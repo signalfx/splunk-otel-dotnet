@@ -1,0 +1,8 @@
+<Project>
+  <Import Project="$(MSBuildThisFileDirectory)Common.props" />
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <LangVersion>10.0</LangVersion>
+  </PropertyGroup>
+</Project>
