@@ -1,0 +1,61 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32819.101
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{88BEA940-34B8-456B-B5C6-1963ADC83E8A}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		Common.props = Common.props
+		Directory.Build.props = Directory.Build.props
+		GlobalSuppressions.cs = GlobalSuppressions.cs
+		LICENSE = LICENSE
+		stylecop.json = stylecop.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{F827C8B9-FF2A-450A-B648-305D5FBB970E}"
+	ProjectSection(SolutionItems) = preProject
+		docs\README.md = docs\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6564E602-76CA-4259-8642-E0C3D8CFF652}"
+	ProjectSection(SolutionItems) = preProject
+		src\Directory.Build.props = src\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Splunk.OpenTelemetry.AutoInstrumentation", "src\Splunk.OpenTelemetry.AutoInstrumentation\Splunk.OpenTelemetry.AutoInstrumentation.csproj", "{689B9DC2-EB4B-4FAA-A858-59D9CCF97EB6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{14A731B9-4F09-43E6-B64C-98E7E6EDA0EA}"
+	ProjectSection(SolutionItems) = preProject
+		test\Directory.Build.props = test\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Splunk.OpenTelemetry.AutoInstrumentation.Tests", "test\Splunk.OpenTelemetry.AutoInstrumentation.Tests\Splunk.OpenTelemetry.AutoInstrumentation.Tests.csproj", "{EE47BEF0-40C5-4AB3-91B6-9CBB420BD59B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{689B9DC2-EB4B-4FAA-A858-59D9CCF97EB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{689B9DC2-EB4B-4FAA-A858-59D9CCF97EB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{689B9DC2-EB4B-4FAA-A858-59D9CCF97EB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{689B9DC2-EB4B-4FAA-A858-59D9CCF97EB6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE47BEF0-40C5-4AB3-91B6-9CBB420BD59B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE47BEF0-40C5-4AB3-91B6-9CBB420BD59B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE47BEF0-40C5-4AB3-91B6-9CBB420BD59B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE47BEF0-40C5-4AB3-91B6-9CBB420BD59B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F827C8B9-FF2A-450A-B648-305D5FBB970E} = {88BEA940-34B8-456B-B5C6-1963ADC83E8A}
+		{689B9DC2-EB4B-4FAA-A858-59D9CCF97EB6} = {6564E602-76CA-4259-8642-E0C3D8CFF652}
+		{EE47BEF0-40C5-4AB3-91B6-9CBB420BD59B} = {14A731B9-4F09-43E6-B64C-98E7E6EDA0EA}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B0A9D043-A771-45B1-AC87-0FFF14CD89D0}
+	EndGlobalSection
+EndGlobal
