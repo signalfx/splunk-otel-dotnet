@@ -1,4 +1,4 @@
-﻿// <copyright file="Class1.cs" company="Splunk Inc.">
+// <copyright file="TracesTests.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +14,17 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation;
+using OpenTelemetry.Trace;
 
-/// <summary>
-/// Class1 scaffolding
-/// </summary>
-public class Class1
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests;
+
+public class TracesTests
 {
-    internal InternalClass2? Class2 { get; set; }
+    [Fact]
+    public void ConfigureTracerProvider()
+    {
+        var builder = Mock.Of<TracerProviderBuilder>();
+        var returnedBuilder = new Traces().ConfigureTracerProvider(builder);
+        returnedBuilder.Should().Be(builder);
+    }
 }

@@ -1,4 +1,4 @@
-// <copyright file="Usings.cs" company="Splunk Inc.">
+﻿// <copyright file="Metrics.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,5 +14,22 @@
 // limitations under the License.
 // </copyright>
 
-global using FluentAssertions;
-global using Xunit;
+using OpenTelemetry.Metrics;
+
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin;
+
+/// <summary>
+/// Metrics plugin
+/// </summary>
+public class Metrics
+{
+    /// <summary>
+    /// Configures Metrics
+    /// </summary>
+    /// <param name="builder"><see cref="MeterProviderBuilder"/>  to configure</param>
+    /// <returns>Returns <see cref="MeterProviderBuilder"/> for chaining.</returns>
+    public MeterProviderBuilder ConfigureMeterProvider(MeterProviderBuilder builder)
+    {
+        return builder;
+    }
+}

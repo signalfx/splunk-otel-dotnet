@@ -1,4 +1,4 @@
-﻿// <copyright file="InternalClass2.cs" company="Splunk Inc.">
+// <copyright file="Usings.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation;
-
-internal class InternalClass2
-{
-}
+global using FluentAssertions;
+global using Moq;
+global using Xunit;
