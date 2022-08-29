@@ -1,4 +1,4 @@
-// <copyright file="Usings.cs" company="Splunk Inc.">
+﻿// <copyright file="Traces.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,22 @@
 // limitations under the License.
 // </copyright>
 
-global using FluentAssertions;
-global using Moq;
-global using Xunit;
+using OpenTelemetry.Trace;
+
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin;
+
+/// <summary>
+/// Tracer plugin
+/// </summary>
+public class Traces
+{
+    /// <summary>
+    /// Configures Traces
+    /// </summary>
+    /// <param name="builder"><see cref="TracerProviderBuilder"/>  to configure</param>
+    /// <returns>Returns <see cref="TracerProviderBuilder"/> for chaining.</returns>
+    public TracerProviderBuilder ConfigureTracerProvider(TracerProviderBuilder builder)
+    {
+        return builder;
+    }
+}

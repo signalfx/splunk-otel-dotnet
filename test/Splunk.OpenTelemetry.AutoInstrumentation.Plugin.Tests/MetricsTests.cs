@@ -1,4 +1,4 @@
-﻿// <copyright file="InternalClass2.cs" company="Splunk Inc.">
+// <copyright file="MetricsTests.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +14,17 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin;
+using OpenTelemetry.Metrics;
 
-internal class InternalClass2
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests;
+
+public class MetricsTests
 {
+    [Fact]
+    public void ConfigureMeterProvider()
+    {
+        var builder = Mock.Of<MeterProviderBuilder>();
+        var returnedBuilder = new Metrics().ConfigureMeterProvider(builder);
+        returnedBuilder.Should().Be(builder);
+    }
 }

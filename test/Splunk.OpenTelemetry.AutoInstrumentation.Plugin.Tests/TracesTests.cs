@@ -1,4 +1,4 @@
-// <copyright file="Class1Tests.cs" company="Splunk Inc.">
+// <copyright file="TracesTests.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,13 +14,17 @@
 // limitations under the License.
 // </copyright>
 
+using OpenTelemetry.Trace;
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests;
 
-public class Class1Tests
+public class TracesTests
 {
     [Fact]
-    public void Test1()
+    public void ConfigureTracerProvider()
     {
-        new Class1().Class2.Should().BeNull();
+        var builder = Mock.Of<TracerProviderBuilder>();
+        var returnedBuilder = new Traces().ConfigureTracerProvider(builder);
+        returnedBuilder.Should().Be(builder);
     }
 }
