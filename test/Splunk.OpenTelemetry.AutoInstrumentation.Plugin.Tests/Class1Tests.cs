@@ -1,4 +1,4 @@
-﻿// <copyright file="Class1.cs" company="Splunk Inc.">
+// <copyright file="Class1Tests.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +14,13 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests;
 
-/// <summary>
-/// Class1 scaffolding
-/// </summary>
-public class Class1
+public class Class1Tests
 {
-    internal InternalClass2? Class2 { get; set; }
+    [Fact]
+    public void Test1()
+    {
+        new Class1().Class2.Should().BeNull();
+    }
 }
