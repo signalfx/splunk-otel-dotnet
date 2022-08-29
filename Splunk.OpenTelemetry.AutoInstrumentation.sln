@@ -32,12 +32,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{14A731B9-4
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests", "test\Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests\Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests.csproj", "{EE47BEF0-40C5-4AB3-91B6-9CBB420BD59B}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{23A5DC4E-0639-43D6-B7A6-A6249968D19C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{23A5DC4E-0639-43D6-B7A6-A6249968D19C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{23A5DC4E-0639-43D6-B7A6-A6249968D19C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{689B9DC2-EB4B-4FAA-A858-59D9CCF97EB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{689B9DC2-EB4B-4FAA-A858-59D9CCF97EB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{689B9DC2-EB4B-4FAA-A858-59D9CCF97EB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
