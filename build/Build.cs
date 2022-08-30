@@ -9,20 +9,20 @@ class Build : NukeBuild
     readonly Configuration Configuration = Configuration.Release;
 
     Target Clean => _ => _
-        .Before(Restore)
         .Executes(() =>
         {
             DotNetTasks.DotNetClean();
         });
 
     Target Restore => _ => _
+        .After(Clean)
         .Executes(() =>
         {
             DotNetTasks.DotNetRestore();
         });
 
     Target Compile => _ => _
-        .DependsOn(Restore)
+        .After(Restore)
         .Executes(() =>
         {
             DotNetTasks.DotNetBuild(s => s
@@ -41,6 +41,7 @@ class Build : NukeBuild
 
     Target Workflow => _ => _
         .DependsOn(Clean)
+        .DependsOn(Restore)
         .DependsOn(Compile)
         .DependsOn(Test);
 }
