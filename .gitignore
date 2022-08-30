@@ -454,4 +454,5 @@ $RECYCLE.BIN/
 !.vscode/extensions.json
 
 # ignore nuke config
-.nuke/*
+.nuke/temp/*
+.nuke/build.schema.json
