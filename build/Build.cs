@@ -12,10 +12,11 @@ class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Release'")]
     readonly Configuration Configuration = Configuration.Release;
 
-    [Parameter("OpenTelemetry AutoInstrumentation dependency version - Default is 'v0.3.0-beta.1'")]
-    readonly string OpenTelemetryAutoInstrumentationVersion = "v0.3.0-beta.1";
+    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v0.3.0-beta.1";
+    [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
+    readonly string OpenTelemetryAutoInstrumentationVersion = OpenTelemetryAutoInstrumentationDefaultVersion;
 
-    private readonly AbsolutePath BinDirectory = RootDirectory / "bin";
+    readonly AbsolutePath BinDirectory = RootDirectory / "bin";
 
     Target Clean => _ => _
         .Executes(() =>
