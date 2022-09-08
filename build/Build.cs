@@ -39,7 +39,12 @@ class Build : NukeBuild
 
             var uri =
                 $"https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/{OpenTelemetryAutoInstrumentationVersion}/{fileName}";
-            await HttpTasks.HttpDownloadFileAsync(uri, BinDirectory / fileName);
+
+            await HttpTasks.HttpDownloadFileAsync(uri, BinDirectory / fileName, clientConfigurator: httpClient =>
+            {
+                httpClient.Timeout = TimeSpan.FromMinutes(3);
+                return httpClient;
+            });
         });
 
     static string GetOTelAutoInstrumentationFileName()
