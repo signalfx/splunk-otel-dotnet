@@ -456,3 +456,5 @@ $RECYCLE.BIN/
 # ignore nuke config
 .nuke/temp/*
 .nuke/build.schema.json
+
+OpenTelemetryDistribution/*

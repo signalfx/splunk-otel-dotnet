@@ -17,6 +17,7 @@ class Build : NukeBuild
     readonly string OpenTelemetryAutoInstrumentationVersion = OpenTelemetryAutoInstrumentationDefaultVersion;
 
     readonly AbsolutePath BinDirectory = RootDirectory / "bin";
+    readonly AbsolutePath OpenTelemetryDistributionFolder = RootDirectory / "OpenTelemetryDistribution";
 
     Target Clean => _ => _
         .Executes(() =>
@@ -40,11 +41,21 @@ class Build : NukeBuild
             var uri =
                 $"https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/{OpenTelemetryAutoInstrumentationVersion}/{fileName}";
 
-            await HttpTasks.HttpDownloadFileAsync(uri, BinDirectory / fileName, clientConfigurator: httpClient =>
+            await HttpTasks.HttpDownloadFileAsync(uri, RootDirectory / fileName, clientConfigurator: httpClient =>
             {
                 httpClient.Timeout = TimeSpan.FromMinutes(3);
                 return httpClient;
             });
+        });
+
+    Target UnpackAutoInstrumentationDistribution => _ => _
+        .After(DownloadAutoInstrumentationDistribution)
+        .Executes(() =>
+        {
+            var fileName = GetOTelAutoInstrumentationFileName();
+            FileSystemTasks.DeleteDirectory(OpenTelemetryDistributionFolder);
+            CompressionTasks.UncompressZip(fileName, OpenTelemetryDistributionFolder);
+            FileSystemTasks.DeleteFile(RootDirectory / fileName);
         });
 
     static string GetOTelAutoInstrumentationFileName()
@@ -74,21 +85,18 @@ class Build : NukeBuild
 
     Target PackSplunkDistribution => _ => _
         .After(Compile)
-        .After(DownloadAutoInstrumentationDistribution)
         .Executes(() =>
         {
             var fileName = GetOTelAutoInstrumentationFileName();
-            var uncompressedFolder = BinDirectory / "uncompressed";
-            FileSystemTasks.DeleteDirectory(uncompressedFolder);
-            CompressionTasks.UncompressZip(BinDirectory / fileName, uncompressedFolder);
+            FileSystemTasks.CopyFileToDirectory(RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin" / "bin" / Configuration / "netstandard2.0" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin.dll", OpenTelemetryDistributionFolder / "plugins");
 
-            FileSystemTasks.CopyFileToDirectory(RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin" / "bin" / Configuration / "netstandard2.0" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin.dll", uncompressedFolder / "plugins");
-
-            CompressionTasks.CompressZip(uncompressedFolder, RootDirectory / "bin" / ("splunk-" + fileName), compressionLevel: CompressionLevel.SmallestSize, fileMode: FileMode.Create);
+            CompressionTasks.CompressZip(OpenTelemetryDistributionFolder, RootDirectory / "bin" / ("splunk-" + fileName), compressionLevel: CompressionLevel.SmallestSize, fileMode: FileMode.Create);
         });
 
     Target Compile => _ => _
         .After(Restore)
+        .After(DownloadAutoInstrumentationDistribution)
+        .After(UnpackAutoInstrumentationDistribution)
         .Executes(() =>
         {
             DotNetTasks.DotNetBuild(s => s
@@ -109,6 +117,7 @@ class Build : NukeBuild
         .DependsOn(Clean)
         .DependsOn(Restore)
         .DependsOn(DownloadAutoInstrumentationDistribution)
+        .DependsOn(UnpackAutoInstrumentationDistribution)
         .DependsOn(Compile)
         .DependsOn(Test)
         .DependsOn(PackSplunkDistribution);

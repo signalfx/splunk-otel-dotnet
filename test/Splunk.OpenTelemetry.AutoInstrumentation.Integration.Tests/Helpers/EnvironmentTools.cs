@@ -43,7 +43,7 @@ public static class EnvironmentTools
         {
             var startDirectory = Environment.CurrentDirectory;
             var currentDirectory = Directory.GetParent(startDirectory);
-            const string searchItem = @"OpenTelemetry.AutoInstrumentation.sln";
+            const string searchItem = @"Splunk.OpenTelemetry.AutoInstrumentation.sln";
 
             while (true)
             {
