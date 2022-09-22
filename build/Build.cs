@@ -56,7 +56,9 @@ class Build : NukeBuild
                 fileName = "opentelemetry-dotnet-instrumentation-windows.zip";
                 break;
             case PlatformFamily.Linux:
-                fileName = "opentelemetry-dotnet-instrumentation-linux-glibc.zip";
+                fileName = Environment.GetEnvironmentVariable("IsAlpine") == "true"
+                    ? "opentelemetry-dotnet-instrumentation-linux-musl.zip"
+                    : "opentelemetry-dotnet-instrumentation-linux-glibc.zip";
                 break;
             case PlatformFamily.OSX:
                 fileName = "opentelemetry-dotnet-instrumentation-macos.zip";

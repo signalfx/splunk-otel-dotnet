@@ -18,10 +18,36 @@ jobs:
       - uses: actions/setup-dotnet@v2.1.0
         with:
           dotnet-version: | 
-            3.1.422
-            6.0.400
+            3.1.423
+            6.0.401
       - run: ./build.cmd Workflow
       - uses: actions/upload-artifact@v3.1.0
         with:
           name: bin-${{ matrix.machine }}
           path: bin/splunk-*.zip
+
+  container-build:
+    strategy:
+      fail-fast: false
+      matrix:
+        base-image: [ alpine ]
+    runs-on: ubuntu-20.04
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v3.0.2
+    - name: Build Docker image
+      run: |
+        docker build \
+          --tag splunk-otel-dotnet/${{ matrix.base-image }} \
+          --file "./build/docker/${{ matrix.base-image }}.dockerfile" \
+          ./build
+    - name: Build in Docker container
+      run: |
+        docker run --rm \
+          --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project \
+          splunk-otel-dotnet/${{ matrix.base-image }} \
+          ./build.sh Workflow
+    - uses: actions/upload-artifact@v3.1.0
+      with:
+        name: bin-${{ matrix.base-image }}
+        path: bin/splunk-*.zip
