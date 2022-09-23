@@ -83,13 +83,21 @@ class Build : NukeBuild
         return fileName;
     }
 
+    Target AddSplunkDistribution => _ => _
+        .After(UnpackAutoInstrumentationDistribution)
+        .Executes(() =>
+        {
+            FileSystemTasks.CopyFileToDirectory(
+                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin" / "bin" / Configuration /
+                "netstandard2.0" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin.dll",
+                OpenTelemetryDistributionFolder / "plugins");
+        });
+
     Target PackSplunkDistribution => _ => _
         .After(Compile)
         .Executes(() =>
         {
             var fileName = GetOTelAutoInstrumentationFileName();
-            FileSystemTasks.CopyFileToDirectory(RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin" / "bin" / Configuration / "netstandard2.0" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin.dll", OpenTelemetryDistributionFolder / "plugins");
-
             CompressionTasks.CompressZip(OpenTelemetryDistributionFolder, RootDirectory / "bin" / ("splunk-" + fileName), compressionLevel: CompressionLevel.SmallestSize, fileMode: FileMode.Create);
         });
 
@@ -118,6 +126,7 @@ class Build : NukeBuild
         .DependsOn(Restore)
         .DependsOn(DownloadAutoInstrumentationDistribution)
         .DependsOn(UnpackAutoInstrumentationDistribution)
+        .DependsOn(AddSplunkDistribution)
         .DependsOn(Compile)
         .DependsOn(Test)
         .DependsOn(PackSplunkDistribution);

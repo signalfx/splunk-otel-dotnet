@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <NoWarn>CS8625,CS8620,CS8618,CS8619,CS8603,CS8600,CS8602,CS8601,CS8604</NoWarn>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" Condition="'$(TargetFramework)' == 'net462'"/>
+  </ItemGroup>
+
+</Project>

@@ -147,8 +147,7 @@ public class EnvironmentHelper
     {
         string nukeOutputPath = Path.Combine(
             EnvironmentTools.GetSolutionDirectory(),
-            "bin",
-            "tracer-home");
+            @"OpenTelemetryDistribution");
 
         if (Directory.Exists(nukeOutputPath))
         {
