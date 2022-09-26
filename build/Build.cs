@@ -3,10 +3,12 @@ using System.IO;
 using System.IO.Compression;
 using Nuke.Common;
 using Nuke.Common.IO;
+using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
 
 class Build : NukeBuild
 {
+    [Solution("Splunk.OpenTelemetry.AutoInstrumentation.sln")] readonly Solution Solution;
     public static int Main() => Execute<Build>(x => x.Workflow);
 
     [Parameter("Configuration to build - Default is 'Release'")]
@@ -112,12 +114,27 @@ class Build : NukeBuild
                     .SetConfiguration(Configuration));
         });
 
-    Target Test => _ => _
+    Target RunUnitTests => _ => _
         .After(Compile)
         .Executes(() =>
         {
+            var project = Solution.GetProject("Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests");
+
             DotNetTasks.DotNetTest(s => s
                 .SetNoBuild(true)
+                .SetProjectFile(project)
+                .SetConfiguration(Configuration));
+        });
+
+    Target RunIntegrationTests => _ => _
+        .After(Compile)
+        .Executes(() =>
+        {
+            var project = Solution.GetProject("Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests");
+
+            DotNetTasks.DotNetTest(s => s
+                .SetNoBuild(true)
+                .SetProjectFile(project)
                 .SetConfiguration(Configuration));
         });
 
@@ -128,6 +145,7 @@ class Build : NukeBuild
         .DependsOn(UnpackAutoInstrumentationDistribution)
         .DependsOn(AddSplunkDistribution)
         .DependsOn(Compile)
-        .DependsOn(Test)
+        .DependsOn(RunUnitTests)
+        .DependsOn(RunIntegrationTests)
         .DependsOn(PackSplunkDistribution);
 }
