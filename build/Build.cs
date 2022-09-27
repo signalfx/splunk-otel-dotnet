@@ -52,6 +52,7 @@ class Build : NukeBuild
 
     Target UnpackAutoInstrumentationDistribution => _ => _
         .After(DownloadAutoInstrumentationDistribution)
+        .After(Clean)
         .Executes(() =>
         {
             var fileName = GetOTelAutoInstrumentationFileName();
