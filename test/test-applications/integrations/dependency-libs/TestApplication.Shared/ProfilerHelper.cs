@@ -28,12 +28,12 @@ public static class ProfilerHelper
         var prefixes = new[] { "COR_", "CORECLR_", "DOTNET_", "OTEL_" };
 
         var envVars = from envVar in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
-            from prefix in prefixes
-            let key = (envVar.Key as string)?.ToUpperInvariant()
-            let value = envVar.Value as string
-            where key.StartsWith(prefix)
-            orderby key
-            select new KeyValuePair<string, string>(key, value);
+                      from prefix in prefixes
+                      let key = (envVar.Key as string)?.ToUpperInvariant()
+                      let value = envVar.Value as string
+                      where key.StartsWith(prefix)
+                      orderby key
+                      select new KeyValuePair<string, string>(key, value);
 
         return envVars;
     }
