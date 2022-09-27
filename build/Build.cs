@@ -18,14 +18,14 @@ class Build : NukeBuild
     [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
     readonly string OpenTelemetryAutoInstrumentationVersion = OpenTelemetryAutoInstrumentationDefaultVersion;
 
-    readonly AbsolutePath BinDirectory = RootDirectory / "bin";
     readonly AbsolutePath OpenTelemetryDistributionFolder = RootDirectory / "OpenTelemetryDistribution";
 
     Target Clean => _ => _
         .Executes(() =>
         {
             DotNetTasks.DotNetClean();
-            FileSystemTasks.DeleteDirectory(BinDirectory);
+            FileSystemTasks.DeleteDirectory(RootDirectory / "bin");
+            FileSystemTasks.DeleteDirectory(OpenTelemetryDistributionFolder);
         });
 
     Target Restore => _ => _
@@ -105,7 +105,6 @@ class Build : NukeBuild
 
     Target Compile => _ => _
         .After(Restore)
-        .After(DownloadAutoInstrumentationDistribution)
         .After(UnpackAutoInstrumentationDistribution)
         .Executes(() =>
         {
