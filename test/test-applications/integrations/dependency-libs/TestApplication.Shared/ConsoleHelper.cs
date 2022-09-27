@@ -23,8 +23,12 @@ public static class ConsoleHelper
     public static void WriteSplashScreen(string[] args)
     {
         Console.WriteLine($"Command line: {string.Join(" ", args)}");
-        var (isProfilerAttached, additionalMessage) = ProfilerHelper.IsProfilerAttached();
-        Console.WriteLine($"Profiler attached: {(isProfilerAttached.HasValue ? isProfilerAttached.Value.ToString() : additionalMessage)}");
         Console.WriteLine($"Platform: {(Environment.Is64BitProcess ? "x64" : "x32")}");
+
+        Console.WriteLine("Environment variables:");
+        foreach (var entry in ProfilerHelper.GetEnvironmentConfiguration())
+        {
+            Console.WriteLine($"\t{entry.Key} = {entry.Value}");
+        }
     }
 }
