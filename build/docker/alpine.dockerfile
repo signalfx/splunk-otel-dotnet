@@ -7,7 +7,10 @@ RUN apk update \
         cmake \
         make \
         bash \
-        alpine-sdk
+        alpine-sdk \
+        protobuf \
+        protobuf-dev \
+        grpc
 
 ENV IsAlpine=true
 
