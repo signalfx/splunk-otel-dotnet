@@ -24,8 +24,8 @@ class Build : NukeBuild
         .Executes(() =>
         {
             DotNetTasks.DotNetClean();
-            FileSystemTasks.DeleteDirectory(RootDirectory / "bin");
             FileSystemTasks.DeleteDirectory(OpenTelemetryDistributionFolder);
+            FileSystemTasks.DeleteDirectory(RootDirectory / GetOTelAutoInstrumentationFileName());
         });
 
     Target Restore => _ => _

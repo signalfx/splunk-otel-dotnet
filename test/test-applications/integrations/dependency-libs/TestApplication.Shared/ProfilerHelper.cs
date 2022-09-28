@@ -25,7 +25,7 @@ public static class ProfilerHelper
 {
     public static IEnumerable<KeyValuePair<string, string>> GetEnvironmentConfiguration()
     {
-        var prefixes = new[] { "COR_", "CORECLR_", "DOTNET_", "OTEL_" };
+        var prefixes = new[] { "COR_", "CORECLR_", "DOTNET_", "OTEL_", "SPLUNK_" };
 
         var envVars = from envVar in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
                       from prefix in prefixes
