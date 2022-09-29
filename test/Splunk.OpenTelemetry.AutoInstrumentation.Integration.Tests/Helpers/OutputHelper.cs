@@ -25,13 +25,13 @@ public static class OutputHelper
     {
         processHelper.Drain();
 
-        string standardOutput = processHelper.StandardOutput;
+        var standardOutput = processHelper.StandardOutput;
         if (!string.IsNullOrWhiteSpace(standardOutput))
         {
             outputHelper.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
         }
 
-        string standardError = processHelper.ErrorOutput;
+        var standardError = processHelper.ErrorOutput;
         if (!string.IsNullOrWhiteSpace(standardError))
         {
             outputHelper.WriteLine($"StandardError:{Environment.NewLine}{standardError}");

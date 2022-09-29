@@ -28,7 +28,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
 public static class EnvironmentTools
 {
     public const string ProfilerClsId = "{918728DD-259F-4A6A-AC2B-B85E1B658318}";
-    public const string DotNetFramework = ".NETFramework";
     public const string CoreFramework = ".NETCoreApp";
 
     private static string? _solutionDirectory;

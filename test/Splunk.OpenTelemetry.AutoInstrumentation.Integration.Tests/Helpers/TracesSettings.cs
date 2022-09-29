@@ -18,7 +18,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
 
 public class TracesSettings
 {
-    public string Exporter => "zipkin";
+    public string Exporter => "otlp";
 
     public int Port { get; set; }
 }

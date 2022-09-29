@@ -17,12 +17,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
-using System.Threading.Tasks;
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Containers;
 using FluentAssertions;
-using Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers.Models;
 using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
@@ -48,128 +43,6 @@ public abstract class TestHelper
 
     protected ITestOutputHelper Output { get; }
 
-    public string GetTestAssemblyPath()
-    {
-#if NETFRAMEWORK
-        // CodeBase is deprecated outside .NET Framework, instead of suppressing the error
-        // build the code as per recommendation for each runtime.
-        var codeBaseUrl = new Uri(Assembly.GetExecutingAssembly().CodeBase);
-        var codeBasePath = Uri.UnescapeDataString(codeBaseUrl.AbsolutePath);
-        var directory = Path.GetDirectoryName(codeBasePath);
-        return Path.GetFullPath(directory);
-#else
-        return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
-#endif
-    }
-
-    public async Task<Container> StartContainerAsync(TestSettings testSettings, int webPort)
-    {
-        // get path to test application that the profiler will attach to
-        string testApplicationName = $"testapplication-{EnvironmentHelper.TestApplicationName.ToLowerInvariant()}";
-
-        string networkName = DockerNetworkHelper.IntegrationTestsNetworkName;
-        string networkId = await DockerNetworkHelper.SetupIntegrationTestsNetworkAsync();
-
-        string logPath = EnvironmentHelper.IsRunningOnCI()
-            ? Path.Combine(Environment.GetEnvironmentVariable("GITHUB_WORKSPACE") ?? string.Empty, "build_data", "profiler-logs")
-            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"OpenTelemetry .NET AutoInstrumentation", "logs");
-
-        Directory.CreateDirectory(logPath);
-
-        Output.WriteLine("Collecting docker logs to: " + logPath);
-
-        var agentPort = testSettings.TracesSettings?.Port ?? testSettings.MetricsSettings?.Port;
-        var builder = new TestcontainersBuilder<TestcontainersContainer>()
-            .WithImage(testApplicationName)
-            .WithCleanUp(cleanUp: true)
-            .WithOutputConsumer(Consume.RedirectStdoutAndStderrToConsole())
-            .WithName($"{testApplicationName}-{agentPort}-{webPort}")
-            .WithNetwork(networkId, networkName)
-            .WithPortBinding(webPort, 80)
-            .WithBindMount(logPath, "c:/inetpub/wwwroot/logs")
-            .WithBindMount(EnvironmentHelper.GetNukeBuildOutput(), "c:/opentelemetry");
-
-        string agentBaseUrl = $"http://{DockerNetworkHelper.IntegrationTestsGateway}:{agentPort}";
-        string agentHealthzUrl = $"{agentBaseUrl}/healthz";
-
-        if (testSettings.TracesSettings != null)
-        {
-            string zipkinEndpoint = $"{agentBaseUrl}/api/v2/spans";
-            Output.WriteLine($"Zipkin Endpoint: {zipkinEndpoint}");
-
-            builder = builder.WithEnvironment("OTEL_EXPORTER_ZIPKIN_ENDPOINT", zipkinEndpoint);
-        }
-
-        if (testSettings.MetricsSettings != null)
-        {
-            Output.WriteLine($"Otlp Endpoint: {agentBaseUrl}");
-            builder = builder.WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", agentBaseUrl);
-            builder = builder.WithEnvironment("OTEL_METRIC_EXPORT_INTERVAL", "1000");
-        }
-
-        foreach (var env in EnvironmentHelper.CustomEnvironmentVariables)
-        {
-            builder = builder.WithEnvironment(env.Key, env.Value);
-        }
-
-        var container = builder.Build();
-        var wasStarted = container.StartAsync().Wait(TimeSpan.FromMinutes(5));
-
-        wasStarted.Should().BeTrue($"Container based on {testApplicationName} has to be operational for the test.");
-
-        Output.WriteLine($"Container was started successfully.");
-
-        PowershellHelper.RunCommand($"docker exec {container.Name} curl -v {agentHealthzUrl}", Output);
-
-        var webAppHealthzUrl = $"http://localhost:{webPort}/healthz";
-        var webAppHealthzResult = await HealthzHelper.TestHealtzAsync(webAppHealthzUrl, "IIS WebApp", Output);
-
-        webAppHealthzResult.Should().BeTrue("IIS WebApp health check never returned OK.");
-
-        Output.WriteLine($"IIS WebApp was started successfully.");
-
-        return new Container(container);
-    }
-
-    public Process? StartTestApplication(
-        int traceAgentPort = 0,
-        int metricsAgentPort = 0,
-        int logsAgentPort = 0,
-        string? arguments = null,
-        string packageVersion = "",
-        int aspNetCorePort = 0,
-        string framework = "",
-        bool enableStartupHook = true,
-        bool enableClrProfiler = true)
-    {
-        var testSettings = new TestSettings
-        {
-            Arguments = arguments,
-            PackageVersion = packageVersion,
-            AspNetCorePort = aspNetCorePort,
-            Framework = framework,
-            EnableStartupHook = enableStartupHook,
-            EnableClrProfiler = enableClrProfiler
-        };
-
-        if (traceAgentPort != 0)
-        {
-            testSettings.TracesSettings = new() { Port = traceAgentPort };
-        }
-
-        if (metricsAgentPort != 0)
-        {
-            testSettings.MetricsSettings = new() { Port = metricsAgentPort };
-        }
-
-        if (logsAgentPort != 0)
-        {
-            testSettings.LogSettings = new() { Port = logsAgentPort };
-        }
-
-        return StartTestApplication(testSettings);
-    }
-
     public void RunTestApplication(int traceAgentPort = 0, int metricsAgentPort = 0, string? arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool enableStartupHook = true, bool enableClrProfiler = true)
     {
         var testSettings = new TestSettings
@@ -193,11 +66,6 @@ public abstract class TestHelper
         }
 
         RunTestApplication(testSettings);
-    }
-
-    protected bool IsCoreClr()
-    {
-        return EnvironmentHelper.IsCoreClr();
     }
 
     protected void SetEnvironmentVariable(string key, string value)

@@ -15,19 +15,14 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using FluentAssertions.Extensions;
 using OpenTelemetry.Proto.Common.V1;
+using OpenTelemetry.Proto.Trace.V1;
 using Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
-using Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers.Mocks;
-using Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers.Models;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -48,70 +43,6 @@ public class SmokeTests : TestHelper
     [Trait("Category", "EndToEnd")]
     public async Task SubmitsTraces()
     {
-        var spans = await RunTestApplicationAsync();
-
-        AssertAllSpansReceived(spans);
-    }
-
-    [Fact]
-    [Trait("Category", "EndToEnd")]
-    public async Task WhenStartupHookIsNotEnabled()
-    {
-        var spans = await RunTestApplicationAsync(enableStartupHook: false);
-
-#if NETFRAMEWORK
-        AssertAllSpansReceived(spans);
-#else
-        // on .NET Core it is required to set DOTNET_STARTUP_HOOKS
-        AssertNoSpansReceived(spans);
-#endif
-    }
-
-    [Fact]
-    [Trait("Category", "EndToEnd")]
-    public async Task ApplicationIsNotExcluded()
-    {
-        SetEnvironmentVariable("OTEL_DOTNET_AUTO_EXCLUDE_PROCESSES", $"dotnet,dotnet.exe");
-
-        var spans = await RunTestApplicationAsync();
-
-        AssertAllSpansReceived(spans);
-    }
-
-    [Fact]
-    [Trait("Category", "EndToEnd")]
-    public async Task ApplicationIsExcluded()
-    {
-        SetEnvironmentVariable("OTEL_DOTNET_AUTO_EXCLUDE_PROCESSES", $"dotnet,dotnet.exe,{EnvironmentHelper.FullTestApplicationName},{EnvironmentHelper.FullTestApplicationName}.exe");
-
-        var spans = await RunTestApplicationAsync();
-
-        AssertNoSpansReceived(spans);
-    }
-
-    [Fact]
-    [Trait("Category", "EndToEnd")]
-    public async Task ApplicationIsNotIncluded()
-    {
-        SetEnvironmentVariable("OTEL_DOTNET_AUTO_INCLUDE_PROCESSES", $"dotnet,dotnet.exe");
-
-        var spans = await RunTestApplicationAsync();
-
-#if NETFRAMEWORK
-        AssertNoSpansReceived(spans);
-#else
-        // FIXME: OTEL_DOTNET_AUTO_INCLUDE_PROCESSES does on .NET Core.
-        // https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/issues/895
-        AssertAllSpansReceived(spans);
-#endif
-    }
-
-    [Fact]
-    [Trait("Category", "EndToEnd")]
-    public async Task ApplicationIsIncluded()
-    {
-        SetEnvironmentVariable("OTEL_DOTNET_AUTO_INCLUDE_PROCESSES", $"{EnvironmentHelper.FullTestApplicationName},{EnvironmentHelper.FullTestApplicationName}.exe");
-
         var spans = await RunTestApplicationAsync();
 
         AssertAllSpansReceived(spans);
@@ -150,96 +81,35 @@ public class SmokeTests : TestHelper
         }
     }
 
-    [Fact]
-    [Trait("Category", "EndToEnd")]
-    public async Task PrometheusExporter()
+    private static void AssertAllSpansReceived(IImmutableList<ResourceSpans> spans)
     {
-        SetEnvironmentVariable("LONG_RUNNING", "true");
-        SetEnvironmentVariable("OTEL_METRICS_EXPORTER", "prometheus");
-        SetEnvironmentVariable("OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
-        string defaultPrometheusMetricsEndpoint = "http://localhost:9464/metrics";
+        const int expectedSpanCount = 2;
 
-        using var process = StartTestApplication();
+        var spanList = spans
+            .SelectMany(resourceSpans => resourceSpans.ScopeSpans)
+            .SelectMany(scopeSpans => scopeSpans.Spans)
+            .ToList();
 
-        try
-        {
-            var assert = async () =>
-            {
-                var httpClient = new HttpClient
-                {
-                    Timeout = 5.Seconds()
-                };
-                var response = await httpClient.GetAsync(defaultPrometheusMetricsEndpoint);
-                response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-                var content = await response.Content.ReadAsStringAsync();
-                Output.WriteLine("Raw metrics from Prometheus:");
-                Output.WriteLine(content);
-                content.Should().Contain("TYPE MyFruitCounter counter");
-            };
-            await assert.Should().NotThrowAfterAsync(
-                waitTime: 30.Seconds(),
-                pollInterval: 1.Seconds());
-        }
-        finally
-        {
-            process?.Kill();
-        }
-    }
-
-    private static void AssertNoSpansReceived(IImmutableList<IMockSpan> spans)
-    {
-        Assert.True(spans.Count() == 0, $"Expecting no spans, received {spans.Count()}");
-    }
-
-    private static void AssertAllSpansReceived(IImmutableList<IMockSpan> spans)
-    {
-        var expectedSpanCount = 2;
-        Assert.True(spans.Count() == expectedSpanCount, $"Expecting {expectedSpanCount} spans, received {spans.Count()}");
+        spanList.Count.Should().Be(expectedSpanCount, $"Expecting {expectedSpanCount} spans, received {spans.Count}");
         if (expectedSpanCount > 0)
         {
-            Assert.Single(spans.Select(s => s.Service).Distinct());
-
-            var spanList = spans.ToList();
-
-            var expectations = new List<WebServerSpanExpectation>();
-            expectations.Add(new WebServerSpanExpectation(ServiceName, null, "SayHello", "SayHello", null));
-            expectations.Add(new WebServerSpanExpectation(ServiceName, null, "HTTP GET", "HTTP GET", null, "GET"));
-
-            AssertSpanExpectations(expectations, spanList);
-        }
-    }
-
-    private static void AssertSpanExpectations(List<WebServerSpanExpectation> expectations, List<IMockSpan> spans)
-    {
-        List<IMockSpan> remainingSpans = spans.Select(s => s).ToList();
-        List<string> failures = new List<string>();
-
-        foreach (SpanExpectation expectation in expectations)
-        {
-            List<IMockSpan> possibleSpans =
-                remainingSpans
-                    .Where(s => expectation.Matches(s))
-                    .ToList();
-
-            if (possibleSpans.Count == 0)
+            var expectedServiceNameAttribute = new KeyValue { Key = "service.name", Value = new AnyValue { StringValue = ServiceName } };
+            foreach (var span in spans)
             {
-                failures.Add($"No spans for: {expectation}");
-                continue;
+                span.Resource.Attributes.Should().ContainEquivalentOf(expectedServiceNameAttribute);
             }
-        }
 
-        string finalMessage = Environment.NewLine + string.Join(Environment.NewLine, failures.Select(f => " - " + f));
-        Assert.True(!failures.Any(), finalMessage);
+            spanList.Should().Contain(span => span.Name == "SayHello");
+            spanList.Should().Contain(span => span.Name == "HTTP GET");
+        }
     }
 
-    private async Task<IImmutableList<IMockSpan>> RunTestApplicationAsync(bool enableStartupHook = true)
+    private async Task<IImmutableList<ResourceSpans>> RunTestApplicationAsync(bool enableStartupHook = true)
     {
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
 
-        using var agent = new MockZipkinCollector(Output);
+        using var agent = new MockTracesCollector(Output);
         RunTestApplication(agent.Port, enableStartupHook: enableStartupHook);
-
         return await agent.WaitForSpansAsync(2, TimeSpan.FromSeconds(5));
     }
 }
