@@ -276,7 +276,7 @@ public class MockMetricsCollector : IDisposable
 
         public string InstrumentationScopeName { get; }
 
-        public Metric Metric { get;  } // protobuf type
+        public Metric Metric { get; } // protobuf type
 
         public override string ToString()
         {
