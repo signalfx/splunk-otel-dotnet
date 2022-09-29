@@ -24,13 +24,13 @@ public interface IMockSpan
 
     public ulong SpanId { get; }
 
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
-    public string Resource { get; set; }
+    public string? Resource { get; set; }
 
-    public string Service { get; }
+    public string? Service { get; }
 
-    public string Type { get; set; }
+    public string? Type { get; set; }
 
     public long Start { get; }
 
@@ -40,5 +40,5 @@ public interface IMockSpan
 
     public byte Error { get; set; }
 
-    public Dictionary<string, string> Tags { get; set; }
+    public Dictionary<string, string>? Tags { get; set; }
 }

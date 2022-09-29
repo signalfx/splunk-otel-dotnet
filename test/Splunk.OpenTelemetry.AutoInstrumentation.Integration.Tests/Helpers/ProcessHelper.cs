@@ -31,22 +31,26 @@ public class ProcessHelper : IDisposable
     private readonly ManualResetEventSlim _outputMutex = new();
     private readonly StringBuilder _outputBuffer = new();
     private readonly StringBuilder _errorBuffer = new();
+    private readonly object _outputLock = new();
 
     private bool _isStdOutputDrained;
     private bool _isErrOutputDrained;
-    private object _outputLock = new object();
 
-    public ProcessHelper(Process process)
+    public ProcessHelper(Process? process)
     {
         Process = process;
-        Process.OutputDataReceived += (_, e) => DrainOutput(e.Data, _outputBuffer, isErrorStream: false);
-        Process.ErrorDataReceived += (_, e) => DrainOutput(e.Data, _errorBuffer, isErrorStream: true);
 
-        Process.BeginOutputReadLine();
-        Process.BeginErrorReadLine();
+        if (Process != null)
+        {
+            Process.OutputDataReceived += (_, e) => DrainOutput(e.Data, _outputBuffer, isErrorStream: false);
+            Process.ErrorDataReceived += (_, e) => DrainOutput(e.Data, _errorBuffer, isErrorStream: true);
+
+            Process.BeginOutputReadLine();
+            Process.BeginErrorReadLine();
+        }
     }
 
-    public Process Process { get; }
+    public Process? Process { get; }
 
     public string StandardOutput => CompleteOutput(_outputBuffer);
 
@@ -67,7 +71,7 @@ public class ProcessHelper : IDisposable
         _outputMutex.Dispose();
     }
 
-    private void DrainOutput(string data, StringBuilder buffer, bool isErrorStream)
+    private void DrainOutput(string? data, StringBuilder buffer, bool isErrorStream)
     {
         if (data != null)
         {
@@ -95,7 +99,7 @@ public class ProcessHelper : IDisposable
 
     private string CompleteOutput(StringBuilder builder)
     {
-        if (Process.HasExited)
+        if (Process is { HasExited: true })
         {
             return builder.ToString();
         }

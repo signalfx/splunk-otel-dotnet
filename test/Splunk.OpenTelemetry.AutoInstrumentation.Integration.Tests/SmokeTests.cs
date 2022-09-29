@@ -140,12 +140,13 @@ public class SmokeTests : TestHelper
             var customClientScope = resourceMetrics.ScopeMetrics.Single(rm => rm.Scope.Name.Equals("MyCompany.MyProduct.MyLibrary", StringComparison.OrdinalIgnoreCase));
             var myFruitCounterMetric = customClientScope.Metrics.FirstOrDefault(m => m.Name.Equals("MyFruitCounter", StringComparison.OrdinalIgnoreCase));
             myFruitCounterMetric.Should().NotBeNull();
-            myFruitCounterMetric.DataCase.Should().Be(global::OpenTelemetry.Proto.Metrics.V1.Metric.DataOneofCase.Sum);
-            myFruitCounterMetric.Sum.DataPoints.Count.Should().Be(1);
+            myFruitCounterMetric?.DataCase.Should().Be(global::OpenTelemetry.Proto.Metrics.V1.Metric.DataOneofCase.Sum);
+            myFruitCounterMetric?.Sum.DataPoints.Count.Should().Be(1);
 
-            var myFruitCounterAttributes = myFruitCounterMetric.Sum.DataPoints[0].Attributes;
-            myFruitCounterAttributes.Count.Should().Be(1);
-            myFruitCounterAttributes.Single(a => a.Key == "name").Value.StringValue.Should().Be("apple");
+            var myFruitCounterAttributes = myFruitCounterMetric?.Sum.DataPoints[0].Attributes;
+            myFruitCounterAttributes.Should().NotBeNull();
+            myFruitCounterAttributes?.Count.Should().Be(1);
+            myFruitCounterAttributes?.Single(a => a.Key == "name").Value.StringValue.Should().Be("apple");
         }
     }
 
@@ -182,7 +183,7 @@ public class SmokeTests : TestHelper
         }
         finally
         {
-            process.Kill();
+            process?.Kill();
         }
     }
 

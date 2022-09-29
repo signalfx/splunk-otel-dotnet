@@ -31,7 +31,7 @@ internal static class HealthzHelper
 
         for (int retry = 0; retry < 5; retry++)
         {
-            HttpResponseMessage response;
+            HttpResponseMessage? response;
 
             try
             {

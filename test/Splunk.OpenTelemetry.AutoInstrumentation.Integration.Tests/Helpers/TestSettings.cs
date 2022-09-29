@@ -18,13 +18,13 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
 
 public class TestSettings
 {
-    public TracesSettings TracesSettings { get; set; } = null;
+    public TracesSettings? TracesSettings { get; set; } = null;
 
-    public MetricsSettings MetricsSettings { get; set; } = null;
+    public MetricsSettings? MetricsSettings { get; set; } = null;
 
-    public LogSettings LogSettings { get; set; } = null;
+    public LogSettings? LogSettings { get; set; } = null;
 
-    public string Arguments { get; set; } = null;
+    public string? Arguments { get; set; } = null;
 
     public string PackageVersion { get; set; } = string.Empty;
 

@@ -31,13 +31,13 @@ public static class EnvironmentTools
     public const string DotNetFramework = ".NETFramework";
     public const string CoreFramework = ".NETCoreApp";
 
-    private static string _solutionDirectory = null;
+    private static string? _solutionDirectory;
 
     /// <summary>
     /// Find the solution directory from anywhere in the hierarchy.
     /// </summary>
     /// <returns>The solution directory.</returns>
-    public static string GetSolutionDirectory()
+    public static string? GetSolutionDirectory()
     {
         if (_solutionDirectory == null)
         {
@@ -47,14 +47,14 @@ public static class EnvironmentTools
 
             while (true)
             {
-                var slnFile = currentDirectory.GetFiles(searchItem).SingleOrDefault();
+                var slnFile = currentDirectory?.GetFiles(searchItem).SingleOrDefault();
 
                 if (slnFile != null)
                 {
                     break;
                 }
 
-                currentDirectory = currentDirectory.Parent;
+                currentDirectory = currentDirectory?.Parent;
 
                 if (currentDirectory == null || !currentDirectory.Exists)
                 {
@@ -62,7 +62,7 @@ public static class EnvironmentTools
                 }
             }
 
-            _solutionDirectory = currentDirectory.FullName;
+            _solutionDirectory = currentDirectory?.FullName;
         }
 
         return _solutionDirectory;

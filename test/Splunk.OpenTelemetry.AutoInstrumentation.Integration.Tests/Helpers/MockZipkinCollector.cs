@@ -43,9 +43,9 @@ public class MockZipkinCollector : IDisposable
         _listener = new(output, HandleHttpRequests, host, "/api/v2/spans/");
     }
 
-    public event EventHandler<EventArgs<HttpListenerContext>> RequestReceived;
+    public event EventHandler<EventArgs<HttpListenerContext>>? RequestReceived;
 
-    public event EventHandler<EventArgs<IList<IMockSpan>>> RequestDeserialized;
+    public event EventHandler<EventArgs<IList<IMockSpan>>>? RequestDeserialized;
 
     /// <summary>
     /// Gets or sets a value indicating whether to skip serialization of traces.
@@ -78,7 +78,7 @@ public class MockZipkinCollector : IDisposable
     public async Task<IImmutableList<IMockSpan>> WaitForSpansAsync(
         int count,
         TimeSpan? timeout = null,
-        string operationName = null,
+        string? operationName = null,
         DateTimeOffset? minDateTime = null,
         bool returnAllOperations = false)
     {
@@ -133,7 +133,7 @@ public class MockZipkinCollector : IDisposable
 
     private void HandleHttpRequests(HttpListenerContext ctx)
     {
-        if (ctx.Request.RawUrl.Equals("/healthz", StringComparison.OrdinalIgnoreCase))
+        if (ctx.Request.RawUrl != null && ctx.Request.RawUrl.Equals("/healthz", StringComparison.OrdinalIgnoreCase))
         {
             CreateHealthResponse(ctx);
             return;

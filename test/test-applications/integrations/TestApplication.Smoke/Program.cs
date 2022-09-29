@@ -37,6 +37,7 @@ public class Program
         // The "LONG_RUNNING" environment variable is used by tests that access/receive
         // data that takes time to be produced.
         var longRunning = Environment.GetEnvironmentVariable("LONG_RUNNING");
+
         while (longRunning == "true")
         {
             // In this case it is necessary to ensure that the test has a chance to read the
@@ -75,6 +76,6 @@ public class Program
         var myMeter = new Meter(SourceName, "1.0");
         var myFruitCounter = myMeter.CreateCounter<int>("MyFruitCounter");
 
-        myFruitCounter.Add(1, new KeyValuePair<string, object>("name", "apple"));
+        myFruitCounter.Add(1, new KeyValuePair<string, object?>("name", "apple"));
     }
 }

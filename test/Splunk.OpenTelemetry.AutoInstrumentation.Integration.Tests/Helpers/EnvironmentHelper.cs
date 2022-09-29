@@ -29,43 +29,43 @@ public class EnvironmentHelper
 {
     private static readonly Assembly ExecutingAssembly = Assembly.GetExecutingAssembly();
     private static readonly string RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
-    private static string _nukeOutputLocation;
+    private static string? _nukeOutputLocation;
 
     private readonly ITestOutputHelper _output;
-    private readonly int _major;
-    private readonly int _minor;
-    private readonly string _patch = null;
+    private readonly int? _major;
+    private readonly int? _minor;
+    private readonly string? _patch;
 
     private readonly string _appNamePrepend;
-    private readonly string _runtime;
-    private readonly bool _isCoreClr;
+    private readonly string? _runtime;
+    private readonly bool? _isCoreClr;
     private readonly string _testApplicationDirectory;
-    private readonly TargetFrameworkAttribute _targetFramework;
+    private readonly TargetFrameworkAttribute? _targetFramework;
 
-    private string _integrationsFileLocation;
-    private string _profilerFileLocation;
+    private string? _integrationsFileLocation;
+    private string? _profilerFileLocation;
 
     public EnvironmentHelper(
         string testApplicationName,
         Type anchorType,
         ITestOutputHelper output,
-        string testApplicationDirectory = null,
+        string? testApplicationDirectory = null,
         bool prependTestApplicationToAppName = true)
     {
         TestApplicationName = testApplicationName;
         _testApplicationDirectory = testApplicationDirectory ?? Path.Combine("test", "test-applications", "integrations");
-        _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
+        _targetFramework = Assembly.GetAssembly(anchorType)?.GetCustomAttribute<TargetFrameworkAttribute>();
         _output = output;
 
-        var parts = _targetFramework.FrameworkName.Split(',');
-        _runtime = parts[0];
-        _isCoreClr = _runtime.Equals(EnvironmentTools.CoreFramework);
+        var parts = _targetFramework?.FrameworkName.Split(',');
+        _runtime = parts?[0];
+        _isCoreClr = _runtime?.Equals(EnvironmentTools.CoreFramework);
 
-        var versionParts = parts[1].Replace("Version=v", string.Empty).Split('.');
-        _major = int.Parse(versionParts[0]);
-        _minor = int.Parse(versionParts[1]);
+        var versionParts = parts?[1].Replace("Version=v", string.Empty).Split('.');
+        _major = int.Parse(versionParts == null ? string.Empty : versionParts[0]);
+        _minor = int.Parse(versionParts == null ? string.Empty : versionParts[1]);
 
-        if (versionParts.Length == 3)
+        if (versionParts?.Length == 3)
         {
             _patch = versionParts[2];
         }
@@ -88,11 +88,12 @@ public class EnvironmentHelper
         return RuntimeFrameworkDescription.Contains("core") || Environment.Version.Major >= 5;
     }
 
-    public static string GetNukeBuildOutput()
+    public static string? GetNukeBuildOutput()
     {
-        string nukeOutputPath = Path.Combine(
-            EnvironmentTools.GetSolutionDirectory(),
-            @"OpenTelemetryDistribution");
+        var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
+
+        var nukeOutputPath = solutionDirectory != null
+            ? Path.Combine(solutionDirectory, @"OpenTelemetryDistribution") : null;
 
         if (Directory.Exists(nukeOutputPath))
         {
@@ -109,7 +110,7 @@ public class EnvironmentHelper
         // https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
         // Github sets CI environment variable
 
-        string env = Environment.GetEnvironmentVariable("CI");
+        var env = Environment.GetEnvironmentVariable("CI");
         return !string.IsNullOrEmpty(env);
     }
 
@@ -151,7 +152,8 @@ public class EnvironmentHelper
         if (DebugModeEnabled)
         {
             environmentVariables["OTEL_DOTNET_AUTO_DEBUG"] = "1";
-            environmentVariables["OTEL_DOTNET_AUTO_LOG_DIRECTORY"] = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "build_data", "profiler-logs");
+            var solutionDirectory = EnvironmentTools.GetSolutionDirectory() ?? string.Empty;
+            environmentVariables["OTEL_DOTNET_AUTO_LOG_DIRECTORY"] = Path.Combine(solutionDirectory, "build_data", "profiler-logs");
         }
 
         if (!string.IsNullOrEmpty(processToProfile))
@@ -207,9 +209,9 @@ public class EnvironmentHelper
             _ => throw new PlatformNotSupportedException()
         };
 
-        string fileName = $"OpenTelemetry.AutoInstrumentation.Native.{extension}";
-        string nukeOutput = GetNukeBuildOutput();
-        string profilerPath = EnvironmentTools.IsWindows()
+        var fileName = $"OpenTelemetry.AutoInstrumentation.Native.{extension}";
+        var nukeOutput = GetNukeBuildOutput() ?? string.Empty;
+        var profilerPath = EnvironmentTools.IsWindows()
             ? Path.Combine(nukeOutput, $"win-{EnvironmentTools.GetPlatform().ToLower()}", fileName)
             : Path.Combine(nukeOutput, fileName);
 
@@ -230,8 +232,8 @@ public class EnvironmentHelper
             return _integrationsFileLocation;
         }
 
-        string fileName = $"integrations.json";
-        string integrationsPath = Path.Combine(GetNukeBuildOutput(), fileName);
+        var fileName = $"integrations.json";
+        var integrationsPath = Path.Combine(GetNukeBuildOutput() ?? string.Empty, fileName);
 
         if (File.Exists(integrationsPath))
         {
@@ -245,7 +247,7 @@ public class EnvironmentHelper
 
     public string GetTestApplicationPath(string packageVersion = "", string framework = "")
     {
-        string extension = "exe";
+        var extension = "exe";
 
         if (IsCoreClr() || _testApplicationDirectory.Contains("aspnet"))
         {
@@ -287,7 +289,7 @@ public class EnvironmentHelper
     {
         var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
         var projectDir = Path.Combine(
-            solutionDirectory,
+            solutionDirectory ?? string.Empty,
             _testApplicationDirectory,
             $"{FullTestApplicationName}");
         return projectDir;
@@ -317,7 +319,7 @@ public class EnvironmentHelper
 
     public string GetTargetFramework()
     {
-        if (_isCoreClr)
+        if (_isCoreClr.HasValue && _isCoreClr.Value)
         {
             if (_major >= 5)
             {
@@ -332,8 +334,8 @@ public class EnvironmentHelper
 
     private static string GetStartupHookOutputPath()
     {
-        string startupHookOutputPath = Path.Combine(
-            GetNukeBuildOutput(),
+        var startupHookOutputPath = Path.Combine(
+            GetNukeBuildOutput() ?? string.Empty,
             "netcoreapp3.1",
             "OpenTelemetry.AutoInstrumentation.StartupHook.dll");
 
@@ -342,8 +344,8 @@ public class EnvironmentHelper
 
     private static string GetSharedStorePath()
     {
-        string storePath = Path.Combine(
-            GetNukeBuildOutput(),
+        var storePath = Path.Combine(
+            GetNukeBuildOutput() ?? string.Empty,
             "store");
 
         return storePath;
@@ -351,8 +353,8 @@ public class EnvironmentHelper
 
     private static string GetAdditionalDepsPath()
     {
-        string additionalDeps = Path.Combine(
-            GetNukeBuildOutput(),
+        var additionalDeps = Path.Combine(
+            GetNukeBuildOutput() ?? string.Empty,
             "AdditionalDeps");
 
         return additionalDeps;

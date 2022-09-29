@@ -58,7 +58,7 @@ public abstract class TestHelper
         var directory = Path.GetDirectoryName(codeBasePath);
         return Path.GetFullPath(directory);
 #else
-        return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
 #endif
     }
 
@@ -71,7 +71,7 @@ public abstract class TestHelper
         string networkId = await DockerNetworkHelper.SetupIntegrationTestsNetworkAsync();
 
         string logPath = EnvironmentHelper.IsRunningOnCI()
-            ? Path.Combine(Environment.GetEnvironmentVariable("GITHUB_WORKSPACE"), "build_data", "profiler-logs")
+            ? Path.Combine(Environment.GetEnvironmentVariable("GITHUB_WORKSPACE") ?? string.Empty, "build_data", "profiler-logs")
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"OpenTelemetry .NET AutoInstrumentation", "logs");
 
         Directory.CreateDirectory(logPath);
@@ -131,11 +131,11 @@ public abstract class TestHelper
         return new Container(container);
     }
 
-    public Process StartTestApplication(
+    public Process? StartTestApplication(
         int traceAgentPort = 0,
         int metricsAgentPort = 0,
         int logsAgentPort = 0,
-        string arguments = null,
+        string? arguments = null,
         string packageVersion = "",
         int aspNetCorePort = 0,
         string framework = "",
@@ -170,7 +170,7 @@ public abstract class TestHelper
         return StartTestApplication(testSettings);
     }
 
-    public void RunTestApplication(int traceAgentPort = 0, int metricsAgentPort = 0, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool enableStartupHook = true, bool enableClrProfiler = true)
+    public void RunTestApplication(int traceAgentPort = 0, int metricsAgentPort = 0, string? arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool enableStartupHook = true, bool enableClrProfiler = true)
     {
         var testSettings = new TestSettings
         {
@@ -208,24 +208,24 @@ public abstract class TestHelper
     private void RunTestApplication(TestSettings testSettings)
     {
         using var process = StartTestApplication(testSettings);
-        Output.WriteLine($"ProcessName: " + process.ProcessName);
+        Output.WriteLine($"ProcessName: " + process?.ProcessName);
         using var helper = new ProcessHelper(process);
 
-        bool processTimeout = !process.WaitForExit((int)DefaultProcessTimeout.TotalMilliseconds);
-        if (processTimeout)
+        var processTimeout = !process?.WaitForExit((int)DefaultProcessTimeout.TotalMilliseconds);
+        if (processTimeout.HasValue && processTimeout.Value)
         {
-            process.Kill();
+            process?.Kill();
         }
 
-        Output.WriteLine($"ProcessId: " + process.Id);
-        Output.WriteLine($"Exit Code: " + process.ExitCode);
+        Output.WriteLine($"ProcessId: " + process?.Id);
+        Output.WriteLine($"Exit Code: " + process?.ExitCode);
         Output.WriteResult(helper);
 
         processTimeout.Should().BeFalse("Test application timed out");
-        process.ExitCode.Should().Be(0, "Test application exited with non-zero exit code");
+        process?.ExitCode.Should().Be(0, "Test application exited with non-zero exit code");
     }
 
-    private Process StartTestApplication(TestSettings testSettings)
+    private Process? StartTestApplication(TestSettings testSettings)
     {
         // get path to test application that the profiler will attach to
         string testApplicationPath = EnvironmentHelper.GetTestApplicationPath(testSettings.PackageVersion, testSettings.Framework);

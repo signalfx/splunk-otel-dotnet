@@ -21,10 +21,10 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
 
 public class InstrumentedProcessHelper
 {
-    public static Process StartInstrumentedProcess(
+    public static Process? StartInstrumentedProcess(
         string executable,
         EnvironmentHelper environmentHelper,
-        string arguments,
+        string? arguments,
         TestSettings testSettings)
     {
         if (environmentHelper == null)

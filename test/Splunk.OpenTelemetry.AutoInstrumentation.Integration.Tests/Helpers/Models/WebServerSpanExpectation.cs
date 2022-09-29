@@ -20,14 +20,14 @@ public class WebServerSpanExpectation : SpanExpectation
 {
     public WebServerSpanExpectation(
         string serviceName,
-        string serviceVersion,
+        string? serviceVersion,
         string operationName,
         string resourceName,
-        string component = "Web",
+        string? component = "Web",
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
         string statusCode = null,
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-        string httpMethod = null)
+        string? httpMethod = null)
         : base(
             serviceName,
             serviceVersion,
@@ -43,9 +43,7 @@ public class WebServerSpanExpectation : SpanExpectation
         // RegisterTagExpectation(Tags.HttpMethod, expected: HttpMethod);
     }
 
-    public string OriginalUri { get; set; }
-
     public string StatusCode { get; set; }
 
-    public string HttpMethod { get; set; }
+    public string? HttpMethod { get; set; }
 }

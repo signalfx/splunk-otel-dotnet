@@ -28,7 +28,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers.Mod
 /// </summary>
 public class SpanExpectation
 {
-    public SpanExpectation(string serviceName, string serviceVersion, string operationName, string resourceName, string type)
+    public SpanExpectation(string serviceName, string? serviceVersion, string operationName, string resourceName, string? type)
     {
         ServiceName = serviceName;
         ServiceVersion = serviceVersion;
@@ -41,7 +41,7 @@ public class SpanExpectation
 
         RegisterCustomExpectation(nameof(OperationName), actual: s => s.Name, expected: OperationName);
         RegisterCustomExpectation(nameof(ServiceName), actual: s => s.Service, expected: ServiceName);
-        RegisterCustomExpectation(nameof(ResourceName), actual: s => s.Resource.TrimEnd(), expected: ResourceName);
+        RegisterCustomExpectation(nameof(ResourceName), actual: s => s.Resource?.TrimEnd(), expected: ResourceName);
         RegisterCustomExpectation(nameof(Type), actual: s => s.Type, expected: Type);
 
         RegisterTagExpectation(
@@ -56,11 +56,11 @@ public class SpanExpectation
 
     public Func<IMockSpan, bool> Always => s => true;
 
-    public List<Func<IMockSpan, string>> Assertions { get; } = new List<Func<IMockSpan, string>>();
+    public List<Func<IMockSpan, string?>> Assertions { get; } = new();
 
     public bool IsTopLevel { get; set; } = true;
 
-    public string Type { get; set; }
+    public string? Type { get; set; }
 
     public string ResourceName { get; set; }
 
@@ -68,12 +68,16 @@ public class SpanExpectation
 
     public string ServiceName { get; set; }
 
-    public string ServiceVersion { get; set; }
+    public string? ServiceVersion { get; set; }
 
-    public static string GetTag(IMockSpan span, string tag)
+    public static string? GetTag(IMockSpan span, string tag)
     {
-        span.Tags.TryGetValue(tag, out var value);
-        return value;
+        if (span.Tags != null && span.Tags.TryGetValue(tag, out var value))
+        {
+            return value;
+        }
+
+        return null;
     }
 
     public override string ToString()
@@ -110,7 +114,10 @@ public class SpanExpectation
             var mismatchMessage = assertion(span);
             if (!string.IsNullOrWhiteSpace(mismatchMessage))
             {
-                messages.Add(mismatchMessage);
+                if (mismatchMessage != null)
+                {
+                    messages.Add(mismatchMessage);
+                }
             }
         }
 
@@ -127,7 +134,7 @@ public class SpanExpectation
     {
         Assertions.Add(span =>
         {
-            if (when(span) && !span.Tags.ContainsKey(tagKey))
+            if (when(span) && span.Tags != null && !span.Tags.ContainsKey(tagKey))
             {
                 return $"Tag {tagKey} is missing from span.";
             }
@@ -158,8 +165,8 @@ public class SpanExpectation
 
     public void RegisterCustomExpectation(
         string keyForMessage,
-        Func<IMockSpan, string> actual,
-        string expected)
+        Func<IMockSpan, string?> actual,
+        string? expected)
     {
         Assertions.Add(span =>
         {
@@ -176,8 +183,8 @@ public class SpanExpectation
 
     public void RegisterTagExpectation(
         string key,
-        string expected,
-        Func<IMockSpan, bool> when = null)
+        string? expected,
+        Func<IMockSpan, bool>? when = null)
     {
         when ??= Always;
 
@@ -192,16 +199,16 @@ public class SpanExpectation
 
             if (actualValue != expected)
             {
-                return FailureMessage(name: key, actual: actualValue, expected: expected);
+                return FailureMessage(name: key, actual: actualValue ?? string.Empty, expected: expected);
             }
 
             return null;
         });
     }
 
-    protected string FailureMessage(string name, string actual, string expected)
+    protected string FailureMessage(string name, string? actual, string? expected)
     {
-        return $"({name} mismatch: actual: {actual ?? "NULL"}, expected: {expected ?? "NULL"})";
+        return $"({name} mismatch: actual: {actual}, expected: {expected ?? "NULL"})";
     }
 
     private IEnumerable<string> ExpectBasicSpanDataExists(IMockSpan span)

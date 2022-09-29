@@ -48,16 +48,16 @@ internal class ZSpanMock : IMockSpan
         get => Convert.ToUInt64(_zipkinData["id"].ToString(), 16);
     }
 
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
-    public string Resource { get; set; }
+    public string? Resource { get; set; }
 
-    public string Service
+    public string? Service
     {
-        get => _zipkinData["localEndpoint"]["serviceName"].ToString();
+        get => _zipkinData["localEndpoint"]["serviceName"]?.ToString();
     }
 
-    public string Type { get; set; }
+    public string? Type { get; set; }
 
     public long Start
     {
@@ -70,14 +70,14 @@ internal class ZSpanMock : IMockSpan
     {
         get
         {
-            _zipkinData.TryGetValue("parentId", out JToken parentId);
+            _zipkinData.TryGetValue("parentId", out var parentId);
             return parentId == null ? null : Convert.ToUInt64(parentId.ToString(), 16);
         }
     }
 
     public byte Error { get; set; }
 
-    public Dictionary<string, string> Tags { get; set; }
+    public Dictionary<string, string>? Tags { get; set; }
 
     public Dictionary<DateTimeOffset, Dictionary<string, object>> Logs
     {
@@ -85,13 +85,17 @@ internal class ZSpanMock : IMockSpan
         {
             var logs = new Dictionary<DateTimeOffset, Dictionary<string, object>>();
 
-            if (_zipkinData.TryGetValue("annotations", out JToken annotations))
+            if (_zipkinData.TryGetValue("annotations", out var annotations))
             {
-                foreach (var item in annotations.ToObject<List<Dictionary<string, object>>>())
+                var annotationsAsObject = annotations?.ToObject<List<Dictionary<string, object>>>();
+                if (annotationsAsObject != null)
                 {
-                    DateTimeOffset timestamp = ((long)item["timestamp"]).UnixMicrosecondsToDateTimeOffset();
-                    item.Remove("timestamp");
-                    logs[timestamp] = item;
+                    foreach (var item in annotationsAsObject)
+                    {
+                        var timestamp = ((long)item["timestamp"]).UnixMicrosecondsToDateTimeOffset();
+                        item.Remove("timestamp");
+                        logs[timestamp] = item;
+                    }
                 }
             }
 
@@ -99,7 +103,7 @@ internal class ZSpanMock : IMockSpan
         }
     }
 
-    public Dictionary<string, double> Metrics { get; set; }
+    public Dictionary<string, double>? Metrics { get; set; }
 
     public override string ToString()
     {
@@ -140,14 +144,19 @@ internal class ZSpanMock : IMockSpan
     [OnDeserialized]
     private void OnDeserialized(StreamingContext context)
     {
-        var resourceNameTag = Tags.GetValueOrDefault("resource.name");
+        var resourceNameTag = Tags?.GetValueOrDefault("resource.name");
         // If resource.name tag not set, it matches the operation name
         Resource = string.IsNullOrEmpty(resourceNameTag) ? Name : resourceNameTag;
-        Type = Tags.GetValueOrDefault("component");
-        var error = Tags.GetValueOrDefault("error") ?? "false";
+        Type = Tags?.GetValueOrDefault("component");
+        var error = Tags?.GetValueOrDefault("error") ?? "false";
         Error = (byte)(error.ToLowerInvariant().Equals("true") ? 1 : 0);
         var spanKind = _zipkinData.GetValueOrDefault("kind")?.ToString();
-        if (spanKind != null)
+        if (spanKind == null)
+        {
+            return;
+        }
+
+        if (Tags != null)
         {
             Tags["span.kind"] = spanKind.ToLowerInvariant();
         }

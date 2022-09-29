@@ -39,12 +39,12 @@ public class MockMetricsCollector : IDisposable
     public MockMetricsCollector(ITestOutputHelper output, string host = "localhost")
     {
         _output = output;
-        _listener = new(output, HandleHttpRequests, host);
+        _listener = new TestHttpListener(output, HandleHttpRequests, host);
     }
 
-    public event EventHandler<EventArgs<HttpListenerContext>> RequestReceived;
+    public event EventHandler<EventArgs<HttpListenerContext>>? RequestReceived;
 
-    public event EventHandler<EventArgs<ExportMetricsServiceRequest>> RequestDeserialized;
+    public event EventHandler<EventArgs<ExportMetricsServiceRequest>>? RequestDeserialized;
 
     /// <summary>
     /// Gets or sets a value indicating whether to skip deserialization of metrics.
@@ -118,37 +118,41 @@ public class MockMetricsCollector : IDisposable
     {
         OnRequestReceived(ctx);
 
-        if (ctx.Request.RawUrl.Equals("/healthz", StringComparison.OrdinalIgnoreCase))
+        var rawUrl = ctx.Request.RawUrl;
+        if (rawUrl != null)
         {
-            CreateHealthResponse(ctx);
-            return;
-        }
-
-        if (ctx.Request.RawUrl.Equals("/v1/metrics", StringComparison.OrdinalIgnoreCase))
-        {
-            if (ShouldDeserializeMetrics)
+            if (rawUrl.Equals("/healthz", StringComparison.OrdinalIgnoreCase))
             {
-                var metricsMessage = ExportMetricsServiceRequest.Parser.ParseFrom(ctx.Request.InputStream);
-                OnRequestDeserialized(metricsMessage);
-
-                lock (this)
-                {
-                    // we only need to lock when replacing the metric collection,
-                    // not when reading it because it is immutable
-                    MetricsMessages = MetricsMessages.Add(metricsMessage);
-                    RequestHeaders = RequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
-                }
+                CreateHealthResponse(ctx);
+                return;
             }
 
-            // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
-            // (Setting content-length avoids that)
-            ctx.Response.ContentType = "application/x-protobuf";
-            ctx.Response.StatusCode = (int)HttpStatusCode.OK;
-            var responseMessage = new ExportMetricsServiceResponse();
-            ctx.Response.ContentLength64 = responseMessage.CalculateSize();
-            responseMessage.WriteTo(ctx.Response.OutputStream);
-            ctx.Response.Close();
-            return;
+            if (rawUrl.Equals("/v1/metrics", StringComparison.OrdinalIgnoreCase))
+            {
+                if (ShouldDeserializeMetrics)
+                {
+                    var metricsMessage = ExportMetricsServiceRequest.Parser.ParseFrom(ctx.Request.InputStream);
+                    OnRequestDeserialized(metricsMessage);
+
+                    lock (this)
+                    {
+                        // we only need to lock when replacing the metric collection,
+                        // not when reading it because it is immutable
+                        MetricsMessages = MetricsMessages.Add(metricsMessage);
+                        RequestHeaders = RequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
+                    }
+                }
+
+                // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
+                // (Setting content-length avoids that)
+                ctx.Response.ContentType = "application/x-protobuf";
+                ctx.Response.StatusCode = (int)HttpStatusCode.OK;
+                var responseMessage = new ExportMetricsServiceResponse();
+                ctx.Response.ContentLength64 = responseMessage.CalculateSize();
+                responseMessage.WriteTo(ctx.Response.OutputStream);
+                ctx.Response.Close();
+                return;
+            }
         }
 
         // We received an unsupported request
