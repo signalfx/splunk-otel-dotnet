@@ -15,144 +15,228 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Collections.Specialized;
-using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Google.Protobuf;
+using Google.Protobuf.Collections;
 using OpenTelemetry.Proto.Collector.Metrics.V1;
-using Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers.Models;
+using OpenTelemetry.Proto.Common.V1;
+using OpenTelemetry.Proto.Metrics.V1;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
 
 public class MockMetricsCollector : IDisposable
 {
-    private static readonly TimeSpan DefaultWaitTimeout = TimeSpan.FromSeconds(20);
+    private static readonly TimeSpan DefaultWaitTimeout = TimeSpan.FromMinutes(1);
 
     private readonly ITestOutputHelper _output;
     private readonly TestHttpListener _listener;
 
-    public MockMetricsCollector(ITestOutputHelper output, string host = "localhost")
+    private readonly List<Expectation> _expectations = new();
+
+    private readonly BlockingCollection<List<CollectedMetric>> _metricsSnapshots = new(10); // bounded to avoid memory leak; contains protobuf type
+
+    private readonly ManualResetEvent _resourceAttributesEvent = new(false); // synchronizes access to _resourceAttributes
+    private RepeatedField<KeyValue>? _resourceAttributes; // protobuf type
+
+    private MockMetricsCollector(ITestOutputHelper output, string host = "localhost")
     {
         _output = output;
         _listener = new TestHttpListener(output, HandleHttpRequests, host);
     }
-
-    public event EventHandler<EventArgs<HttpListenerContext>>? RequestReceived;
-
-    public event EventHandler<EventArgs<ExportMetricsServiceRequest>>? RequestDeserialized;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether to skip deserialization of metrics.
-    /// </summary>
-    public bool ShouldDeserializeMetrics { get; set; } = true;
 
     /// <summary>
     /// Gets the TCP port that this collector is listening on.
     /// </summary>
     public int Port { get => _listener.Port; }
 
-    /// <summary>
-    /// Gets the filters used to filter out metrics we don't want to look at for a test.
-    /// </summary>
-    public List<Func<ExportMetricsServiceRequest, bool>> MetricFilters { get; private set; } = new List<Func<ExportMetricsServiceRequest, bool>>();
-
-    public IImmutableList<ExportMetricsServiceRequest> MetricsMessages { get; private set; } = ImmutableList<ExportMetricsServiceRequest>.Empty;
-
-    public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
-
-    /// <summary>
-    /// Wait for the given number of metric requests to appear.
-    /// </summary>
-    /// <param name="count">The expected number of metric requests.</param>
-    /// <param name="timeout">The timeout</param>
-    /// <returns>The list of metric requests.</returns>
-    public IImmutableList<ExportMetricsServiceRequest> WaitForMetrics(
-        int count,
-        TimeSpan? timeout = null)
+    public static async Task<MockMetricsCollector> Start(ITestOutputHelper output, string host = "localhost")
     {
-        timeout ??= DefaultWaitTimeout;
-        var deadline = DateTime.Now.Add(timeout.Value);
+        var collector = new MockMetricsCollector(output, host);
 
-        IImmutableList<ExportMetricsServiceRequest> relevantMetricRequests = ImmutableList<ExportMetricsServiceRequest>.Empty;
+        var healthzResult = await collector._listener.VerifyHealthzAsync();
 
-        while (DateTime.Now < deadline)
+        if (!healthzResult)
         {
-            relevantMetricRequests =
-                MetricsMessages
-                    .Where(m => MetricFilters.All(shouldReturn => shouldReturn(m)))
-                    .ToImmutableList();
-
-            if (relevantMetricRequests.Count >= count)
-            {
-                break;
-            }
-
-            Thread.Sleep(500);
+            collector.Dispose();
+            throw new InvalidOperationException($"Cannot start {nameof(MockTracesCollector)}!");
         }
 
-        return relevantMetricRequests;
+        return collector;
     }
 
     public void Dispose()
     {
-        WriteOutput($"Shutting down. Total metric requests received: '{MetricsMessages.Count}'");
+        WriteOutput($"Shutting down.");
+        _metricsSnapshots.Dispose();
+        _resourceAttributesEvent.Dispose();
         _listener.Dispose();
     }
 
-    protected virtual void OnRequestReceived(HttpListenerContext context)
+    public void Expect(string instrumentationScopeName, Func<Metric, bool>? predicate = null, string? description = null)
     {
-        RequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(context));
+        predicate ??= x => true;
+        description ??= instrumentationScopeName;
+
+        _expectations.Add(new Expectation(instrumentationScopeName, predicate, description));
     }
 
-    protected virtual void OnRequestDeserialized(ExportMetricsServiceRequest metricsRequest)
+    public void AssertExpectations(TimeSpan? timeout = null)
     {
-        RequestDeserialized?.Invoke(this, new EventArgs<ExportMetricsServiceRequest>(metricsRequest));
+        if (_expectations.Count == 0)
+        {
+            throw new InvalidOperationException("Expectations were not set");
+        }
+
+        var missingExpectations = new List<Expectation>(_expectations);
+        var expectationsMet = new List<CollectedMetric>();
+        var additionalEntries = new List<CollectedMetric>();
+
+        timeout ??= DefaultWaitTimeout;
+        var cts = new CancellationTokenSource();
+
+        try
+        {
+            cts.CancelAfter(timeout.Value);
+
+            // loop until expectations met or timeout
+            while (true)
+            {
+                var metrics = _metricsSnapshots.Take(cts.Token); // get the metrics snapshot
+
+                missingExpectations = new List<Expectation>(_expectations);
+                expectationsMet = new List<CollectedMetric>();
+                additionalEntries = new List<CollectedMetric>();
+
+                foreach (var metric in metrics)
+                {
+                    bool found = false;
+                    for (int i = missingExpectations.Count - 1; i >= 0; i--)
+                    {
+                        if (metric.InstrumentationScopeName != missingExpectations[i].InstrumentationScopeName)
+                        {
+                            continue;
+                        }
+
+                        if (!missingExpectations[i].Predicate(metric.Metric))
+                        {
+                            continue;
+                        }
+
+                        expectationsMet.Add(metric);
+                        missingExpectations.RemoveAt(i);
+                        found = true;
+                        break;
+                    }
+
+                    if (!found)
+                    {
+                        additionalEntries.Add(metric);
+                    }
+                }
+
+                if (missingExpectations.Count == 0)
+                {
+                    return;
+                }
+            }
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            // CancelAfter called with non-positive value
+            FailMetrics(missingExpectations, expectationsMet, additionalEntries);
+        }
+        catch (OperationCanceledException)
+        {
+            // timeout
+            FailMetrics(missingExpectations, expectationsMet, additionalEntries);
+        }
+    }
+
+    private static void FailMetrics(
+        List<Expectation> missingExpectations,
+        List<CollectedMetric> expectationsMet,
+        List<CollectedMetric> additionalEntries)
+    {
+        var message = new StringBuilder();
+        message.AppendLine();
+
+        message.AppendLine("Missing expectations:");
+        foreach (var logline in missingExpectations)
+        {
+            message.AppendLine($"  - \"{logline.Description}\"");
+        }
+
+        message.AppendLine("Entries meeting expectations:");
+        foreach (var logline in expectationsMet)
+        {
+            message.AppendLine($"    \"{logline}\"");
+        }
+
+        message.AppendLine("Additional entries:");
+        foreach (var logline in additionalEntries)
+        {
+            message.AppendLine($"  + \"{logline}\"");
+        }
+
+        Assert.Fail(message.ToString());
     }
 
     private void HandleHttpRequests(HttpListenerContext ctx)
     {
-        OnRequestReceived(ctx);
-
         var rawUrl = ctx.Request.RawUrl;
         if (rawUrl != null)
         {
-            if (rawUrl.Equals("/healthz", StringComparison.OrdinalIgnoreCase))
-            {
-                CreateHealthResponse(ctx);
-                return;
-            }
-
             if (rawUrl.Equals("/v1/metrics", StringComparison.OrdinalIgnoreCase))
             {
-                if (ShouldDeserializeMetrics)
+                var metricsMessage = ExportMetricsServiceRequest.Parser.ParseFrom(ctx.Request.InputStream);
+                if (metricsMessage.ResourceMetrics != null)
                 {
-                    var metricsMessage = ExportMetricsServiceRequest.Parser.ParseFrom(ctx.Request.InputStream);
-                    OnRequestDeserialized(metricsMessage);
-
-                    lock (this)
+                    foreach (var resourceMetric in metricsMessage.ResourceMetrics)
                     {
-                        // we only need to lock when replacing the metric collection,
-                        // not when reading it because it is immutable
-                        MetricsMessages = MetricsMessages.Add(metricsMessage);
-                        RequestHeaders = RequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
+                        if (resourceMetric.ScopeMetrics != null)
+                        {
+                            // resource metrics are always the same. set them only once.
+                            if (_resourceAttributes == null)
+                            {
+                                _resourceAttributes = resourceMetric.Resource.Attributes;
+                                _resourceAttributesEvent.Set();
+                            }
+
+                            // process metrics snapshot
+                            var metricsSnapshot = new List<CollectedMetric>();
+                            foreach (var scopeMetrics in resourceMetric.ScopeMetrics)
+                            {
+                                if (scopeMetrics.Metrics != null)
+                                {
+                                    foreach (var metric in scopeMetrics.Metrics)
+                                    {
+                                        metricsSnapshot.Add(new CollectedMetric(scopeMetrics.Scope.Name, metric));
+                                    }
+                                }
+                            }
+
+                            _metricsSnapshots.Add(metricsSnapshot);
+                        }
                     }
                 }
-
-                // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
-                // (Setting content-length avoids that)
-                ctx.Response.ContentType = "application/x-protobuf";
-                ctx.Response.StatusCode = (int)HttpStatusCode.OK;
-                var responseMessage = new ExportMetricsServiceResponse();
-                ctx.Response.ContentLength64 = responseMessage.CalculateSize();
-                responseMessage.WriteTo(ctx.Response.OutputStream);
-                ctx.Response.Close();
-                return;
             }
+
+            // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
+            // (Setting content-length avoids that)
+            ctx.Response.ContentType = "application/x-protobuf";
+            ctx.Response.StatusCode = (int)HttpStatusCode.OK;
+            var responseMessage = new ExportMetricsServiceResponse();
+            ctx.Response.ContentLength64 = responseMessage.CalculateSize();
+            responseMessage.WriteTo(ctx.Response.OutputStream);
+            ctx.Response.Close();
+            return;
         }
 
         // We received an unsupported request
@@ -160,19 +244,43 @@ public class MockMetricsCollector : IDisposable
         ctx.Response.Close();
     }
 
-    private void CreateHealthResponse(HttpListenerContext ctx)
-    {
-        ctx.Response.ContentType = "text/plain";
-        var buffer = Encoding.UTF8.GetBytes("OK");
-        ctx.Response.ContentLength64 = buffer.LongLength;
-        ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
-        ctx.Response.StatusCode = (int)HttpStatusCode.OK;
-        ctx.Response.Close();
-    }
-
     private void WriteOutput(string msg)
     {
         const string name = nameof(MockMetricsCollector);
         _output.WriteLine($"[{name}]: {msg}");
+    }
+
+    private class Expectation
+    {
+        public Expectation(string instrumentationScopeName, Func<Metric, bool> predicate, string description)
+        {
+            InstrumentationScopeName = instrumentationScopeName;
+            Predicate = predicate;
+            Description = description;
+        }
+
+        public string InstrumentationScopeName { get; }
+
+        public Func<Metric, bool> Predicate { get; }
+
+        public string Description { get; }
+    }
+
+    private class CollectedMetric
+    {
+        public CollectedMetric(string instrumentationScopeName, Metric metric)
+        {
+            InstrumentationScopeName = instrumentationScopeName;
+            Metric = metric;
+        }
+
+        public string InstrumentationScopeName { get; }
+
+        public Metric Metric { get;  } // protobuf type
+
+        public override string ToString()
+        {
+            return $"InstrumentationScopeName = {InstrumentationScopeName}, Metric = {Metric}";
+        }
     }
 }
