@@ -83,10 +83,9 @@ public class Program
 
     private static void EmitLogs()
     {
-        const string logMessage = "SmokeTest app log";
         using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
 
         var logger = loggerFactory.CreateLogger<Program>();
-        logger.LogInformation(logMessage);
+        logger.LogInformation("SmokeTest app log");
     }
 }
