@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 
+using System;
 using System.Threading.Tasks;
 using Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
 using Xunit;
@@ -59,4 +60,19 @@ public class SmokeTests : TestHelper
 
         collector.AssertExpectations();
     }
+
+#if !NETFRAMEWORK
+    [Fact(Skip = "Waiting for the new release of OpenTelemetry Autoinstrumentation to support this scenario.")]
+    [Trait("Category", "EndToEnd")]
+    public async Task SubmitLogs()
+    {
+        using var collector = await MockLogsCollector.Start(Output);
+        collector.Expect(logRecord => Convert.ToString(logRecord.Body) == "{ \"stringValue\": \"SmokeTest app log\" }");
+
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE", "true");
+        RunTestApplication(collector.Port);
+
+        collector.AssertExpectations();
+    }
+#endif
 }
