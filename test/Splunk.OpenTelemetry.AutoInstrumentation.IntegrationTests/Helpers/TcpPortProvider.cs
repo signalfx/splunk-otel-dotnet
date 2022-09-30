@@ -17,7 +17,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 /// <summary>
 /// Helper class that tries to provide unique ports numbers across processes and threads in the same machine.

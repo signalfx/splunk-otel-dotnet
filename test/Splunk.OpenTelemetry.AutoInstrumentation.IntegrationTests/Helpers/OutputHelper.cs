@@ -17,7 +17,7 @@
 using System;
 using Xunit.Abstractions;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 public static class OutputHelper
 {

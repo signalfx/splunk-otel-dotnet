@@ -16,11 +16,11 @@
 
 using System;
 using System.Threading.Tasks;
-using Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
+using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests;
 
 public class SmokeTests : TestHelper
 {

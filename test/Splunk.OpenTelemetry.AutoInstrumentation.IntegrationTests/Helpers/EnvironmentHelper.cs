@@ -23,7 +23,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Xunit.Abstractions;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 public class EnvironmentHelper
 {

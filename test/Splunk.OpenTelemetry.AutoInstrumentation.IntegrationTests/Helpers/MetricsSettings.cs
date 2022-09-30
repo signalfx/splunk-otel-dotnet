@@ -1,4 +1,4 @@
-// <copyright file="LogSettings.cs" company="Splunk Inc.">
+// <copyright file="MetricsSettings.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +14,9 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-public class LogSettings
+public class MetricsSettings
 {
     public string Exporter => "otlp";
 

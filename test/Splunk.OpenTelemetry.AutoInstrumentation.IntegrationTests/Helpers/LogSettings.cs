@@ -1,4 +1,4 @@
-// <copyright file="EventArgs.cs" company="Splunk Inc.">
+// <copyright file="LogSettings.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,16 +14,11 @@
 // limitations under the License.
 // </copyright>
 
-using System;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers.Models;
-
-public class EventArgs<T> : EventArgs
+public class LogSettings
 {
-    public EventArgs(T value)
-    {
-        Value = value;
-    }
+    public string Exporter => "otlp";
 
-    public T Value { get; }
+    public int Port { get; set; }
 }

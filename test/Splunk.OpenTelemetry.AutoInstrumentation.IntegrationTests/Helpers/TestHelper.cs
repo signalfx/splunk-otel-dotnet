@@ -20,7 +20,7 @@ using System.IO;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 public abstract class TestHelper
 {

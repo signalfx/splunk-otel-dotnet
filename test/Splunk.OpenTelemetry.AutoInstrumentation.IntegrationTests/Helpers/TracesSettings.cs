@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 public class TracesSettings
 {

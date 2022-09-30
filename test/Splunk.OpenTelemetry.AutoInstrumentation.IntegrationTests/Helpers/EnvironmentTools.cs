@@ -20,7 +20,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 /// <summary>
 /// General use utility methods for all tests and tools.

@@ -20,7 +20,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 internal static class HealthzHelper
 {

@@ -19,7 +19,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 /// <summary>
 /// Drains the standard and error output of a process

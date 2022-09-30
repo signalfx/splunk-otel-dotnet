@@ -130,7 +130,7 @@ class Build : NukeBuild
         .After(Compile)
         .Executes(() =>
         {
-            var project = Solution.GetProject("Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests");
+            var project = Solution.GetProject("Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests");
 
             DotNetTasks.DotNetTest(s => s
                 .SetNoBuild(true)

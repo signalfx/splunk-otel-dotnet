@@ -17,7 +17,7 @@
 using System;
 using System.Diagnostics;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 public class InstrumentedProcessHelper
 {

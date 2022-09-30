@@ -1,4 +1,4 @@
-// <copyright file="MetricsSettings.cs" company="Splunk Inc.">
+// <copyright file="EventArgs.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,11 +14,16 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
+using System;
 
-public class MetricsSettings
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers.Models;
+
+public class EventArgs<T> : EventArgs
 {
-    public string Exporter => "otlp";
+    public EventArgs(T value)
+    {
+        Value = value;
+    }
 
-    public int Port { get; set; }
+    public T Value { get; }
 }

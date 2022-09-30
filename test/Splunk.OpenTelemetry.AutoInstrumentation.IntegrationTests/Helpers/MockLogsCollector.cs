@@ -27,7 +27,7 @@ using OpenTelemetry.Proto.Logs.V1;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.Helpers;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 public class MockLogsCollector : IDisposable
 {

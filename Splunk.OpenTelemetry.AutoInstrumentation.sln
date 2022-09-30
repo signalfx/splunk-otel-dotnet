@@ -36,7 +36,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.cspr
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{D43C3CFD-4BFA-4415-8063-CBCADDD5451B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests", "test\Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests\Splunk.OpenTelemetry.AutoInstrumentation.Integration.Tests.csproj", "{1CE4522F-D8CB-46FE-B48B-5250761DC2F6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests", "test\Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests\Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.csproj", "{1CE4522F-D8CB-46FE-B48B-5250761DC2F6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test-applications", "test-applications", "{A6DD239C-1359-4B04-844B-3DAD486AA370}"
 EndProject
