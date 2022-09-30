@@ -35,7 +35,7 @@ public class MockLogsCollector : IDisposable
 
     private readonly ITestOutputHelper _output;
     private readonly TestHttpListener _listener;
-    private readonly BlockingCollection<global::OpenTelemetry.Proto.Logs.V1.LogRecord> _logs = new(100); // bounded to avoid memory leak
+    private readonly BlockingCollection<LogRecord> _logs = new(100); // bounded to avoid memory leak
     private readonly List<Expectation> _expectations = new();
 
     private MockLogsCollector(ITestOutputHelper output, string host = "localhost")
@@ -71,7 +71,7 @@ public class MockLogsCollector : IDisposable
         _listener.Dispose();
     }
 
-    public void Expect(Func<global::OpenTelemetry.Proto.Logs.V1.LogRecord, bool> predicate, string? description = null)
+    public void Expect(Func<LogRecord, bool> predicate, string? description = null)
     {
         description ??= "<no description>";
 
@@ -86,8 +86,8 @@ public class MockLogsCollector : IDisposable
         }
 
         var missingExpectations = new List<Expectation>(_expectations);
-        var expectationsMet = new List<global::OpenTelemetry.Proto.Logs.V1.LogRecord>();
-        var additionalEntries = new List<global::OpenTelemetry.Proto.Logs.V1.LogRecord>();
+        var expectationsMet = new List<LogRecord>();
+        var additionalEntries = new List<LogRecord>();
 
         timeout ??= DefaultWaitTimeout;
         var cts = new CancellationTokenSource();
@@ -137,8 +137,8 @@ public class MockLogsCollector : IDisposable
 
     private static void FailExpectations(
         List<Expectation> missingExpectations,
-        List<global::OpenTelemetry.Proto.Logs.V1.LogRecord> expectationsMet,
-        List<global::OpenTelemetry.Proto.Logs.V1.LogRecord> additionalEntries)
+        List<LogRecord> expectationsMet,
+        List<LogRecord> additionalEntries)
     {
         var message = new StringBuilder();
         message.AppendLine();

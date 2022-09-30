@@ -67,7 +67,7 @@ public class MockTracesCollector : IDisposable
 
     public void Dispose()
     {
-        WriteOutput($"Shutting down.");
+        WriteOutput("Shutting down.");
         _spans.Dispose();
         _listener.Dispose();
     }

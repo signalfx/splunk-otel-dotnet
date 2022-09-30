@@ -73,7 +73,7 @@ public class MockMetricsCollector : IDisposable
 
     public void Dispose()
     {
-        WriteOutput($"Shutting down.");
+        WriteOutput("Shutting down.");
         _metricsSnapshots.Dispose();
         _resourceAttributesEvent.Dispose();
         _listener.Dispose();
@@ -81,7 +81,7 @@ public class MockMetricsCollector : IDisposable
 
     public void Expect(string instrumentationScopeName, Func<Metric, bool>? predicate = null, string? description = null)
     {
-        predicate ??= x => true;
+        predicate ??= _ => true;
         description ??= instrumentationScopeName;
 
         _expectations.Add(new Expectation(instrumentationScopeName, predicate, description));

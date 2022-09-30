@@ -18,7 +18,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Security.Principal;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
@@ -67,7 +66,7 @@ public static class EnvironmentTools
         return _solutionDirectory;
     }
 
-    public static string GetOS()
+    public static string GetOs()
     {
         return IsWindows() ? "win" :
             RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux" :
@@ -75,34 +74,9 @@ public static class EnvironmentTools
             string.Empty;
     }
 
-    public static bool IsLinux()
-    {
-        return RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-    }
-
     public static bool IsWindows()
     {
         return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-    }
-
-    public static bool IsWindowsAdministrator()
-    {
-        if (!IsWindows())
-        {
-            return false;
-        }
-
-#pragma warning disable CA1416 // Validate platform compatibility
-        using var identity = WindowsIdentity.GetCurrent();
-        var principal = new WindowsPrincipal(identity);
-
-        return principal.IsInRole(WindowsBuiltInRole.Administrator);
-#pragma warning restore CA1416 // Validate platform compatibility
-    }
-
-    public static bool IsMacOS()
-    {
-        return RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
     }
 
     public static string GetPlatform()

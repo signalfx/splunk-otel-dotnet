@@ -27,7 +27,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 public class EnvironmentHelper
 {
-    private static readonly Assembly ExecutingAssembly = Assembly.GetExecutingAssembly();
     private static readonly string RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
     private static string? _nukeOutputLocation;
 
@@ -37,10 +36,8 @@ public class EnvironmentHelper
     private readonly string? _patch;
 
     private readonly string _appNamePrepend;
-    private readonly string? _runtime;
     private readonly bool? _isCoreClr;
     private readonly string _testApplicationDirectory;
-    private readonly TargetFrameworkAttribute? _targetFramework;
 
     private string? _integrationsFileLocation;
     private string? _profilerFileLocation;
@@ -54,12 +51,12 @@ public class EnvironmentHelper
     {
         TestApplicationName = testApplicationName;
         _testApplicationDirectory = testApplicationDirectory ?? Path.Combine("test", "test-applications", "integrations");
-        _targetFramework = Assembly.GetAssembly(anchorType)?.GetCustomAttribute<TargetFrameworkAttribute>();
+        var targetFramework = Assembly.GetAssembly(anchorType)?.GetCustomAttribute<TargetFrameworkAttribute>();
         _output = output;
 
-        var parts = _targetFramework?.FrameworkName.Split(',');
-        _runtime = parts?[0];
-        _isCoreClr = _runtime?.Equals(EnvironmentTools.CoreFramework);
+        var parts = targetFramework?.FrameworkName.Split(',');
+        var runtime = parts?[0];
+        _isCoreClr = runtime?.Equals(EnvironmentTools.CoreFramework);
 
         var versionParts = parts?[1].Replace("Version=v", string.Empty).Split('.');
         _major = int.Parse(versionParts == null ? string.Empty : versionParts[0]);
@@ -77,7 +74,7 @@ public class EnvironmentHelper
 
     public bool DebugModeEnabled { get; set; } = true;
 
-    public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
+    public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new();
 
     public string TestApplicationName { get; }
 
@@ -88,14 +85,14 @@ public class EnvironmentHelper
         return RuntimeFrameworkDescription.Contains("core") || Environment.Version.Major >= 5;
     }
 
-    public static string? GetNukeBuildOutput()
+    public static string GetNukeBuildOutput()
     {
         var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
 
         var nukeOutputPath = solutionDirectory != null
             ? Path.Combine(solutionDirectory, @"OpenTelemetryDistribution") : null;
 
-        if (Directory.Exists(nukeOutputPath))
+        if (nukeOutputPath != null && Directory.Exists(nukeOutputPath))
         {
             _nukeOutputLocation = nukeOutputPath;
 
@@ -103,15 +100,6 @@ public class EnvironmentHelper
         }
 
         throw new Exception($"Unable to find Nuke output at: {nukeOutputPath}. Ensure Nuke has run first.");
-    }
-
-    public static bool IsRunningOnCI()
-    {
-        // https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
-        // Github sets CI environment variable
-
-        var env = Environment.GetEnvironmentVariable("CI");
-        return !string.IsNullOrEmpty(env);
     }
 
     public void SetEnvironmentVariables(
@@ -201,7 +189,7 @@ public class EnvironmentHelper
             return _profilerFileLocation;
         }
 
-        string extension = EnvironmentTools.GetOS() switch
+        string extension = EnvironmentTools.GetOs() switch
         {
             "win" => "dll",
             "linux" => "so",
@@ -210,7 +198,7 @@ public class EnvironmentHelper
         };
 
         var fileName = $"OpenTelemetry.AutoInstrumentation.Native.{extension}";
-        var nukeOutput = GetNukeBuildOutput() ?? string.Empty;
+        var nukeOutput = GetNukeBuildOutput();
         var profilerPath = EnvironmentTools.IsWindows()
             ? Path.Combine(nukeOutput, $"win-{EnvironmentTools.GetPlatform().ToLower()}", fileName)
             : Path.Combine(nukeOutput, fileName);
@@ -218,7 +206,7 @@ public class EnvironmentHelper
         if (File.Exists(profilerPath))
         {
             _profilerFileLocation = profilerPath;
-            _output?.WriteLine($"Found profiler at {_profilerFileLocation}.");
+            _output.WriteLine($"Found profiler at {_profilerFileLocation}.");
             return _profilerFileLocation;
         }
 
@@ -232,13 +220,13 @@ public class EnvironmentHelper
             return _integrationsFileLocation;
         }
 
-        var fileName = $"integrations.json";
-        var integrationsPath = Path.Combine(GetNukeBuildOutput() ?? string.Empty, fileName);
+        var fileName = "integrations.json";
+        var integrationsPath = Path.Combine(GetNukeBuildOutput(), fileName);
 
         if (File.Exists(integrationsPath))
         {
             _integrationsFileLocation = integrationsPath;
-            _output?.WriteLine($"Found integrations at {_profilerFileLocation}.");
+            _output.WriteLine($"Found integrations at {_profilerFileLocation}.");
             return _integrationsFileLocation;
         }
 
@@ -335,7 +323,7 @@ public class EnvironmentHelper
     private static string GetStartupHookOutputPath()
     {
         var startupHookOutputPath = Path.Combine(
-            GetNukeBuildOutput() ?? string.Empty,
+            GetNukeBuildOutput(),
             "netcoreapp3.1",
             "OpenTelemetry.AutoInstrumentation.StartupHook.dll");
 
@@ -345,7 +333,7 @@ public class EnvironmentHelper
     private static string GetSharedStorePath()
     {
         var storePath = Path.Combine(
-            GetNukeBuildOutput() ?? string.Empty,
+            GetNukeBuildOutput(),
             "store");
 
         return storePath;
@@ -354,7 +342,7 @@ public class EnvironmentHelper
     private static string GetAdditionalDepsPath()
     {
         var additionalDeps = Path.Combine(
-            GetNukeBuildOutput() ?? string.Empty,
+            GetNukeBuildOutput(),
             "AdditionalDeps");
 
         return additionalDeps;

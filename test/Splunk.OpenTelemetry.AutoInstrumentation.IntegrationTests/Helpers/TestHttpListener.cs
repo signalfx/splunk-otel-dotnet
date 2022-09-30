@@ -28,7 +28,6 @@ public class TestHttpListener : IDisposable
     private readonly ITestOutputHelper _output;
     private readonly Action<HttpListenerContext> _requestHandler;
     private readonly HttpListener _listener;
-    private readonly Thread _listenerThread;
     private readonly string _prefix;
 
     public TestHttpListener(ITestOutputHelper output, Action<HttpListenerContext> requestHandler, string host, string sufix = "/")
@@ -55,8 +54,8 @@ public class TestHttpListener : IDisposable
                 _listener.Prefixes.Add(_prefix);
 
                 // successfully listening
-                _listenerThread = new Thread(HandleHttpRequests);
-                _listenerThread.Start();
+                var listenerThread = new Thread(HandleHttpRequests);
+                listenerThread.Start();
                 WriteOutput($"Listening on '{_prefix}'");
 
                 return;
@@ -88,7 +87,7 @@ public class TestHttpListener : IDisposable
 
     public void Dispose()
     {
-        WriteOutput($"Listener is shutting down.");
+        WriteOutput("Listener is shutting down.");
         _listener.Stop();
     }
 

@@ -76,7 +76,7 @@ public abstract class TestHelper
     private void RunTestApplication(TestSettings testSettings)
     {
         using var process = StartTestApplication(testSettings);
-        Output.WriteLine($"ProcessName: " + process?.ProcessName);
+        Output.WriteLine($"ProcessName: {process?.ProcessName}");
         using var helper = new ProcessHelper(process);
 
         var processTimeout = !process?.WaitForExit((int)DefaultProcessTimeout.TotalMilliseconds);
@@ -85,8 +85,8 @@ public abstract class TestHelper
             process?.Kill();
         }
 
-        Output.WriteLine($"ProcessId: " + process?.Id);
-        Output.WriteLine($"Exit Code: " + process?.ExitCode);
+        Output.WriteLine($"ProcessId: {process?.Id}");
+        Output.WriteLine($"Exit Code: {process?.ExitCode}");
         Output.WriteResult(helper);
 
         processTimeout.Should().BeFalse("Test application timed out");
