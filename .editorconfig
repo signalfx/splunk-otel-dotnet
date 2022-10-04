@@ -36,6 +36,10 @@ insert_final_newline = true
 [*.xml]
 indent_size = 2
 
+# Xml project files
+[*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]
+indent_size = 2
+
 [*.{cs,vb}]
 #### Naming styles ####
 

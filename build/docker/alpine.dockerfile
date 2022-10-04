@@ -7,9 +7,14 @@ RUN apk update \
         cmake \
         make \
         bash \
-        alpine-sdk
+        alpine-sdk \
+        protobuf \
+        protobuf-dev \
+        grpc
 
 ENV IsAlpine=true
+ENV PROTOBUF_PROTOC=/usr/bin/protoc
+ENV gRPC_PluginFullPath=/usr/bin/grpc_csharp_plugin
 
 # Install older sdks using the install script
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \

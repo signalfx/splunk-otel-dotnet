@@ -36,6 +36,22 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.cspr
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{D43C3CFD-4BFA-4415-8063-CBCADDD5451B}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests", "test\Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests\Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.csproj", "{1CE4522F-D8CB-46FE-B48B-5250761DC2F6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test-applications", "test-applications", "{A6DD239C-1359-4B04-844B-3DAD486AA370}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integrations", "integrations", "{52FAD8BC-5D9B-4379-82F7-114C41B3ACEB}"
+	ProjectSection(SolutionItems) = preProject
+		test\test-applications\integrations\Directory.Build.props = test\test-applications\integrations\Directory.Build.props
+		test\test-applications\integrations\GlobalSuppressions.cs = test\test-applications\integrations\GlobalSuppressions.cs
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestApplication.Smoke", "test\test-applications\integrations\TestApplication.Smoke\TestApplication.Smoke.csproj", "{8C866EE9-8260-4D33-A2FE-8EDF2953A007}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dependency-libs", "dependency-libs", "{A7C478E4-30A8-4B00-8BA2-9D7DD8384625}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApplication.Shared", "test\test-applications\integrations\dependency-libs\TestApplication.Shared\TestApplication.Shared.csproj", "{1CEC4875-ED16-4EDF-919F-5700B868C5A5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,6 +68,18 @@ Global
 		{EE47BEF0-40C5-4AB3-91B6-9CBB420BD59B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{23A5DC4E-0639-43D6-B7A6-A6249968D19C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{23A5DC4E-0639-43D6-B7A6-A6249968D19C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1CE4522F-D8CB-46FE-B48B-5250761DC2F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1CE4522F-D8CB-46FE-B48B-5250761DC2F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1CE4522F-D8CB-46FE-B48B-5250761DC2F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1CE4522F-D8CB-46FE-B48B-5250761DC2F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C866EE9-8260-4D33-A2FE-8EDF2953A007}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C866EE9-8260-4D33-A2FE-8EDF2953A007}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C866EE9-8260-4D33-A2FE-8EDF2953A007}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C866EE9-8260-4D33-A2FE-8EDF2953A007}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1CEC4875-ED16-4EDF-919F-5700B868C5A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1CEC4875-ED16-4EDF-919F-5700B868C5A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1CEC4875-ED16-4EDF-919F-5700B868C5A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1CEC4875-ED16-4EDF-919F-5700B868C5A5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -61,6 +89,12 @@ Global
 		{689B9DC2-EB4B-4FAA-A858-59D9CCF97EB6} = {6564E602-76CA-4259-8642-E0C3D8CFF652}
 		{EE47BEF0-40C5-4AB3-91B6-9CBB420BD59B} = {14A731B9-4F09-43E6-B64C-98E7E6EDA0EA}
 		{23A5DC4E-0639-43D6-B7A6-A6249968D19C} = {D43C3CFD-4BFA-4415-8063-CBCADDD5451B}
+		{1CE4522F-D8CB-46FE-B48B-5250761DC2F6} = {14A731B9-4F09-43E6-B64C-98E7E6EDA0EA}
+		{A6DD239C-1359-4B04-844B-3DAD486AA370} = {14A731B9-4F09-43E6-B64C-98E7E6EDA0EA}
+		{52FAD8BC-5D9B-4379-82F7-114C41B3ACEB} = {A6DD239C-1359-4B04-844B-3DAD486AA370}
+		{8C866EE9-8260-4D33-A2FE-8EDF2953A007} = {52FAD8BC-5D9B-4379-82F7-114C41B3ACEB}
+		{A7C478E4-30A8-4B00-8BA2-9D7DD8384625} = {52FAD8BC-5D9B-4379-82F7-114C41B3ACEB}
+		{1CEC4875-ED16-4EDF-919F-5700B868C5A5} = {A7C478E4-30A8-4B00-8BA2-9D7DD8384625}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B0A9D043-A771-45B1-AC87-0FFF14CD89D0}
