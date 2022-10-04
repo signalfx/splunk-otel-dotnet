@@ -29,7 +29,8 @@ TODO
 
 ## Advanced configuration
 
-For advanced configuration options, refer to the [config.md](config.md).
+For advanced configuration options, refer to
+the [Advanced configuration](config.md) documentation.
 
 ## Manual instrumentation
 
@@ -39,7 +40,7 @@ TODO
 
 If you're currently using the [SignalFx Instrumentation for .NET](https://github.com/signalfx/signalfx-dotnet-tracing)
 and want to migrate to the Splunk Distribution of OpenTelemetry .NET,
-see [migrating.md](migrating.md).
+see the [Migrating](migrating.md) documentation.
 
 ## Troubleshooting
 
