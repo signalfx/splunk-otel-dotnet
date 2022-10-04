@@ -5,10 +5,12 @@ on:
     branches: [ main ]
     paths:
     - '**.md'
+    - 'package.json'
   pull_request:
     branches: [ main ]
     paths:
     - '**.md'
+    - 'package.json'
 
 jobs:
   build:
