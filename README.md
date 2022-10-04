@@ -10,7 +10,7 @@ telemetry to [Splunk APM](https://docs.splunk.com/Observability/apm/intro-to-apm
 
 ### Getting Started
 
-Read the unofficial documentation for this distribution in the
+Read the draft documentation for this distribution in the
 [docs](docs/README.md).
 
 <!-- To be used when we have our official docs:
