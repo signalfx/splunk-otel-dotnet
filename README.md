@@ -6,6 +6,43 @@ provides a .NET Profiler and startup hooks
 that automatically instrument your .NET application to capture and report
 telemetry to [Splunk APM](https://docs.splunk.com/Observability/apm/intro-to-apm.html).
 
+## Documentation
+
+### Getting Started
+
+Read the draft documentation for this distribution in the
+[docs](docs/README.md).
+
+<!-- To be used when we have our official docs:
+Read the official documentation for this distribution in the
+[Splunk Docs site](https://docs.splunk.com/Observability/gdi/get-data-in/application/dotnet/get-started.html).
+-->
+
+### Troubleshooting
+
+For troubleshooting information, see the
+[Troubleshooting](docs/troubleshooting.md)
+documentation.
+
+<!-- To be used when we have our official docs:
+For troubleshooting information, see the
+[Troubleshooting](https://docs.splunk.com/Observability/gdi/get-data-in/application/dotnet/troubleshooting/common-dotnet-troubleshooting.html)
+documentation.
+-->
+
+## Examples
+
+You can find our official "user-facing" examples
+[here](https://github.com/signalfx/tracing-examples/tree/main/opentelemetry-tracing/opentelemetry-dotnet).
+
+The [example directory](./example) contains smaller, developer focused, examples.
+It is meant to be used for experimenting and exploratory end-to-end testing.
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md)
+before creating an issue or a pull request.
+
 ## License
 
 The Splunk Distribution of OpenTelemetry .NET is a distribution of
