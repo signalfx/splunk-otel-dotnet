@@ -2,11 +2,11 @@
 
 Thank you for your interest in contributing to our repository! Whether it's a bug
 report, new feature, or question, we greatly value feedback and contributions from
-our community. Read through this document before submitting any issues or pull 
+our community. Read through this document before submitting any issues or pull
 requests to ensure we have all the necessary information to effectively respond
 to your bug report or contribution.
 
-In addition to this document, review our [Code of Conduct](CODE_OF_CONDUCT.md). 
+In addition to this document, review our [Code of Conduct](CODE_OF_CONDUCT.md).
 For any code of conduct questions or comments, send an email to oss@splunk.com.
 
 ## Reporting Bugs/Feature Requests
@@ -33,13 +33,13 @@ See [SECURITY.md](SECURITY.md#reporting-security-issues) for instructions.
 
 ## Documentation
 
-The Splunk Observability documentation is hosted on https://docs.splunk.com/Observability,
-which contains all the prescriptive guidance for Splunk Observability products. 
+The Splunk Observability documentation is hosted on <https://docs.splunk.com/Observability>,
+which contains all the prescriptive guidance for Splunk Observability products.
 Prescriptive guidance consists of step-by-step instructions, conceptual material,
-and decision support for customers. Reference documentation and development 
+and decision support for customers. Reference documentation and development
 documentation is hosted on this repository.
 
-You can send feedback about Splunk Observability docs by clicking the Feedback 
+You can send feedback about Splunk Observability docs by clicking the Feedback
 button on any of our documentation pages.
 
 ## Contributing via Pull Requests
