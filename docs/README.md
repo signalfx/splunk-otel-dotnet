@@ -30,7 +30,7 @@ TODO
 ## Advanced configuration
 
 For advanced configuration options, refer to
-the [Advanced configuration](config.md) documentation.
+the [Advanced configuration](advanced-config.md) documentation.
 
 ## Manual instrumentation
 
