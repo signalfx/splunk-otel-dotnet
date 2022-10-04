@@ -17,7 +17,7 @@ This Splunk distribution comes with the following defaults:
 - [W3C tracecontext](https://www.w3.org/TR/trace-context/) and
   [W3C baggage](https://www.w3.org/TR/baggage/) context propagation.
 - OTLP over HTTP exporter configured to send spans to a locally running [Splunk OpenTelemetry
-  Connector](https://github.com/signalfx/splunk-otel-collector)
+  Collector](https://github.com/signalfx/splunk-otel-collector)
 
 Install the distribution:
 
