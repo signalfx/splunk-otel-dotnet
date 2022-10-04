@@ -1,0 +1,11 @@
+{
+    "version": "0.2",
+    "language": "en",
+    "dictionaries": ["other"],
+    "dictionaryDefinitions": [
+        { "name": "other", "path": "./.cspell/other.txt"}
+    ],
+    "ignoreRegExpList": [
+        "/Job-[A-Z]{5}/"
+    ]
+}

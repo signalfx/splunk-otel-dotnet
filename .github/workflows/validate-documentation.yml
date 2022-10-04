@@ -1,0 +1,24 @@
+name: validate-documentation
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+    - '**.md'
+    - 'package.json'
+  pull_request:
+    branches: [ main ]
+    paths:
+    - '**.md'
+    - 'package.json'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3.0.2
+
+    - run: npm install
+
+    - run: npm run markdownlint && npm run cspell
