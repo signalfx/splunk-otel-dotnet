@@ -6,11 +6,13 @@ on:
     paths:
     - '**.md'
     - 'package.json'
+    - 'package-lock.json'
   pull_request:
     branches: [ main ]
     paths:
     - '**.md'
     - 'package.json'
+    - 'package-lock.json'
 
 jobs:
   build:
