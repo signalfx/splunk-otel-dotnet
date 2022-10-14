@@ -17,7 +17,7 @@ This Splunk distribution comes with the following defaults:
 
 ### Install
 
-Download and extract the appropriate binaries from
+Download and install the latest binaries from
 [the latest release](https://github.com/signalfx/splunk-otel-dotnet/releases/latest).
 
 > The path where you put the binaries is referenced as `$INSTALL_DIR`
