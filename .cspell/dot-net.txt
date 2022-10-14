@@ -1,0 +1,2 @@
+netcoreapp
+CORECLR
