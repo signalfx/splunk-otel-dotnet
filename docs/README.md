@@ -15,8 +15,6 @@ This Splunk distribution comes with the following defaults:
 - OTLP over HTTP exporter configured to send spans to a locally running [Splunk OpenTelemetry
   Collector](https://github.com/signalfx/splunk-otel-collector)
 
-## Get started
-
 ### Install
 
 Download and extract the appropriate binaries from
