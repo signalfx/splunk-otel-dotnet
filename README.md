@@ -1,4 +1,4 @@
-# Splunk Distribution of OpenTelemetry Go
+# Splunk Distribution of OpenTelemetry .NET
 
 [![OpenTelemetry .NET](https://img.shields.io/badge/OTel-1.3.1-blueviolet)](https://github.com/open-telemetry/opentelemetry-dotnet/releases/tag/core-1.3.1)
 [![OpenTelemetry .NET Auto Instrumentation](https://img.shields.io/badge/OTel-v0.3.1-blueviolet)](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.3.1-beta.1)
