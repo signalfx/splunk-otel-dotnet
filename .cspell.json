@@ -1,9 +1,11 @@
 {
     "version": "0.2",
     "language": "en",
-    "dictionaries": ["other"],
+    "dictionaries": ["other", "dot-net", "company-terms"],
     "dictionaryDefinitions": [
-        { "name": "other", "path": "./.cspell/other.txt"}
+        { "name": "other", "path": "./.cspell/other.txt"},
+        { "name": "dot-net", "path": "./.cspell/dot-net.txt"},
+        { "name": "company-terms", "path": "./.cspell/company-terms.txt"}
     ],
     "ignoreRegExpList": [
         "/Job-[A-Z]{5}/"

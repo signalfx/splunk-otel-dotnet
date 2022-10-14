@@ -3,3 +3,4 @@ OTLP
 proto
 protos
 tracecontext
+dylib

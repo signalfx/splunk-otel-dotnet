@@ -1,5 +1,13 @@
 # Splunk Distribution of OpenTelemetry .NET
 
+[![OpenTelemetry .NET](https://img.shields.io/badge/OTel-1.3.1-blueviolet)](https://github.com/open-telemetry/opentelemetry-dotnet/releases/tag/core-1.3.1)
+[![OpenTelemetry .NET Auto Instrumentation](https://img.shields.io/badge/OTel-v0.3.1-blueviolet)](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.3.1-beta.1)
+[![Splunk GDI Specification](https://img.shields.io/badge/GDI-1.3.0-blueviolet)](https://github.com/signalfx/gdi-specification/releases/tag/v1.3.0)
+[![Keep a Changelog](https://img.shields.io/badge/changelog-Keep%20a%20Changelog-%23E05735)](CHANGELOG.md)
+[![LICENSE](https://img.shields.io/github/license/signalfx/splunk-otel-dotnet)](LICENSE)
+
+[![Build Status](https://img.shields.io/github/workflow/status/signalfx/splunk-otel-dotnet/ci)](https://github.com/signalfx/splunk-otel-dotnet/actions?query=branch%3Amain)
+
 The Splunk Distribution of
 [OpenTelemetry .NET Automatic Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation).
 provides a .NET Profiler and startup hooks
