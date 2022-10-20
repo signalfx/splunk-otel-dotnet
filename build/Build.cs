@@ -86,8 +86,8 @@ class Build : NukeBuild
         return fileName;
     }
 
-    Target AddSplunkDistribution => _ => _
-        .After(UnpackAutoInstrumentationDistribution)
+    Target AddSplunkPlugins => _ => _
+        .After(Compile)
         .Executes(() =>
         {
             FileSystemTasks.CopyFileToDirectory(
@@ -97,7 +97,7 @@ class Build : NukeBuild
         });
 
     Target PackSplunkDistribution => _ => _
-        .After(Compile)
+        .After(AddSplunkPlugins)
         .Executes(() =>
         {
             var fileName = GetOTelAutoInstrumentationFileName();
@@ -143,8 +143,8 @@ class Build : NukeBuild
         .DependsOn(Restore)
         .DependsOn(DownloadAutoInstrumentationDistribution)
         .DependsOn(UnpackAutoInstrumentationDistribution)
-        .DependsOn(AddSplunkDistribution)
         .DependsOn(Compile)
+        .DependsOn(AddSplunkPlugins)
         .DependsOn(RunUnitTests)
         .DependsOn(RunIntegrationTests)
         .DependsOn(PackSplunkDistribution);
