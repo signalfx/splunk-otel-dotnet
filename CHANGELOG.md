@@ -21,5 +21,5 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [0.0.1-alpha.1](https://github.com/signalfx/splunk-otel-dotnet/releases/tag/v0.0.1-alpha.1)
 
-The is an initial, alpha release,
+The is the first alpha release,
 built on top of [OpenTelemetry .NET Auto Instrumentation v0.3.1-beta.1](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.3.1-beta.1).
