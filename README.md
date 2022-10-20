@@ -55,7 +55,7 @@ before creating an issue or a pull request.
 
 The Splunk Distribution of OpenTelemetry .NET is a distribution of
 [OpenTelemetry .NET Automatic Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation).
-It is released under the terms of the Apache Software License version 2.0.
+It is licensed under the terms of the Apache Software License version 2.0.
 For more details, see [the license file](./LICENSE).
 
 > Copyright 2022 Splunk Inc.
