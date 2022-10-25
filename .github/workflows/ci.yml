@@ -22,7 +22,7 @@ jobs:
             3.1.423
             6.0.401
       - run: ./build.cmd Workflow
-      - uses: actions/upload-artifact@v3.1.0
+      - uses: actions/upload-artifact@v3.1.1
         with:
           name: bin-${{ matrix.machine }}
           path: bin/splunk-*.zip
@@ -48,7 +48,7 @@ jobs:
           --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project \
           splunk-otel-dotnet/${{ matrix.base-image }} \
           ./build.sh Workflow
-    - uses: actions/upload-artifact@v3.1.0
+    - uses: actions/upload-artifact@v3.1.1
       with:
         name: bin-${{ matrix.base-image }}
         path: bin/splunk-*.zip
