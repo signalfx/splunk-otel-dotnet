@@ -96,8 +96,17 @@ class Build : NukeBuild
                 OpenTelemetryDistributionFolder / "plugins");
         });
 
-    Target PackSplunkDistribution => _ => _
+    Target CopyInstrumentScripts => _ => _
         .After(AddSplunkPlugins)
+        .Executes(() =>
+        {
+            var source = RootDirectory / "instrument.sh";
+            var dest = OpenTelemetryDistributionFolder;
+            FileSystemTasks.CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+        });
+
+    Target PackSplunkDistribution => _ => _
+        .After(CopyInstrumentScripts)
         .Executes(() =>
         {
             var fileName = GetOTelAutoInstrumentationFileName();
@@ -145,6 +154,7 @@ class Build : NukeBuild
         .DependsOn(UnpackAutoInstrumentationDistribution)
         .DependsOn(Compile)
         .DependsOn(AddSplunkPlugins)
+        .DependsOn(CopyInstrumentScripts)
         .DependsOn(RunUnitTests)
         .DependsOn(RunIntegrationTests)
         .DependsOn(PackSplunkDistribution);
