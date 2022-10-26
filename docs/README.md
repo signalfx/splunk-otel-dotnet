@@ -84,6 +84,43 @@ uses environment variables as parameters:
 
 > On macOS [`coreutils`](https://formulae.brew.sh/formula/coreutils) is required.
 
+### PowerShell module (Windows)
+
+On Windows, you can install Splunk Distribution of OpenTelemetry .NET
+and instrument your .NET application using the provided PowerShell module.
+Example usage:
+
+```powershell
+# Download and import the module
+$module_url = "https://github.com/signalfx/splunk-otel-dotnet/releases/download/v0.0.1-alpha.1/Splunk.OTel.DotNet.psm1"
+$download_path = Join-Path $env:temp "Splunk.OTel.DotNet.psm1"
+Invoke-WebRequest -Uri $module_url -OutFile $download_path
+Import-Module $download_path
+
+# Install core files
+Install-OpenTelemetryCore
+
+# Setup IIS instrumentation
+Register-OpenTelemetryForIIS
+
+# Setup your Windows Service instrumentation
+Register-OpenTelemetryForWindowsService -WindowsServiceName "MyServiceName" -OTelServiceName "MyServiceDisplayName"
+
+# Setup environment to start instrumentation from the current PowerShell session
+Register-OpenTelemetryForCurrentSession -OTelServiceName "MyServiceDisplayName"
+
+# Get current installation location
+Get-OpenTelemetryInstallDirectory
+
+# List all available commands
+Get-Command -Module OpenTelemetry.DotNet.Auto
+
+# Get command's usage information
+Get-Help Install-OpenTelemetryCore -Detailed
+```
+
+⚠️ Registering for IIS and Windows Service will perform a service restart.
+
 ## Advanced configuration
 
 For advanced configuration options, refer to

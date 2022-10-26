@@ -53,6 +53,32 @@ jobs:
         name: bin-${{ matrix.base-image }}
         path: bin/splunk-*.zip
 
+  powershell-script:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/setup-dotnet@v3.0.2
+        with:
+          dotnet-version: 6.0.x
+      - name: Test the PowerShell module instructions from README.md
+        shell: powershell
+        run: |
+          $module_url = "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/Splunk.OTel.DotNet.psm1"
+          $dl_path = Join-Path $env:temp "Splunk.OTel.DotNet.psm1"
+          $log_path = "C:\ProgramData\OpenTelemetry .NET AutoInstrumentation\logs\dotnet-tracer-managed-dotnet-*"
+          Invoke-WebRequest -Uri $module_url -OutFile $dl_path
+          Import-Module $dl_path
+          Install-OpenTelemetryCore
+          $install_dir = Get-OpenTelemetryInstallDirectory
+          Register-OpenTelemetryForCurrentSession -OTelServiceName "MyServiceDisplayName"
+          dotnet help
+          If (-not (Test-Path $log_path)) { throw "Log file does not exist. Instrumentation test failed." }
+          Remove-Item $log_path
+          Unregister-OpenTelemetryForCurrentSession
+          dotnet help
+          If (Test-Path $log_path) { throw "Log file exists. Instrumentation uninstall failed." }
+          Uninstall-OpenTelemetryCore
+          If (Test-Path $install_dir) { throw "Core files exist. Core uninstall failed." }
+
   shell-scripts:
     strategy:
       fail-fast: false
