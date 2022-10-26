@@ -33,8 +33,8 @@ test -z "$OTEL_DOTNET_AUTO_HOME" && OTEL_DOTNET_AUTO_HOME="$HOME/.splunk-otel-do
 test -z "$TMPDIR" && TMPDIR="$(mktemp -d)"
 test -z "$VERSION" && VERSION="v0.0.1-alpha.1"
 
-RELEASES_URL="https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases"
-ARCHIVE="opentelemetry-dotnet-instrumentation-$OS_TYPE.zip"
+RELEASES_URL="https://github.com/signalfx/splunk-otel-dotnet/releases"
+ARCHIVE="splunk-opentelemetry-dotnet-instrumentation-$OS_TYPE.zip"
 
 TMPFILE="$TMPDIR/$ARCHIVE"
 (
