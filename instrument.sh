@@ -112,7 +112,7 @@ if [ "$ENABLE_PROFILING" = "true" ]; then
       SUFIX="dll"
       ;;
     *)
-      echo "BUG: Invalid OS_TYPE. Submit an issue in https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation." >&2
+      echo "BUG: Invalid OS_TYPE. Submit an issue in https://github.com/signalfx/splunk-otel-dotnet." >&2
       return 1
       ;;
   esac
