@@ -4,3 +4,7 @@ proto
 protos
 tracecontext
 dylib
+myapp
+TMPDIR
+mktemp
+coreutils
