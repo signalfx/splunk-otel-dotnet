@@ -51,9 +51,10 @@ When running your application, make sure to:
 
 ### Shell scripts
 
-You can install Splunk Distribution of OpenTelemetry .NET
-and instrument your .NET application using the provided Shell scripts.
-Example usage:
+You can install the Splunk Distribution of OpenTelemetry .NET
+and instrument your .NET application using the official shell scripts.
+
+For example:
 
 ```sh
 curl -sSfL https://raw.githubusercontent.com/signalfx/splunk-otel-dotnet/v0.0.1-alpha.1/splunk-otel-dotnet-install.sh -O
@@ -62,7 +63,7 @@ sh ./splunk-otel-dotnet-install.sh
 OTEL_SERVICE_NAME=myapp OTEL_RESOURCE_ATTRIBUTES=deployment.environment=staging,service.version=1.0.0 dotnet run
 ```
 
-[splunk-otel-dotnet-install.sh](../splunk-otel-dotnet-install.sh) script
+The [splunk-otel-dotnet-install.sh](../splunk-otel-dotnet-install.sh) script
 uses environment variables as parameters:
 
 | Parameter               | Description                                                      | Required | Default value             |
@@ -72,7 +73,7 @@ uses environment variables as parameters:
 | `TMPDIR`                | Temporary directory used when downloading the files              | No       | `$(mktemp -d)`            |
 | `VERSION`               | Version to download                                              | No       | `v0.0.1-alpha.1`           |
 
-[instrument.sh](../instrument.sh) script
+The [instrument.sh](../instrument.sh) script
 uses environment variables as parameters:
 
 | Parameter               | Description                                                            | Required | Default value             |
