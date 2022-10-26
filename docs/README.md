@@ -28,7 +28,7 @@ OTEL_SERVICE_NAME=myapp OTEL_RESOURCE_ATTRIBUTES=deployment.environment=staging,
 ```
 
 The [splunk-otel-dotnet-install.sh](../splunk-otel-dotnet-install.sh) script
-downloads and installs the distrubtion.
+downloads and installs the distribution.
 It has to be invoked only once.
 It uses environment variables as parameters:
 
