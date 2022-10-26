@@ -52,3 +52,36 @@ jobs:
       with:
         name: bin-${{ matrix.base-image }}
         path: bin/splunk-*.zip
+
+  shell-scripts:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - machine: windows-2022
+            log-dir: "/c/ProgramData/OpenTelemetry .NET AutoInstrumentation/logs"
+          - machine: ubuntu-20.04
+            log-dir: "/var/log/opentelemetry/dotnet"
+          - machine: macos-11
+            log-dir: "/var/log/opentelemetry/dotnet"
+    runs-on: ${{ matrix.machine }}
+    steps:
+      - uses: actions/setup-dotnet@v3.0.2
+        with:
+          dotnet-version: 6.0.x
+      - run: brew install coreutils
+        if: ${{ runner.os == 'macOS' }}
+      - name: Create test directory
+        run: sudo mkdir -p ${{ matrix.log-dir }} && sudo chmod a+rwx ${{ matrix.log-dir }}  # workaround before next release
+        if: ${{ runner.os != 'Windows' }}
+      - name: Test the Shell scripts from README.md
+        shell: bash
+        run: |
+          set -e
+          curl -sSfL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/splunk-otel-dotnet-install.sh -O
+          sh ./splunk-otel-dotnet-install.sh
+            test "$(ls -A "$HOME/.splunk-otel-dotnet")"
+          curl -sSfL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/instrument.sh -O
+          . ./instrument.sh
+          dotnet help
+            test "$(ls -A '${{ matrix.log-dir }}' )"

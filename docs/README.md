@@ -49,6 +49,40 @@ When running your application, make sure to:
 
 > Some settings can be omitted on .NET (Core). For more information, see the [documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v0.3.1-beta.1/docs/config.md#net-clr-profiler).
 
+### Shell scripts
+
+You can install Splunk Distribution of OpenTelemetry .NET
+and instrument your .NET application using the provided Shell scripts.
+Example usage:
+
+```sh
+curl -sSfL https://raw.githubusercontent.com/open-telemetry/opentelemetry-dotnet-instrumentation/v0.0.1-alpha.1/splunk-otel-dotnet-install.sh -O
+sh ./splunk-otel-dotnet-install.sh
+. $HOME/.splunk-otel-dotnet/instrument.sh
+OTEL_SERVICE_NAME=myapp OTEL_RESOURCE_ATTRIBUTES=deployment.environment=staging,service.version=1.0.0 dotnet run
+```
+
+[splunk-otel-dotnet-install.sh](../splunk-otel-dotnet-install.sh) script
+uses environment variables as parameters:
+
+| Parameter               | Description                                                      | Required | Default value             |
+|-------------------------|------------------------------------------------------------------|----------|---------------------------|
+| `OTEL_DOTNET_AUTO_HOME` | Location where binaries are to be installed                      | No       | `$HOME/.splunk-otel-dotnet` |
+| `OS_TYPE`               | Possible values: `linux-glibc`, `linux-musl`, `macos`, `windows` | No       | *Calculated*              |
+| `TMPDIR`                | Temporary directory used when downloading the files              | No       | `$(mktemp -d)`            |
+| `VERSION`               | Version to download                                              | No       | `v0.0.1-alpha.1`           |
+
+[instrument.sh](../instrument.sh) script
+uses environment variables as parameters:
+
+| Parameter               | Description                                                            | Required | Default value             |
+|-------------------------|------------------------------------------------------------------------|----------|---------------------------|
+| `ENABLE_PROFILING`      | Whether to set the .NET CLR Profiler, possible values: `true`, `false` | No       | `true`                    |
+| `OTEL_DOTNET_AUTO_HOME` | Location where binaries are to be installed                            | No       | `$HOME/.splunk-otel-dotnet` |
+| `OS_TYPE`               | Possible values: `linux-glibc`, `linux-musl`, `macos`, `windows`       | No       | *Calculated*              |
+
+> On macOS [`coreutils`](https://formulae.brew.sh/formula/coreutils) is required.
+
 ## Advanced configuration
 
 For advanced configuration options, refer to
