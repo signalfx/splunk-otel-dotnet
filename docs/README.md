@@ -56,7 +56,7 @@ and instrument your .NET application using the provided Shell scripts.
 Example usage:
 
 ```sh
-curl -sSfL https://raw.githubusercontent.com/open-telemetry/opentelemetry-dotnet-instrumentation/v0.0.1-alpha.1/splunk-otel-dotnet-install.sh -O
+curl -sSfL https://raw.githubusercontent.com/signalfx/splunk-otel-dotnet/v0.0.1-alpha.1/splunk-otel-dotnet-install.sh -O
 sh ./splunk-otel-dotnet-install.sh
 . $HOME/.splunk-otel-dotnet/instrument.sh
 OTEL_SERVICE_NAME=myapp OTEL_RESOURCE_ATTRIBUTES=deployment.environment=staging,service.version=1.0.0 dotnet run
