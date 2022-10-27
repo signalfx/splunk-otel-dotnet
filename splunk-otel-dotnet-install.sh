@@ -31,10 +31,10 @@ esac
 
 test -z "$OTEL_DOTNET_AUTO_HOME" && OTEL_DOTNET_AUTO_HOME="$HOME/.splunk-otel-dotnet"
 test -z "$TMPDIR" && TMPDIR="$(mktemp -d)"
-test -z "$VERSION" && VERSION="v0.0.1-alpha.1"
+test -z "$VERSION" && VERSION="v0.0.1-alpha.2"
 
 RELEASES_URL="https://github.com/signalfx/splunk-otel-dotnet/releases"
-ARCHIVE="splunk-opentelemetry-dotnet-instrumentation-$OS_TYPE.zip"
+ARCHIVE="splunk-opentelemetry-dotnet-$OS_TYPE.zip"
 
 TMPFILE="$TMPDIR/$ARCHIVE"
 (
