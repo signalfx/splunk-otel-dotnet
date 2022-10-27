@@ -46,7 +46,7 @@ function Reset-IIS() {
 }
 
 function Download-OpenTelemetry([string]$Version, [string]$Path) {
-    $archive = "splunk-opentelemetry-dotnet-instrumentation-windows.zip"
+    $archive = "splunk-opentelemetry-dotnet-windows.zip"
     $dlUrl = "https://github.com/signalfx/splunk-otel-dotnet/releases/download/$Version/$archive"
     $dlPath = Join-Path $Path $archive
 
