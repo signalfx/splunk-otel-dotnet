@@ -59,7 +59,36 @@ and instrument your .NET application using the official PowerShell script module
 
 For example:
 
-TODO
+```powershell
+# Download and import the module
+$module_url = "https://github.com/signalfx/splunk-otel-dotnet/releases/download/v0.0.1-alpha.1/Splunk.OTel.DotNet.psm1"
+$download_path = Join-Path $env:temp "Splunk.OTel.DotNet.psm1"
+Invoke-WebRequest -Uri $module_url -OutFile $download_path
+Import-Module $download_path
+
+# Install core files
+Install-OpenTelemetryCore
+
+# Setup IIS instrumentation
+Register-OpenTelemetryForIIS
+
+# Setup your Windows Service instrumentation
+Register-OpenTelemetryForWindowsService -WindowsServiceName "MyServiceName" -OTelServiceName "MyServiceDisplayName"
+
+# Setup environment to start instrumentation from the current PowerShell session
+Register-OpenTelemetryForCurrentSession -OTelServiceName "MyServiceDisplayName"
+
+# Get current installation location
+Get-OpenTelemetryInstallDirectory
+
+# List all available commands
+Get-Command -Module OpenTelemetry.DotNet.Auto
+
+# Get command's usage information
+Get-Help Install-OpenTelemetryCore -Detailed
+```
+
+⚠️ Register for IIS and Windows Service performs a service restart.
 
 ## Advanced configuration
 
