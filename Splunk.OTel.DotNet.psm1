@@ -181,7 +181,7 @@ function Install-OpenTelemetryCore() {
         [string]$InstallDir = "<auto>"
     )
 
-    $version = "v0.0.1-alpha.1"
+    $version = "v0.0.1-alpha.2"
     $installDir = Get-CLIInstallDir-From-InstallDir $InstallDir
     $tempDir = Get-Temp-Directory
     $dlPath = $null
