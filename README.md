@@ -43,9 +43,6 @@ documentation.
 You can find our official "user-facing" examples
 [here](https://github.com/signalfx/tracing-examples/tree/main/opentelemetry-tracing/opentelemetry-dotnet).
 
-The [example directory](./example) contains smaller, developer focused, examples.
-It is meant to be used for experimenting and exploratory end-to-end testing.
-
 ## Contributing
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md)
