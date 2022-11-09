@@ -145,6 +145,11 @@ function Remove-Windows-Service([string]$WindowsServiceName) {
     else {
         throw "Invalid service '$WindowsServiceName'. Service does not exist."
     }
+
+    $remaining = Get-ItemPropertyValue $regKey -Name Environment
+    if (-not $remaining) {
+        Remove-ItemProperty $regKey -Name Environment
+    }
 }
 
 function Filter-Env-List([string[]]$EnvValues, [string[]]$Filters) {
