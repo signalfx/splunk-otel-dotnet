@@ -19,8 +19,8 @@ jobs:
       - uses: actions/setup-dotnet@v3.0.3
         with:
           dotnet-version: | 
-            3.1.423
-            6.0.401
+            3.1.425
+            6.0.403
       - run: ./build.cmd Workflow
       - uses: actions/upload-artifact@v3.1.1
         with:
