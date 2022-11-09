@@ -1,0 +1,13 @@
+include:
+  - project: 'ci-cd/templates'
+    ref: master
+    file: '/prodsec/.oss-scan.yml'
+
+stages:
+  - fossa-scan
+
+oss-scan:
+  stage: fossa-scan
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "main"'
+  extends: .oss-scan
