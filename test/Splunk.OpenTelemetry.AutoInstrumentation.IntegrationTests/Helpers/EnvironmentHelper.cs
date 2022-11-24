@@ -317,6 +317,7 @@ public class EnvironmentHelper
         return Path.Combine(
             binDir,
             packageVersion,
+            EnvironmentTools.GetPlatform().ToLowerInvariant(),
             EnvironmentTools.GetBuildConfiguration(),
             targetFramework);
     }
@@ -340,7 +341,7 @@ public class EnvironmentHelper
     {
         var startupHookOutputPath = Path.Combine(
             GetNukeBuildOutput(),
-            "netcoreapp3.1",
+            "net",
             "OpenTelemetry.AutoInstrumentation.StartupHook.dll");
 
         return startupHookOutputPath;
