@@ -1,10 +1,13 @@
-using System;
-using System.IO;
-using System.IO.Compression;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
+using Nuke.Common.Tools.MSBuild;
+using System;
+using System.IO;
+using System.IO.Compression;
+
+using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 class Build : NukeBuild
 {
@@ -13,6 +16,9 @@ class Build : NukeBuild
 
     [Parameter("Configuration to build - Default is 'Release'")]
     readonly Configuration Configuration = Configuration.Release;
+
+    [Parameter("Platform to build - x86 or x64. Default is 'x64'")]
+    readonly MSBuildTargetPlatform Platform = MSBuildTargetPlatform.x64;
 
     const string OpenTelemetryAutoInstrumentationDefaultVersion = "v0.5.0";
     [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
@@ -118,9 +124,10 @@ class Build : NukeBuild
         .After(UnpackAutoInstrumentationDistribution)
         .Executes(() =>
         {
-            DotNetTasks.DotNetBuild(s => s
-                    .SetNoRestore(true)
-                    .SetConfiguration(Configuration));
+            DotNetBuild(s => s
+                .SetNoRestore(true)
+                .SetConfiguration(Configuration)
+                .SetPlatform(Platform));
         });
 
     Target RunUnitTests => _ => _
@@ -129,7 +136,7 @@ class Build : NukeBuild
         {
             var project = Solution.GetProject("Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests");
 
-            DotNetTasks.DotNetTest(s => s
+            DotNetTest(s => s
                 .SetNoBuild(true)
                 .SetProjectFile(project)
                 .SetConfiguration(Configuration));
@@ -141,7 +148,7 @@ class Build : NukeBuild
         {
             var project = Solution.GetProject("Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests");
 
-            DotNetTasks.DotNetTest(s => s
+            DotNetTest(s => s
                 .SetNoBuild(true)
                 .SetProjectFile(project)
                 .SetConfiguration(Configuration));
