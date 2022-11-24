@@ -29,7 +29,7 @@ class Build : NukeBuild
     Target Clean => _ => _
         .Executes(() =>
         {
-            DotNetTasks.DotNetClean();
+            DotNetClean();
             FileSystemTasks.DeleteDirectory(OpenTelemetryDistributionFolder);
             FileSystemTasks.DeleteDirectory(RootDirectory / GetOTelAutoInstrumentationFileName());
         });
@@ -38,7 +38,7 @@ class Build : NukeBuild
         .After(Clean)
         .Executes(() =>
         {
-            DotNetTasks.DotNetRestore();
+            DotNetRestore();
         });
 
     Target DownloadAutoInstrumentationDistribution => _ => _
