@@ -5,8 +5,8 @@
 
   <PropertyGroup>
       <!-- only run .NET Framework tests on Windows -->
-      <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net6.0;netcoreapp3.1;net462</TargetFrameworks>
-      <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">net6.0;netcoreapp3.1</TargetFrameworks>
+      <TargetFrameworks>net7.0;net6.0</TargetFrameworks>
+      <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">$(TargetFrameworks);net462</TargetFrameworks>
   </PropertyGroup>
 
   <!-- StyleCop -->

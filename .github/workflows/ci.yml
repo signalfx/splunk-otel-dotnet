@@ -19,8 +19,8 @@ jobs:
       - uses: actions/setup-dotnet@v3.0.3
         with:
           dotnet-version: | 
-            3.1.425
             6.0.403
+            7.0.100
       - run: ./build.cmd Workflow
       - uses: actions/upload-artifact@v3.1.1
         with:
@@ -58,7 +58,7 @@ jobs:
     steps:
       - uses: actions/setup-dotnet@v3.0.3
         with:
-          dotnet-version: 6.0.x
+          dotnet-version: 7.0.100
       - name: Test the PowerShell module instructions from README.md
         shell: powershell
         run: |
@@ -96,7 +96,7 @@ jobs:
     steps:
       - uses: actions/setup-dotnet@v3.0.3
         with:
-          dotnet-version: 6.0.x
+          dotnet-version: 7.0.100
       - run: brew install coreutils
         if: ${{ runner.os == 'macOS' }}
       - name: Create test directory
