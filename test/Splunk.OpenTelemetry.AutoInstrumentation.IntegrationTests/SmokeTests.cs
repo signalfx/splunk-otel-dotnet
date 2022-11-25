@@ -78,7 +78,7 @@ public class SmokeTests : TestHelper
     }
 
 #if !NETFRAMEWORK
-    [Fact(Skip = "Waiting for the new release of OpenTelemetry Autoinstrumentation to support this scenario.")]
+    [Fact]
     [Trait("Category", "EndToEnd")]
     public async Task SubmitLogs()
     {
