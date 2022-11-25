@@ -27,4 +27,9 @@ internal static class ConfigurationKeys
     /// Configuration key for access token.
     /// </summary>
     public const string AccessToken = "SPLUNK_ACCESS_TOKEN";
+
+    public static class OpenTelemetry
+    {
+        public const string OtlpEndpoint = "OTEL_EXPORTER_OTLP_ENDPOINT";
+    }
 }

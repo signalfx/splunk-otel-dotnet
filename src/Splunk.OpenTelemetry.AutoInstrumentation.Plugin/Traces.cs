@@ -61,7 +61,7 @@ public class Traces
     /// <param name="options">Otlp options</param>
     public void ConfigureOptions(OtlpExporterOptions options)
     {
-        if (_settings.Realm != null)
+        if (!_settings.IsOtlpEndpointSet && _settings.Realm != null)
         {
             options.Endpoint = new Uri(string.Format(Constants.Ingest.TracesIngestTemplate, _settings.Realm));
         }

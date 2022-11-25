@@ -35,7 +35,10 @@ internal class PluginSettings
 
         Realm = source.GetString(ConfigurationKeys.Realm);
         AccessToken = source.GetString(ConfigurationKeys.AccessToken);
+        IsOtlpEndpointSet = source.GetString(ConfigurationKeys.OpenTelemetry.OtlpEndpoint) != null;
     }
+
+    public bool IsOtlpEndpointSet { get; set; }
 
     public string? Realm { get; set; }
 
