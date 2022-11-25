@@ -14,7 +14,10 @@
 // limitations under the License.
 // </copyright>
 
+using System.Collections.Specialized;
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
+using Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Configuration;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests;
 
@@ -26,5 +29,23 @@ public class MetricsTests
         var builder = Mock.Of<MeterProviderBuilder>();
         var returnedBuilder = new Metrics().ConfigureMeterProvider(builder);
         returnedBuilder.Should().Be(builder);
+    }
+
+    [Fact]
+    public void ConfigureOtlpOptions()
+    {
+        var configuration = new NameValueCollection()
+        {
+            { "SPLUNK_REALM", "my-realm" },
+            { "SPLUNK_ACCESS_TOKEN", "MyToken" }
+        };
+
+        var settings = new PluginSettings(new NameValueConfigurationSource(configuration));
+
+        var options = new OtlpExporterOptions();
+        new Metrics(settings).ConfigureOptions(options);
+
+        options.Endpoint.Should().Be("https://ingest.my-realm.signalfx.com/v2/datapoint");
+        options.Headers.Should().Be("X-Sf-Token=MyToken");
     }
 }
