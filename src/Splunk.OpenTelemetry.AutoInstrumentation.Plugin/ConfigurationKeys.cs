@@ -14,18 +14,17 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin
-{
-    internal static class ConfigurationKeys
-    {
-        /// <summary>
-        /// Configuration key for realm.
-        /// </summary>
-        public const string Realm = "SPLUNK_REALM";
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin;
 
-        /// <summary>
-        /// Configuration key for access token.
-        /// </summary>
-        public const string AccessToken = "SPLUNK_ACCESS_TOKEN";
-    }
+internal static class ConfigurationKeys
+{
+    /// <summary>
+    /// Configuration key for realm.
+    /// </summary>
+    public const string Realm = "SPLUNK_REALM";
+
+    /// <summary>
+    /// Configuration key for access token.
+    /// </summary>
+    public const string AccessToken = "SPLUNK_ACCESS_TOKEN";
 }

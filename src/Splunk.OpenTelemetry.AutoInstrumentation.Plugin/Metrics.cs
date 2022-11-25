@@ -18,66 +18,65 @@ using System;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin;
+
+/// <summary>
+/// Splunk OTel metrics plugin
+/// </summary>
+public class Metrics
 {
+    private readonly PluginSettings _settings;
+
     /// <summary>
-    /// Splunk OTel metrics plugin
+    /// Initializes a new instance of the <see cref="Metrics"/> class.
     /// </summary>
-    public class Metrics
+    public Metrics()
+        : this(PluginSettings.FromDefaultSources())
     {
-        private readonly PluginSettings _settings;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Metrics"/> class.
-        /// </summary>
-        public Metrics()
-            : this(PluginSettings.FromDefaultSources())
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Metrics"/> class.
+    /// This is constructor is for testing purposes.
+    /// </summary>
+    /// <param name="settings">PluginSettings instance</param>
+    internal Metrics(PluginSettings settings)
+    {
+        _settings = settings;
+    }
+
+    /// <summary>
+    /// Configures Metrics
+    /// </summary>
+    /// <param name="builder"><see cref="MeterProviderBuilder"/> to configure</param>
+    /// <returns>Returns <see cref="MeterProviderBuilder"/> for chaining.</returns>
+    public MeterProviderBuilder ConfigureMeterProvider(MeterProviderBuilder builder)
+    {
+        return builder;
+    }
+
+    /// <summary>
+    /// Configure Otlp exporter options
+    /// </summary>
+    /// <param name="options">Otlp options</param>
+    public void ConfigureOptions(OtlpExporterOptions options)
+    {
+        if (_settings.Realm != null)
         {
+            options.Endpoint = new Uri(string.Format(Constants.Ingest.MetricsIngestTemplate, _settings.Realm));
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Metrics"/> class.
-        /// This is constructor is for testing purposes.
-        /// </summary>
-        /// <param name="settings">PluginSettings instance</param>
-        internal Metrics(PluginSettings settings)
+        if (_settings.AccessToken != null)
         {
-            _settings = settings;
-        }
+            string accessHeader = $"X-Sf-Token={_settings.AccessToken}";
 
-        /// <summary>
-        /// Configures Metrics
-        /// </summary>
-        /// <param name="builder"><see cref="MeterProviderBuilder"/>  to configure</param>
-        /// <returns>Returns <see cref="MeterProviderBuilder"/> for chaining.</returns>
-        public MeterProviderBuilder ConfigureMeterProvider(MeterProviderBuilder builder)
-        {
-            return builder;
-        }
-
-        /// <summary>
-        /// Configure Otlp exporter options
-        /// </summary>
-        /// <param name="options">Otlp options</param>
-        public void ConfigureOptions(OtlpExporterOptions options)
-        {
-            if (_settings.Realm != null)
+            if (string.IsNullOrEmpty(options.Headers))
             {
-                options.Endpoint = new Uri(string.Format(Constants.Ingest.MetricsIngestTemplate, _settings.Realm));
+                options.Headers = accessHeader;
             }
-
-            if (_settings.AccessToken != null)
+            else
             {
-                string accessHeader = $"X-Sf-Token={_settings.AccessToken}";
-
-                if (string.IsNullOrEmpty(options.Headers))
-                {
-                    options.Headers = accessHeader;
-                }
-                else
-                {
-                    options.Headers = $"{options.Headers}, {accessHeader}";
-                }
+                options.Headers = $"{options.Headers}, {accessHeader}";
             }
         }
     }

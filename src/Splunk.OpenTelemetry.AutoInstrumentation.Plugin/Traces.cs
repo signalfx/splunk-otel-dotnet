@@ -18,66 +18,65 @@ using System;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Trace;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin;
+
+/// <summary>
+/// Splunk OTel traces plugin
+/// </summary>
+public class Traces
 {
+    private readonly PluginSettings _settings;
+
     /// <summary>
-    /// Splunk OTel traces plugin
+    /// Initializes a new instance of the <see cref="Traces"/> class.
     /// </summary>
-    public class Traces
+    public Traces()
+        : this(PluginSettings.FromDefaultSources())
     {
-        private readonly PluginSettings _settings;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Traces"/> class.
-        /// </summary>
-        public Traces()
-            : this(PluginSettings.FromDefaultSources())
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Traces"/> class.
+    /// This is constructor is for testing purposes.
+    /// </summary>
+    /// <param name="settings">PluginSettins instance</param>
+    internal Traces(PluginSettings settings)
+    {
+        _settings = settings;
+    }
+
+    /// <summary>
+    /// Configures Traces
+    /// </summary>
+    /// <param name="builder"><see cref="TracerProviderBuilder"/> to configure</param>
+    /// <returns>Returns <see cref="TracerProviderBuilder"/> for chaining.</returns>
+    public TracerProviderBuilder ConfigureTracerProvider(TracerProviderBuilder builder)
+    {
+        return builder;
+    }
+
+    /// <summary>
+    /// Configure Otlp exporter options
+    /// </summary>
+    /// <param name="options">Otlp options</param>
+    public void ConfigureOptions(OtlpExporterOptions options)
+    {
+        if (_settings.Realm != null)
         {
+            options.Endpoint = new Uri(string.Format(Constants.Ingest.TracesIngestTemplate, _settings.Realm));
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Traces"/> class.
-        /// This is constructor is for testing purposes.
-        /// </summary>
-        /// <param name="settings">PluginSettins instance</param>
-        internal Traces(PluginSettings settings)
+        if (_settings.AccessToken != null)
         {
-            _settings = settings;
-        }
+            string accessHeader = $"X-Sf-Token={_settings.AccessToken}";
 
-        /// <summary>
-        /// Configures Traces
-        /// </summary>
-        /// <param name="builder"><see cref="TracerProviderBuilder"/>  to configure</param>
-        /// <returns>Returns <see cref="TracerProviderBuilder"/> for chaining.</returns>
-        public TracerProviderBuilder ConfigureTracerProvider(TracerProviderBuilder builder)
-        {
-            return builder;
-        }
-
-        /// <summary>
-        /// Configure Otlp exporter options
-        /// </summary>
-        /// <param name="options">Otlp options</param>
-        public void ConfigureOptions(OtlpExporterOptions options)
-        {
-            if (_settings.Realm != null)
+            if (string.IsNullOrEmpty(options.Headers))
             {
-                options.Endpoint = new Uri(string.Format(Constants.Ingest.TracesIngestTemplate, _settings.Realm));
+                options.Headers = accessHeader;
             }
-
-            if (_settings.AccessToken != null)
+            else
             {
-                string accessHeader = $"X-Sf-Token={_settings.AccessToken}";
-
-                if (string.IsNullOrEmpty(options.Headers))
-                {
-                    options.Headers = accessHeader;
-                }
-                else
-                {
-                    options.Headers = $"{options.Headers}, {accessHeader}";
-                }
+                options.Headers = $"{options.Headers}, {accessHeader}";
             }
         }
     }

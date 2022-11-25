@@ -14,14 +14,13 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin;
+
+internal static class Constants
 {
-    internal static class Constants
+    public static class Ingest
     {
-        public static class Ingest
-        {
-            public const string TracesIngestTemplate = "https://ingest.{0}.signalfx.com/v2/trace";
-            public const string MetricsIngestTemplate = "https://ingest.{0}.signalfx.com/v2/datapoint";
-        }
+        public const string TracesIngestTemplate = "https://ingest.{0}.signalfx.com/v2/trace";
+        public const string MetricsIngestTemplate = "https://ingest.{0}.signalfx.com/v2/datapoint";
     }
 }

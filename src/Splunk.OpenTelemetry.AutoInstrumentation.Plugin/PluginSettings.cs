@@ -17,47 +17,46 @@
 using System;
 using Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Configuration;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin
-{
-    internal class PluginSettings
-    {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PluginSettings"/> class
-        /// using the specified <see cref="IConfigurationSource"/> to initialize values.
-        /// </summary>
-        /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        internal PluginSettings(IConfigurationSource source)
-        {
-            if (source == null)
-            {
-                throw new ArgumentNullException(nameof(source));
-            }
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin;
 
-            Realm = source.GetString(ConfigurationKeys.Realm);
-            AccessToken = source.GetString(ConfigurationKeys.AccessToken);
+internal class PluginSettings
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PluginSettings"/> class
+    /// using the specified <see cref="IConfigurationSource"/> to initialize values.
+    /// </summary>
+    /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
+    internal PluginSettings(IConfigurationSource source)
+    {
+        if (source == null)
+        {
+            throw new ArgumentNullException(nameof(source));
         }
 
-        public string? Realm { get; set; }
+        Realm = source.GetString(ConfigurationKeys.Realm);
+        AccessToken = source.GetString(ConfigurationKeys.AccessToken);
+    }
 
-        public string? AccessToken { get; set; }
+    public string? Realm { get; set; }
 
-        public static PluginSettings FromDefaultSources()
+    public string? AccessToken { get; set; }
+
+    public static PluginSettings FromDefaultSources()
+    {
+        var configurationSource = new CompositeConfigurationSource
         {
-            var configurationSource = new CompositeConfigurationSource
-            {
-                new EnvironmentConfigurationSource(),
+            new EnvironmentConfigurationSource(),
 
 /*
- * TODO: Enable ASP.NET web.config support
- *
+* TODO: Enable ASP.NET web.config support
+*
 #if NETFRAMEWORK
-                // on .NET Framework only, also read from app.config/web.config
-                new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings)
+            // on .NET Framework only, also read from app.config/web.config
+            new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings)
 #endif
 */
-            };
+        };
 
-            return new PluginSettings(configurationSource);
-        }
+        return new PluginSettings(configurationSource);
     }
 }
