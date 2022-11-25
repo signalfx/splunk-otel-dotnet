@@ -20,13 +20,13 @@
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net462' ">
     <Reference Include="OpenTelemetry.AutoInstrumentation">
-      <HintPath>..\..\OpenTelemetryDistribution\net462\OpenTelemetry.AutoInstrumentation.dll</HintPath>
+      <HintPath>..\..\OpenTelemetryDistribution\netfx\OpenTelemetry.AutoInstrumentation.dll</HintPath>
     </Reference>
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' != 'net462' ">
     <Reference Include="OpenTelemetry.AutoInstrumentation">
-      <HintPath>..\..\OpenTelemetryDistribution\netcoreapp3.1\OpenTelemetry.AutoInstrumentation.dll</HintPath>
+      <HintPath>..\..\OpenTelemetryDistribution\net\OpenTelemetry.AutoInstrumentation.dll</HintPath>
     </Reference>
   </ItemGroup>
 
