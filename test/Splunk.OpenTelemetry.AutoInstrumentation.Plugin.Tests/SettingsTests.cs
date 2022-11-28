@@ -45,8 +45,8 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests
 
         private static void ClearEnvVars()
         {
-            Environment.SetEnvironmentVariable(ConfigurationKeys.Realm, null);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AccessToken, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Realm, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AccessToken, null);
         }
     }
 }
