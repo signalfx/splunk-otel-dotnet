@@ -99,7 +99,12 @@ class Build : NukeBuild
             FileSystemTasks.CopyFileToDirectory(
                 RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin" / "bin" / Configuration /
                 "netstandard2.0" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin.dll",
-                OpenTelemetryDistributionFolder / "plugins");
+                OpenTelemetryDistributionFolder / "net");
+
+            FileSystemTasks.CopyFileToDirectory(
+                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin" / "bin" / Configuration /
+                "netstandard2.0" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin.dll",
+                OpenTelemetryDistributionFolder / "netfx");
         });
 
     Target CopyInstrumentScripts => _ => _
