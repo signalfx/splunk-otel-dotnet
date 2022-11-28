@@ -14,7 +14,10 @@
 // limitations under the License.
 // </copyright>
 
+using System.Collections.Specialized;
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Trace;
+using Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Configuration;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests;
 
@@ -26,5 +29,23 @@ public class TracesTests
         var builder = Mock.Of<TracerProviderBuilder>();
         var returnedBuilder = new Traces().ConfigureTracerProvider(builder);
         returnedBuilder.Should().Be(builder);
+    }
+
+    [Fact]
+    public void ConfigureOtlpOptions()
+    {
+        var configuration = new NameValueCollection()
+        {
+            { "SPLUNK_REALM", "my-realm" },
+            { "SPLUNK_ACCESS_TOKEN", "MyToken" }
+        };
+
+        var settings = new PluginSettings(new NameValueConfigurationSource(configuration));
+
+        var options = new OtlpExporterOptions();
+        new Traces(settings).ConfigureOptions(options);
+
+        options.Endpoint.Should().Be("https://ingest.my-realm.signalfx.com/v2/trace");
+        options.Headers.Should().Be("X-Sf-Token=MyToken");
     }
 }
