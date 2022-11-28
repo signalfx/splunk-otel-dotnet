@@ -1,4 +1,4 @@
-﻿// <copyright file="MockTracesCollector.cs" company="Splunk Inc.">
+// <copyright file="MockSpansCollector.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="MockTracesCollector.cs" company="OpenTelemetry Authors">
+// <copyright file="MockSpansCollector.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,15 +30,20 @@
 // limitations under the License.
 // </copyright>
 
+#nullable disable
+
+#if NETFRAMEWORK
+using System.Net;
+#else
+using Microsoft.AspNetCore.Http;
+#endif
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Google.Protobuf;
 using OpenTelemetry.Proto.Collector.Trace.V1;
 using OpenTelemetry.Proto.Trace.V1;
 using Xunit;
@@ -46,19 +51,23 @@ using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-public class MockTracesCollector : IDisposable
+public class MockSpansCollector : IDisposable
 {
-    private static readonly TimeSpan DefaultWaitTimeout = TimeSpan.FromMinutes(1);
-
     private readonly ITestOutputHelper _output;
-    private readonly TestHttpListener _listener;
-    private readonly BlockingCollection<Span> _spans = new(100); // bounded to avoid memory leak
+    private readonly TestHttpServer _listener;
+
+    private readonly BlockingCollection<Collected> _spans = new(100); // bounded to avoid memory leak
     private readonly List<Expectation> _expectations = new();
 
-    private MockTracesCollector(ITestOutputHelper output, string host = "localhost")
+    public MockSpansCollector(ITestOutputHelper output, string host = "localhost")
     {
         _output = output;
-        _listener = new TestHttpListener(output, HandleHttpRequests, host);
+
+#if NETFRAMEWORK
+        _listener = new TestHttpServer(output, HandleHttpRequests, host, "/v1/traces/");
+#else
+        _listener = new TestHttpServer(output, HandleHttpRequests, "/v1/traces");
+#endif
     }
 
     /// <summary>
@@ -66,33 +75,22 @@ public class MockTracesCollector : IDisposable
     /// </summary>
     public int Port { get => _listener.Port; }
 
-    public static async Task<MockTracesCollector> Start(ITestOutputHelper output, string host = "localhost")
-    {
-        var collector = new MockTracesCollector(output, host);
-
-        var healthzResult = await collector._listener.VerifyHealthzAsync();
-
-        if (!healthzResult)
-        {
-            collector.Dispose();
-            throw new InvalidOperationException($"Cannot start {nameof(MockTracesCollector)}!");
-        }
-
-        return collector;
-    }
+    public OtlpResourceExpector ResourceExpector { get; } = new();
 
     public void Dispose()
     {
         WriteOutput("Shutting down.");
+        ResourceExpector.Dispose();
         _spans.Dispose();
         _listener.Dispose();
     }
 
-    public void Expect(Func<Span, bool> predicate, string? description = null)
+    public void Expect(string instrumentationScopeName, Func<Span, bool> predicate = null, string description = null)
     {
+        predicate ??= x => true;
         description ??= "<no description>";
 
-        _expectations.Add(new Expectation(predicate, description));
+        _expectations.Add(new Expectation { InstrumentationScopeName = instrumentationScopeName, Predicate = predicate, Description = description });
     }
 
     public void AssertExpectations(TimeSpan? timeout = null)
@@ -103,10 +101,10 @@ public class MockTracesCollector : IDisposable
         }
 
         var missingExpectations = new List<Expectation>(_expectations);
-        var expectationsMet = new List<Span>();
-        var additionalEntries = new List<Span>();
+        var expectationsMet = new List<Collected>();
+        var additionalEntries = new List<Collected>();
 
-        timeout ??= DefaultWaitTimeout;
+        timeout ??= Timeout.Expectation;
         var cts = new CancellationTokenSource();
 
         try
@@ -117,7 +115,12 @@ public class MockTracesCollector : IDisposable
                 var found = false;
                 for (var i = missingExpectations.Count - 1; i >= 0; i--)
                 {
-                    if (!missingExpectations[i].Predicate(resourceSpans))
+                    if (missingExpectations[i].InstrumentationScopeName != resourceSpans.InstrumentationScopeName)
+                    {
+                        continue;
+                    }
+
+                    if (!missingExpectations[i].Predicate(resourceSpans.Span))
                     {
                         continue;
                     }
@@ -152,10 +155,19 @@ public class MockTracesCollector : IDisposable
         }
     }
 
+    public void AssertEmpty(TimeSpan? timeout = null)
+    {
+        timeout ??= Timeout.NoExpectation;
+        if (_spans.TryTake(out var resourceSpan, timeout.Value))
+        {
+            Assert.Fail($"Expected nothing, but got: {resourceSpan}");
+        }
+    }
+
     private static void FailExpectations(
         List<Expectation> missingExpectations,
-        List<Span> expectationsMet,
-        List<Span> additionalEntries)
+        List<Collected> expectationsMet,
+        List<Collected> additionalEntries)
     {
         var message = new StringBuilder();
         message.AppendLine();
@@ -181,53 +193,68 @@ public class MockTracesCollector : IDisposable
         Assert.Fail(message.ToString());
     }
 
+#if NETFRAMEWORK
     private void HandleHttpRequests(HttpListenerContext ctx)
     {
-        var rawUrl = ctx.Request.RawUrl;
-        if (rawUrl != null)
+        var traceMessage = ExportTraceServiceRequest.Parser.ParseFrom(ctx.Request.InputStream);
+        HandleTraceMessage(traceMessage);
+
+        ctx.GenerateEmptyProtobufResponse<ExportTraceServiceResponse>();
+    }
+#else
+    private async Task HandleHttpRequests(HttpContext ctx)
+    {
+        using var bodyStream = await ctx.ReadBodyToMemoryAsync();
+        var traceMessage = ExportTraceServiceRequest.Parser.ParseFrom(bodyStream);
+        HandleTraceMessage(traceMessage);
+
+        await ctx.GenerateEmptyProtobufResponseAsync<ExportTraceServiceResponse>();
+    }
+#endif
+
+    private void HandleTraceMessage(ExportTraceServiceRequest traceMessage)
+    {
+        foreach (var resourceSpan in traceMessage.ResourceSpans ?? Enumerable.Empty<ResourceSpans>())
         {
-            if (rawUrl.Equals("/v1/traces", StringComparison.OrdinalIgnoreCase))
+            ResourceExpector.Collect(resourceSpan.Resource);
+            foreach (var scopeSpans in resourceSpan.ScopeSpans ?? Enumerable.Empty<ScopeSpans>())
             {
-                var message = ExportTraceServiceRequest.Parser.ParseFrom(ctx.Request.InputStream);
-                message.ResourceSpans
-                    .SelectMany(resourceSpans => resourceSpans.ScopeSpans)
-                    .SelectMany(scopeSpans => scopeSpans.Spans)
-                    .ToList()
-                    .ForEach(span => _spans.Add(span));
+                foreach (var span in scopeSpans.Spans ?? Enumerable.Empty<Span>())
+                {
+                    _spans.Add(new Collected
+                    {
+                        InstrumentationScopeName = scopeSpans.Scope.Name,
+                        Span = span
+                    });
+                }
             }
-
-            // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
-            // (Setting content-length avoids that)
-            ctx.Response.ContentType = "application/x-protobuf";
-            ctx.Response.StatusCode = (int)HttpStatusCode.OK;
-            var responseMessage = new ExportTraceServiceResponse();
-            ctx.Response.ContentLength64 = responseMessage.CalculateSize();
-            responseMessage.WriteTo(ctx.Response.OutputStream);
-            ctx.Response.Close();
-            return;
         }
-
-        // We received an unsupported request
-        ctx.Response.StatusCode = (int)HttpStatusCode.NotImplemented;
-        ctx.Response.Close();
     }
 
     private void WriteOutput(string msg)
     {
-        const string name = nameof(MockTracesCollector);
+        const string name = nameof(MockSpansCollector);
         _output.WriteLine($"[{name}]: {msg}");
     }
 
     private class Expectation
     {
-        public Expectation(Func<Span, bool> predicate, string? description = null)
+        public string InstrumentationScopeName { get; set; }
+
+        public Func<Span, bool> Predicate { get; set; }
+
+        public string Description { get; set; }
+    }
+
+    private class Collected
+    {
+        public string InstrumentationScopeName { get; set; }
+
+        public Span Span { get; set; } // protobuf type
+
+        public override string ToString()
         {
-            Predicate = predicate;
-            Description = description;
+            return $"InstrumentationScopeName = {InstrumentationScopeName}, Span = {Span}";
         }
-
-        public Func<Span, bool> Predicate { get; }
-
-        public string? Description { get; }
     }
 }

@@ -30,25 +30,15 @@
 // limitations under the License.
 // </copyright>
 
+#nullable disable
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 public class TestSettings
 {
-    public TracesSettings? TracesSettings { get; set; } = null;
-
-    public MetricsSettings? MetricsSettings { get; set; } = null;
-
-    public LogSettings? LogSettings { get; set; } = null;
-
-    public string? Arguments { get; set; } = null;
+    public string Arguments { get; set; } = null;
 
     public string PackageVersion { get; set; } = string.Empty;
 
     public string Framework { get; set; } = string.Empty;
-
-    public int AspNetCorePort { get; set; } = 5000;
-
-    public bool EnableStartupHook { get; set; } = true;
-
-    public bool EnableClrProfiler { get; set; } = true;
 }

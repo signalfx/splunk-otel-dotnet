@@ -30,17 +30,21 @@
 // limitations under the License.
 // </copyright>
 
+#nullable disable
+
+#if NETFRAMEWORK
+using System.Net;
+#else
+using Microsoft.AspNetCore.Http;
+#endif
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Net;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Google.Protobuf;
-using Google.Protobuf.Collections;
 using OpenTelemetry.Proto.Collector.Metrics.V1;
-using OpenTelemetry.Proto.Common.V1;
 using OpenTelemetry.Proto.Metrics.V1;
 using Xunit;
 using Xunit.Abstractions;
@@ -49,22 +53,20 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 public class MockMetricsCollector : IDisposable
 {
-    private static readonly TimeSpan DefaultWaitTimeout = TimeSpan.FromMinutes(1);
-
     private readonly ITestOutputHelper _output;
-    private readonly TestHttpListener _listener;
+    private readonly TestHttpServer _listener;
 
     private readonly List<Expectation> _expectations = new();
+    private readonly BlockingCollection<List<Collected>> _metricsSnapshots = new(10); // bounded to avoid memory leak; contains protobuf type
 
-    private readonly BlockingCollection<List<CollectedMetric>> _metricsSnapshots = new(10); // bounded to avoid memory leak; contains protobuf type
-
-    private readonly ManualResetEvent _resourceAttributesEvent = new(false); // synchronizes access to _resourceAttributes
-    private RepeatedField<KeyValue>? _resourceAttributes; // protobuf type
-
-    private MockMetricsCollector(ITestOutputHelper output, string host = "localhost")
+    public MockMetricsCollector(ITestOutputHelper output, string host = "localhost")
     {
         _output = output;
-        _listener = new TestHttpListener(output, HandleHttpRequests, host);
+#if NETFRAMEWORK
+        _listener = new(output, HandleHttpRequests, host, "/v1/metrics/");
+#else
+        _listener = new(output, HandleHttpRequests, "/v1/metrics");
+#endif
     }
 
     /// <summary>
@@ -72,35 +74,22 @@ public class MockMetricsCollector : IDisposable
     /// </summary>
     public int Port { get => _listener.Port; }
 
-    public static async Task<MockMetricsCollector> Start(ITestOutputHelper output, string host = "localhost")
-    {
-        var collector = new MockMetricsCollector(output, host);
-
-        var healthzResult = await collector._listener.VerifyHealthzAsync();
-
-        if (!healthzResult)
-        {
-            collector.Dispose();
-            throw new InvalidOperationException($"Cannot start {nameof(MockTracesCollector)}!");
-        }
-
-        return collector;
-    }
+    public OtlpResourceExpector ResourceExpector { get; } = new();
 
     public void Dispose()
     {
-        WriteOutput("Shutting down.");
+        WriteOutput($"Shutting down.");
+        ResourceExpector.Dispose();
         _metricsSnapshots.Dispose();
-        _resourceAttributesEvent.Dispose();
         _listener.Dispose();
     }
 
-    public void Expect(string instrumentationScopeName, Func<Metric, bool>? predicate = null, string? description = null)
+    public void Expect(string instrumentationScopeName, Func<Metric, bool> predicate = null, string description = null)
     {
-        predicate ??= _ => true;
+        predicate ??= x => true;
         description ??= instrumentationScopeName;
 
-        _expectations.Add(new Expectation(instrumentationScopeName, predicate, description));
+        _expectations.Add(new Expectation { InstrumentationScopeName = instrumentationScopeName, Predicate = predicate, Description = description });
     }
 
     public void AssertExpectations(TimeSpan? timeout = null)
@@ -111,41 +100,37 @@ public class MockMetricsCollector : IDisposable
         }
 
         var missingExpectations = new List<Expectation>(_expectations);
-        var expectationsMet = new List<CollectedMetric>();
-        var additionalEntries = new List<CollectedMetric>();
+        var expectationsMet = new List<Collected>();
+        var additionalEntries = new List<Collected>();
 
-        timeout ??= DefaultWaitTimeout;
+        timeout ??= Timeout.Expectation;
         var cts = new CancellationTokenSource();
 
         try
         {
             cts.CancelAfter(timeout.Value);
-
-            // loop until expectations met or timeout
-            while (true)
+            foreach (var collectedMetricsSnapshot in _metricsSnapshots.GetConsumingEnumerable(cts.Token))
             {
-                var metrics = _metricsSnapshots.Take(cts.Token); // get the metrics snapshot
-
                 missingExpectations = new List<Expectation>(_expectations);
-                expectationsMet = new List<CollectedMetric>();
-                additionalEntries = new List<CollectedMetric>();
+                expectationsMet = new List<Collected>();
+                additionalEntries = new List<Collected>();
 
-                foreach (var metric in metrics)
+                foreach (var collected in collectedMetricsSnapshot)
                 {
                     bool found = false;
                     for (int i = missingExpectations.Count - 1; i >= 0; i--)
                     {
-                        if (metric.InstrumentationScopeName != missingExpectations[i].InstrumentationScopeName)
+                        if (collected.InstrumentationScopeName != missingExpectations[i].InstrumentationScopeName)
                         {
                             continue;
                         }
 
-                        if (!missingExpectations[i].Predicate(metric.Metric))
+                        if (!missingExpectations[i].Predicate(collected.Metric))
                         {
                             continue;
                         }
 
-                        expectationsMet.Add(metric);
+                        expectationsMet.Add(collected);
                         missingExpectations.RemoveAt(i);
                         found = true;
                         break;
@@ -153,7 +138,7 @@ public class MockMetricsCollector : IDisposable
 
                     if (!found)
                     {
-                        additionalEntries.Add(metric);
+                        additionalEntries.Add(collected);
                     }
                 }
 
@@ -175,10 +160,19 @@ public class MockMetricsCollector : IDisposable
         }
     }
 
+    internal void AssertEmpty(TimeSpan? timeout = null)
+    {
+        timeout ??= Timeout.NoExpectation;
+        if (_metricsSnapshots.TryTake(out var metricsResource, timeout.Value))
+        {
+            Assert.Fail($"Expected nothing, but got: {metricsResource}");
+        }
+    }
+
     private static void FailMetrics(
         List<Expectation> missingExpectations,
-        List<CollectedMetric> expectationsMet,
-        List<CollectedMetric> additionalEntries)
+        List<Collected> expectationsMet,
+        List<Collected> additionalEntries)
     {
         var message = new StringBuilder();
         message.AppendLine();
@@ -204,60 +198,47 @@ public class MockMetricsCollector : IDisposable
         Assert.Fail(message.ToString());
     }
 
+#if NETFRAMEWORK
     private void HandleHttpRequests(HttpListenerContext ctx)
     {
-        var rawUrl = ctx.Request.RawUrl;
-        if (rawUrl != null)
+        var metricsMessage = ExportMetricsServiceRequest.Parser.ParseFrom(ctx.Request.InputStream);
+        HandleMetricsMessage(metricsMessage);
+
+        ctx.GenerateEmptyProtobufResponse<ExportMetricsServiceResponse>();
+    }
+#else
+    private async Task HandleHttpRequests(HttpContext ctx)
+    {
+        using var bodyStream = await ctx.ReadBodyToMemoryAsync();
+        var metricsMessage = ExportMetricsServiceRequest.Parser.ParseFrom(bodyStream);
+        HandleMetricsMessage(metricsMessage);
+
+        await ctx.GenerateEmptyProtobufResponseAsync<ExportMetricsServiceResponse>();
+    }
+#endif
+
+    private void HandleMetricsMessage(ExportMetricsServiceRequest metricsMessage)
+    {
+        foreach (var resourceMetric in metricsMessage.ResourceMetrics ?? Enumerable.Empty<ResourceMetrics>())
         {
-            if (rawUrl.Equals("/v1/metrics", StringComparison.OrdinalIgnoreCase))
+            ResourceExpector.Collect(resourceMetric.Resource);
+
+            // process metrics snapshot
+            var metricsSnapshot = new List<Collected>();
+            foreach (var scopeMetrics in resourceMetric.ScopeMetrics ?? Enumerable.Empty<ScopeMetrics>())
             {
-                var metricsMessage = ExportMetricsServiceRequest.Parser.ParseFrom(ctx.Request.InputStream);
-                if (metricsMessage.ResourceMetrics != null)
+                foreach (var metric in scopeMetrics.Metrics ?? Enumerable.Empty<Metric>())
                 {
-                    foreach (var resourceMetric in metricsMessage.ResourceMetrics)
+                    metricsSnapshot.Add(new Collected
                     {
-                        if (resourceMetric.ScopeMetrics != null)
-                        {
-                            // resource metrics are always the same. set them only once.
-                            if (_resourceAttributes == null)
-                            {
-                                _resourceAttributes = resourceMetric.Resource.Attributes;
-                                _resourceAttributesEvent.Set();
-                            }
-
-                            // process metrics snapshot
-                            var metricsSnapshot = new List<CollectedMetric>();
-                            foreach (var scopeMetrics in resourceMetric.ScopeMetrics)
-                            {
-                                if (scopeMetrics.Metrics != null)
-                                {
-                                    foreach (var metric in scopeMetrics.Metrics)
-                                    {
-                                        metricsSnapshot.Add(new CollectedMetric(scopeMetrics.Scope.Name, metric));
-                                    }
-                                }
-                            }
-
-                            _metricsSnapshots.Add(metricsSnapshot);
-                        }
-                    }
+                        InstrumentationScopeName = scopeMetrics.Scope.Name,
+                        Metric = metric
+                    });
                 }
             }
 
-            // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
-            // (Setting content-length avoids that)
-            ctx.Response.ContentType = "application/x-protobuf";
-            ctx.Response.StatusCode = (int)HttpStatusCode.OK;
-            var responseMessage = new ExportMetricsServiceResponse();
-            ctx.Response.ContentLength64 = responseMessage.CalculateSize();
-            responseMessage.WriteTo(ctx.Response.OutputStream);
-            ctx.Response.Close();
-            return;
+            _metricsSnapshots.Add(metricsSnapshot);
         }
-
-        // We received an unsupported request
-        ctx.Response.StatusCode = (int)HttpStatusCode.NotImplemented;
-        ctx.Response.Close();
     }
 
     private void WriteOutput(string msg)
@@ -268,31 +249,18 @@ public class MockMetricsCollector : IDisposable
 
     private class Expectation
     {
-        public Expectation(string instrumentationScopeName, Func<Metric, bool> predicate, string description)
-        {
-            InstrumentationScopeName = instrumentationScopeName;
-            Predicate = predicate;
-            Description = description;
-        }
+        public string InstrumentationScopeName { get; set; }
 
-        public string InstrumentationScopeName { get; }
+        public Func<Metric, bool> Predicate { get; set; }
 
-        public Func<Metric, bool> Predicate { get; }
-
-        public string Description { get; }
+        public string Description { get; set; }
     }
 
-    private class CollectedMetric
+    private class Collected
     {
-        public CollectedMetric(string instrumentationScopeName, Metric metric)
-        {
-            InstrumentationScopeName = instrumentationScopeName;
-            Metric = metric;
-        }
+        public string InstrumentationScopeName { get; set; }
 
-        public string InstrumentationScopeName { get; }
-
-        public Metric Metric { get; } // protobuf type
+        public Metric Metric { get; set; } // protobuf type
 
         public override string ToString()
         {

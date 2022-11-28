@@ -1,4 +1,4 @@
-// <copyright file="TracesSettings.cs" company="Splunk Inc.">
+// <copyright file="CollectorRequestHelper.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="TracesSettings.cs" company="OpenTelemetry Authors">
+// <copyright file="CollectorRequestHelper.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,11 +30,36 @@
 // limitations under the License.
 // </copyright>
 
+#nullable disable
+
+#if NET6_0_OR_GREATER
+using System.IO;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-public class TracesSettings
+internal static class CollectorRequestHelper
 {
-    public string Exporter => "otlp";
+    public static async Task<MemoryStream> ReadBodyToMemoryAsync(this HttpContext ctx)
+    {
+        if (!ctx.Request.Body.CanSeek)
+        {
+            // We only do this if the stream isn't *already* seekable,
+            // as EnableBuffering will create a new stream instance
+            // each time it's called
+            ctx.Request.EnableBuffering();
+        }
 
-    public int Port { get; set; }
+        ctx.Request.Body.Position = 0;
+
+        var inMemory = new MemoryStream();
+        await ctx.Request.Body.CopyToAsync(inMemory);
+
+        inMemory.Position = 0;
+
+        return inMemory;
+    }
 }
+
+#endif

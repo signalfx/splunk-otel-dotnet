@@ -1,4 +1,4 @@
-// <copyright file="HealthzHelper.cs" company="Splunk Inc.">
+// <copyright file="FirewallHelper.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="HealthzHelper.cs" company="OpenTelemetry Authors">
+// <copyright file="FirewallHelper.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,44 +32,26 @@
 
 #nullable disable
 
-using System;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-internal static class HealthzHelper
+public static class FirewallHelper
 {
-    public static async Task TestAsync(string healthzUrl, ITestOutputHelper output)
+    public static FirewallPort OpenWinPort(int port, ITestOutputHelper output)
     {
-        output.WriteLine($"Testing healthz endpoint: {healthzUrl}");
-        HttpClient client = new();
+        string ruleName = $"TraceAgent-{port}";
+        string psCommand = $"New-NetFirewallRule -DisplayName '{ruleName}' -Direction Inbound -LocalPort {port} -Protocol TCP -Action Allow -Profile Any";
 
-        var intervalMilliseconds = 500;
-        var maxMillisecondsToWait = 15_000;
-        var maxRetries = maxMillisecondsToWait / intervalMilliseconds;
-        for (int retry = 0; retry < maxRetries; retry++)
-        {
-            try
-            {
-                var response = await client.GetAsync(healthzUrl);
-                if (response.StatusCode == HttpStatusCode.OK)
-                {
-                    return;
-                }
+        PowershellHelper.RunCommand(psCommand, output);
 
-                output.WriteLine($"Healthz endpoint retured HTTP status code: {response.StatusCode}");
-            }
-            catch (Exception ex)
-            {
-                output.WriteLine($"Healthz endpoint call failed: {ex.Message}");
-            }
+        return new FirewallPort(port, ruleName, output);
+    }
 
-            await Task.Delay(intervalMilliseconds);
-        }
+    public static void CloseWinPort(string ruleName, ITestOutputHelper output)
+    {
+        string psCommand = $"Remove-NetFirewallRule -DisplayName {ruleName}";
 
-        throw new InvalidOperationException($"Healthz endpoint never returned OK: {healthzUrl}");
+        PowershellHelper.RunCommand(psCommand, output);
     }
 }

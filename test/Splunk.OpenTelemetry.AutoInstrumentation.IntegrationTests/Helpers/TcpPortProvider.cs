@@ -30,6 +30,8 @@
 // limitations under the License.
 // </copyright>
 
+#nullable disable
+
 using System.Net;
 using System.Net.Sockets;
 
@@ -44,14 +46,14 @@ public static class TcpPortProvider
 {
     public static int GetOpenPort()
     {
-        TcpListener? tcpListener = null;
+        TcpListener tcpListener = null;
 
         try
         {
             tcpListener = new TcpListener(IPAddress.Loopback, 0);
             tcpListener.Start();
 
-            var port = ((IPEndPoint)tcpListener.LocalEndpoint).Port;
+            int port = ((IPEndPoint)tcpListener.LocalEndpoint).Port;
 
             return port;
         }
