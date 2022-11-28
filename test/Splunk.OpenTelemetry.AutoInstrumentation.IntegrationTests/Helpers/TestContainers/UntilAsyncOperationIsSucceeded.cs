@@ -1,4 +1,4 @@
-// <copyright file="OutputHelper.cs" company="Splunk Inc.">
+// <copyright file="UntilAsyncOperationIsSucceeded.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="OutputHelper.cs" company="OpenTelemetry Authors">
+// <copyright file="UntilAsyncOperationIsSucceeded.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,28 +32,33 @@
 
 #nullable disable
 
-using Xunit.Abstractions;
+using System;
+using System.Threading.Tasks;
+using DotNet.Testcontainers.Configurations;
+using DotNet.Testcontainers.Containers;
+using Microsoft.Extensions.Logging;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers.TestContainers;
 
-public static class OutputHelper
+internal class UntilAsyncOperationIsSucceeded : IWaitUntil
 {
-    public static void WriteResult(this ITestOutputHelper outputHelper, ProcessHelper processHelper)
+    private readonly int _maxCallCount;
+    private readonly Func<Task<bool>> _operation;
+    private int _tryCount;
+
+    public UntilAsyncOperationIsSucceeded(Func<Task<bool>> operation, int maxCallCount)
     {
-        processHelper.Drain();
+        _operation = operation;
+        _maxCallCount = maxCallCount;
+    }
 
-        var standardOutput = processHelper.StandardOutput;
-        if (!string.IsNullOrWhiteSpace(standardOutput))
+    public async Task<bool> Until(ITestcontainersContainer testcontainers, ILogger logger)
+    {
+        if (++_tryCount > _maxCallCount)
         {
-            outputHelper.WriteLine("StandardOutput:");
-            outputHelper.WriteLine(standardOutput);
+            throw new TimeoutException($"Number of failed operations exceeded max count ({_maxCallCount}).");
         }
 
-        var standardError = processHelper.ErrorOutput;
-        if (!string.IsNullOrWhiteSpace(standardError))
-        {
-            outputHelper.WriteLine("StandardError:");
-            outputHelper.WriteLine(standardError);
-        }
+        return await _operation();
     }
 }

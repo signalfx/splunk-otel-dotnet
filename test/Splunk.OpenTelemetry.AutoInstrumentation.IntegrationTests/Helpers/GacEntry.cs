@@ -1,4 +1,4 @@
-// <copyright file="MetricsSettings.cs" company="Splunk Inc.">
+// <copyright file="GacEntry.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="MetricsSettings.cs" company="OpenTelemetry Authors">
+// <copyright file="GacEntry.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,11 +30,28 @@
 // limitations under the License.
 // </copyright>
 
+#nullable disable
+
+#if NETFRAMEWORK
+using System;
+using System.EnterpriseServices.Internal;
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-public class MetricsSettings
+public class GacEntry : IDisposable
 {
-    public string Exporter => "otlp";
+    private readonly string _assemblyPath;
+    private readonly Publish _publish = new Publish();
 
-    public int Port { get; set; }
+    public GacEntry(string assemblyPath)
+    {
+        _assemblyPath = assemblyPath;
+        _publish.GacInstall(assemblyPath);
+    }
+
+    public void Dispose()
+    {
+        _publish.GacRemove(_assemblyPath);
+    }
 }
+#endif
