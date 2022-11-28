@@ -21,9 +21,9 @@ using System.Linq;
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin
 {
     /// <summary>
-    /// Class providing injection of splunk distribution version.
+    /// Class providing injection of splunk resources.
     /// </summary>
-    public static class ResourceNameInjector
+    public static class ResourceInjector
     {
         private const string ResourceEnvVarKey = "OTEL_RESOURCE_ATTRIBUTES";
         private const string SplunkDistroVersionKey = "splunk.distro.version";
@@ -33,7 +33,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin
         /// <summary>
         /// Adds splunk plunk distribution version to the resources.
         /// </summary>
-        public static void AddSplunkResourceName()
+        public static void InjectSplunkDistributionVersion()
         {
             const string splunkDistroVersion = "v0.0.1-alpha.2";
 

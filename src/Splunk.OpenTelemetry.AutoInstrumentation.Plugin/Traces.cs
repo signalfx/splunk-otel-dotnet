@@ -30,7 +30,7 @@ public class Traces
     /// <returns>Returns <see cref="TracerProviderBuilder"/> for chaining.</returns>
     public TracerProviderBuilder ConfigureTracerProvider(TracerProviderBuilder builder)
     {
-        ResourceNameInjector.AddSplunkResourceName();
+        ResourceInjector.InjectSplunkDistributionVersion();
         return builder;
     }
 }
