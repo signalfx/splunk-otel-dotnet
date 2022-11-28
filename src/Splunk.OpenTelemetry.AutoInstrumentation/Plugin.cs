@@ -15,6 +15,7 @@
 // </copyright>
 
 using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
@@ -27,6 +28,7 @@ public class Plugin
 {
     private readonly Metrics _metrics = new();
     private readonly Traces _traces = new();
+    private readonly Logs _logs = new();
 
     /// <summary>
     /// Configures Metrics
@@ -64,5 +66,14 @@ public class Plugin
     public void ConfigureTracesOptions(OtlpExporterOptions options)
     {
         _traces.ConfigureTracesOptions(options);
+    }
+
+    /// <summary>
+    /// Configure metrics OpenTelemetryLoggerOptions options
+    /// </summary>
+    /// <param name="options"><see cref="OpenTelemetryLoggerOptions"/> to configure</param>
+    public void ConfigureLogsOptions(OpenTelemetryLoggerOptions options)
+    {
+        _logs.ConfigureLogsOptions(options);
     }
 }

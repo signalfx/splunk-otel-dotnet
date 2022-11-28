@@ -330,5 +330,7 @@ public class EnvironmentHelper
         CustomEnvironmentVariables["OTEL_TRACES_EXPORTER"] = "none";
         CustomEnvironmentVariables["OTEL_METRICS_EXPORTER"] = "none";
         CustomEnvironmentVariables["OTEL_LOGS_EXPORTER"] = "none";
+
+        CustomEnvironmentVariables["OTEL_DOTNET_AUTO_PLUGINS"] = "Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
     }
 }

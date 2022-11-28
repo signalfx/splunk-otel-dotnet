@@ -31,4 +31,8 @@
     <Protobuf Include="opentelemetry\**\*.proto" GrpcServices="none" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Splunk.OpenTelemetry.AutoInstrumentation\Splunk.OpenTelemetry.AutoInstrumentation.csproj" />
+  </ItemGroup>
+
 </Project>
