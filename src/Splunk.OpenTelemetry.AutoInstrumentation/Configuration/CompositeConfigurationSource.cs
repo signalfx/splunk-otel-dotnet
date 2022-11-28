@@ -35,7 +35,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Configuration;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 
 /// <summary>
 /// Represents one or more configuration sources.

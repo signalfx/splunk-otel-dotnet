@@ -97,13 +97,13 @@ class Build : NukeBuild
         .Executes(() =>
         {
             FileSystemTasks.CopyFileToDirectory(
-                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin" / "bin" / Configuration /
-                "netstandard2.0" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin.dll",
+                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
+                "netstandard2.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
                 OpenTelemetryDistributionFolder / "net");
 
             FileSystemTasks.CopyFileToDirectory(
-                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin" / "bin" / Configuration /
-                "netstandard2.0" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin.dll",
+                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
+                "netstandard2.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
                 OpenTelemetryDistributionFolder / "netfx");
         });
 
@@ -139,7 +139,7 @@ class Build : NukeBuild
         .After(Compile)
         .Executes(() =>
         {
-            var project = Solution.GetProject("Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests");
+            var project = Solution.GetProject("Splunk.OpenTelemetry.AutoInstrumentation.Tests");
 
             DotNetTest(s => s
                 .SetNoBuild(true)

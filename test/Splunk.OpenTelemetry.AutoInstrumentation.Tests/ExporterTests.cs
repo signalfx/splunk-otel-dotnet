@@ -17,7 +17,7 @@
 using System;
 using OpenTelemetry.Exporter;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 {
     public class ExporterTests
     {

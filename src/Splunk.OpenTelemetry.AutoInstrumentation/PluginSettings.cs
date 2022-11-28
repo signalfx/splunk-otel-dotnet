@@ -15,9 +15,9 @@
 // </copyright>
 
 using System;
-using Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Configuration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin;
+namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class PluginSettings
 {

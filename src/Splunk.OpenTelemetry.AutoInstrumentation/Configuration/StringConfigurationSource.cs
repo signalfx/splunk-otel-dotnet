@@ -1,4 +1,4 @@
-﻿// <copyright file="EnvironmentConfigurationSource.cs" company="Splunk Inc.">
+﻿// <copyright file="StringConfigurationSource.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="EnvironmentConfigurationSource.cs" company="OpenTelemetry Authors">
+// <copyright file="StringConfigurationSource.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,25 +30,43 @@
 // limitations under the License.
 // </copyright>
 
-using System;
+using System.Globalization;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Configuration;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 
-internal class EnvironmentConfigurationSource : StringConfigurationSource
+/// <summary>
+/// A base <see cref="IConfigurationSource"/> implementation
+/// for string-only configuration sources.
+/// </summary>
+internal abstract class StringConfigurationSource : IConfigurationSource
 {
     /// <inheritdoc />
-    public override string? GetString(string key)
-    {
-        try
-        {
-            return Environment.GetEnvironmentVariable(key);
-        }
-        catch
-        {
-            // We should not add a dependency from the Configuration system to the Logger system,
-            // so do nothing
-        }
+    public abstract string? GetString(string key);
 
-        return null;
+    /// <inheritdoc />
+    public virtual int? GetInt32(string key)
+    {
+        string? value = GetString(key);
+
+        return int.TryParse(value, out int result)
+            ? result
+            : null;
+    }
+
+    /// <inheritdoc />
+    public double? GetDouble(string key)
+    {
+        string? value = GetString(key);
+
+        return double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double result)
+            ? result
+            : null;
+    }
+
+    /// <inheritdoc />
+    public virtual bool? GetBool(string key)
+    {
+        string? value = GetString(key);
+        return bool.TryParse(value, out bool result) ? result : null;
     }
 }

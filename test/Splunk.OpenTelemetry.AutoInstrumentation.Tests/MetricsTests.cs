@@ -17,9 +17,9 @@
 using System.Collections.Specialized;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
-using Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Configuration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
 public class MetricsTests
 {

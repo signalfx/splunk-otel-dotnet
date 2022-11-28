@@ -1,4 +1,4 @@
-﻿// <copyright file="Traces.cs" company="Splunk Inc.">
+﻿// <copyright file="Metrics.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,41 +16,41 @@
 
 using System;
 using OpenTelemetry.Exporter;
-using OpenTelemetry.Trace;
+using OpenTelemetry.Metrics;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin;
+namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 /// <summary>
-/// Splunk OTel traces plugin
+/// Splunk OTel metrics plugin
 /// </summary>
-public class Traces
+public class Metrics
 {
     private readonly PluginSettings _settings;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Traces"/> class.
+    /// Initializes a new instance of the <see cref="Metrics"/> class.
     /// </summary>
-    public Traces()
+    public Metrics()
         : this(PluginSettings.FromDefaultSources())
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Traces"/> class.
+    /// Initializes a new instance of the <see cref="Metrics"/> class.
     /// This is constructor is for testing purposes.
     /// </summary>
-    /// <param name="settings">PluginSettins instance</param>
-    internal Traces(PluginSettings settings)
+    /// <param name="settings">PluginSettings instance</param>
+    internal Metrics(PluginSettings settings)
     {
         _settings = settings;
     }
 
     /// <summary>
-    /// Configures Traces
+    /// Configures Metrics
     /// </summary>
-    /// <param name="builder"><see cref="TracerProviderBuilder"/> to configure</param>
-    /// <returns>Returns <see cref="TracerProviderBuilder"/> for chaining.</returns>
-    public TracerProviderBuilder ConfigureTracerProvider(TracerProviderBuilder builder)
+    /// <param name="builder"><see cref="MeterProviderBuilder"/> to configure</param>
+    /// <returns>Returns <see cref="MeterProviderBuilder"/> for chaining.</returns>
+    public MeterProviderBuilder ConfigureMeterProvider(MeterProviderBuilder builder)
     {
         return builder;
     }
@@ -63,7 +63,7 @@ public class Traces
     {
         if (!_settings.IsOtlpEndpointSet && _settings.Realm != null)
         {
-            options.Endpoint = new Uri(string.Format(Constants.Ingest.TracesIngestTemplate, _settings.Realm));
+            options.Endpoint = new Uri(string.Format(Constants.Ingest.MetricsIngestTemplate, _settings.Realm));
         }
 
         if (_settings.AccessToken != null)

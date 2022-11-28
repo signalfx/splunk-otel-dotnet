@@ -1,4 +1,4 @@
-﻿// <copyright file="StringConfigurationSource.cs" company="Splunk Inc.">
+﻿// <copyright file="NameValueConfigurationSource.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="StringConfigurationSource.cs" company="OpenTelemetry Authors">
+// <copyright file="NameValueConfigurationSource.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,43 +30,31 @@
 // limitations under the License.
 // </copyright>
 
-using System.Globalization;
+using System.Collections.Specialized;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Configuration;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 
 /// <summary>
-/// A base <see cref="IConfigurationSource"/> implementation
-/// for string-only configuration sources.
+/// Represents a configuration source that retrieves
+/// values from the provided <see cref="NameValueCollection"/>.
 /// </summary>
-internal abstract class StringConfigurationSource : IConfigurationSource
+internal class NameValueConfigurationSource : StringConfigurationSource
 {
-    /// <inheritdoc />
-    public abstract string? GetString(string key);
+    private readonly NameValueCollection _nameValueCollection;
 
-    /// <inheritdoc />
-    public virtual int? GetInt32(string key)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NameValueConfigurationSource"/> class
+    /// that wraps the specified <see cref="NameValueCollection"/>.
+    /// </summary>
+    /// <param name="nameValueCollection">The collection that will be wrapped by this configuration source.</param>
+    public NameValueConfigurationSource(NameValueCollection nameValueCollection)
     {
-        string? value = GetString(key);
-
-        return int.TryParse(value, out int result)
-            ? result
-            : null;
+        _nameValueCollection = nameValueCollection;
     }
 
     /// <inheritdoc />
-    public double? GetDouble(string key)
+    public override string GetString(string key)
     {
-        string? value = GetString(key);
-
-        return double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double result)
-            ? result
-            : null;
-    }
-
-    /// <inheritdoc />
-    public virtual bool? GetBool(string key)
-    {
-        string? value = GetString(key);
-        return bool.TryParse(value, out bool result) ? result : null;
+        return _nameValueCollection[key];
     }
 }

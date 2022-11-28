@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Splunk.OpenTelemetry.AutoInstrumentation.Plugin\Splunk.OpenTelemetry.AutoInstrumentation.Plugin.csproj" />
+    <ProjectReference Include="..\..\src\Splunk.OpenTelemetry.AutoInstrumentation\Splunk.OpenTelemetry.AutoInstrumentation.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="xunit.runner.json">
