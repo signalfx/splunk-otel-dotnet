@@ -18,15 +18,18 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin;
 
 internal static class ConfigurationKeys
 {
-    /// <summary>
-    /// Configuration key for realm.
-    /// </summary>
-    public const string Realm = "SPLUNK_REALM";
+    public static class Splunk
+    {
+        /// <summary>
+        /// Configuration key for realm.
+        /// </summary>
+        public const string Realm = "SPLUNK_REALM";
 
-    /// <summary>
-    /// Configuration key for access token.
-    /// </summary>
-    public const string AccessToken = "SPLUNK_ACCESS_TOKEN";
+        /// <summary>
+        /// Configuration key for access token.
+        /// </summary>
+        public const string AccessToken = "SPLUNK_ACCESS_TOKEN";
+    }
 
     public static class OpenTelemetry
     {

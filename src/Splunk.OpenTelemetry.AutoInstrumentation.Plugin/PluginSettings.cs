@@ -33,9 +33,9 @@ internal class PluginSettings
             throw new ArgumentNullException(nameof(source));
         }
 
-        Realm = source.GetString(ConfigurationKeys.Realm);
-        AccessToken = source.GetString(ConfigurationKeys.AccessToken);
-        IsOtlpEndpointSet = source.GetString(ConfigurationKeys.OpenTelemetry.OtlpEndpoint) != null;
+        Realm = source.GetString(ConfigurationKeys.Splunk.Realm);
+        AccessToken = source.GetString(ConfigurationKeys.Splunk.AccessToken);
+        IsOtlpEndpointSet = !string.IsNullOrEmpty(source.GetString(ConfigurationKeys.OpenTelemetry.OtlpEndpoint));
     }
 
     public bool IsOtlpEndpointSet { get; set; }
