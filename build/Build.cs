@@ -149,6 +149,7 @@ class Build : NukeBuild
 
     Target RunIntegrationTests => _ => _
         .After(Compile)
+        .After(AddSplunkPlugins)
         .Executes(() =>
         {
             var project = Solution.GetProject("Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests");
