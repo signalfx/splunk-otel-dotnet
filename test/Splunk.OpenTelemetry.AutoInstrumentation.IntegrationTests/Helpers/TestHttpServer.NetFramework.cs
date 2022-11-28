@@ -1,4 +1,4 @@
-// <copyright file="TestHttpListener.cs" company="Splunk Inc.">
+// <copyright file="TestHttpServer.NetFramework.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="TestHttpListener.cs" company="OpenTelemetry Authors">
+// <copyright file="TestHttpServer.NetFramework.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,63 +30,39 @@
 // limitations under the License.
 // </copyright>
 
+#nullable disable
+
+#if NETFRAMEWORK
+
 using System;
 using System.Net;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-public class TestHttpListener : IDisposable
+public class TestHttpServer : IDisposable
 {
     private readonly ITestOutputHelper _output;
     private readonly Action<HttpListenerContext> _requestHandler;
     private readonly HttpListener _listener;
-    private readonly string _prefix;
+    private readonly Thread _listenerThread;
 
-    public TestHttpListener(ITestOutputHelper output, Action<HttpListenerContext> requestHandler, string host, string sufix = "/")
+    public TestHttpServer(ITestOutputHelper output, Action<HttpListenerContext> requestHandler, string host, string sufix = "/")
     {
         _output = output;
         _requestHandler = requestHandler;
 
-        // try up to 5 consecutive ports before giving up
-        int retries = 4;
-        while (true)
-        {
-            // seems like we can't reuse a listener if it fails to start,
-            // so create a new listener each time we retry
-            _listener = new HttpListener();
+        Port = TcpPortProvider.GetOpenPort();
 
-            try
-            {
-                _listener.Start();
+        _listener = new HttpListener();
+        _listener.Start();
+        var prefix = new UriBuilder("http", host, Port, sufix).ToString(); // See https://docs.microsoft.com/en-us/dotnet/api/system.net.httplistenerprefixcollection.add?redirectedfrom=MSDN&view=net-6.0#remarks for info about the host value.
+        _listener.Prefixes.Add(prefix);
+        WriteOutput($"Listening on '{prefix}'");
 
-                // See https://docs.microsoft.com/en-us/dotnet/api/system.net.httplistenerprefixcollection.add?redirectedfrom=MSDN&view=net-6.0#remarks
-                // for info about the host value.
-                Port = TcpPortProvider.GetOpenPort();
-                _prefix = new UriBuilder("http", host, Port, sufix).ToString();
-                _listener.Prefixes.Add(_prefix);
-
-                // successfully listening
-                var listenerThread = new Thread(HandleHttpRequests);
-                listenerThread.Start();
-                WriteOutput($"Listening on '{_prefix}'");
-
-                return;
-            }
-            catch (HttpListenerException) when (retries > 0)
-            {
-                retries--;
-            }
-
-            // always close listener if exception is thrown,
-            // whether it was caught or not
-            _listener.Close();
-
-            WriteOutput("Listener shut down. Could not find available port.");
-        }
+        _listenerThread = new Thread(HandleHttpRequests);
+        _listenerThread.Start();
     }
 
     /// <summary>
@@ -94,17 +70,11 @@ public class TestHttpListener : IDisposable
     /// </summary>
     public int Port { get; }
 
-    public Task<bool> VerifyHealthzAsync()
-    {
-        var healhtzEndpoint = $"{_prefix.Replace("*", "localhost")}/healthz";
-
-        return HealthzHelper.TestHealtzAsync(healhtzEndpoint, nameof(MockTracesCollector), _output);
-    }
-
     public void Dispose()
     {
-        WriteOutput("Listener is shutting down.");
-        _listener.Stop();
+        WriteOutput($"Shutting down");
+        _listener.Close();
+        _listenerThread.Join();
     }
 
     private void HandleHttpRequests()
@@ -114,16 +84,6 @@ public class TestHttpListener : IDisposable
             try
             {
                 var ctx = _listener.GetContext();
-                var rawUrl = ctx.Request.RawUrl;
-                if (rawUrl != null)
-                {
-                    if (rawUrl.EndsWith("/healthz", StringComparison.OrdinalIgnoreCase))
-                    {
-                        CreateHealthResponse(ctx);
-                        continue;
-                    }
-                }
-
                 _requestHandler(ctx);
             }
             catch (HttpListenerException)
@@ -153,19 +113,10 @@ public class TestHttpListener : IDisposable
         }
     }
 
-    private void CreateHealthResponse(HttpListenerContext ctx)
-    {
-        ctx.Response.ContentType = "text/plain";
-        var buffer = Encoding.UTF8.GetBytes("OK");
-        ctx.Response.ContentLength64 = buffer.LongLength;
-        ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
-        ctx.Response.StatusCode = (int)HttpStatusCode.OK;
-        ctx.Response.Close();
-    }
-
     private void WriteOutput(string msg)
     {
-        const string name = nameof(TestHttpListener);
+        const string name = nameof(TestHttpServer);
         _output.WriteLine($"[{name}]: {msg}");
     }
 }
+#endif

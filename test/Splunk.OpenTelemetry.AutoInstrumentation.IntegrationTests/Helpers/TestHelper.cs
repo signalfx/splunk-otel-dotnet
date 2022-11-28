@@ -30,9 +30,12 @@
 // limitations under the License.
 // </copyright>
 
+#nullable disable
+
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using FluentAssertions;
 using Xunit.Abstractions;
 
@@ -40,9 +43,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 public abstract class TestHelper
 {
-    // Warning: Long timeouts can cause integer overflow!
-    private static readonly TimeSpan DefaultProcessTimeout = TimeSpan.FromMinutes(5);
-
     protected TestHelper(string testApplicationName, ITestOutputHelper output)
     {
         Output = output;
@@ -59,58 +59,100 @@ public abstract class TestHelper
 
     protected ITestOutputHelper Output { get; }
 
-    public void RunTestApplication(int traceAgentPort = 0, int metricsAgentPort = 0, string? arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool enableStartupHook = true, bool enableClrProfiler = true)
+    /// <summary>
+    /// Gets the path for the test assembly, not the shadow copy created by xunit.
+    /// </summary>
+    /// <returns>Path for the test assembly</returns>
+    public string GetTestAssemblyPath()
     {
-        var testSettings = new TestSettings
-        {
-            Arguments = arguments,
-            PackageVersion = packageVersion,
-            AspNetCorePort = aspNetCorePort,
-            Framework = framework,
-            EnableStartupHook = enableStartupHook,
-            EnableClrProfiler = enableClrProfiler
-        };
-
-        if (traceAgentPort != 0)
-        {
-            testSettings.TracesSettings = new() { Port = traceAgentPort };
-        }
-
-        if (metricsAgentPort != 0)
-        {
-            testSettings.MetricsSettings = new() { Port = metricsAgentPort };
-        }
-
-        RunTestApplication(testSettings);
+#if NETFRAMEWORK
+        // CodeBase is deprecated outside .NET Framework, instead of suppressing the error
+        // build the code as per recommendation for each runtime.
+        var codeBaseUrl = new Uri(Assembly.GetExecutingAssembly().CodeBase);
+        var codeBasePath = Uri.UnescapeDataString(codeBaseUrl.AbsolutePath);
+        var directory = Path.GetDirectoryName(codeBasePath);
+        return Path.GetFullPath(directory);
+#else
+        return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+#endif
     }
 
-    protected void SetEnvironmentVariable(string key, string value)
+    public void SetEnvironmentVariable(string key, string value)
     {
-        EnvironmentHelper.CustomEnvironmentVariables.Add(key, value);
+        EnvironmentHelper.CustomEnvironmentVariables[key] = value;
     }
 
-    private void RunTestApplication(TestSettings testSettings)
+    public void RemoveEnvironmentVariable(string key)
     {
+        EnvironmentHelper.CustomEnvironmentVariables.Remove(key);
+    }
+
+    public void SetExporter(MockSpansCollector collector)
+    {
+        SetEnvironmentVariable("OTEL_TRACES_EXPORTER", "otlp");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://localhost:{collector.Port}");
+    }
+
+    public void SetExporter(MockMetricsCollector collector)
+    {
+        SetEnvironmentVariable("OTEL_METRICS_EXPORTER", "otlp");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://localhost:{collector.Port}");
+    }
+
+    public void SetExporter(MockLogsCollector collector)
+    {
+        SetEnvironmentVariable("OTEL_LOGS_EXPORTER", "otlp");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://localhost:{collector.Port}");
+    }
+
+    public void EnableBytecodeInstrumentation()
+    {
+        SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
+    }
+
+    public void EnableDefaultExporters()
+    {
+        RemoveEnvironmentVariable("OTEL_TRACES_EXPORTER");
+        RemoveEnvironmentVariable("OTEL_METRICS_EXPORTER");
+        RemoveEnvironmentVariable("OTEL_LOGS_EXPORTER");
+    }
+
+    /// <summary>
+    /// RunTestApplication starts the test application, wait up to DefaultProcessTimeout.
+    /// Assertion exceptions are thrown if it timed out or the exit code is non-zero.
+    /// </summary>
+    /// <param name="testSettings">Test settings</param>
+    public void RunTestApplication(TestSettings testSettings = null)
+    {
+        testSettings ??= new();
         using var process = StartTestApplication(testSettings);
-        Output.WriteLine($"ProcessName: {process?.ProcessName}");
+        Output.WriteLine($"ProcessName: " + process.ProcessName);
         using var helper = new ProcessHelper(process);
 
-        var processTimeout = !process?.WaitForExit((int)DefaultProcessTimeout.TotalMilliseconds);
-        if (processTimeout.HasValue && processTimeout.Value)
+        bool processTimeout = !process.WaitForExit((int)Timeout.ProcessExit.TotalMilliseconds);
+        if (processTimeout)
         {
-            process?.Kill();
+            process.Kill();
         }
 
-        Output.WriteLine($"ProcessId: {process?.Id}");
-        Output.WriteLine($"Exit Code: {process?.ExitCode}");
+        Output.WriteLine("ProcessId: " + process.Id);
+        Output.WriteLine("Exit Code: " + process.ExitCode);
         Output.WriteResult(helper);
 
         processTimeout.Should().BeFalse("Test application timed out");
-        process?.ExitCode.Should().Be(0, "Test application exited with non-zero exit code");
+        process.ExitCode.Should().Be(0, "Test application exited with non-zero exit code");
     }
 
-    private Process? StartTestApplication(TestSettings testSettings)
+    /// <summary>
+    /// StartTestApplication starts the test application
+    /// and returns the Process instance for further interaction.
+    /// </summary>
+    /// <param name="testSettings">Test settings</param>
+    /// <returns>Test application process</returns>
+    public Process StartTestApplication(TestSettings testSettings = null)
     {
+        testSettings ??= new();
+
         // get path to test application that the profiler will attach to
         string testApplicationPath = EnvironmentHelper.GetTestApplicationPath(testSettings.PackageVersion, testSettings.Framework);
         if (!File.Exists(testApplicationPath))
@@ -121,11 +163,6 @@ public abstract class TestHelper
         Output.WriteLine($"Starting Application: {testApplicationPath}");
         var executable = EnvironmentHelper.IsCoreClr() ? EnvironmentHelper.GetTestApplicationExecutionSource() : testApplicationPath;
         var args = EnvironmentHelper.IsCoreClr() ? $"{testApplicationPath} {testSettings.Arguments ?? string.Empty}" : testSettings.Arguments;
-
-        return InstrumentedProcessHelper.StartInstrumentedProcess(
-            executable,
-            EnvironmentHelper,
-            args,
-            testSettings);
+        return InstrumentedProcessHelper.Start(executable, args, EnvironmentHelper);
     }
 }

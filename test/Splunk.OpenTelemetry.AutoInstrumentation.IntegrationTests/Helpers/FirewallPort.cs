@@ -1,4 +1,4 @@
-// <copyright file="HealthzHelper.cs" company="Splunk Inc.">
+// <copyright file="FirewallPort.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="HealthzHelper.cs" company="OpenTelemetry Authors">
+// <copyright file="FirewallPort.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,43 +33,28 @@
 #nullable disable
 
 using System;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-internal static class HealthzHelper
+public class FirewallPort : IDisposable
 {
-    public static async Task TestAsync(string healthzUrl, ITestOutputHelper output)
+    private readonly ITestOutputHelper _output;
+
+    public FirewallPort(int port, string rule, ITestOutputHelper output)
     {
-        output.WriteLine($"Testing healthz endpoint: {healthzUrl}");
-        HttpClient client = new();
+        _output = output;
 
-        var intervalMilliseconds = 500;
-        var maxMillisecondsToWait = 15_000;
-        var maxRetries = maxMillisecondsToWait / intervalMilliseconds;
-        for (int retry = 0; retry < maxRetries; retry++)
-        {
-            try
-            {
-                var response = await client.GetAsync(healthzUrl);
-                if (response.StatusCode == HttpStatusCode.OK)
-                {
-                    return;
-                }
+        Port = port;
+        Rule = rule;
+    }
 
-                output.WriteLine($"Healthz endpoint retured HTTP status code: {response.StatusCode}");
-            }
-            catch (Exception ex)
-            {
-                output.WriteLine($"Healthz endpoint call failed: {ex.Message}");
-            }
+    public int Port { get; }
 
-            await Task.Delay(intervalMilliseconds);
-        }
+    public string Rule { get; }
 
-        throw new InvalidOperationException($"Healthz endpoint never returned OK: {healthzUrl}");
+    public void Dispose()
+    {
+        FirewallHelper.CloseWinPort(Rule, _output);
     }
 }

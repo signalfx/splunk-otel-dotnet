@@ -1,4 +1,4 @@
-// <copyright file="OutputHelper.cs" company="Splunk Inc.">
+// <copyright file="Timeout.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="OutputHelper.cs" company="OpenTelemetry Authors">
+// <copyright file="Timeout.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,28 +32,13 @@
 
 #nullable disable
 
-using Xunit.Abstractions;
+using System;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-public static class OutputHelper
+internal static class Timeout
 {
-    public static void WriteResult(this ITestOutputHelper outputHelper, ProcessHelper processHelper)
-    {
-        processHelper.Drain();
-
-        var standardOutput = processHelper.StandardOutput;
-        if (!string.IsNullOrWhiteSpace(standardOutput))
-        {
-            outputHelper.WriteLine("StandardOutput:");
-            outputHelper.WriteLine(standardOutput);
-        }
-
-        var standardError = processHelper.ErrorOutput;
-        if (!string.IsNullOrWhiteSpace(standardError))
-        {
-            outputHelper.WriteLine("StandardError:");
-            outputHelper.WriteLine(standardError);
-        }
-    }
+    public static readonly TimeSpan ProcessExit = TimeSpan.FromMinutes(5); // caution: long timeouts can cause integer overflow!
+    public static readonly TimeSpan Expectation = TimeSpan.FromMinutes(1); // long to avoid flaky tests
+    public static readonly TimeSpan NoExpectation = TimeSpan.FromSeconds(3); // short to not make the tests unnecessary long
 }

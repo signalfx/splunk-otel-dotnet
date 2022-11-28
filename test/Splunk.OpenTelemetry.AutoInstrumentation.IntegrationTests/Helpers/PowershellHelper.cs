@@ -1,4 +1,4 @@
-// <copyright file="LogSettings.cs" company="Splunk Inc.">
+// <copyright file="PowershellHelper.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="LogSettings.cs" company="OpenTelemetry Authors">
+// <copyright file="PowershellHelper.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,11 +30,33 @@
 // limitations under the License.
 // </copyright>
 
+#nullable disable
+
+using System.Diagnostics;
+using Xunit.Abstractions;
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-public class LogSettings
+public static class PowershellHelper
 {
-    public string Exporter => "otlp";
+    public static (string StandardOutput, string ErrorOutput) RunCommand(string psCommand, ITestOutputHelper outputHelper)
+    {
+        ProcessStartInfo startInfo = new ProcessStartInfo();
+        startInfo.FileName = @"powershell.exe";
+        startInfo.Arguments = $"& {psCommand}";
+        startInfo.RedirectStandardOutput = true;
+        startInfo.RedirectStandardError = true;
+        startInfo.UseShellExecute = false;
+        startInfo.CreateNoWindow = true;
+        startInfo.Verb = "runas";
 
-    public int Port { get; set; }
+        Process process = Process.Start(startInfo);
+        ProcessHelper helper = new ProcessHelper(process);
+        process.WaitForExit();
+
+        outputHelper.WriteLine($"PS> {psCommand}");
+        outputHelper.WriteResult(helper);
+
+        return (helper.StandardOutput, helper.ErrorOutput);
+    }
 }

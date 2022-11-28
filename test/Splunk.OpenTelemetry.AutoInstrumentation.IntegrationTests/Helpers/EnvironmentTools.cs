@@ -30,10 +30,13 @@
 // limitations under the License.
 // </copyright>
 
+#nullable disable
+
 using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
@@ -43,15 +46,16 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 public static class EnvironmentTools
 {
     public const string ProfilerClsId = "{918728DD-259F-4A6A-AC2B-B85E1B658318}";
+    public const string DotNetFramework = ".NETFramework";
     public const string CoreFramework = ".NETCoreApp";
 
-    private static string? _solutionDirectory;
+    private static string _solutionDirectory = null;
 
     /// <summary>
     /// Find the solution directory from anywhere in the hierarchy.
     /// </summary>
     /// <returns>The solution directory.</returns>
-    public static string? GetSolutionDirectory()
+    public static string GetSolutionDirectory()
     {
         if (_solutionDirectory == null)
         {
@@ -61,14 +65,14 @@ public static class EnvironmentTools
 
             while (true)
             {
-                var slnFile = currentDirectory?.GetFiles(searchItem).SingleOrDefault();
+                var slnFile = currentDirectory.GetFiles(searchItem).SingleOrDefault();
 
                 if (slnFile != null)
                 {
                     break;
                 }
 
-                currentDirectory = currentDirectory?.Parent;
+                currentDirectory = currentDirectory.Parent;
 
                 if (currentDirectory == null || !currentDirectory.Exists)
                 {
@@ -76,13 +80,13 @@ public static class EnvironmentTools
                 }
             }
 
-            _solutionDirectory = currentDirectory?.FullName;
+            _solutionDirectory = currentDirectory.FullName;
         }
 
         return _solutionDirectory;
     }
 
-    public static string GetOs()
+    public static string GetOS()
     {
         return IsWindows() ? "win" :
             RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux" :
@@ -90,9 +94,34 @@ public static class EnvironmentTools
             string.Empty;
     }
 
+    public static bool IsLinux()
+    {
+        return RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+    }
+
     public static bool IsWindows()
     {
         return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+    }
+
+    public static bool IsWindowsAdministrator()
+    {
+        if (!IsWindows())
+        {
+            return false;
+        }
+
+#pragma warning disable CA1416 // Validate platform compatibility
+        using var identity = WindowsIdentity.GetCurrent();
+        var principal = new WindowsPrincipal(identity);
+
+        return principal.IsInRole(WindowsBuiltInRole.Administrator);
+#pragma warning restore CA1416 // Validate platform compatibility
+    }
+
+    public static bool IsMacOS()
+    {
+        return RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
     }
 
     public static string GetPlatform()
