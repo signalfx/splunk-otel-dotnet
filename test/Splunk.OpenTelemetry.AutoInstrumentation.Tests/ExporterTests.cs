@@ -32,7 +32,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             var settings = PluginSettings.FromDefaultSources();
 
             var options = new OtlpExporterOptions();
-            new Metrics(settings).ConfigureOptions(options);
+            new Metrics(settings).ConfigureMetricsOptions(options);
 
             options.Endpoint.Should().Be(endpoint);
 
