@@ -7,14 +7,11 @@ function Get-Current-InstallDir() {
 }
 
 function Get-CLIInstallDir-From-InstallDir([string]$InstallDir) {
-    $dir = "Splunk OpenTelemetry .NET"
+    $dir = "OpenTelemetry .NET AutoInstrumentation"
     
-    if ($InstallDir -eq "<auto>" -or $installDir -eq "AppData") {
-        return (Join-Path $env:LOCALAPPDATA "Programs" | Join-Path -ChildPath $dir)
-    }
-    elseif ($InstallDir -eq "ProgramFiles") {
+    if ($InstallDir -eq "<auto>") {
         return (Join-Path $Env:ProgramFiles $dir)
-    } 
+    }
     elseif (Test-Path $InstallDir -IsValid) {
         return $InstallDir
     }
@@ -63,7 +60,7 @@ function Get-Environment-Variables-Table([string]$InstallDir, [string]$OTelServi
 
     $DOTNET_ADDITIONAL_DEPS = Join-Path $InstallDir "AdditionalDeps"
     $DOTNET_SHARED_STORE = Join-Path $InstallDir "store"
-    $DOTNET_STARTUP_HOOKS = Join-Path $InstallDir "netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+    $DOTNET_STARTUP_HOOKS = Join-Path $InstallDir "net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
 
     $OTEL_DOTNET_AUTO_HOME = $InstallDir
     $OTEL_DOTNET_AUTO_INTEGRATIONS_FILE = Join-Path $InstallDir "integrations.json"
@@ -87,7 +84,8 @@ function Get-Environment-Variables-Table([string]$InstallDir, [string]$OTelServi
         "DOTNET_STARTUP_HOOKS"                = $DOTNET_STARTUP_HOOKS;
         # OpenTelemetry
         "OTEL_DOTNET_AUTO_HOME"               = $OTEL_DOTNET_AUTO_HOME;
-        "OTEL_DOTNET_AUTO_INTEGRATIONS_FILE"  = $OTEL_DOTNET_AUTO_INTEGRATIONS_FILE
+        "OTEL_DOTNET_AUTO_INTEGRATIONS_FILE"  = $OTEL_DOTNET_AUTO_INTEGRATIONS_FILE;
+        "OTEL_DOTNET_AUTO_PLUGINS"            = "Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation.Plugin";
     }
 
     if (-not [string]::IsNullOrWhiteSpace($OTelServiceName)) {
@@ -327,6 +325,9 @@ function Unregister-OpenTelemetryForCurrentSession() {
 
     # OpenTelemetry
     Get-ChildItem env: | Where-Object { $_.Name -like "OTEL_DOTNET_*" } | ForEach-Object { Set-Item "env:$($_.Name)" $null }
+
+    # Splunk
+    Get-ChildItem env: | Where-Object { $_.Name -like "SPLUNK_*" } | ForEach-Object { Set-Item "env:$($_.Name)" $null }
 }
 
 <#
