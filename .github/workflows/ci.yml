@@ -44,7 +44,7 @@ jobs:
         shell: powershell
         run: |
           $log_path = "C:\ProgramData\OpenTelemetry .NET AutoInstrumentation\logs\*"
-          Import-Module Splunk.OTel.DotNet.psm1
+          Import-Module "${PWD}/Splunk.OTel.DotNet.psm1"
           [System.Environment]::SetEnvironmentVariable("SPLUNK_OTEL_DOTNET_AUTO_INSTALL_DIR", "${PWD}\OpenTelemetryDistribution", [System.EnvironmentVariableTarget]::Machine)
           Register-OpenTelemetryForCurrentSession -OTelServiceName "MyServiceDisplayName"
           dotnet help
