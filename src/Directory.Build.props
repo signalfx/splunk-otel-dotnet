@@ -2,7 +2,7 @@
   <Import Project="..\Directory.Build.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net462;net6.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <!-- NuGet packages -->

@@ -29,6 +29,11 @@ internal static class ConfigurationKeys
         /// Configuration key for access token.
         /// </summary>
         public const string AccessToken = "SPLUNK_ACCESS_TOKEN";
+
+        /// <summary>
+        /// Configuration key for enabling splunk context server timing header.
+        /// </summary>
+        public const string TraceResponseHeaderEnabled = "SIGNALFX_TRACE_RESPONSE_HEADER_ENABLED";
     }
 
     public static class OpenTelemetry

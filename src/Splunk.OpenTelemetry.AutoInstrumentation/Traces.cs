@@ -15,8 +15,16 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Trace;
+
+#if NETFRAMEWORK
+using System.Web;
+using OpenTelemetry.Instrumentation.AspNet;
+#else
+using OpenTelemetry.Instrumentation.AspNetCore;
+#endif
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
@@ -38,6 +46,41 @@ internal class Traces
     {
         return builder.ConfigureResource(ResourceConfigurator.Configure);
     }
+
+#if NETFRAMEWORK
+    public void ConfigureTracesOptions(AspNetInstrumentationOptions options)
+    {
+        if (_settings.TraceResponseHeaderEnabled)
+        {
+            options.Enrich = (activity, eventName, obj) =>
+            {
+                if (eventName == "OnStopActivity" && obj is HttpResponse response)
+                {
+                    ServerTimingHeader.SetHeaders(activity, response.Headers, (headers, key, value) =>
+                    {
+                        headers[key] = value;
+                    });
+                }
+            };
+        }
+    }
+#endif
+
+#if NET6_0_OR_GREATER
+    public void ConfigureTracesOptions(AspNetCoreInstrumentationOptions options)
+    {
+        if (_settings.TraceResponseHeaderEnabled)
+        {
+            options.EnrichWithHttpResponse = (activity, response) =>
+            {
+                ServerTimingHeader.SetHeaders(activity, response.Headers, (headers, key, value) =>
+                {
+                    headers.TryAdd(key, value);
+                });
+            };
+        }
+    }
+#endif
 
     public void ConfigureTracesOptions(OtlpExporterOptions options)
     {

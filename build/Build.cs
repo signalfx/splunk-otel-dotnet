@@ -98,14 +98,14 @@ class Build : NukeBuild
         {
             FileSystemTasks.CopyFileToDirectory(
                 RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
-                "netstandard2.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
+                "net6.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
                 OpenTelemetryDistributionFolder / "net");
 
             if (EnvironmentInfo.IsWin)
             {
                 FileSystemTasks.CopyFileToDirectory(
                     RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
-                    "netstandard2.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
+                    "net462" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
                     OpenTelemetryDistributionFolder / "netfx");
             }
         });
