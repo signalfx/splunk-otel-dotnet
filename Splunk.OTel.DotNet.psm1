@@ -88,6 +88,8 @@ function Get-Environment-Variables-Table([string]$InstallDir, [string]$OTelServi
         # OpenTelemetry
         "OTEL_DOTNET_AUTO_HOME"               = $OTEL_DOTNET_AUTO_HOME;
         "OTEL_DOTNET_AUTO_INTEGRATIONS_FILE"  = $OTEL_DOTNET_AUTO_INTEGRATIONS_FILE
+        # Splunk distribution
+        "OTEL_DOTNET_AUTO_PLUGINS"            = "Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
     }
 
     if (-not [string]::IsNullOrWhiteSpace($OTelServiceName)) {
