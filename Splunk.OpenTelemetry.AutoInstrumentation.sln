@@ -23,14 +23,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6564E602-76C
 		src\Directory.Build.props = src\Directory.Build.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Splunk.OpenTelemetry.AutoInstrumentation.Plugin", "src\Splunk.OpenTelemetry.AutoInstrumentation.Plugin\Splunk.OpenTelemetry.AutoInstrumentation.Plugin.csproj", "{689B9DC2-EB4B-4FAA-A858-59D9CCF97EB6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Splunk.OpenTelemetry.AutoInstrumentation", "src\Splunk.OpenTelemetry.AutoInstrumentation\Splunk.OpenTelemetry.AutoInstrumentation.csproj", "{689B9DC2-EB4B-4FAA-A858-59D9CCF97EB6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{14A731B9-4F09-43E6-B64C-98E7E6EDA0EA}"
 	ProjectSection(SolutionItems) = preProject
 		test\Directory.Build.props = test\Directory.Build.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests", "test\Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests\Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests.csproj", "{EE47BEF0-40C5-4AB3-91B6-9CBB420BD59B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Splunk.OpenTelemetry.AutoInstrumentation.Tests", "test\Splunk.OpenTelemetry.AutoInstrumentation.Tests\Splunk.OpenTelemetry.AutoInstrumentation.Tests.csproj", "{EE47BEF0-40C5-4AB3-91B6-9CBB420BD59B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{23A5DC4E-0639-43D6-B7A6-A6249968D19C}"
 EndProject

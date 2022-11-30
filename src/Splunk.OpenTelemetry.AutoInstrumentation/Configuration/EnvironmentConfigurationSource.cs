@@ -1,4 +1,4 @@
-﻿// <copyright file="NameValueConfigurationSource.cs" company="Splunk Inc.">
+﻿// <copyright file="EnvironmentConfigurationSource.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="NameValueConfigurationSource.cs" company="OpenTelemetry Authors">
+// <copyright file="EnvironmentConfigurationSource.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,31 +30,25 @@
 // limitations under the License.
 // </copyright>
 
-using System.Collections.Specialized;
+using System;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Configuration;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 
-/// <summary>
-/// Represents a configuration source that retrieves
-/// values from the provided <see cref="NameValueCollection"/>.
-/// </summary>
-internal class NameValueConfigurationSource : StringConfigurationSource
+internal class EnvironmentConfigurationSource : StringConfigurationSource
 {
-    private readonly NameValueCollection _nameValueCollection;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="NameValueConfigurationSource"/> class
-    /// that wraps the specified <see cref="NameValueCollection"/>.
-    /// </summary>
-    /// <param name="nameValueCollection">The collection that will be wrapped by this configuration source.</param>
-    public NameValueConfigurationSource(NameValueCollection nameValueCollection)
-    {
-        _nameValueCollection = nameValueCollection;
-    }
-
     /// <inheritdoc />
-    public override string GetString(string key)
+    public override string? GetString(string key)
     {
-        return _nameValueCollection[key];
+        try
+        {
+            return Environment.GetEnvironmentVariable(key);
+        }
+        catch
+        {
+            // We should not add a dependency from the Configuration system to the Logger system,
+            // so do nothing
+        }
+
+        return null;
     }
 }

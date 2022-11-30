@@ -17,9 +17,9 @@
 using System.Collections.Specialized;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
-using Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Configuration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
 public class MetricsTests
 {
@@ -34,7 +34,7 @@ public class MetricsTests
     [Fact]
     public void ConfigureOtlpOptions()
     {
-        var configuration = new NameValueCollection()
+        var configuration = new NameValueCollection
         {
             { "SPLUNK_REALM", "my-realm" },
             { "SPLUNK_ACCESS_TOKEN", "MyToken" }
@@ -43,7 +43,7 @@ public class MetricsTests
         var settings = new PluginSettings(new NameValueConfigurationSource(configuration));
 
         var options = new OtlpExporterOptions();
-        new Metrics(settings).ConfigureOptions(options);
+        new Metrics(settings).ConfigureMetricsOptions(options);
 
         options.Endpoint.Should().Be("https://ingest.my-realm.signalfx.com/v2/datapoint");
         options.Headers.Should().Be("X-Sf-Token=MyToken");

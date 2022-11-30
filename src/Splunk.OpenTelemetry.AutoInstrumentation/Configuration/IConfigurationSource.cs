@@ -30,7 +30,7 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Configuration;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 
 /// <summary>
 /// A source of configuration settings, identifiable by a string key.

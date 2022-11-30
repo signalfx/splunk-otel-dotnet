@@ -17,7 +17,7 @@
 using System;
 using OpenTelemetry.Exporter;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 {
     public class ExporterTests
     {
@@ -32,7 +32,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests
             var settings = PluginSettings.FromDefaultSources();
 
             var options = new OtlpExporterOptions();
-            new Metrics(settings).ConfigureOptions(options);
+            new Metrics(settings).ConfigureMetricsOptions(options);
 
             options.Endpoint.Should().Be(endpoint);
 

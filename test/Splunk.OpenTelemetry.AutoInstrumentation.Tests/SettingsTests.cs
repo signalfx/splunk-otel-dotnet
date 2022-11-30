@@ -17,7 +17,7 @@
 using System;
 using FluentAssertions.Execution;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 {
     public class SettingsTests : IDisposable
     {

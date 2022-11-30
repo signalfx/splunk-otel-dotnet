@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin;
+namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal static class ConfigurationKeys
 {

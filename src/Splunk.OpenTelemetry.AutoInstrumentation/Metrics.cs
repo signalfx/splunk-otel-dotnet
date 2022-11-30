@@ -18,48 +18,28 @@ using System;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin;
+namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
-/// <summary>
-/// Splunk OTel metrics plugin
-/// </summary>
-public class Metrics
+internal class Metrics
 {
     private readonly PluginSettings _settings;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Metrics"/> class.
-    /// </summary>
     public Metrics()
         : this(PluginSettings.FromDefaultSources())
     {
     }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Metrics"/> class.
-    /// This is constructor is for testing purposes.
-    /// </summary>
-    /// <param name="settings">PluginSettings instance</param>
     internal Metrics(PluginSettings settings)
     {
         _settings = settings;
     }
 
-    /// <summary>
-    /// Configures Metrics
-    /// </summary>
-    /// <param name="builder"><see cref="MeterProviderBuilder"/> to configure</param>
-    /// <returns>Returns <see cref="MeterProviderBuilder"/> for chaining.</returns>
     public MeterProviderBuilder ConfigureMeterProvider(MeterProviderBuilder builder)
     {
         return builder;
     }
 
-    /// <summary>
-    /// Configure Otlp exporter options
-    /// </summary>
-    /// <param name="options">Otlp options</param>
-    public void ConfigureOptions(OtlpExporterOptions options)
+    public void ConfigureMetricsOptions(OtlpExporterOptions options)
     {
         if (!_settings.IsOtlpEndpointSet && _settings.Realm != null)
         {
