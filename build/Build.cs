@@ -20,7 +20,7 @@ class Build : NukeBuild
     [Parameter("Platform to build - x86 or x64. Default is 'x64'")]
     readonly MSBuildTargetPlatform Platform = MSBuildTargetPlatform.x64;
 
-    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v0.5.0";
+    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v0.5.1-beta.1";
     [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
     readonly string OpenTelemetryAutoInstrumentationVersion = OpenTelemetryAutoInstrumentationDefaultVersion;
 
@@ -101,10 +101,13 @@ class Build : NukeBuild
                 "netstandard2.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
                 OpenTelemetryDistributionFolder / "net");
 
-            FileSystemTasks.CopyFileToDirectory(
-                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
-                "netstandard2.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
-                OpenTelemetryDistributionFolder / "netfx");
+            if (EnvironmentInfo.IsWin)
+            {
+                FileSystemTasks.CopyFileToDirectory(
+                    RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
+                    "netstandard2.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
+                    OpenTelemetryDistributionFolder / "netfx");
+            }
         });
 
     Target CopyInstrumentScripts => _ => _
