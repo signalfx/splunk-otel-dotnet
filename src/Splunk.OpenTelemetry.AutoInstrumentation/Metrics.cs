@@ -36,7 +36,7 @@ internal class Metrics
 
     public MeterProviderBuilder ConfigureMeterProvider(MeterProviderBuilder builder)
     {
-        return builder;
+        return builder.ConfigureResource(ResourceConfigurator.Configure);
     }
 
     public void ConfigureMetricsOptions(OtlpExporterOptions options)
