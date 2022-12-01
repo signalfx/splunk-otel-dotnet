@@ -16,6 +16,7 @@
 
 using System.Net.Http;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -24,8 +25,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests;
 
 public class ServerTimingHeaderTests : TestHelper
 {
-    private const string ServiceName = "TestApplication.HttpServer";
-
     public ServerTimingHeaderTests(ITestOutputHelper output)
         : base("HttpServer", output)
     {
@@ -34,14 +33,20 @@ public class ServerTimingHeaderTests : TestHelper
     [Fact]
     public async Task SubmitRequest()
     {
-        var port = 8000;
-        var settings = new TestSettings() { Arguments = $"--aspnet-core-port {port}" };
-        using var process = StartTestApplication(settings);
+        var port = TcpPortProvider.GetOpenPort();
+        var url = $"http://localhost:{port}";
+
+        SetEnvironmentVariable("ASPNETCORE_URLS", url);
+
+        using var process = StartTestApplication();
         Output.WriteLine($"ProcessName: " + process.ProcessName);
         using var helper = new ProcessHelper(process);
 
         var client = new HttpClient();
-        var response = await client.GetAsync($"http://localhost:{port}/request");
+        var response = await client.GetAsync($"{url}/request");
+
+        response.Headers.Should().Contain(x => x.Key == "Server-Timing");
+        response.Headers.Should().Contain(x => x.Key == "Access-Control-Expose-Headers");
 
         Output.WriteResult(helper);
     }

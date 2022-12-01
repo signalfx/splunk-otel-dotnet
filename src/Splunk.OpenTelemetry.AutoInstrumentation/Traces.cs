@@ -32,11 +32,6 @@ internal class Traces
 {
     private readonly PluginSettings _settings;
 
-    public Traces()
-        : this(PluginSettings.FromDefaultSources())
-    {
-    }
-
     internal Traces(PluginSettings settings)
     {
         _settings = settings;
@@ -45,6 +40,28 @@ internal class Traces
     public TracerProviderBuilder ConfigureTracerProvider(TracerProviderBuilder builder)
     {
         return builder.ConfigureResource(ResourceConfigurator.Configure);
+    }
+
+    public void ConfigureTracesOptions(OtlpExporterOptions options)
+    {
+        if (!_settings.IsOtlpEndpointSet && _settings.Realm != null)
+        {
+            options.Endpoint = new Uri(string.Format(Constants.Ingest.TracesIngestTemplate, _settings.Realm));
+        }
+
+        if (_settings.AccessToken != null)
+        {
+            string accessHeader = $"X-Sf-Token={_settings.AccessToken}";
+
+            if (string.IsNullOrEmpty(options.Headers))
+            {
+                options.Headers = accessHeader;
+            }
+            else
+            {
+                options.Headers = $"{options.Headers}, {accessHeader}";
+            }
+        }
     }
 
 #if NETFRAMEWORK
@@ -71,8 +88,10 @@ internal class Traces
     {
         if (_settings.TraceResponseHeaderEnabled)
         {
-            options.EnrichWithHttpResponse = (activity, response) =>
+            options.EnrichWithHttpRequest = (activity, request) =>
             {
+                var response = request.HttpContext.Response;
+
                 ServerTimingHeader.SetHeaders(activity, response.Headers, (headers, key, value) =>
                 {
                     headers.TryAdd(key, value);
@@ -81,26 +100,4 @@ internal class Traces
         }
     }
 #endif
-
-    public void ConfigureTracesOptions(OtlpExporterOptions options)
-    {
-        if (!_settings.IsOtlpEndpointSet && _settings.Realm != null)
-        {
-            options.Endpoint = new Uri(string.Format(Constants.Ingest.TracesIngestTemplate, _settings.Realm));
-        }
-
-        if (_settings.AccessToken != null)
-        {
-            string accessHeader = $"X-Sf-Token={_settings.AccessToken}";
-
-            if (string.IsNullOrEmpty(options.Headers))
-            {
-                options.Headers = accessHeader;
-            }
-            else
-            {
-                options.Headers = $"{options.Headers}, {accessHeader}";
-            }
-        }
-    }
 }

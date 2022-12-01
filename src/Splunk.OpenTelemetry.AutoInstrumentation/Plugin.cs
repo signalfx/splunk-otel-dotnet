@@ -32,8 +32,10 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 /// </summary>
 public class Plugin
 {
-    private readonly Metrics _metrics = new();
-    private readonly Traces _traces = new();
+    private static readonly PluginSettings Settings = PluginSettings.FromDefaultSources();
+
+    private readonly Metrics _metrics = new(Settings);
+    private readonly Traces _traces = new(Settings);
     private readonly Logs _logs = new();
 
     /// <summary>
