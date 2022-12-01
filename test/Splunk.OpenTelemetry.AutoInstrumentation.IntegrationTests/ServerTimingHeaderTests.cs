@@ -50,6 +50,12 @@ public class ServerTimingHeaderTests : TestHelper
         var client = new HttpClient();
         var response = await client.GetAsync($"{url}/request");
 
+        bool processTimeout = !process.WaitForExit((int)Timeout.ProcessExit.TotalMilliseconds);
+        if (processTimeout)
+        {
+            process.Kill();
+        }
+
         Output.WriteResult(helper);
 
         using (new AssertionScope())
