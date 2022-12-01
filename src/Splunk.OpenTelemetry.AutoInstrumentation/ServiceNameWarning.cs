@@ -29,8 +29,15 @@ internal static class ServiceNameWarning
     private const char AttributeListSplitter = ',';
     private const char AttributeKeyValueSplitter = '=';
 
+    private static bool _warningEmitted;
+
     internal static void SendOnMissingServiceName(ILogger logger)
     {
+        if (_warningEmitted)
+        {
+            return;
+        }
+
         var serviceName = Environment.GetEnvironmentVariable(ServiceNameEnvVarKey);
         if (!string.IsNullOrEmpty(serviceName))
         {
@@ -67,5 +74,7 @@ internal static class ServiceNameWarning
         logger.Warning(
             "The service.name attribute is not set, your service is unnamed and will be difficult to identify. " +
             "Set your service name using the OTEL_SERVICE_NAME or OTEL_RESOURCE_ATTRIBUTES environment variable.");
+
+        _warningEmitted = true;
     }
 }
