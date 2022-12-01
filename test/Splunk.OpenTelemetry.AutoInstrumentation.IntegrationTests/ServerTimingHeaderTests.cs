@@ -14,6 +14,8 @@
 // limitations under the License.
 // </copyright>
 
+#if NET6_0_OR_GREATER
+
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -57,3 +59,5 @@ public class ServerTimingHeaderTests : TestHelper
         }
     }
 }
+
+#endif
