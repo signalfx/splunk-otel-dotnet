@@ -67,7 +67,5 @@ internal static class ServiceNameWarning
         logger.Warning(
             "The service.name attribute is not set, your service is unnamed and will be difficult to identify. " +
             "Set your service name using the OTEL_SERVICE_NAME or OTEL_RESOURCE_ATTRIBUTES environment variable.");
-
-        Console.WriteLine("Nie ma");
     }
 }
