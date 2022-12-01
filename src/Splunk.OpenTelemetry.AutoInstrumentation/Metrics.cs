@@ -23,7 +23,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class Metrics
 {
-    private static readonly ILogger Log = OtelLogging.GetLogger();
     private readonly PluginSettings _settings;
 
     public Metrics()
@@ -38,7 +37,7 @@ internal class Metrics
 
     public MeterProviderBuilder ConfigureMeterProvider(MeterProviderBuilder builder)
     {
-        ServiceNameWarning.SendOnMissingServiceName(Log);
+        ServiceNameWarning.SendOnMissingServiceName();
         return builder.ConfigureResource(ResourceConfigurator.Configure);
     }
 

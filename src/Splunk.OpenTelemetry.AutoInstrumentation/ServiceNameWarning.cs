@@ -31,7 +31,7 @@ internal static class ServiceNameWarning
 
     private static bool _warningEmitted;
 
-    internal static void SendOnMissingServiceName(ILogger logger)
+    internal static void SendOnMissingServiceName()
     {
         if (_warningEmitted)
         {
@@ -47,7 +47,7 @@ internal static class ServiceNameWarning
         var attributes = Environment.GetEnvironmentVariable(ResourcesEnvVarKey);
         if (string.IsNullOrEmpty(attributes))
         {
-            SendWarning(logger);
+            SendWarning();
             return;
         }
 
@@ -59,19 +59,19 @@ internal static class ServiceNameWarning
         }
         catch (ArgumentOutOfRangeException)
         {
-            SendWarning(logger);
+            SendWarning();
             return;
         }
 
         if (!serviceNameAttribute.ContainsKey(AttributeName))
         {
-            SendWarning(logger);
+            SendWarning();
         }
     }
 
-    private static void SendWarning(ILogger logger)
+    private static void SendWarning()
     {
-        logger.Warning(
+        Logger.Warning(
             "The service.name attribute is not set, your service is unnamed and will be difficult to identify. " +
             "Set your service name using the OTEL_SERVICE_NAME or OTEL_RESOURCE_ATTRIBUTES environment variable.");
 

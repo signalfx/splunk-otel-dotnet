@@ -23,7 +23,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class Traces
 {
-    private static readonly ILogger Log = OtelLogging.GetLogger();
     private readonly PluginSettings _settings;
 
     public Traces()
@@ -38,7 +37,7 @@ internal class Traces
 
     public TracerProviderBuilder ConfigureTracerProvider(TracerProviderBuilder builder)
     {
-        ServiceNameWarning.SendOnMissingServiceName(Log);
+        ServiceNameWarning.SendOnMissingServiceName();
         return builder.ConfigureResource(ResourceConfigurator.Configure);
     }
 

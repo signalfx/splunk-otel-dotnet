@@ -21,11 +21,9 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class Logs
 {
-    private static readonly ILogger Log = OtelLogging.GetLogger();
-
     public void ConfigureLogsOptions(OpenTelemetryLoggerOptions options)
     {
-        ServiceNameWarning.SendOnMissingServiceName(Log);
+        ServiceNameWarning.SendOnMissingServiceName();
         options.ConfigureResource(ResourceConfigurator.Configure);
     }
 }
