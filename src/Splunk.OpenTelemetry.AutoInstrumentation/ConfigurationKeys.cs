@@ -33,7 +33,7 @@ internal static class ConfigurationKeys
         /// <summary>
         /// Configuration key for enabling splunk context server timing header.
         /// </summary>
-        public const string TraceResponseHeaderEnabled = "SIGNALFX_TRACE_RESPONSE_HEADER_ENABLED";
+        public const string TraceResponseHeaderEnabled = "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED";
     }
 
     public static class OpenTelemetry
