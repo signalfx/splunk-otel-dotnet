@@ -71,8 +71,10 @@ internal class Traces
         {
             options.Enrich = (activity, eventName, obj) =>
             {
-                if (eventName == "OnStopActivity" && obj is HttpResponse response)
+                if (eventName == "OnStartActivity" && obj is HttpRequest request)
                 {
+                    var response = request.RequestContext.HttpContext.Response;
+
                     ServerTimingHeader.SetHeaders(activity, response.Headers, (headers, key, value) =>
                     {
                         headers[key] = value;
