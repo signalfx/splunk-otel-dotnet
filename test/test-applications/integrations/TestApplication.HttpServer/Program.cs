@@ -26,11 +26,13 @@ public class Program
         ConsoleHelper.WriteSplashScreen(args);
 
         var builder = WebApplication.CreateBuilder(args);
+
+        var requestPath = "/request";
         var app = builder.Build();
-        using var observer = new LifetimeObserver(app);
+        using var observer = new LifetimeObserver(app, requestPath);
 
         app.UseWelcomePage("/alive-check");
-        app.MapGet("/request", () =>
+        app.MapGet(requestPath, () =>
         {
             return "TestApplication.HttpServer";
         });

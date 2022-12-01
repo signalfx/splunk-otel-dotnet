@@ -19,19 +19,22 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 
 namespace TestApplication.Smoke;
 
 public class LifetimeObserver : IDisposable, IObserver<DiagnosticListener>, IObserver<KeyValuePair<string, object?>>
 {
     private readonly WebApplication _app;
+    private readonly string _terminatorPath;
     private readonly Timer _timer;
     private IDisposable _subscriber;
     private int _shutDown;
 
-    public LifetimeObserver(WebApplication app)
+    public LifetimeObserver(WebApplication app, string terminatorPath)
     {
         _app = app;
+        _terminatorPath = terminatorPath;
         _timer = new Timer((state) => Shutdown());
 
         // Trigger application shutdown in 2 minutes
@@ -55,7 +58,11 @@ public class LifetimeObserver : IDisposable, IObserver<DiagnosticListener>, IObs
 
     public void OnNext(KeyValuePair<string, object?> value)
     {
-        if (value.Key == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop")
+        const string key = "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop";
+
+        if (value.Key == key &&
+            value.Value is HttpContext httpContext &&
+            httpContext.Request.Path == _terminatorPath)
         {
             Shutdown();
         }

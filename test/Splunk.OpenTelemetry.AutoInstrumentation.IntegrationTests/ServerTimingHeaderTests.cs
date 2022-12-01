@@ -39,9 +39,7 @@ public class ServerTimingHeaderTests : TestHelper
         var port = TcpPortProvider.GetOpenPort();
         var url = $"http://localhost:{port}";
 
-        SetEnvironmentVariable("ASPNETCORE_URLS", url);
-
-        using var process = StartTestApplication();
+        using var process = StartTestApplication(new() { Arguments = $"--urls {url}" });
         Output.WriteLine($"ProcessName: " + process.ProcessName);
         using var helper = new ProcessHelper(process);
 
