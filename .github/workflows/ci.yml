@@ -35,7 +35,6 @@ jobs:
         run: |
           set -e
           export OTEL_DOTNET_AUTO_HOME="${PWD}/OpenTelemetryDistribution"
-          export OTEL_DOTNET_AUTO_EXCLUDE_PROCESSES="dotnet
           . ./instrument.sh
             dotnet ./test/test-applications/integrations/TestApplication.Smoke/bin/x64/Release/net7.0/TestApplication.Smoke.dll
           test "$(ls -A '${{ matrix.log-dir }}' )"
