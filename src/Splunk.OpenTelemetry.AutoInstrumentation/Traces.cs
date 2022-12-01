@@ -17,11 +17,13 @@
 using System;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Trace;
+using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class Traces
 {
+    private static readonly ILogger Log = OtelLogging.GetLogger();
     private readonly PluginSettings _settings;
 
     public Traces()
@@ -36,6 +38,7 @@ internal class Traces
 
     public TracerProviderBuilder ConfigureTracerProvider(TracerProviderBuilder builder)
     {
+        ServiceNameWarning.SendOnMissingServiceName(Log);
         return builder.ConfigureResource(ResourceConfigurator.Configure);
     }
 

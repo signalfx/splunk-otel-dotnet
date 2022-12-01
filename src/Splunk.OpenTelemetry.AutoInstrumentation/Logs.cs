@@ -15,13 +15,17 @@
 // </copyright>
 
 using OpenTelemetry.Logs;
+using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class Logs
 {
+    private static readonly ILogger Log = OtelLogging.GetLogger();
+
     public void ConfigureLogsOptions(OpenTelemetryLoggerOptions options)
     {
+        ServiceNameWarning.SendOnMissingServiceName(Log);
         options.ConfigureResource(ResourceConfigurator.Configure);
     }
 }
