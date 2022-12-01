@@ -47,8 +47,7 @@ public static class ServerTimingHeader
 
     private static string ToHeaderValue(Activity activity)
     {
-        var samplingPriority = activity.Context.TraceFlags;
-        var sampled = samplingPriority > 0 ? "01" : "00";
-        return $"traceparent;desc=\"00-{activity.TraceId}-{activity.SpanId.ToHexString()}-{sampled}\"";
+        var sampled = ((int)activity.Context.TraceFlags).ToString("D2");
+        return $"traceparent;desc=\"00-{activity.TraceId}-{activity.SpanId}-{sampled}\"";
     }
 }
