@@ -14,12 +14,10 @@
 // limitations under the License.
 // </copyright>
 
-using System.Linq;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
-using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
