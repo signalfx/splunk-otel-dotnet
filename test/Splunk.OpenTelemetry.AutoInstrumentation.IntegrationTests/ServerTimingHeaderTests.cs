@@ -17,6 +17,7 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -42,12 +43,17 @@ public class ServerTimingHeaderTests : TestHelper
         Output.WriteLine($"ProcessName: " + process.ProcessName);
         using var helper = new ProcessHelper(process);
 
+        await HealthzHelper.TestAsync($"{url}/alive-check", Output);
+
         var client = new HttpClient();
         var response = await client.GetAsync($"{url}/request");
 
-        response.Headers.Should().Contain(x => x.Key == "Server-Timing");
-        response.Headers.Should().Contain(x => x.Key == "Access-Control-Expose-Headers");
-
         Output.WriteResult(helper);
+
+        using (new AssertionScope())
+        {
+            response.Headers.Should().Contain(x => x.Key == "Server-Timing");
+            response.Headers.Should().Contain(x => x.Key == "Access-Control-Expose-Headers");
+        }
     }
 }

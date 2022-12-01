@@ -27,8 +27,9 @@ public class Program
 
         var builder = WebApplication.CreateBuilder(args);
         var app = builder.Build();
-        var observer = new LifetimeObserver(app);
+        using var observer = new LifetimeObserver(app);
 
+        app.UseWelcomePage("/alive-check");
         app.MapGet("/request", () =>
         {
             return "TestApplication.HttpServer";
