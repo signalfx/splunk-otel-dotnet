@@ -17,7 +17,7 @@
 using Microsoft.AspNetCore.Builder;
 using TestApplication.Shared;
 
-namespace TestApplication.Smoke;
+namespace TestApplication.HttpServer;
 
 public class Program
 {

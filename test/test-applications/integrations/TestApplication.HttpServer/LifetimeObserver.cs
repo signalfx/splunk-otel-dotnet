@@ -21,7 +21,7 @@ using System.Threading;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
-namespace TestApplication.Smoke;
+namespace TestApplication.HttpServer;
 
 public class LifetimeObserver : IDisposable, IObserver<DiagnosticListener>, IObserver<KeyValuePair<string, object?>>
 {
