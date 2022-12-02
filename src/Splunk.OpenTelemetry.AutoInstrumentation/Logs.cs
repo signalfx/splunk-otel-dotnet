@@ -22,6 +22,7 @@ internal class Logs
 {
     public void ConfigureLogsOptions(OpenTelemetryLoggerOptions options)
     {
+        ServiceNameWarning.SendOnMissingServiceName();
         options.ConfigureResource(ResourceConfigurator.Configure);
     }
 }
