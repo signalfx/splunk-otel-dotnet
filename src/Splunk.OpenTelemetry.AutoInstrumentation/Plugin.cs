@@ -37,6 +37,15 @@ public class Plugin
     private readonly Metrics _metrics = new(Settings);
     private readonly Traces _traces = new(Settings);
     private readonly Logs _logs = new();
+    private readonly Sdk _sdk = new();
+
+    /// <summary>
+    /// Configures Sdk
+    /// </summary>
+    public void Initializing()
+    {
+        _sdk.Initializing();
+    }
 
     /// <summary>
     /// Configures Metrics

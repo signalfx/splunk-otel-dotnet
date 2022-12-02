@@ -1,4 +1,4 @@
-﻿// <copyright file="Logs.cs" company="Splunk Inc.">
+﻿// <copyright file="Sdk.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,14 +14,17 @@
 // limitations under the License.
 // </copyright>
 
-using OpenTelemetry.Logs;
+using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
-internal class Logs
+internal class Sdk
 {
-    public void ConfigureLogsOptions(OpenTelemetryLoggerOptions options)
+    private readonly ILogger _log = new Logger();
+
+    public void Initializing()
     {
-        options.ConfigureResource(ResourceConfigurator.Configure);
+        ServiceNameWarning.Instance.SendOnMissingServiceName(_log);
+        SdkLimitOptionsConfigurator.Configure();
     }
 }

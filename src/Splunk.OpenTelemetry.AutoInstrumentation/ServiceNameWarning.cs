@@ -32,10 +32,6 @@ internal class ServiceNameWarning
     private static readonly Lazy<ServiceNameWarning> LazyInstance = new(() => new ServiceNameWarning());
     private int _warningEmitted;
 
-    internal ServiceNameWarning()
-    {
-    }
-
     internal static ServiceNameWarning Instance => LazyInstance.Value;
 
     internal void SendOnMissingServiceName(ILogger logger)
