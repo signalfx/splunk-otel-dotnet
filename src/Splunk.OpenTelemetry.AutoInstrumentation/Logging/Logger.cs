@@ -48,10 +48,6 @@ internal static class Logger
 
     internal static void Warning(string message)
     {
-        if (WarningMethod != null && Log != null)
-        {
-            WarningMethod
-                .Invoke(Log, new object[] { message, 0, string.Empty });
-        }
+        WarningMethod?.Invoke(Log, new object[] { message, 0, string.Empty });
     }
 }
