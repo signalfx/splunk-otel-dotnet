@@ -30,6 +30,8 @@ jobs:
       - run: ./build.cmd Workflow
       - run: brew install coreutils
         if: ${{ runner.os == 'macOS' }}
+      - run: sed -i 's/\r//' .\instrument.sh
+        if: ${{ runner.os != 'Windows' }}
       - name: Test the Shell scripts from README.md
         shell: bash
         run: |
@@ -38,7 +40,7 @@ jobs:
           export OTEL_DOTNET_AUTO_HOME="${PWD}/OpenTelemetryDistribution"
           . ./instrument.sh
           ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net7.0/publish/TestApplication.Smoke
-          test "$(ls -A '${{ matrix.log-dir }}' )"
+            test "$(ls -A '${{ matrix.log-dir }}' )"
       - name: Test the PowerShell module instructions from README.md
         if: ${{ runner.os == 'Windows' }}
         shell: powershell
