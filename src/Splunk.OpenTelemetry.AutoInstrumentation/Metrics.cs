@@ -17,7 +17,6 @@
 using System;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
-using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
