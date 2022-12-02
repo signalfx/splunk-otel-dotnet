@@ -30,7 +30,7 @@ jobs:
       - run: ./build.cmd Workflow
       - run: brew install coreutils
         if: ${{ runner.os == 'macOS' }}
-      - run: sed -i 's/\r//' .\instrument.sh
+      - run: sed -i 's/\r//' instrument.sh
         if: ${{ runner.os != 'Windows' }}
       - name: Test the Shell scripts from README.md
         shell: bash
