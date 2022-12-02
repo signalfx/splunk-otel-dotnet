@@ -33,7 +33,7 @@ internal static class ServiceNameWarning
 
     internal static void SendOnMissingServiceName()
     {
-        if (Interlocked.CompareExchange(ref _warningEmitted, 1, 0) == 1)
+        if (Interlocked.CompareExchange(ref _warningEmitted, 1, 0) != 0)
         {
             return;
         }
