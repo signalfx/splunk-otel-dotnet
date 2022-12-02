@@ -16,7 +16,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
@@ -29,11 +29,11 @@ internal static class ServiceNameWarning
     private const char AttributeListSplitter = ',';
     private const char AttributeKeyValueSplitter = '=';
 
-    private static bool _warningEmitted;
+    private static int _warningEmitted;
 
     internal static void SendOnMissingServiceName()
     {
-        if (_warningEmitted)
+        if (Interlocked.CompareExchange(ref _warningEmitted, 1, 0) == 1)
         {
             return;
         }
@@ -79,7 +79,5 @@ internal static class ServiceNameWarning
         Logger.Warning(
             "The service.name attribute is not set, your service is unnamed and will be difficult to identify. " +
             "Set your service name using the OTEL_SERVICE_NAME or OTEL_RESOURCE_ATTRIBUTES environment variable.");
-
-        _warningEmitted = true;
     }
 }
