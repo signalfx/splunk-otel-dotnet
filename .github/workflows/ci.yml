@@ -34,9 +34,10 @@ jobs:
         shell: bash
         run: |
           set -e
+          dotnet publish -f net7.0 -c Release ./test/test-applications/integrations/TestApplication.Smoke
           export OTEL_DOTNET_AUTO_HOME="${PWD}/OpenTelemetryDistribution"
           . ./instrument.sh
-            dotnet ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net7.0/TestApplication.Smoke.dll
+          ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net7.0/publish/TestApplication.Smoke
           test "$(ls -A '${{ matrix.log-dir }}' )"
       - name: Test the PowerShell module instructions from README.md
         if: ${{ runner.os == 'Windows' }}
@@ -46,12 +47,12 @@ jobs:
           Import-Module "${PWD}/Splunk.OTel.DotNet.psm1"
           [System.Environment]::SetEnvironmentVariable("SPLUNK_OTEL_DOTNET_AUTO_INSTALL_DIR", "${PWD}\OpenTelemetryDistribution", [System.EnvironmentVariableTarget]::Machine)
           Register-OpenTelemetryForCurrentSession -OTelServiceName "MyServiceDisplayName"
-            ./test/test-applications/integrations/TestApplication.Smoke/bin/x64/Release/net7.0/TestApplication.Smoke.exe
+          ./test/test-applications/integrations/TestApplication.Smoke/bin/x64/Release/net7.0/TestApplication.Smoke.exe
           if (-not $?) { throw "dotnet help returned exit code: $LASTEXITCODE" }
           if (-not (Test-Path $log_path)) { throw "Log file does not exist. Instrumentation test failed." }
           Remove-Item $log_path
           Unregister-OpenTelemetryForCurrentSession
-            ./test/test-applications/integrations/TestApplication.Smoke/bin/x64/Release/net7.0/TestApplication.Smoke.exe
+          ./test/test-applications/integrations/TestApplication.Smoke/bin/x64/Release/net7.0/TestApplication.Smoke.exe
           if (-not $?) { throw "dotnet help returned exit code: $LASTEXITCODE" }
           if (Test-Path $log_path) { throw "Log file exists. Instrumentation unregister failed." }
       - uses: actions/upload-artifact@v3.1.1
