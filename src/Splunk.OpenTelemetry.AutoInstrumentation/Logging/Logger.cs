@@ -40,9 +40,9 @@ internal static class Logger
                 .GetType()
                 .GetMethod("Warning", types: new[] { typeof(string), typeof(int), typeof(string) });
         }
-        catch
+        catch (Exception e)
         {
-            // Something broke but we have nowhere to log that
+            Console.Error.WriteLine($"Could not initialize Logger. {e}");
         }
     }
 

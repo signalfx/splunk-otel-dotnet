@@ -51,19 +51,24 @@ internal static class ServiceNameWarning
             return;
         }
 
-        IDictionary<string, string> serviceNameAttribute;
-        try
+        IDictionary<string, string> serviceNameAttribute = new Dictionary<string, string>();
+        var rawAttributes = attributes.Split(AttributeListSplitter);
+        foreach (var rawKeyValuePair in rawAttributes)
         {
-            serviceNameAttribute = attributes.Split(AttributeListSplitter)
-                .ToDictionary(s => s.Split(AttributeKeyValueSplitter)[0], s => s.Split(AttributeKeyValueSplitter)[1]);
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            SendWarning();
-            return;
+            var keyValuePair = rawKeyValuePair.Split(AttributeKeyValueSplitter);
+            if (keyValuePair.Length != 2)
+            {
+                continue;
+            }
+
+            serviceNameAttribute[keyValuePair[0].Trim()] = keyValuePair[1].Trim();
         }
 
         if (!serviceNameAttribute.ContainsKey(AttributeName))
+        {
+            SendWarning();
+        }
+        else if (string.IsNullOrEmpty(serviceNameAttribute[AttributeName]))
         {
             SendWarning();
         }
