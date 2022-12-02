@@ -67,10 +67,13 @@ internal static class ServiceNameWarning
         if (!serviceNameAttribute.ContainsKey(AttributeName))
         {
             SendWarning();
+            return;
         }
-        else if (string.IsNullOrEmpty(serviceNameAttribute[AttributeName]))
+
+        if (string.IsNullOrEmpty(serviceNameAttribute[AttributeName]))
         {
             SendWarning();
+            return;
         }
     }
 
