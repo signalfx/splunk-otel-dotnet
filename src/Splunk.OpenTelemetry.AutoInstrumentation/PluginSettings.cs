@@ -35,8 +35,8 @@ internal class PluginSettings
 
         Realm = source.GetString(ConfigurationKeys.Splunk.Realm);
         AccessToken = source.GetString(ConfigurationKeys.Splunk.AccessToken);
-        TraceResponseHeaderEnabled = source?.GetBool(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled) ?? true;
-        IsOtlpEndpointSet = !string.IsNullOrEmpty(source?.GetString(ConfigurationKeys.OpenTelemetry.OtlpEndpoint));
+        TraceResponseHeaderEnabled = source.GetBool(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled) ?? true;
+        IsOtlpEndpointSet = !string.IsNullOrEmpty(source.GetString(ConfigurationKeys.OpenTelemetry.OtlpEndpoint));
     }
 
     public string? Realm { get; }

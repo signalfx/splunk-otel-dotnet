@@ -33,9 +33,13 @@ public class ServerTimingHeaderTests : TestHelper
     {
     }
 
-    [Fact]
-    public async Task SubmitRequest()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SubmitRequest(bool isEnabled)
     {
+        SetEnvironmentVariable("SPLUNK_TRACE_RESPONSE_HEADER_ENABLED", isEnabled.ToString());
+
         var port = TcpPortProvider.GetOpenPort();
         var url = $"http://localhost:{port}";
 
@@ -58,8 +62,16 @@ public class ServerTimingHeaderTests : TestHelper
 
         using (new AssertionScope())
         {
-            response.Headers.Should().Contain(x => x.Key == "Server-Timing");
-            response.Headers.Should().Contain(x => x.Key == "Access-Control-Expose-Headers");
+            if (isEnabled)
+            {
+                response.Headers.Should().Contain(x => x.Key == "Server-Timing");
+                response.Headers.Should().Contain(x => x.Key == "Access-Control-Expose-Headers");
+            }
+            else
+            {
+                response.Headers.Should().NotContain(x => x.Key == "Server-Timing");
+                response.Headers.Should().NotContain(x => x.Key == "Access-Control-Expose-Headers");
+            }
         }
     }
 }
