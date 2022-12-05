@@ -26,11 +26,6 @@ internal class Metrics
     private readonly ILogger _log = new Logger();
     private readonly PluginSettings _settings;
 
-    public Metrics()
-        : this(PluginSettings.FromDefaultSources())
-    {
-    }
-
     internal Metrics(PluginSettings settings)
     {
         _settings = settings;

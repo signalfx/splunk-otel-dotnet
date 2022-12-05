@@ -29,7 +29,7 @@ internal static class ResourceConfigurator
     {
         var assembly = typeof(ResourceConfigurator).Assembly;
         var version = FileVersionInfo.GetVersionInfo(assembly.Location);
-        Version = version.FileVersion;
+        Version = version.FileVersion ?? "unknown";
     }
 
     public static void Configure(ResourceBuilder resourceBuilder)
