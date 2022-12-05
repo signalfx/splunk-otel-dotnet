@@ -1,4 +1,4 @@
-﻿// <copyright file="Logs.cs" company="Splunk Inc.">
+// <copyright file="ILogger.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,18 +14,16 @@
 // limitations under the License.
 // </copyright>
 
-using OpenTelemetry.Logs;
-using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation;
-
-internal class Logs
+/// <summary>
+/// Logger interface.
+/// </summary>
+public interface ILogger
 {
-    private readonly ILogger _log = new Logger();
-
-    public void ConfigureLogsOptions(OpenTelemetryLoggerOptions options)
-    {
-        ServiceNameWarning.Instance.SendOnMissingServiceName(_log);
-        options.ConfigureResource(ResourceConfigurator.Configure);
-    }
+    /// <summary>
+    /// Logs warning message.
+    /// </summary>
+    /// <param name="message">Message to be logged.</param>
+    void Warning(string message);
 }
