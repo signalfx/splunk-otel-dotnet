@@ -21,10 +21,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
 public class ServiceNameWarningTests : IDisposable
 {
-    private const string OtelServiceNameKey = "OTEL_SERVICE_NAME";
-    private const string OtelResourceAttributesKey = "OTEL_RESOURCE_ATTRIBUTES";
-
-    private Mock<ILogger> _logger = new Mock<ILogger>();
+    private Mock<ILogger> _logger = new();
 
     [Fact]
     public void ServiceNameNotSet()
@@ -47,7 +44,7 @@ public class ServiceNameWarningTests : IDisposable
     [Fact]
     public void ServiceNameSet()
     {
-        Environment.SetEnvironmentVariable(OtelServiceNameKey, "nameset");
+        Environment.SetEnvironmentVariable("OTEL_SERVICE_NAME", "nameset");
         var serviceNameWarning = new ServiceNameWarning();
         serviceNameWarning.SendOnMissingServiceName(_logger.Object);
         _logger.Verify(logger => logger.Warning(It.IsAny<string>()), Times.Exactly(0));
@@ -56,7 +53,7 @@ public class ServiceNameWarningTests : IDisposable
     [Fact]
     public void ResourceNameSet()
     {
-        Environment.SetEnvironmentVariable(OtelResourceAttributesKey, "something=2,service.name=nameset");
+        Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "something=2,service.name=nameset");
         var serviceNameWarning = new ServiceNameWarning();
         serviceNameWarning.SendOnMissingServiceName(_logger.Object);
         _logger.Verify(logger => logger.Warning(It.IsAny<string>()), Times.Exactly(0));
@@ -65,7 +62,7 @@ public class ServiceNameWarningTests : IDisposable
     [Fact]
     public void ResourceWithoutServiceName()
     {
-        Environment.SetEnvironmentVariable(OtelResourceAttributesKey, "something=2,other=whatever");
+        Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "something=2,other=whatever");
         var serviceNameWarning = new ServiceNameWarning();
         serviceNameWarning.SendOnMissingServiceName(_logger.Object);
         _logger.Verify(logger => logger.Warning(It.IsAny<string>()), Times.Exactly(1));
@@ -74,7 +71,7 @@ public class ServiceNameWarningTests : IDisposable
     [Fact]
     public void EmptyResourceName()
     {
-        Environment.SetEnvironmentVariable(OtelResourceAttributesKey, "something=2,service.name=,b=3");
+        Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "something=2,service.name=,b=3");
         var serviceNameWarning = new ServiceNameWarning();
         serviceNameWarning.SendOnMissingServiceName(_logger.Object);
         _logger.Verify(logger => logger.Warning(It.IsAny<string>()), Times.Exactly(1));
@@ -83,7 +80,7 @@ public class ServiceNameWarningTests : IDisposable
     [Fact]
     public void InvalidResourceName()
     {
-        Environment.SetEnvironmentVariable(OtelResourceAttributesKey, "something=2,service.name==,b=3,");
+        Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "something=2,service.name==,b=3,");
         var serviceNameWarning = new ServiceNameWarning();
         serviceNameWarning.SendOnMissingServiceName(_logger.Object);
         _logger.Verify(logger => logger.Warning(It.IsAny<string>()), Times.Exactly(1));
@@ -91,7 +88,7 @@ public class ServiceNameWarningTests : IDisposable
 
     public void Dispose()
     {
-        Environment.SetEnvironmentVariable(OtelServiceNameKey, null);
-        Environment.SetEnvironmentVariable(OtelResourceAttributesKey, null);
+        Environment.SetEnvironmentVariable("OTEL_SERVICE_NAME", null);
+        Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", null);
     }
 }
