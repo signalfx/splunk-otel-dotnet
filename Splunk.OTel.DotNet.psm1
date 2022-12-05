@@ -7,7 +7,7 @@ function Get-Current-InstallDir() {
 }
 
 function Get-CLIInstallDir-From-InstallDir([string]$InstallDir) {
-    $dir = "OpenTelemetry .NET AutoInstrumentation"
+    $dir = "Splunk OpenTelemetry .NET"
     
     if ($InstallDir -eq "<auto>") {
         return (Join-Path $Env:ProgramFiles $dir)
