@@ -40,3 +40,13 @@ When running your application, make sure to:
 | `OTEL_DOTNET_AUTO_INTEGRATIONS_FILE` | All versions           | `$INSTALL_DIR/integrations.json`                                               |
 
 > Some settings can be omitted on .NET (Core). For more information, see the [documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v0.4.0-beta.1/docs/config.md#net-clr-profiler).
+
+## Splunk plugin settings
+
+Note: .NET Framework apps can read settings also from `Web.config` and `App.config`.
+
+| Environment variable                   | Description                           | Default value |
+|----------------------------------------|---------------------------------------|---------------|
+| `SPLUNK_REALM`                         | Specifies direct ingest realm.        |               |
+| `SPLUNK_ACCESS_TOKEN`                  | Specifies direct ingest access token. |               |
+| `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED` | Enables Splunk RUM integration.       | `true`        |

@@ -9,6 +9,11 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Added
 
+* .NET Framework settings can read configuration from Web.config and App.config
+* Add `SPLUNK_REALM` configuration key to specify direct ingest realm.
+* Add `SPLUNK_ACCESS_TOKEN` configuration key to authorize direct ingest.
+* Add `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED` configuration key to support Splunk RUM.
+
 ### Changed
 
 ### Deprecated
