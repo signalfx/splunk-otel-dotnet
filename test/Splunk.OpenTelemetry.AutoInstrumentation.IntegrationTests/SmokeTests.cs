@@ -30,8 +30,7 @@
 // limitations under the License.
 // </copyright>
 
-using System;
-using System.Threading.Tasks;
+using System.Reflection;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -51,28 +50,35 @@ public class SmokeTests : TestHelper
 
     [Fact]
     [Trait("Category", "EndToEnd")]
-    public async Task SubmitsTraces()
+    public void SubmitsTraces()
     {
+        using var collector = new MockSpansCollector(Output);
+        SetExporter(collector);
+        collector.Expect("MyCompany.MyProduct.MyLibrary");
+#if NETFRAMEWORK
+        collector.Expect("OpenTelemetry.Instrumentation.Http.HttpWebRequest");
+#elif NET7_0_OR_GREATER
+        collector.Expect("System.Net.Http");
+#else
+        collector.Expect("OpenTelemetry.Instrumentation.Http.HttpClient");
+#endif
+
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
-
-        using var collector = await MockTracesCollector.Start(Output);
-        collector.Expect(span => span.Name == "SayHello");
-        collector.Expect(span => span.Name == "HTTP GET");
-
-        RunTestApplication(collector.Port);
+        RunTestApplication();
 
         collector.AssertExpectations();
     }
 
     [Fact]
     [Trait("Category", "EndToEnd")]
-    public async Task SubmitMetrics()
+    public void SubmitMetrics()
     {
-        using var collector = await MockMetricsCollector.Start(Output);
+        using var collector = new MockMetricsCollector(Output);
+        SetExporter(collector);
         collector.Expect("MyCompany.MyProduct.MyLibrary", metric => metric.Name == "MyFruitCounter");
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
-        RunTestApplication(collector.Port);
+        RunTestApplication();
 
         collector.AssertExpectations();
     }
@@ -80,15 +86,76 @@ public class SmokeTests : TestHelper
 #if !NETFRAMEWORK
     [Fact]
     [Trait("Category", "EndToEnd")]
-    public async Task SubmitLogs()
+    public void SubmitLogs()
     {
-        using var collector = await MockLogsCollector.Start(Output);
-        collector.Expect(logRecord => Convert.ToString(logRecord.Body) == "{ \"stringValue\": \"SmokeTest app log\" }");
+        using var collector = new MockLogsCollector(Output);
+        SetExporter(collector);
+        collector.Expect(logRecord => System.Convert.ToString(logRecord.Body) == "{ \"stringValue\": \"SmokeTest app log\" }");
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE", "true");
-        RunTestApplication(collector.Port);
+        EnableBytecodeInstrumentation();
+        RunTestApplication();
 
         collector.AssertExpectations();
+    }
+#endif
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void TracesResource()
+    {
+        using var collector = new MockSpansCollector(Output);
+        SetExporter(collector);
+        collector.ResourceExpector.Expect("service.name", ServiceName);
+        collector.ResourceExpector.Expect("telemetry.sdk.name", "opentelemetry");
+        collector.ResourceExpector.Expect("telemetry.sdk.language", "dotnet");
+        collector.ResourceExpector.Expect("telemetry.sdk.version", typeof(global::OpenTelemetry.Resources.Resource).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
+        collector.ResourceExpector.Expect("telemetry.auto.version", "0.5.1-beta.1");
+        collector.ResourceExpector.Expect("splunk.distro.version", typeof(Plugin).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
+
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
+        RunTestApplication();
+
+        collector.ResourceExpector.AssertExpectations();
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void MetricsResource()
+    {
+        using var collector = new MockMetricsCollector(Output);
+        SetExporter(collector);
+        collector.ResourceExpector.Expect("service.name", ServiceName);
+        collector.ResourceExpector.Expect("telemetry.sdk.name", "opentelemetry");
+        collector.ResourceExpector.Expect("telemetry.sdk.language", "dotnet");
+        collector.ResourceExpector.Expect("telemetry.sdk.version", typeof(global::OpenTelemetry.Resources.Resource).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
+        collector.ResourceExpector.Expect("telemetry.auto.version", "0.5.1-beta.1");
+        collector.ResourceExpector.Expect("splunk.distro.version", typeof(Plugin).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
+
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
+        RunTestApplication();
+
+        collector.ResourceExpector.AssertExpectations();
+    }
+
+#if !NETFRAMEWORK // The feature is not supported on .NET Framework
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void LogsResource()
+    {
+        using var collector = new MockLogsCollector(Output);
+        SetExporter(collector);
+        collector.ResourceExpector.Expect("service.name", ServiceName);
+        collector.ResourceExpector.Expect("telemetry.sdk.name", "opentelemetry");
+        collector.ResourceExpector.Expect("telemetry.sdk.language", "dotnet");
+        collector.ResourceExpector.Expect("telemetry.sdk.version", typeof(global::OpenTelemetry.Resources.Resource).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
+        collector.ResourceExpector.Expect("telemetry.auto.version", "0.5.1-beta.1");
+        collector.ResourceExpector.Expect("splunk.distro.version", typeof(Plugin).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
+
+        EnableBytecodeInstrumentation();
+        RunTestApplication();
+
+        collector.ResourceExpector.AssertExpectations();
     }
 #endif
 }

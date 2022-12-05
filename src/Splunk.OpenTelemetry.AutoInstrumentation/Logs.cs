@@ -1,4 +1,4 @@
-// <copyright file="MetricsTests.cs" company="Splunk Inc.">
+﻿// <copyright file="Logs.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,17 +14,18 @@
 // limitations under the License.
 // </copyright>
 
-using OpenTelemetry.Metrics;
+using OpenTelemetry.Logs;
+using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests;
+namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
-public class MetricsTests
+internal class Logs
 {
-    [Fact]
-    public void ConfigureMeterProvider()
+    private readonly ILogger _log = new Logger();
+
+    public void ConfigureLogsOptions(OpenTelemetryLoggerOptions options)
     {
-        var builder = Mock.Of<MeterProviderBuilder>();
-        var returnedBuilder = new Metrics().ConfigureMeterProvider(builder);
-        returnedBuilder.Should().Be(builder);
+        ServiceNameWarning.Instance.SendOnMissingServiceName(_log);
+        options.ConfigureResource(ResourceConfigurator.Configure);
     }
 }

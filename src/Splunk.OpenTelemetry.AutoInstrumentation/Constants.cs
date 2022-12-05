@@ -1,4 +1,4 @@
-﻿// <copyright file="Traces.cs" company="Splunk Inc.">
+﻿// <copyright file="Constants.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,22 +14,13 @@
 // limitations under the License.
 // </copyright>
 
-using OpenTelemetry.Trace;
+namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin;
-
-/// <summary>
-/// Tracer plugin
-/// </summary>
-public class Traces
+internal static class Constants
 {
-    /// <summary>
-    /// Configures Traces
-    /// </summary>
-    /// <param name="builder"><see cref="TracerProviderBuilder"/>  to configure</param>
-    /// <returns>Returns <see cref="TracerProviderBuilder"/> for chaining.</returns>
-    public TracerProviderBuilder ConfigureTracerProvider(TracerProviderBuilder builder)
+    public static class Ingest
     {
-        return builder;
+        public const string TracesIngestTemplate = "https://ingest.{0}.signalfx.com/v2/trace";
+        public const string MetricsIngestTemplate = "https://ingest.{0}.signalfx.com/v2/datapoint";
     }
 }

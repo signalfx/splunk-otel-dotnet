@@ -20,7 +20,7 @@ class Build : NukeBuild
     [Parameter("Platform to build - x86 or x64. Default is 'x64'")]
     readonly MSBuildTargetPlatform Platform = MSBuildTargetPlatform.x64;
 
-    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v0.5.0";
+    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v0.5.1-beta.1";
     [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
     readonly string OpenTelemetryAutoInstrumentationVersion = OpenTelemetryAutoInstrumentationDefaultVersion;
 
@@ -97,9 +97,17 @@ class Build : NukeBuild
         .Executes(() =>
         {
             FileSystemTasks.CopyFileToDirectory(
-                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin" / "bin" / Configuration /
-                "netstandard2.0" / "Splunk.OpenTelemetry.AutoInstrumentation.Plugin.dll",
-                OpenTelemetryDistributionFolder / "plugins");
+                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
+                "net6.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
+                OpenTelemetryDistributionFolder / "net");
+
+            if (EnvironmentInfo.IsWin)
+            {
+                FileSystemTasks.CopyFileToDirectory(
+                    RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
+                    "net462" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
+                    OpenTelemetryDistributionFolder / "netfx");
+            }
         });
 
     Target CopyInstrumentScripts => _ => _
@@ -134,7 +142,7 @@ class Build : NukeBuild
         .After(Compile)
         .Executes(() =>
         {
-            var project = Solution.GetProject("Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests");
+            var project = Solution.GetProject("Splunk.OpenTelemetry.AutoInstrumentation.Tests");
 
             DotNetTest(s => s
                 .SetNoBuild(true)
@@ -144,6 +152,7 @@ class Build : NukeBuild
 
     Target RunIntegrationTests => _ => _
         .After(Compile)
+        .After(AddSplunkPlugins)
         .Executes(() =>
         {
             var project = Solution.GetProject("Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests");

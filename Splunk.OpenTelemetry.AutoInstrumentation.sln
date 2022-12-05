@@ -23,14 +23,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6564E602-76C
 		src\Directory.Build.props = src\Directory.Build.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Splunk.OpenTelemetry.AutoInstrumentation.Plugin", "src\Splunk.OpenTelemetry.AutoInstrumentation.Plugin\Splunk.OpenTelemetry.AutoInstrumentation.Plugin.csproj", "{689B9DC2-EB4B-4FAA-A858-59D9CCF97EB6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Splunk.OpenTelemetry.AutoInstrumentation", "src\Splunk.OpenTelemetry.AutoInstrumentation\Splunk.OpenTelemetry.AutoInstrumentation.csproj", "{689B9DC2-EB4B-4FAA-A858-59D9CCF97EB6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{14A731B9-4F09-43E6-B64C-98E7E6EDA0EA}"
 	ProjectSection(SolutionItems) = preProject
 		test\Directory.Build.props = test\Directory.Build.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests", "test\Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests\Splunk.OpenTelemetry.AutoInstrumentation.Plugin.Tests.csproj", "{EE47BEF0-40C5-4AB3-91B6-9CBB420BD59B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Splunk.OpenTelemetry.AutoInstrumentation.Tests", "test\Splunk.OpenTelemetry.AutoInstrumentation.Tests\Splunk.OpenTelemetry.AutoInstrumentation.Tests.csproj", "{EE47BEF0-40C5-4AB3-91B6-9CBB420BD59B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{23A5DC4E-0639-43D6-B7A6-A6249968D19C}"
 EndProject
@@ -51,6 +51,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dependency-libs", "dependency-libs", "{A7C478E4-30A8-4B00-8BA2-9D7DD8384625}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestApplication.Shared", "test\test-applications\integrations\dependency-libs\TestApplication.Shared\TestApplication.Shared.csproj", "{1CEC4875-ED16-4EDF-919F-5700B868C5A5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestApplication.HttpServer", "test\test-applications\integrations\TestApplication.HttpServer\TestApplication.HttpServer.csproj", "{4E4BA0EE-4732-4FEF-BD8D-F11174063B65}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -128,6 +130,18 @@ Global
 		{1CEC4875-ED16-4EDF-919F-5700B868C5A5}.Release|x64.Build.0 = Release|x64
 		{1CEC4875-ED16-4EDF-919F-5700B868C5A5}.Release|x86.ActiveCfg = Release|x86
 		{1CEC4875-ED16-4EDF-919F-5700B868C5A5}.Release|x86.Build.0 = Release|x86
+		{4E4BA0EE-4732-4FEF-BD8D-F11174063B65}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{4E4BA0EE-4732-4FEF-BD8D-F11174063B65}.Debug|Any CPU.Build.0 = Debug|x64
+		{4E4BA0EE-4732-4FEF-BD8D-F11174063B65}.Debug|x64.ActiveCfg = Debug|x64
+		{4E4BA0EE-4732-4FEF-BD8D-F11174063B65}.Debug|x64.Build.0 = Debug|x64
+		{4E4BA0EE-4732-4FEF-BD8D-F11174063B65}.Debug|x86.ActiveCfg = Debug|x86
+		{4E4BA0EE-4732-4FEF-BD8D-F11174063B65}.Debug|x86.Build.0 = Debug|x86
+		{4E4BA0EE-4732-4FEF-BD8D-F11174063B65}.Release|Any CPU.ActiveCfg = Release|x64
+		{4E4BA0EE-4732-4FEF-BD8D-F11174063B65}.Release|Any CPU.Build.0 = Release|x64
+		{4E4BA0EE-4732-4FEF-BD8D-F11174063B65}.Release|x64.ActiveCfg = Release|x64
+		{4E4BA0EE-4732-4FEF-BD8D-F11174063B65}.Release|x64.Build.0 = Release|x64
+		{4E4BA0EE-4732-4FEF-BD8D-F11174063B65}.Release|x86.ActiveCfg = Release|x86
+		{4E4BA0EE-4732-4FEF-BD8D-F11174063B65}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -143,6 +157,7 @@ Global
 		{8C866EE9-8260-4D33-A2FE-8EDF2953A007} = {52FAD8BC-5D9B-4379-82F7-114C41B3ACEB}
 		{A7C478E4-30A8-4B00-8BA2-9D7DD8384625} = {52FAD8BC-5D9B-4379-82F7-114C41B3ACEB}
 		{1CEC4875-ED16-4EDF-919F-5700B868C5A5} = {A7C478E4-30A8-4B00-8BA2-9D7DD8384625}
+		{4E4BA0EE-4732-4FEF-BD8D-F11174063B65} = {52FAD8BC-5D9B-4379-82F7-114C41B3ACEB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B0A9D043-A771-45B1-AC87-0FFF14CD89D0}

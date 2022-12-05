@@ -30,6 +30,8 @@
 // limitations under the License.
 // </copyright>
 
+#nullable disable
+
 using System;
 using System.Diagnostics;
 using System.Text;
@@ -42,8 +44,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 /// </summary>
 public class ProcessHelper : IDisposable
 {
-    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(5);
-
     private readonly ManualResetEventSlim _outputMutex = new();
     private readonly StringBuilder _outputBuffer = new();
     private readonly StringBuilder _errorBuffer = new();
@@ -52,21 +52,17 @@ public class ProcessHelper : IDisposable
     private bool _isStdOutputDrained;
     private bool _isErrOutputDrained;
 
-    public ProcessHelper(Process? process)
+    public ProcessHelper(Process process)
     {
         Process = process;
+        Process.OutputDataReceived += (_, e) => DrainOutput(e.Data, _outputBuffer, isErrorStream: false);
+        Process.ErrorDataReceived += (_, e) => DrainOutput(e.Data, _errorBuffer, isErrorStream: true);
 
-        if (Process != null)
-        {
-            Process.OutputDataReceived += (_, e) => DrainOutput(e.Data, _outputBuffer, isErrorStream: false);
-            Process.ErrorDataReceived += (_, e) => DrainOutput(e.Data, _errorBuffer, isErrorStream: true);
-
-            Process.BeginOutputReadLine();
-            Process.BeginErrorReadLine();
-        }
+        Process.BeginOutputReadLine();
+        Process.BeginErrorReadLine();
     }
 
-    public Process? Process { get; }
+    public Process Process { get; }
 
     public string StandardOutput => CompleteOutput(_outputBuffer);
 
@@ -74,7 +70,7 @@ public class ProcessHelper : IDisposable
 
     public bool Drain()
     {
-        return Drain(DefaultTimeout);
+        return Drain(Timeout.ProcessExit);
     }
 
     public bool Drain(TimeSpan timeout)
@@ -87,7 +83,7 @@ public class ProcessHelper : IDisposable
         _outputMutex.Dispose();
     }
 
-    private void DrainOutput(string? data, StringBuilder buffer, bool isErrorStream)
+    private void DrainOutput(string data, StringBuilder buffer, bool isErrorStream)
     {
         if (data != null)
         {
@@ -115,7 +111,7 @@ public class ProcessHelper : IDisposable
 
     private string CompleteOutput(StringBuilder builder)
     {
-        if (Process is { HasExited: true })
+        if (Process.HasExited)
         {
             return builder.ToString();
         }

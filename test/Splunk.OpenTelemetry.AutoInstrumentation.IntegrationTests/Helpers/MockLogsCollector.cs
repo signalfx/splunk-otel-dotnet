@@ -1,4 +1,4 @@
-﻿// <copyright file="MockLogsCollector.cs" company="Splunk Inc.">
+// <copyright file="MockLogsCollector.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,14 +30,20 @@
 // limitations under the License.
 // </copyright>
 
+#nullable disable
+
+#if NETFRAMEWORK
+using System.Net;
+#else
+using Microsoft.AspNetCore.Http;
+#endif
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Net;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Google.Protobuf;
 using OpenTelemetry.Proto.Collector.Logs.V1;
 using OpenTelemetry.Proto.Logs.V1;
 using Xunit;
@@ -47,17 +53,20 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 public class MockLogsCollector : IDisposable
 {
-    private static readonly TimeSpan DefaultWaitTimeout = TimeSpan.FromMinutes(1);
-
     private readonly ITestOutputHelper _output;
-    private readonly TestHttpListener _listener;
+    private readonly TestHttpServer _listener;
     private readonly BlockingCollection<LogRecord> _logs = new(100); // bounded to avoid memory leak
     private readonly List<Expectation> _expectations = new();
 
-    private MockLogsCollector(ITestOutputHelper output, string host = "localhost")
+    public MockLogsCollector(ITestOutputHelper output, string host = "localhost")
     {
         _output = output;
-        _listener = new TestHttpListener(output, HandleHttpRequests, host);
+
+#if NETFRAMEWORK
+        _listener = new(output, HandleHttpRequests, host, "/v1/logs/");
+#else
+        _listener = new(output, HandleHttpRequests, "/v1/logs");
+#endif
     }
 
     /// <summary>
@@ -65,33 +74,21 @@ public class MockLogsCollector : IDisposable
     /// </summary>
     public int Port { get => _listener.Port; }
 
-    public static async Task<MockLogsCollector> Start(ITestOutputHelper output, string host = "localhost")
-    {
-        var collector = new MockLogsCollector(output, host);
-
-        var healthzResult = await collector._listener.VerifyHealthzAsync();
-
-        if (!healthzResult)
-        {
-            collector.Dispose();
-            throw new InvalidOperationException($"Cannot start {nameof(MockLogsCollector)}!");
-        }
-
-        return collector;
-    }
+    public OtlpResourceExpector ResourceExpector { get; } = new();
 
     public void Dispose()
     {
         WriteOutput($"Shutting down. Total logs requests received: '{_logs.Count}'");
+        ResourceExpector.Dispose();
         _logs.Dispose();
         _listener.Dispose();
     }
 
-    public void Expect(Func<LogRecord, bool> predicate, string? description = null)
+    public void Expect(Func<LogRecord, bool> predicate, string description = null)
     {
         description ??= "<no description>";
 
-        _expectations.Add(new Expectation(predicate, description));
+        _expectations.Add(new Expectation { Predicate = predicate, Description = description });
     }
 
     public void AssertExpectations(TimeSpan? timeout = null)
@@ -105,7 +102,7 @@ public class MockLogsCollector : IDisposable
         var expectationsMet = new List<LogRecord>();
         var additionalEntries = new List<LogRecord>();
 
-        timeout ??= DefaultWaitTimeout;
+        timeout ??= Timeout.Expectation;
         var cts = new CancellationTokenSource();
 
         try
@@ -151,6 +148,15 @@ public class MockLogsCollector : IDisposable
         }
     }
 
+    public void AssertEmpty(TimeSpan? timeout = null)
+    {
+        timeout ??= Timeout.NoExpectation;
+        if (_logs.TryTake(out var logRecord, timeout.Value))
+        {
+            Assert.Fail($"Expected nothing, but got: {logRecord}");
+        }
+    }
+
     private static void FailExpectations(
         List<Expectation> missingExpectations,
         List<LogRecord> expectationsMet,
@@ -180,49 +186,38 @@ public class MockLogsCollector : IDisposable
         Assert.Fail(message.ToString());
     }
 
+#if NETFRAMEWORK
     private void HandleHttpRequests(HttpListenerContext ctx)
     {
-        var rawUrl = ctx.Request.RawUrl;
-        if (rawUrl != null)
+        var logsMessage = ExportLogsServiceRequest.Parser.ParseFrom(ctx.Request.InputStream);
+        HandleLogsMessage(logsMessage);
+
+        ctx.GenerateEmptyProtobufResponse<ExportLogsServiceResponse>();
+    }
+#else
+    private async Task HandleHttpRequests(HttpContext ctx)
+    {
+        using var bodyStream = await ctx.ReadBodyToMemoryAsync();
+        var metricsMessage = ExportLogsServiceRequest.Parser.ParseFrom(bodyStream);
+        HandleLogsMessage(metricsMessage);
+
+        await ctx.GenerateEmptyProtobufResponseAsync<ExportLogsServiceResponse>();
+    }
+#endif
+
+    private void HandleLogsMessage(ExportLogsServiceRequest logsMessage)
+    {
+        foreach (var resourceLogs in logsMessage.ResourceLogs ?? Enumerable.Empty<ResourceLogs>())
         {
-            if (rawUrl.Equals("/v1/logs", StringComparison.OrdinalIgnoreCase))
+            ResourceExpector.Collect(resourceLogs.Resource);
+            foreach (var scopeLogs in resourceLogs.ScopeLogs ?? Enumerable.Empty<ScopeLogs>())
             {
-                var logsMessage = ExportLogsServiceRequest.Parser.ParseFrom(ctx.Request.InputStream);
-                if (logsMessage.ResourceLogs != null)
+                foreach (var logRecord in scopeLogs.LogRecords ?? Enumerable.Empty<LogRecord>())
                 {
-                    foreach (var rLogs in logsMessage.ResourceLogs)
-                    {
-                        if (rLogs.ScopeLogs != null)
-                        {
-                            foreach (var sLogs in rLogs.ScopeLogs)
-                            {
-                                if (sLogs.LogRecords != null)
-                                {
-                                    foreach (var logRecord in sLogs.LogRecords)
-                                    {
-                                        _logs.Add(logRecord);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    _logs.Add(logRecord);
                 }
             }
-
-            // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
-            // (Setting content-length avoids that)
-            ctx.Response.ContentType = "application/x-protobuf";
-            ctx.Response.StatusCode = (int)HttpStatusCode.OK;
-            var responseMessage = new ExportLogsServiceResponse();
-            ctx.Response.ContentLength64 = responseMessage.CalculateSize();
-            responseMessage.WriteTo(ctx.Response.OutputStream);
-            ctx.Response.Close();
-            return;
         }
-
-        // We received an unsupported request
-        ctx.Response.StatusCode = (int)HttpStatusCode.NotImplemented;
-        ctx.Response.Close();
     }
 
     private void WriteOutput(string msg)
@@ -233,14 +228,8 @@ public class MockLogsCollector : IDisposable
 
     private class Expectation
     {
-        public Expectation(Func<LogRecord, bool> predicate, string description)
-        {
-            Predicate = predicate;
-            Description = description;
-        }
+        public Func<LogRecord, bool> Predicate { get; set; }
 
-        public Func<LogRecord, bool> Predicate { get; }
-
-        public string Description { get; }
+        public string Description { get; set; }
     }
 }

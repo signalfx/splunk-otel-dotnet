@@ -1,4 +1,4 @@
-﻿// <copyright file="Metrics.cs" company="Splunk Inc.">
+// <copyright file="ILogger.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,22 +14,16 @@
 // limitations under the License.
 // </copyright>
 
-using OpenTelemetry.Metrics;
-
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Plugin;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 /// <summary>
-/// Metrics plugin
+/// Logger interface.
 /// </summary>
-public class Metrics
+public interface ILogger
 {
     /// <summary>
-    /// Configures Metrics
+    /// Logs warning message.
     /// </summary>
-    /// <param name="builder"><see cref="MeterProviderBuilder"/>  to configure</param>
-    /// <returns>Returns <see cref="MeterProviderBuilder"/> for chaining.</returns>
-    public MeterProviderBuilder ConfigureMeterProvider(MeterProviderBuilder builder)
-    {
-        return builder;
-    }
+    /// <param name="message">Message to be logged.</param>
+    void Warning(string message);
 }

@@ -1,4 +1,4 @@
-// <copyright file="LogSettings.cs" company="Splunk Inc.">
+﻿// <copyright file="EnvironmentConfigurationSource.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="LogSettings.cs" company="OpenTelemetry Authors">
+// <copyright file="EnvironmentConfigurationSource.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,11 +30,25 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
+using System;
 
-public class LogSettings
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
+
+internal class EnvironmentConfigurationSource : StringConfigurationSource
 {
-    public string Exporter => "otlp";
+    /// <inheritdoc />
+    public override string? GetString(string key)
+    {
+        try
+        {
+            return Environment.GetEnvironmentVariable(key);
+        }
+        catch
+        {
+            // We should not add a dependency from the Configuration system to the Logger system,
+            // so do nothing
+        }
 
-    public int Port { get; set; }
+        return null;
+    }
 }

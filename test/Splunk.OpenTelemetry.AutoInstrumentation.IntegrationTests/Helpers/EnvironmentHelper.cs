@@ -30,6 +30,8 @@
 // limitations under the License.
 // </copyright>
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -44,41 +46,43 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 public class EnvironmentHelper
 {
     private static readonly string RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
-    private static string? _nukeOutputLocation;
+    private static string _nukeOutputLocation;
 
     private readonly ITestOutputHelper _output;
-    private readonly int? _major;
-    private readonly int? _minor;
-    private readonly string? _patch;
+    private readonly int _major;
+    private readonly int _minor;
+    private readonly string _patch = null;
 
     private readonly string _appNamePrepend;
-    private readonly bool? _isCoreClr;
+    private readonly string _runtime;
+    private readonly bool _isCoreClr;
     private readonly string _testApplicationDirectory;
+    private readonly TargetFrameworkAttribute _targetFramework;
 
-    private string? _integrationsFileLocation;
-    private string? _profilerFileLocation;
+    private string _integrationsFileLocation;
+    private string _profilerFileLocation;
 
     public EnvironmentHelper(
         string testApplicationName,
         Type anchorType,
         ITestOutputHelper output,
-        string? testApplicationDirectory = null,
+        string testApplicationDirectory = null,
         bool prependTestApplicationToAppName = true)
     {
         TestApplicationName = testApplicationName;
         _testApplicationDirectory = testApplicationDirectory ?? Path.Combine("test", "test-applications", "integrations");
-        var targetFramework = Assembly.GetAssembly(anchorType)?.GetCustomAttribute<TargetFrameworkAttribute>();
+        _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
         _output = output;
 
-        var parts = targetFramework?.FrameworkName.Split(',');
-        var runtime = parts?[0];
-        _isCoreClr = runtime?.Equals(EnvironmentTools.CoreFramework);
+        var parts = _targetFramework.FrameworkName.Split(',');
+        _runtime = parts[0];
+        _isCoreClr = _runtime.Equals(EnvironmentTools.CoreFramework);
 
-        var versionParts = parts?[1].Replace("Version=v", string.Empty).Split('.');
-        _major = int.Parse(versionParts == null ? string.Empty : versionParts[0]);
-        _minor = int.Parse(versionParts == null ? string.Empty : versionParts[1]);
+        var versionParts = parts[1].Replace("Version=v", string.Empty).Split('.');
+        _major = int.Parse(versionParts[0]);
+        _minor = int.Parse(versionParts[1]);
 
-        if (versionParts?.Length == 3)
+        if (versionParts.Length == 3)
         {
             _patch = versionParts[2];
         }
@@ -86,11 +90,13 @@ public class EnvironmentHelper
         _appNamePrepend = prependTestApplicationToAppName
             ? "TestApplication."
             : string.Empty;
+
+        SetDefaultEnvironmentVariables();
     }
 
     public bool DebugModeEnabled { get; set; } = true;
 
-    public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new();
+    public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
 
     public string TestApplicationName { get; }
 
@@ -118,80 +124,17 @@ public class EnvironmentHelper
         throw new Exception($"Unable to find Nuke output at: {nukeOutputPath}. Ensure Nuke has run first.");
     }
 
-    public void SetEnvironmentVariables(
-        TestSettings testSettings,
-        StringDictionary environmentVariables,
-        string processToProfile)
+    public static bool IsRunningOnCI()
     {
-        string profilerPath = GetProfilerPath();
+        // https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
+        // Github sets CI environment variable
 
-        if (IsCoreClr())
-        {
-            // enableStartupHook should be true by default, and the parameter should only be set
-            // to false when testing the case that instrumentation should not be available.
-            if (testSettings.EnableStartupHook)
-            {
-                environmentVariables["DOTNET_STARTUP_HOOKS"] = GetStartupHookOutputPath();
-                environmentVariables["DOTNET_SHARED_STORE"] = GetSharedStorePath();
-                environmentVariables["DOTNET_ADDITIONAL_DEPS"] = GetAdditionalDepsPath();
-            }
+        string env = Environment.GetEnvironmentVariable("CI");
+        return !string.IsNullOrEmpty(env);
+    }
 
-            if (testSettings.EnableClrProfiler)
-            {
-                environmentVariables["CORECLR_ENABLE_PROFILING"] = "1";
-                environmentVariables["CORECLR_PROFILER"] = EnvironmentTools.ProfilerClsId;
-                environmentVariables["CORECLR_PROFILER_PATH"] = profilerPath;
-            }
-        }
-        else
-        {
-            if (testSettings.EnableClrProfiler)
-            {
-                environmentVariables["COR_ENABLE_PROFILING"] = "1";
-                environmentVariables["COR_PROFILER"] = EnvironmentTools.ProfilerClsId;
-                environmentVariables["COR_PROFILER_PATH"] = profilerPath;
-            }
-        }
-
-        if (DebugModeEnabled)
-        {
-            environmentVariables["OTEL_DOTNET_AUTO_DEBUG"] = "1";
-            var solutionDirectory = EnvironmentTools.GetSolutionDirectory() ?? string.Empty;
-            environmentVariables["OTEL_DOTNET_AUTO_LOG_DIRECTORY"] = Path.Combine(solutionDirectory, "build_data", "profiler-logs");
-        }
-
-        if (!string.IsNullOrEmpty(processToProfile))
-        {
-            environmentVariables["OTEL_DOTNET_AUTO_INCLUDE_PROCESSES"] = Path.GetFileName(processToProfile);
-        }
-
-        environmentVariables["OTEL_DOTNET_AUTO_HOME"] = GetNukeBuildOutput();
-
-        environmentVariables["OTEL_DOTNET_AUTO_INTEGRATIONS_FILE"] = Environment.GetEnvironmentVariable("OTEL_DOTNET_AUTO_INTEGRATIONS_FILE") ?? GetIntegrationsPath();
-
-        if (testSettings.TracesSettings != null)
-        {
-            environmentVariables["OTEL_TRACES_EXPORTER"] = testSettings.TracesSettings.Exporter;
-            environmentVariables["OTEL_EXPORTER_OTLP_ENDPOINT"] = $"http://localhost:{testSettings.TracesSettings.Port}";
-        }
-
-        if (testSettings.MetricsSettings != null)
-        {
-            environmentVariables["OTEL_METRICS_EXPORTER"] = testSettings.MetricsSettings.Exporter;
-            environmentVariables["OTEL_EXPORTER_OTLP_ENDPOINT"] = $"http://localhost:{testSettings.MetricsSettings.Port}";
-        }
-
-        if (testSettings.LogSettings != null)
-        {
-            environmentVariables["OTEL_LOGS_EXPORTER"] = testSettings.LogSettings.Exporter;
-            environmentVariables["OTEL_EXPORTER_OTLP_ENDPOINT"] = $"http://localhost:{testSettings.LogSettings.Port}";
-        }
-
-        // for ASP.NET Core test applications, set the server's port
-        environmentVariables["ASPNETCORE_URLS"] = $"http://127.0.0.1:{testSettings.AspNetCorePort}/";
-
-        environmentVariables["OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES"] = "TestApplication.*";
-
+    public void SetEnvironmentVariables(StringDictionary environmentVariables)
+    {
         foreach (var key in CustomEnvironmentVariables.Keys)
         {
             environmentVariables[key] = CustomEnvironmentVariables[key];
@@ -205,7 +148,7 @@ public class EnvironmentHelper
             return _profilerFileLocation;
         }
 
-        string extension = EnvironmentTools.GetOs() switch
+        string extension = EnvironmentTools.GetOS() switch
         {
             "win" => "dll",
             "linux" => "so",
@@ -213,16 +156,16 @@ public class EnvironmentHelper
             _ => throw new PlatformNotSupportedException()
         };
 
-        var fileName = $"OpenTelemetry.AutoInstrumentation.Native.{extension}";
-        var nukeOutput = GetNukeBuildOutput();
-        var profilerPath = EnvironmentTools.IsWindows()
+        string fileName = $"OpenTelemetry.AutoInstrumentation.Native.{extension}";
+        string nukeOutput = GetNukeBuildOutput();
+        string profilerPath = EnvironmentTools.IsWindows()
             ? Path.Combine(nukeOutput, $"win-{EnvironmentTools.GetPlatform().ToLower()}", fileName)
             : Path.Combine(nukeOutput, fileName);
 
         if (File.Exists(profilerPath))
         {
             _profilerFileLocation = profilerPath;
-            _output.WriteLine($"Found profiler at {_profilerFileLocation}.");
+            _output?.WriteLine($"Found profiler at {_profilerFileLocation}.");
             return _profilerFileLocation;
         }
 
@@ -236,13 +179,13 @@ public class EnvironmentHelper
             return _integrationsFileLocation;
         }
 
-        var fileName = "integrations.json";
-        var integrationsPath = Path.Combine(GetNukeBuildOutput(), fileName);
+        string fileName = $"integrations.json";
+        string integrationsPath = Path.Combine(GetNukeBuildOutput(), fileName);
 
         if (File.Exists(integrationsPath))
         {
             _integrationsFileLocation = integrationsPath;
-            _output.WriteLine($"Found integrations at {_profilerFileLocation}.");
+            _output?.WriteLine($"Found integrations at {_profilerFileLocation}.");
             return _integrationsFileLocation;
         }
 
@@ -251,7 +194,7 @@ public class EnvironmentHelper
 
     public string GetTestApplicationPath(string packageVersion = "", string framework = "")
     {
-        var extension = "exe";
+        string extension = "exe";
 
         if (IsCoreClr() || _testApplicationDirectory.Contains("aspnet"))
         {
@@ -293,7 +236,7 @@ public class EnvironmentHelper
     {
         var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
         var projectDir = Path.Combine(
-            solutionDirectory ?? string.Empty,
+            solutionDirectory,
             _testApplicationDirectory,
             $"{FullTestApplicationName}");
         return projectDir;
@@ -324,14 +267,9 @@ public class EnvironmentHelper
 
     public string GetTargetFramework()
     {
-        if (_isCoreClr.HasValue && _isCoreClr.Value)
+        if (_isCoreClr)
         {
-            if (_major >= 5)
-            {
-                return $"net{_major}.{_minor}";
-            }
-
-            return $"netcoreapp{_major}.{_minor}";
+            return $"net{_major}.{_minor}";
         }
 
         return $"net{_major}{_minor}{_patch ?? string.Empty}";
@@ -339,7 +277,7 @@ public class EnvironmentHelper
 
     private static string GetStartupHookOutputPath()
     {
-        var startupHookOutputPath = Path.Combine(
+        string startupHookOutputPath = Path.Combine(
             GetNukeBuildOutput(),
             "net",
             "OpenTelemetry.AutoInstrumentation.StartupHook.dll");
@@ -349,7 +287,7 @@ public class EnvironmentHelper
 
     private static string GetSharedStorePath()
     {
-        var storePath = Path.Combine(
+        string storePath = Path.Combine(
             GetNukeBuildOutput(),
             "store");
 
@@ -358,10 +296,41 @@ public class EnvironmentHelper
 
     private static string GetAdditionalDepsPath()
     {
-        var additionalDeps = Path.Combine(
+        string additionalDeps = Path.Combine(
             GetNukeBuildOutput(),
             "AdditionalDeps");
 
         return additionalDeps;
+    }
+
+    private void SetDefaultEnvironmentVariables()
+    {
+        string profilerPath = GetProfilerPath();
+
+        CustomEnvironmentVariables["DOTNET_STARTUP_HOOKS"] = GetStartupHookOutputPath();
+        CustomEnvironmentVariables["DOTNET_SHARED_STORE"] = GetSharedStorePath();
+        CustomEnvironmentVariables["DOTNET_ADDITIONAL_DEPS"] = GetAdditionalDepsPath();
+
+        // call TestHelper.EnableBytecodeInstrumentation() to enable CoreCLR Profiler when bytecode instrumentation is needed
+        // it is not enabled by default to make sure that the instrumentations that do not require CoreCLR Profiler are working without it
+        CustomEnvironmentVariables["CORECLR_PROFILER"] = EnvironmentTools.ProfilerClsId;
+        CustomEnvironmentVariables["CORECLR_PROFILER_PATH"] = profilerPath;
+
+        CustomEnvironmentVariables["COR_ENABLE_PROFILING"] = "1";
+        CustomEnvironmentVariables["COR_PROFILER"] = EnvironmentTools.ProfilerClsId;
+        CustomEnvironmentVariables["COR_PROFILER_PATH"] = profilerPath;
+
+        CustomEnvironmentVariables["OTEL_DOTNET_AUTO_DEBUG"] = "1";
+        CustomEnvironmentVariables["OTEL_DOTNET_AUTO_LOG_DIRECTORY"] = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "build_data", "profiler-logs");
+        CustomEnvironmentVariables["OTEL_DOTNET_AUTO_HOME"] = GetNukeBuildOutput();
+        CustomEnvironmentVariables["OTEL_DOTNET_AUTO_INTEGRATIONS_FILE"] = Environment.GetEnvironmentVariable("OTEL_DOTNET_AUTO_INTEGRATIONS_FILE") ?? GetIntegrationsPath();
+        CustomEnvironmentVariables["OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES"] = "TestApplication.*";
+
+        // exporters are disabled by default in order not to have errors in the logs
+        CustomEnvironmentVariables["OTEL_TRACES_EXPORTER"] = "none";
+        CustomEnvironmentVariables["OTEL_METRICS_EXPORTER"] = "none";
+        CustomEnvironmentVariables["OTEL_LOGS_EXPORTER"] = "none";
+
+        CustomEnvironmentVariables["OTEL_DOTNET_AUTO_PLUGINS"] = "Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation";
     }
 }
