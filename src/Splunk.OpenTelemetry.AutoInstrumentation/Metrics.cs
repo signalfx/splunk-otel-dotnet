@@ -17,11 +17,13 @@
 using System;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
+using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class Metrics
 {
+    private readonly ILogger _log = new Logger();
     private readonly PluginSettings _settings;
 
     internal Metrics(PluginSettings settings)
@@ -31,7 +33,7 @@ internal class Metrics
 
     public MeterProviderBuilder ConfigureMeterProvider(MeterProviderBuilder builder)
     {
-        ServiceNameWarning.SendOnMissingServiceName();
+        ServiceNameWarning.Instance.SendOnMissingServiceName(_log);
         return builder.ConfigureResource(ResourceConfigurator.Configure);
     }
 

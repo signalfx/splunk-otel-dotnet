@@ -19,7 +19,7 @@ using System.Reflection;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
-internal static class Logger
+internal class Logger : ILogger
 {
     private static readonly object? Log;
     private static readonly MethodInfo? WarningMethod;
@@ -46,7 +46,7 @@ internal static class Logger
         }
     }
 
-    internal static void Warning(string message)
+    void ILogger.Warning(string message)
     {
         WarningMethod?.Invoke(Log, new object[] { message, 0, string.Empty });
     }

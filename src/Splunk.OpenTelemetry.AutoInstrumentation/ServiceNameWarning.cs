@@ -21,7 +21,7 @@ using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
-internal static class ServiceNameWarning
+internal class ServiceNameWarning
 {
     private const string ServiceNameEnvVarKey = "OTEL_SERVICE_NAME";
     private const string ResourcesEnvVarKey = "OTEL_RESOURCE_ATTRIBUTES";
@@ -29,9 +29,16 @@ internal static class ServiceNameWarning
     private const char AttributeListSplitter = ',';
     private const char AttributeKeyValueSplitter = '=';
 
-    private static int _warningEmitted;
+    private static readonly Lazy<ServiceNameWarning> LazyInstance = new(() => new ServiceNameWarning());
+    private int _warningEmitted;
 
-    internal static void SendOnMissingServiceName()
+    internal ServiceNameWarning()
+    {
+    }
+
+    internal static ServiceNameWarning Instance => LazyInstance.Value;
+
+    internal void SendOnMissingServiceName(ILogger logger)
     {
         if (Interlocked.CompareExchange(ref _warningEmitted, 1, 0) != 0)
         {
@@ -47,7 +54,7 @@ internal static class ServiceNameWarning
         var attributes = Environment.GetEnvironmentVariable(ResourcesEnvVarKey);
         if (string.IsNullOrEmpty(attributes))
         {
-            SendWarning();
+            SendWarning(logger);
             return;
         }
 
@@ -66,20 +73,19 @@ internal static class ServiceNameWarning
 
         if (!serviceNameAttribute.ContainsKey(AttributeName))
         {
-            SendWarning();
+            SendWarning(logger);
             return;
         }
 
         if (string.IsNullOrEmpty(serviceNameAttribute[AttributeName]))
         {
-            SendWarning();
-            return;
+            SendWarning(logger);
         }
     }
 
-    private static void SendWarning()
+    private static void SendWarning(ILogger logger)
     {
-        Logger.Warning(
+        logger.Warning(
             "The service.name attribute is not set, your service is unnamed and will be difficult to identify. " +
             "Set your service name using the OTEL_SERVICE_NAME or OTEL_RESOURCE_ATTRIBUTES environment variable.");
     }

@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Trace;
+using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 #if NETFRAMEWORK
 using System.Web;
@@ -30,6 +31,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class Traces
 {
+    private readonly ILogger _log = new Logger();
     private readonly PluginSettings _settings;
 
     internal Traces(PluginSettings settings)
@@ -39,7 +41,7 @@ internal class Traces
 
     public TracerProviderBuilder ConfigureTracerProvider(TracerProviderBuilder builder)
     {
-        ServiceNameWarning.SendOnMissingServiceName();
+        ServiceNameWarning.Instance.SendOnMissingServiceName(_log);
         return builder.ConfigureResource(ResourceConfigurator.Configure);
     }
 
