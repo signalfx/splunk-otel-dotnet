@@ -24,11 +24,6 @@ internal class Metrics
 {
     private readonly PluginSettings _settings;
 
-    public Metrics()
-        : this(PluginSettings.FromDefaultSources())
-    {
-    }
-
     internal Metrics(PluginSettings settings)
     {
         _settings = settings;

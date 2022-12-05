@@ -27,7 +27,7 @@ public class MetricsTests
     public void ConfigureMeterProvider()
     {
         var builder = Mock.Of<MeterProviderBuilder>();
-        var returnedBuilder = new Metrics().ConfigureMeterProvider(builder);
+        var returnedBuilder = new Metrics(PluginSettings.FromDefaultSources()).ConfigureMeterProvider(builder);
         returnedBuilder.Should().Be(builder);
     }
 

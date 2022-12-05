@@ -27,7 +27,7 @@ public class TracesTests
     public void ConfigureTracerProvider()
     {
         var builder = Mock.Of<TracerProviderBuilder>();
-        var returnedBuilder = new Traces().ConfigureTracerProvider(builder);
+        var returnedBuilder = new Traces(PluginSettings.FromDefaultSources()).ConfigureTracerProvider(builder);
         returnedBuilder.Should().Be(builder);
     }
 
