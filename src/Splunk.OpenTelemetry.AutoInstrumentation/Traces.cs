@@ -84,9 +84,9 @@ internal class Traces
             };
         }
     }
-#endif
 
-#if NET6_0_OR_GREATER
+#else
+
     public void ConfigureTracesOptions(AspNetCoreInstrumentationOptions options)
     {
         if (_settings.TraceResponseHeaderEnabled)

@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-#if NET6_0_OR_GREATER
+#if !NETFRAMEWORK
 
 using System.Net.Http;
 using System.Threading.Tasks;
