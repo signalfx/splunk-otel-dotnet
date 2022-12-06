@@ -53,14 +53,11 @@ internal class PluginSettings
         {
             new EnvironmentConfigurationSource(),
 
-/*
-* TODO: Enable ASP.NET web.config support
-*
 #if NETFRAMEWORK
             // on .NET Framework only, also read from app.config/web.config
             new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings)
 #endif
-*/
+
         };
 
         return new PluginSettings(configurationSource);
