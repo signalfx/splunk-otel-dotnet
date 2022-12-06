@@ -93,9 +93,9 @@ else
 fi
 
 if [ -z "$DOTNET_STARTUP_HOOKS" ]; then
-  export DOTNET_STARTUP_HOOKS="${OTEL_DOTNET_AUTO_HOME}/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+  export DOTNET_STARTUP_HOOKS="${OTEL_DOTNET_AUTO_HOME}/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
 else
-  export DOTNET_STARTUP_HOOKS="${OTEL_DOTNET_AUTO_HOME}/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll${SEPARATOR}${DOTNET_STARTUP_HOOKS}"
+  export DOTNET_STARTUP_HOOKS="${OTEL_DOTNET_AUTO_HOME}/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll${SEPARATOR}${DOTNET_STARTUP_HOOKS}"
 fi
 
 # Configure .NET CLR Profiler
@@ -141,4 +141,5 @@ if [ "$ENABLE_PROFILING" = "true" ]; then
 
   # Configure the bytecode instrumentation configuration file
   export OTEL_DOTNET_AUTO_INTEGRATIONS_FILE="$OTEL_DOTNET_AUTO_HOME/integrations.json"
+  export OTEL_DOTNET_AUTO_PLUGINS="Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation"
 fi
