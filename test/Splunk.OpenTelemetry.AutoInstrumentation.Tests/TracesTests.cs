@@ -45,7 +45,7 @@ public class TracesTests
         var options = new OtlpExporterOptions();
         new Traces(settings).ConfigureTracesOptions(options);
 
-        options.Endpoint.Should().Be("https://ingest.my-realm.signalfx.com/v2/trace");
+        options.Endpoint.Should().Be("https://ingest.my-realm.signalfx.com/v2/trace/otlp");
         options.Headers.Should().Be("X-Sf-Token=MyToken");
     }
 }
