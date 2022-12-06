@@ -128,7 +128,9 @@ function Remove-Windows-Service([string]$WindowsServiceName) {
         "DOTNET_SHARED_STORE",
         "DOTNET_STARTUP_HOOKS",
         # OpenTelemetry
-        "OTEL_DOTNET_"
+        "OTEL_DOTNET_",
+        # Splunk
+        "SPLUNK_"
     )
 
     $regPath = "HKLM:SYSTEM\CurrentControlSet\Services\"
