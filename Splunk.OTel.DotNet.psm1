@@ -63,7 +63,7 @@ function Get-Environment-Variables-Table([string]$InstallDir, [string]$OTelServi
 
     $DOTNET_ADDITIONAL_DEPS = Join-Path $InstallDir "AdditionalDeps"
     $DOTNET_SHARED_STORE = Join-Path $InstallDir "store"
-    $DOTNET_STARTUP_HOOKS = Join-Path $InstallDir "netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+    $DOTNET_STARTUP_HOOKS = Join-Path $InstallDir "net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
 
     $OTEL_DOTNET_AUTO_HOME = $InstallDir
     $OTEL_DOTNET_AUTO_INTEGRATIONS_FILE = Join-Path $InstallDir "integrations.json"
@@ -88,6 +88,8 @@ function Get-Environment-Variables-Table([string]$InstallDir, [string]$OTelServi
         # OpenTelemetry
         "OTEL_DOTNET_AUTO_HOME"               = $OTEL_DOTNET_AUTO_HOME;
         "OTEL_DOTNET_AUTO_INTEGRATIONS_FILE"  = $OTEL_DOTNET_AUTO_INTEGRATIONS_FILE
+        # Splunk distribution
+        "OTEL_DOTNET_AUTO_PLUGINS"            = "Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
     }
 
     if (-not [string]::IsNullOrWhiteSpace($OTelServiceName)) {
