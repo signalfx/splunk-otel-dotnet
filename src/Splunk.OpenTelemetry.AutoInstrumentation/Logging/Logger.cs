@@ -19,7 +19,7 @@ using System.Reflection;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
-internal static class Logger
+internal class Logger : ILogger
 {
     private static readonly object? Log;
     private static readonly MethodInfo? WarningMethod;
@@ -28,13 +28,13 @@ internal static class Logger
     {
         try
         {
-            var otelLoggingtype = Type.GetType("OpenTelemetry.AutoInstrumentation.Logging.OtelLogging, OpenTelemetry.AutoInstrumentation");
+            var otelLoggingtype = Type.GetType("OpenTelemetry.AutoInstrumentation.Logging.OtelLogging, OpenTelemetry.AutoInstrumentation")!;
             // Call the constructor to initialize (this method guarantees that the static constructor is only called once, regardless how many times the method is called)
             System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(otelLoggingtype.TypeHandle);
 
-            var method = otelLoggingtype.GetMethod("GetLogger", BindingFlags.Static | BindingFlags.NonPublic);
+            var method = otelLoggingtype.GetMethod("GetLogger", BindingFlags.Static | BindingFlags.NonPublic)!;
 
-            Log = method.Invoke(null, null);
+            Log = method.Invoke(null, null)!;
 
             WarningMethod = Log
                 .GetType()
@@ -46,7 +46,7 @@ internal static class Logger
         }
     }
 
-    internal static void Warning(string message)
+    void ILogger.Warning(string message)
     {
         WarningMethod?.Invoke(Log, new object[] { message, 0, string.Empty });
     }

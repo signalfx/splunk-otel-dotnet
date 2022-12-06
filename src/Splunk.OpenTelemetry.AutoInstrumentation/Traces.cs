@@ -15,19 +15,24 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Trace;
+using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
+
+#if NETFRAMEWORK
+using System.Web;
+using OpenTelemetry.Instrumentation.AspNet;
+#else
+using OpenTelemetry.Instrumentation.AspNetCore;
+#endif
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class Traces
 {
+    private readonly ILogger _log = new Logger();
     private readonly PluginSettings _settings;
-
-    public Traces()
-        : this(PluginSettings.FromDefaultSources())
-    {
-    }
 
     internal Traces(PluginSettings settings)
     {
@@ -36,7 +41,7 @@ internal class Traces
 
     public TracerProviderBuilder ConfigureTracerProvider(TracerProviderBuilder builder)
     {
-        ServiceNameWarning.SendOnMissingServiceName();
+        ServiceNameWarning.Instance.SendOnMissingServiceName(_log);
         return builder.ConfigureResource(ResourceConfigurator.Configure);
     }
 
@@ -61,4 +66,43 @@ internal class Traces
             }
         }
     }
+
+#if NETFRAMEWORK
+    public void ConfigureTracesOptions(AspNetInstrumentationOptions options)
+    {
+        if (_settings.TraceResponseHeaderEnabled)
+        {
+            options.Enrich = (activity, eventName, obj) =>
+            {
+                if (eventName == "OnStartActivity" && obj is HttpRequest request)
+                {
+                    var response = request.RequestContext.HttpContext.Response;
+
+                    ServerTimingHeader.SetHeaders(activity, response.Headers, (headers, key, value) =>
+                    {
+                        headers[key] = value;
+                    });
+                }
+            };
+        }
+    }
+
+#else
+
+    public void ConfigureTracesOptions(AspNetCoreInstrumentationOptions options)
+    {
+        if (_settings.TraceResponseHeaderEnabled)
+        {
+            options.EnrichWithHttpRequest = (activity, request) =>
+            {
+                var response = request.HttpContext.Response;
+
+                ServerTimingHeader.SetHeaders(activity, response.Headers, (headers, key, value) =>
+                {
+                    headers.TryAdd(key, value);
+                });
+            };
+        }
+    }
+#endif
 }

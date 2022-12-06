@@ -19,6 +19,12 @@ using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
+#if NETFRAMEWORK
+using OpenTelemetry.Instrumentation.AspNet;
+#else
+using OpenTelemetry.Instrumentation.AspNetCore;
+#endif
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 /// <summary>
@@ -26,8 +32,10 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 /// </summary>
 public class Plugin
 {
-    private readonly Metrics _metrics = new();
-    private readonly Traces _traces = new();
+    private static readonly PluginSettings Settings = PluginSettings.FromDefaultSources();
+
+    private readonly Metrics _metrics = new(Settings);
+    private readonly Traces _traces = new(Settings);
     private readonly Logs _logs = new();
 
     /// <summary>
@@ -60,13 +68,37 @@ public class Plugin
     }
 
     /// <summary>
-    /// Configure Traces OTLP exporter options
+    /// Configure Traces OTLP exporter options.
     /// </summary>
-    /// <param name="options">Otlp options</param>
+    /// <param name="options">Otlp options.</param>
     public void ConfigureTracesOptions(OtlpExporterOptions options)
     {
         _traces.ConfigureTracesOptions(options);
     }
+
+#if NETFRAMEWORK
+
+    /// <summary>
+    /// Configures ASP.NET instrumentation options.
+    /// </summary>
+    /// <param name="options">Otlp options.</param>
+    public void ConfigureTracesOptions(AspNetInstrumentationOptions options)
+    {
+        _traces.ConfigureTracesOptions(options);
+    }
+
+#else
+
+    /// <summary>
+    /// Configures ASP.NET Core instrumentation options.
+    /// </summary>
+    /// <param name="options">Otlp options.</param>
+    public void ConfigureTracesOptions(AspNetCoreInstrumentationOptions options)
+    {
+        _traces.ConfigureTracesOptions(options);
+    }
+
+#endif
 
     /// <summary>
     /// Configure metrics OpenTelemetryLoggerOptions options

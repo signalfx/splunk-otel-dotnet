@@ -35,14 +35,17 @@ internal class PluginSettings
 
         Realm = source.GetString(ConfigurationKeys.Splunk.Realm);
         AccessToken = source.GetString(ConfigurationKeys.Splunk.AccessToken);
+        TraceResponseHeaderEnabled = source.GetBool(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled) ?? true;
         IsOtlpEndpointSet = !string.IsNullOrEmpty(source.GetString(ConfigurationKeys.OpenTelemetry.OtlpEndpoint));
     }
 
-    public bool IsOtlpEndpointSet { get; set; }
+    public string? Realm { get; }
 
-    public string? Realm { get; set; }
+    public string? AccessToken { get; }
 
-    public string? AccessToken { get; set; }
+    public bool TraceResponseHeaderEnabled { get; }
+
+    public bool IsOtlpEndpointSet { get; }
 
     public static PluginSettings FromDefaultSources()
     {
@@ -50,14 +53,11 @@ internal class PluginSettings
         {
             new EnvironmentConfigurationSource(),
 
-/*
-* TODO: Enable ASP.NET web.config support
-*
 #if NETFRAMEWORK
             // on .NET Framework only, also read from app.config/web.config
             new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings)
 #endif
-*/
+
         };
 
         return new PluginSettings(configurationSource);
