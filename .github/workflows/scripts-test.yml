@@ -73,3 +73,30 @@ jobs:
           . ./instrument.sh
           ./bin/Release/net7.0/publish/testapp
             test "$(ls -A '${{ matrix.log-dir }}' )"
+
+  shell-scripts-container:
+    strategy:
+      fail-fast: false
+      matrix:
+        base-image: [ alpine ]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3.1.0
+      - name: Test the Shell scripts from README.md in Docker container
+        run: |
+          set -e
+          docker build -t mybuildimage -f "./docker/${{ matrix.base-image }}.dockerfile" .
+          docker run --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project --rm mybuildimage /bin/sh -c '
+            set -e
+            mkdir testapp
+            cd testapp
+            dotnet new console
+            dotnet publish /p:TreatWarningsAsErrors=false -f net7.0 -c Release
+            curl -sSfL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/splunk-otel-dotnet-install.sh -O
+            sh ./splunk-otel-dotnet-install
+              test "$(ls -A "$HOME/.splunk-otel-dotnet")"
+            curl -sSfL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/instrument.sh -O
+            . ./instrument.sh
+            ./bin/Release/net7.0/publish/testapp
+              test "$(ls -A /var/log/opentelemetry/dotnet )"
+          '
