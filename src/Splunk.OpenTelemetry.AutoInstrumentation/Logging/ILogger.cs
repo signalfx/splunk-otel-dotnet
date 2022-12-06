@@ -26,4 +26,10 @@ public interface ILogger
     /// </summary>
     /// <param name="message">Message to be logged.</param>
     void Warning(string message);
+
+    /// <summary>
+    /// Logs error message.
+    /// </summary>
+    /// <param name="message">Message to be logged.</param>
+    void Error(string message);
 }
