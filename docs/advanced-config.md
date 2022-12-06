@@ -45,8 +45,16 @@ When running your application, make sure to:
 
 Note: .NET Framework apps can read settings also from `Web.config` and `App.config`.
 
-| Environment variable                   | Description                                | Default value |
-|----------------------------------------|--------------------------------------------|---------------|
-| `SPLUNK_REALM`                         | Specifies direct OTLP ingest realm.        |               |
-| `SPLUNK_ACCESS_TOKEN`                  | Specifies direct OTLP ingest access token. |               |
-| `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED` | Enables Splunk RUM integration.            | `true`        |
+| Environment variable                   | Default | Description                                |
+|----------------------------------------|---------|--------------------------------------------|
+| `SPLUNK_REALM`                         | `none`  | Specifies direct OTLP ingest realm. [1]    |
+| `SPLUNK_ACCESS_TOKEN`                  |         | Specifies direct OTLP ingest access token. |
+| `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED` | `true`  | Enables Splunk RUM integration.            |
+
+- [1]: By default, instrumentation libraries are configured to send to a local
+  collector. If `SPLUNK_REALM` is set to
+  anything besides `none` then the `OTEL_EXPORTER_*_ENDPOINT` is set to an
+  [endpoint](https://dev.splunk.com/observability/docs/realms_in_endpoints/)
+  based on the defined realm. If both `SPLUNK_REALM` and
+  `OTEL_EXPORTER_*_ENDPOINT` are set then `OTEL_EXPORTER_*_ENDPOINT` takes
+  precedence.
