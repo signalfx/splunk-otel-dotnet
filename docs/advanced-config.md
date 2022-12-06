@@ -45,8 +45,8 @@ When running your application, make sure to:
 
 Note: .NET Framework apps can read settings also from `Web.config` and `App.config`.
 
-| Environment variable                   | Description                           | Default value |
-|----------------------------------------|---------------------------------------|---------------|
-| `SPLUNK_REALM`                         | Specifies direct ingest realm.        |               |
-| `SPLUNK_ACCESS_TOKEN`                  | Specifies direct ingest access token. |               |
-| `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED` | Enables Splunk RUM integration.       | `true`        |
+| Environment variable                   | Description                                | Default value |
+|----------------------------------------|--------------------------------------------|---------------|
+| `SPLUNK_REALM`                         | Specifies direct OTLP ingest realm.        |               |
+| `SPLUNK_ACCESS_TOKEN`                  | Specifies direct OTLP ingest access token. |               |
+| `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED` | Enables Splunk RUM integration.            | `true`        |
