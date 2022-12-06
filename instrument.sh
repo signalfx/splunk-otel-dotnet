@@ -141,4 +141,5 @@ if [ "$ENABLE_PROFILING" = "true" ]; then
 
   # Configure the bytecode instrumentation configuration file
   export OTEL_DOTNET_AUTO_INTEGRATIONS_FILE="$OTEL_DOTNET_AUTO_HOME/integrations.json"
+  export OTEL_DOTNET_AUTO_PLUGINS="Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation"
 fi
