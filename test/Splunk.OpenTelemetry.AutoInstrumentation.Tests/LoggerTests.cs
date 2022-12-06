@@ -31,7 +31,7 @@ public class LoggerTests
     public void ImplementationDoesNotThrowExceptionWhenReflectionFails()
     {
         ILogger logger = new Logger();
-        var exception = Record.Exception(() => logger.Warning("message"));
-        exception.Should().Be(null);
+        Action act = () => logger.Warning("message");
+        act.Should().NotThrow();
     }
 }
