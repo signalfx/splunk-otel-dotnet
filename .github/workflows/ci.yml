@@ -76,7 +76,7 @@ jobs:
       run: |
         docker build \
           --tag splunk-otel-dotnet/${{ matrix.base-image }} \
-          --file "./build/docker/${{ matrix.base-image }}.dockerfile" \
+          --file "./docker/${{ matrix.base-image }}.dockerfile" \
           ./build
     - name: Build in Docker container
       run: |
@@ -84,6 +84,18 @@ jobs:
           --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project \
           splunk-otel-dotnet/${{ matrix.base-image }} \
           ./build.sh Workflow
+    - name: Test the Shell scripts from README.md in Docker container
+      run: |
+        set -e
+        docker build -t mybuildimage -f "./docker/${{ matrix.base-image }}.dockerfile" .
+        docker run --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project --rm mybuildimage /bin/sh -c '
+          set -e
+          dotnet publish -f net7.0 -c Release ./test/test-applications/integrations/TestApplication.Smoke
+          export OTEL_DOTNET_AUTO_HOME="${PWD}/OpenTelemetryDistribution"
+          . ./instrument.sh
+          ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net7.0/publish/TestApplication.Smoke
+            test "$(ls -A /var/log/opentelemetry/dotnet )"
+        '
     - uses: actions/upload-artifact@v3.1.1
       with:
         name: bin-${{ matrix.base-image }}
