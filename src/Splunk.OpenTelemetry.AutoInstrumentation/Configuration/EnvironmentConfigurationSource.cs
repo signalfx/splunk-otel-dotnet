@@ -36,8 +36,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 
 internal class EnvironmentConfigurationSource : StringConfigurationSource
 {
-    /// <inheritdoc />
-    public override string? GetString(string key)
+    protected override string? GetStringInternal(string key)
     {
         try
         {

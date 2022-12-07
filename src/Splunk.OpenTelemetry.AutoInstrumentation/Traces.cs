@@ -32,12 +32,18 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class Traces
 {
-    private readonly ILogger _log = new Logger();
+    private readonly ILogger _log;
     private readonly PluginSettings _settings;
 
     internal Traces(PluginSettings settings)
+        : this(settings, new Logger())
+    {
+    }
+
+    internal Traces(PluginSettings settings, ILogger logger)
     {
         _settings = settings;
+        _log = logger;
     }
 
     public TracerProviderBuilder ConfigureTracerProvider(TracerProviderBuilder builder)

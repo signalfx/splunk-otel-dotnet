@@ -41,7 +41,16 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 internal abstract class StringConfigurationSource : IConfigurationSource
 {
     /// <inheritdoc />
-    public abstract string? GetString(string key);
+    public virtual string? GetString(string key)
+    {
+        string? value = GetStringInternal(key);
+        if (string.IsNullOrEmpty(value))
+        {
+            return null;
+        }
+
+        return value;
+    }
 
     /// <inheritdoc />
     public virtual int? GetInt32(string key)
@@ -69,4 +78,6 @@ internal abstract class StringConfigurationSource : IConfigurationSource
         string? value = GetString(key);
         return bool.TryParse(value, out bool result) ? result : null;
     }
+
+    protected abstract string? GetStringInternal(string key);
 }

@@ -46,12 +46,12 @@ internal class Logger : ILogger
         }
     }
 
-    void ILogger.Warning(string message)
+    public void Warning(string message)
     {
         WarningMethod?.Invoke(Log, new object[] { message, 0, string.Empty });
     }
 
-    void ILogger.Error(string message)
+    public void Error(string message)
     {
         ErrorMethod?.Invoke(Log, new object[] { message, 0, string.Empty });
     }

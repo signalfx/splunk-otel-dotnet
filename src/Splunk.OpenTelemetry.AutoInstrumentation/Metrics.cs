@@ -24,12 +24,18 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class Metrics
 {
-    private readonly ILogger _log = new Logger();
+    private readonly ILogger _log;
     private readonly PluginSettings _settings;
 
     internal Metrics(PluginSettings settings)
+    : this(settings, new Logger())
+    {
+    }
+
+    internal Metrics(PluginSettings settings, ILogger logger)
     {
         _settings = settings;
+        _log = logger;
     }
 
     public MeterProviderBuilder ConfigureMeterProvider(MeterProviderBuilder builder)
