@@ -18,6 +18,8 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal static class Constants
 {
+    public const string None = "none";
+
     public static class Ingest
     {
         public const string TracesIngestTemplate = "https://ingest.{0}.signalfx.com/v2/trace/otlp";

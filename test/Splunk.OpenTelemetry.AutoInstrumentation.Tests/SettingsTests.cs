@@ -38,7 +38,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 
             using (new AssertionScope())
             {
-                settings.Realm.Should().BeNull();
+                settings.Realm.Should().Be("none");
                 settings.AccessToken.Should().BeNull();
                 settings.TraceResponseHeaderEnabled.Should().BeTrue();
             }

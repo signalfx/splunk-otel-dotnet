@@ -17,18 +17,25 @@
 using System;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
+using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class Metrics
 {
-    private readonly ILogger _log = new Logger();
+    private readonly ILogger _log;
     private readonly PluginSettings _settings;
 
     internal Metrics(PluginSettings settings)
+    : this(settings, new Logger())
+    {
+    }
+
+    internal Metrics(PluginSettings settings, ILogger logger)
     {
         _settings = settings;
+        _log = logger;
     }
 
     public MeterProviderBuilder ConfigureMeterProvider(MeterProviderBuilder builder)
@@ -39,23 +46,16 @@ internal class Metrics
 
     public void ConfigureMetricsOptions(OtlpExporterOptions options)
     {
-        if (!_settings.IsOtlpEndpointSet && _settings.Realm != null)
+        if (!_settings.IsOtlpEndpointSet && _settings.Realm != Constants.None)
         {
+            if (string.IsNullOrEmpty(_settings.AccessToken))
+            {
+                _log.Error($"'{ConfigurationKeys.Splunk.AccessToken}' is required when '{ConfigurationKeys.Splunk.Realm}' is set.");
+                return;
+            }
+
             options.Endpoint = new Uri(string.Format(Constants.Ingest.MetricsIngestTemplate, _settings.Realm));
-        }
-
-        if (_settings.AccessToken != null)
-        {
-            string accessHeader = $"X-Sf-Token={_settings.AccessToken}";
-
-            if (string.IsNullOrEmpty(options.Headers))
-            {
-                options.Headers = accessHeader;
-            }
-            else
-            {
-                options.Headers = $"{options.Headers}, {accessHeader}";
-            }
+            options.Headers = options.Headers.AppendAccessToken(_settings.AccessToken!);
         }
     }
 }

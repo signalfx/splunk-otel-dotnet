@@ -33,13 +33,13 @@ internal class PluginSettings
             throw new ArgumentNullException(nameof(source));
         }
 
-        Realm = source.GetString(ConfigurationKeys.Splunk.Realm);
+        Realm = source.GetString(ConfigurationKeys.Splunk.Realm) ?? Constants.None;
         AccessToken = source.GetString(ConfigurationKeys.Splunk.AccessToken);
         TraceResponseHeaderEnabled = source.GetBool(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled) ?? true;
         IsOtlpEndpointSet = !string.IsNullOrEmpty(source.GetString(ConfigurationKeys.OpenTelemetry.OtlpEndpoint));
     }
 
-    public string? Realm { get; }
+    public string Realm { get; }
 
     public string? AccessToken { get; }
 

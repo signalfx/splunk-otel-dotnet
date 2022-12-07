@@ -15,9 +15,11 @@
 // </copyright>
 
 using System.Collections.Specialized;
+using FluentAssertions.Execution;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
@@ -47,5 +49,31 @@ public class TracesTests
 
         options.Endpoint.Should().Be("https://ingest.my-realm.signalfx.com/v2/trace/otlp");
         options.Headers.Should().Be("X-Sf-Token=MyToken");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void WhenRealmIsSetRequireAccessToken(string accessToken)
+    {
+        var configuration = new NameValueCollection
+        {
+            { "SPLUNK_REALM", "my-realm" },
+            { "SPLUNK_ACCESS_TOKEN", accessToken }
+        };
+
+        var settings = new PluginSettings(new NameValueConfigurationSource(configuration));
+        var options = new OtlpExporterOptions();
+        var loggerMock = new Mock<ILogger>();
+
+        new Traces(settings, loggerMock.Object).ConfigureTracesOptions(options);
+
+        using (new AssertionScope())
+        {
+            loggerMock.Verify(x => x.Error(It.IsAny<string>()), Times.Once());
+
+            options.Endpoint.ToString().Should().NotContain("my-realm");
+            options.Headers.Should().BeNull();
+        }
     }
 }

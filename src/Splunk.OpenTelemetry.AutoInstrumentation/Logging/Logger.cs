@@ -23,6 +23,7 @@ internal class Logger : ILogger
 {
     private static readonly object? Log;
     private static readonly MethodInfo? WarningMethod;
+    private static readonly MethodInfo? ErrorMethod;
 
     static Logger()
     {
@@ -36,9 +37,8 @@ internal class Logger : ILogger
 
             Log = method.Invoke(null, null)!;
 
-            WarningMethod = Log
-                .GetType()
-                .GetMethod("Warning", types: new[] { typeof(string), typeof(int), typeof(string) });
+            WarningMethod = GetMethod("Warning");
+            ErrorMethod = GetMethod("Error");
         }
         catch (Exception ex)
         {
@@ -46,8 +46,24 @@ internal class Logger : ILogger
         }
     }
 
-    void ILogger.Warning(string message)
+    public void Warning(string message)
     {
         WarningMethod?.Invoke(Log, new object[] { message, 0, string.Empty });
+    }
+
+    public void Error(string message)
+    {
+        ErrorMethod?.Invoke(Log, new object[] { message, 0, string.Empty });
+    }
+
+    private static MethodInfo? GetMethod(string method)
+    {
+        // First type is 'string messageTemplate'
+        // Last but one is '[CallerLineNumber] int sourceLine = 0'
+        // Last type is '[CallerFilePath] string sourceFile = ""'
+
+        return Log?
+            .GetType()
+            .GetMethod(method, types: new[] { typeof(string), typeof(int), typeof(string) });
     }
 }
