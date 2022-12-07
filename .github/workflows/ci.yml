@@ -76,7 +76,7 @@ jobs:
       run: |
         docker build \
           --tag splunk-otel-dotnet/${{ matrix.base-image }} \
-          --file "./build/docker/${{ matrix.base-image }}.dockerfile" \
+          --file "./docker/${{ matrix.base-image }}.dockerfile" \
           ./build
     - name: Build in Docker container
       run: |
@@ -87,7 +87,7 @@ jobs:
     - name: Test the Shell scripts from README.md in Docker container
       run: |
         set -e
-        docker build -t mybuildimage -f "./build/docker/${{ matrix.base-image }}.dockerfile" .
+        docker build -t mybuildimage -f "./docker/${{ matrix.base-image }}.dockerfile" .
         docker run --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project --rm mybuildimage /bin/sh -c '
           set -e
           dotnet publish -f net7.0 -c Release ./test/test-applications/integrations/TestApplication.Smoke
