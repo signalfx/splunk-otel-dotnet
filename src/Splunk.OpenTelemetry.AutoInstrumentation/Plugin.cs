@@ -36,7 +36,7 @@ public class Plugin
 
     private readonly Metrics _metrics = new(Settings);
     private readonly Traces _traces = new(Settings);
-    private readonly Logs _logs = new();
+    private readonly Logs _logs = new(Settings);
 
     /// <summary>
     /// Configures Metrics

@@ -34,7 +34,7 @@ internal class Metrics
     public MeterProviderBuilder ConfigureMeterProvider(MeterProviderBuilder builder)
     {
         ServiceNameWarning.Instance.SendOnMissingServiceName(_log);
-        return builder.ConfigureResource(ResourceConfigurator.Configure);
+        return builder.ConfigureResource(b => ResourceConfigurator.Configure(b, _settings));
     }
 
     public void ConfigureMetricsOptions(OtlpExporterOptions options)

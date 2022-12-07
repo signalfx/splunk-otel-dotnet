@@ -14,6 +14,7 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 * Add `SPLUNK_ACCESS_TOKEN` configuration key to authorize direct ingest.
 * Add `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED` configuration key
   to support Splunk RUM.
+* Add `SIGNALFX_ENV` configuration key to specify environment name.
 
 ### Changed
 

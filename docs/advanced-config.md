@@ -47,6 +47,7 @@ Note: .NET Framework apps can read settings also from `Web.config` and `App.conf
 
 | Environment variable                   | Default | Description                                |
 |----------------------------------------|---------|--------------------------------------------|
+| `SIGNALFX_ENV`                         |         | Specifies environment name.                |
 | `SPLUNK_REALM`                         | `none`  | Specifies direct OTLP ingest realm. [1]    |
 | `SPLUNK_ACCESS_TOKEN`                  |         | Specifies direct OTLP ingest access token. |
 | `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED` | `true`  | Enables Splunk RUM integration.            |

@@ -14,30 +14,43 @@
 // limitations under the License.
 // </copyright>
 
+using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
 using FluentAssertions.Execution;
 using OpenTelemetry.Resources;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
 public class ResourceConfiguratorTests
 {
     [Fact]
-    public void ConfigureSplunkDistributionVersion()
+    public void ResourceConfiguratorConfigure()
     {
+        var configuration = new NameValueCollection
+        {
+            { "SIGNALFX_ENV", "test" },
+        };
+
+        var settings = new PluginSettings(new NameValueConfigurationSource(configuration));
         var resourceBuilder = ResourceBuilder.CreateEmpty();
 
-        ResourceConfigurator.Configure(resourceBuilder);
+        ResourceConfigurator.Configure(resourceBuilder, settings);
 
         var resource = resourceBuilder.Build();
 
         using (new AssertionScope())
         {
-            resource.Attributes.Count().Should().Be(1);
-            var attribute = resource.Attributes.First();
-            attribute.Key.Should().Be("splunk.distro.version");
-            (attribute.Value as string).Should().Be(typeof(Plugin).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
+            resource.Attributes.Count().Should().Be(2);
+
+            var versionAttribute = resource.Attributes.First();
+            versionAttribute.Key.Should().Be("splunk.distro.version");
+            (versionAttribute.Value as string).Should().Be(typeof(Plugin).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
+
+            var envAttribute = resource.Attributes.Last();
+            envAttribute.Key.Should().Be("deployment.environment");
+            (envAttribute.Value as string).Should().Be("test");
         }
     }
 }

@@ -22,10 +22,16 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 internal class Logs
 {
     private readonly ILogger _log = new Logger();
+    private readonly PluginSettings _settings;
+
+    public Logs(PluginSettings settings)
+    {
+        _settings = settings;
+    }
 
     public void ConfigureLogsOptions(OpenTelemetryLoggerOptions options)
     {
         ServiceNameWarning.Instance.SendOnMissingServiceName(_log);
-        options.ConfigureResource(ResourceConfigurator.Configure);
+        options.ConfigureResource(b => ResourceConfigurator.Configure(b, _settings));
     }
 }

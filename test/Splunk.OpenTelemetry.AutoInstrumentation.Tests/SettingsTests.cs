@@ -40,12 +40,14 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             {
                 settings.Realm.Should().BeNull();
                 settings.AccessToken.Should().BeNull();
+                settings.EnvironmentName.Should().BeNull();
                 settings.TraceResponseHeaderEnabled.Should().BeTrue();
             }
         }
 
         private static void ClearEnvVars()
         {
+            Environment.SetEnvironmentVariable(ConfigurationKeys.SignalFx.Environment, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Realm, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AccessToken, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled, null);

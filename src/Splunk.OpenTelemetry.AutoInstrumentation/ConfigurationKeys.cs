@@ -18,6 +18,14 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal static class ConfigurationKeys
 {
+    public static class SignalFx
+    {
+        /// <summary>
+        /// Configuration key for current environment name.
+        /// </summary>
+        public const string Environment = "SIGNALFX_ENV";
+    }
+
     public static class Splunk
     {
         /// <summary>

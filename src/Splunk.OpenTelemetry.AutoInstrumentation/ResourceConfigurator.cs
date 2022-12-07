@@ -23,6 +23,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 internal static class ResourceConfigurator
 {
     private const string SplunkDistroVersionName = "splunk.distro.version";
+    private const string DeploymentEnvironment = "deployment.environment";
     private static readonly string Version;
 
     static ResourceConfigurator()
@@ -32,9 +33,18 @@ internal static class ResourceConfigurator
         Version = version.FileVersion ?? "unknown";
     }
 
-    public static void Configure(ResourceBuilder resourceBuilder)
+    public static void Configure(ResourceBuilder resourceBuilder, PluginSettings settings)
     {
-        resourceBuilder
-            .AddAttributes(new KeyValuePair<string, object>[] { new(SplunkDistroVersionName, Version) });
+        var attributes = new List<KeyValuePair<string, object>>
+        {
+            new(SplunkDistroVersionName, Version)
+        };
+
+        if (!string.IsNullOrEmpty(settings.EnvironmentName))
+        {
+            attributes.Add(new(DeploymentEnvironment, settings.EnvironmentName!));
+        }
+
+        resourceBuilder.AddAttributes(attributes);
     }
 }
