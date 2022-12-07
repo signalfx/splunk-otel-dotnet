@@ -20,7 +20,7 @@ internal static class Constants
 {
     public static class Ingest
     {
-        public const string TracesIngestTemplate = "https://ingest.{0}.signalfx.com/v2/trace";
+        public const string TracesIngestTemplate = "https://ingest.{0}.signalfx.com/v2/trace/otlp";
         public const string MetricsIngestTemplate = "https://ingest.{0}.signalfx.com/v2/datapoint";
     }
 }
