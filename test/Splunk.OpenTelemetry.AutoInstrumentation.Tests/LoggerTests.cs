@@ -23,15 +23,15 @@ public class LoggerTests
     [Fact]
     public void ConstructorDoesNotThrowExceptionWhenReflectionFails()
     {
-        var exception = Record.Exception(() => new Logger());
-        exception.Should().Be(null);
+        var action = () => new Logger();
+        action.Should().NotThrow();
     }
 
     [Fact]
     public void ImplementationDoesNotThrowExceptionWhenReflectionFails()
     {
         ILogger logger = new Logger();
-        Action act = () => logger.Warning("message");
-        act.Should().NotThrow();
+        var action = () => logger.Warning("message");
+        action.Should().NotThrow();
     }
 }
