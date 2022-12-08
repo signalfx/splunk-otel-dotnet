@@ -48,7 +48,6 @@ internal class Traces
 
     public TracerProviderBuilder ConfigureTracerProvider(TracerProviderBuilder builder)
     {
-        ServiceNameWarning.Instance.SendOnMissingServiceName(_log);
         return builder.ConfigureResource(ResourceConfigurator.Configure);
     }
 

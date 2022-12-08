@@ -30,6 +30,7 @@
 // limitations under the License.
 // </copyright>
 
+using System.Linq;
 using System.Reflection;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 using Xunit;
@@ -62,6 +63,22 @@ public class SmokeTests : TestHelper
 #else
         collector.Expect("OpenTelemetry.Instrumentation.Http.HttpClient");
 #endif
+
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
+        RunTestApplication();
+
+        collector.AssertExpectations();
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void SdkOptionLimits()
+    {
+        using var collector = new MockSpansCollector(Output);
+        SetExporter(collector);
+        collector.Expect(
+            "MyCompany.MyProduct.MyLibrary",
+            span => span.Attributes.FirstOrDefault(att => att.Key == "long")?.Value.StringValue == new string('*', 12000));
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
         RunTestApplication();
