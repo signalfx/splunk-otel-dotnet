@@ -14,10 +14,12 @@
 // limitations under the License.
 // </copyright>
 
+using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
 using FluentAssertions.Execution;
 using OpenTelemetry.Resources;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
@@ -28,13 +30,21 @@ public class ResourceConfiguratorTests
     {
         var resourceBuilder = ResourceBuilder.CreateEmpty();
 
-        ResourceConfigurator.Configure(resourceBuilder);
+        var configuration = new NameValueCollection
+        {
+            { "OTEL_SERVICE_NAME", "MyServiceName" },
+        };
+
+        var settings = new PluginSettings(new NameValueConfigurationSource(configuration));
+
+        ResourceConfigurator.Configure(resourceBuilder, settings);
 
         var resource = resourceBuilder.Build();
 
         using (new AssertionScope())
         {
             resource.Attributes.Count().Should().Be(1);
+
             var attribute = resource.Attributes.First();
             attribute.Key.Should().Be("splunk.distro.version");
             (attribute.Value as string).Should().Be(typeof(Plugin).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);

@@ -48,7 +48,7 @@ internal class Traces
 
     public TracerProviderBuilder ConfigureTracerProvider(TracerProviderBuilder builder)
     {
-        return builder.ConfigureResource(ResourceConfigurator.Configure);
+        return builder.ConfigureResource(b => ResourceConfigurator.Configure(b, _settings));
     }
 
     public void ConfigureTracesOptions(OtlpExporterOptions options)

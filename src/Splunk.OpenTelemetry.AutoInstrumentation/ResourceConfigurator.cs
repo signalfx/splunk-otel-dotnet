@@ -18,11 +18,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using OpenTelemetry.Resources;
 
+using static Splunk.OpenTelemetry.AutoInstrumentation.Helpers.ServiceNameHelper;
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal static class ResourceConfigurator
 {
     private const string SplunkDistroVersionName = "splunk.distro.version";
+    private const string ServiceName = "service.name";
+
     private static readonly string Version;
 
     static ResourceConfigurator()
@@ -32,9 +36,18 @@ internal static class ResourceConfigurator
         Version = version.FileVersion ?? "unknown";
     }
 
-    public static void Configure(ResourceBuilder resourceBuilder)
+    public static void Configure(ResourceBuilder resourceBuilder, PluginSettings settings)
     {
-        resourceBuilder
-            .AddAttributes(new KeyValuePair<string, object>[] { new(SplunkDistroVersionName, Version) });
+        var attributes = new List<KeyValuePair<string, object>>
+        {
+            new(SplunkDistroVersionName, Version)
+        };
+
+        if (!HasServiceName(settings))
+        {
+            attributes.Add(new(ServiceName, GetGeneratedServiceName()));
+        }
+
+        resourceBuilder.AddAttributes(attributes);
     }
 }
