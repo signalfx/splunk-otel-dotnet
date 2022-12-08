@@ -30,18 +30,18 @@ internal class SdkLimitOptionsConfigurator
         int? unlimited = int.MaxValue;
         int? takeFromFallback = null;
 
-        SetEnvironmentalVariable("OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT", 12000);
-        SetEnvironmentalVariable("OTEL_ATTRIBUTE_COUNT_LIMIT", unlimited);
+        ChangeEnvironmentalVariableDefault("OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT", 12000);
+        ChangeEnvironmentalVariableDefault("OTEL_ATTRIBUTE_COUNT_LIMIT", unlimited);
 
-        SetEnvironmentalVariable("OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT", takeFromFallback);
-        SetEnvironmentalVariable("OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT", takeFromFallback);
-        SetEnvironmentalVariable("OTEL_SPAN_EVENT_COUNT_LIMIT", unlimited);
-        SetEnvironmentalVariable("OTEL_SPAN_LINK_COUNT_LIMIT", 1000);
-        SetEnvironmentalVariable("OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT", takeFromFallback);
-        SetEnvironmentalVariable("OTEL_LINK_ATTRIBUTE_COUNT_LIMIT", takeFromFallback);
+        ChangeEnvironmentalVariableDefault("OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT", takeFromFallback);
+        ChangeEnvironmentalVariableDefault("OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT", takeFromFallback);
+        ChangeEnvironmentalVariableDefault("OTEL_SPAN_EVENT_COUNT_LIMIT", unlimited);
+        ChangeEnvironmentalVariableDefault("OTEL_SPAN_LINK_COUNT_LIMIT", 1000);
+        ChangeEnvironmentalVariableDefault("OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT", takeFromFallback);
+        ChangeEnvironmentalVariableDefault("OTEL_LINK_ATTRIBUTE_COUNT_LIMIT", takeFromFallback);
     }
 
-    private static void SetEnvironmentalVariable(string environmentalVariableName, int? value)
+    private static void ChangeEnvironmentalVariableDefault(string environmentalVariableName, int? value)
     {
         var environmentVariable = Environment.GetEnvironmentVariable(environmentalVariableName);
 
