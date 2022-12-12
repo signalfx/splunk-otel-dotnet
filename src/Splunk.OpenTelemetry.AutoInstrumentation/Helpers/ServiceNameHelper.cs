@@ -75,7 +75,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Helpers
                 Log.Error(ex, "Error creating default service name.");
             }
 
-            return "Unkown";
+            return "unknown_service";
         }
 
 #if NETFRAMEWORK
