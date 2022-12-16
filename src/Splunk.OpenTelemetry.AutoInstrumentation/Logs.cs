@@ -20,8 +20,15 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class Logs
 {
+    private readonly PluginSettings _settings;
+
+    internal Logs(PluginSettings settings)
+    {
+        _settings = settings;
+    }
+
     public void ConfigureLogsOptions(OpenTelemetryLoggerOptions options)
     {
-        options.ConfigureResource(ResourceConfigurator.Configure);
+        options.ConfigureResource(b => ResourceConfigurator.Configure(b, _settings));
     }
 }

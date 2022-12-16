@@ -14,6 +14,8 @@
 // limitations under the License.
 // </copyright>
 
+using System;
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 /// <summary>
@@ -32,4 +34,11 @@ public interface ILogger
     /// </summary>
     /// <param name="message">Message to be logged.</param>
     void Error(string message);
+
+    /// <summary>
+    /// Logs error message.
+    /// </summary>
+    /// <param name="exception">Exception to be logged.</param>
+    /// <param name="message">Message to be logged.</param>
+    void Error(Exception exception, string message);
 }
