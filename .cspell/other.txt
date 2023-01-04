@@ -8,3 +8,6 @@ myapp
 TMPDIR
 mktemp
 coreutils
+signalfx
+SIGNALFX
+Bson
