@@ -1,8 +1,11 @@
 # Migrating
 
-This doc outlines configuration settings available in [signalfx-dotnet-tracing](https://github.com/signalfx/signalfx-dotnet-tracing/)
- instrumentation, and their equivalents available in
- Splunk distribution of OpenTelemetry .NET.
+## Configuration
+
+This section outlines configuration settings available in
+[SignalFx Instrumentation for .NET](https://github.com/signalfx/signalfx-dotnet-tracing/),
+and their equivalents in
+Splunk distribution of OpenTelemetry .NET.
 
 ## Main settings
 
