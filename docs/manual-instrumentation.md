@@ -7,36 +7,7 @@ and functionality of your application, clients, and framework.
 
 ## Traces
 
-### Instrument using System.Diagnostics API
-
 For the list of steps required, see the [upstream documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/main/docs/manual-instrumentation.md).
-
-### Instrument using OpenTracing API
-
-1. Add the `OpenTracing` dependency to your project:
-
-    ```xml
-    <PackageReference Include="OpenTracing" Version="0.12.1" />
-    ```
-
-1. Set the `OTEL_DOTNET_AUTO_OPENTRACING_ENABLED` environment variable to `true`.
-
-1. Obtain the `OpenTracing.Util.GlobalTracer` instance:
-
-    ```csharp
-    var tracer = GlobalTracer.Instance;
-    ```
-
-1. Create a span. Optionally, set tags:
-
-    ```csharp
-    // Create an active span that will be automatically parented by any existing span in this context
-    using (IScope scope = tracer.BuildSpan("MyTracedFunctionality").StartActive(finishSpanOnDispose: true))
-    {
-        var span = scope.Span;
-        span.SetTag("MyTag", "MyValue");        
-    }    
-    ```
 
 ## Metrics
 
