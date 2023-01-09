@@ -1,15 +1,15 @@
 # Manually instrument a .NET application
 
-The auto-instrumentation provides a base you can build on by adding your own
+The automatic instrumentation provides a base you can build upon by adding your own
 custom instrumentation. By using both instrumentation approaches,
-you'll be able to present a more detailed representation of the logic
+you can produce a more detailed representation of the logic
 and functionality of your application, clients, and framework.
 
 ## Traces
 
 ### Instrument using System.Diagnostics API
 
-For the list of steps required, see [link](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/main/docs/manual-instrumentation.md).
+For the list of steps required, see the [upstream documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/main/docs/manual-instrumentation.md).
 
 ### Instrument using OpenTracing API
 
@@ -19,7 +19,7 @@ For the list of steps required, see [link](https://github.com/open-telemetry/ope
     <PackageReference Include="OpenTracing" Version="0.12.1" />
     ```
 
-1. Set `OTEL_DOTNET_AUTO_OPENTRACING_ENABLED` environment variable to `true`
+1. Set the `OTEL_DOTNET_AUTO_OPENTRACING_ENABLED` environment variable to `true`.
 
 1. Obtain the `OpenTracing.Util.GlobalTracer` instance:
 
