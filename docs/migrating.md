@@ -91,3 +91,9 @@ following should be set: `OTEL_PROPAGATORS=b3multi,tracecontext`.
 | `SIGNALFX_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED`   | Enable to close consumer scope on method enter, and start a new one on method exit.                                                                                                                                           | `true`                              | none                                                     |
 | `SIGNALFX_TRACE_RESPONSE_HEADER_ENABLED`               | Enable to add server trace information to HTTP response headers. It enables [Splunk Real User Monitoring (RUM)](https://docs.splunk.com/Observability/rum/intro-to-rum.html) integration when using ASP.NET and ASP.NET Core. | `true`                              | `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED`                   |
 | `SIGNALFX_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` | ASP.NET span and resource names are based on routing configuration if applicable.                                                                                                                                             | `true`                              | none (fixed behavior equivalent to setting to `true`)    |
+
+## OpenTracing integration
+
+SignalFx Instrumentation for .NET supports OpenTracing [integration](https://github.com/signalfx/signalfx-dotnet-tracing/blob/main/docs/manual-instrumentation.md).
+Similar support can be enabled when using Splunk distribution of OpenTelemetry .NET
+by setting `OTEL_DOTNET_AUTO_OPENTRACING_ENABLED` environment variable to `true`.
