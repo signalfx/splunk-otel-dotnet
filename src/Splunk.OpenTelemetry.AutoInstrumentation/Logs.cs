@@ -29,6 +29,6 @@ internal class Logs
 
     public void ConfigureLogsOptions(OpenTelemetryLoggerOptions options)
     {
-        options.ConfigureResource(b => ResourceConfigurator.Configure(b, _settings));
+        options.SetResourceBuilder(ResourceConfigurator.CreateResourceBuilder(_settings));
     }
 }
