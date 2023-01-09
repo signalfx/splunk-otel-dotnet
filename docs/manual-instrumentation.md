@@ -5,16 +5,18 @@ custom instrumentation. By using both instrumentation approaches,
 you'll be able to present a more detailed representation of the logic
 and functionality of your application, clients, and framework.
 
-## Instrument using System.Diagnostics API
+## Traces
+
+### Instrument using System.Diagnostics API
 
 For the list of steps required, see [link](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/main/docs/manual-instrumentation.md).
 
-## Instrument using OpenTracing API
+### Instrument using OpenTracing API
 
-1. Add the `OpenTelemetry.Shims.OpenTracing` dependency to your project:
+1. Add the `OpenTracing` dependency to your project:
 
     ```xml
-    <PackageReference Include="OpenTelemetry.Shims.OpenTracing" Version="1.0.0-rc9.10" />
+    <PackageReference Include="OpenTracing" Version="0.12.1" />
     ```
 
 1. Set `OTEL_DOTNET_AUTO_OPENTRACING_ENABLED` environment variable to `true`
@@ -34,6 +36,39 @@ For the list of steps required, see [link](https://github.com/open-telemetry/ope
         var span = scope.Span;
         span.SetTag("MyTag", "MyValue");        
     }    
+    ```
+
+## Metrics
+
+1. Add the `System.Diagnostics.DiagnosticSource` dependency to your project:
+
+    ```xml
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="7.0.0" />
+    ```
+
+1. Create a `Meter` instance:
+
+    ```csharp
+    using var meter = new Meter("My.Application", "1.0");
+    ```
+
+1. Create an `Instrument`:
+
+    ```csharp
+    var counter = meter.CreateCounter<long>("custom.counter", description: "Custom counter's description");
+    ```
+
+1. Update the `Instrument` value:
+
+    ```csharp
+    counter.Add(1);
+    ```
+
+1. Register your `Meter` with OpenTelemetry.AutoInstrumentation by setting the
+`OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES` environment variable:
+
+    ```bash
+    OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES=My.Application
     ```
 
 Further reading:
