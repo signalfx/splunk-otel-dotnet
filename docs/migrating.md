@@ -17,6 +17,12 @@ The following settings are common to most instrumentation scenarios:
 | `SIGNALFX_SERVICE_NAME`   | The name of the application or service.                                               | `OTEL_SERVICE_NAME`                            |
 | `SIGNALFX_VERSION`        | The version of the application. When set, it populates the `version` tag on spans.    |  Use `OTEL_RESOURCE_ATTRIBUTES` |
 
+To set `version` tag on spans to `1.0.0`, configure environment variables:
+
+- `SIGNALFX_VERSION=1.0.0` for SignalFx Instrumentation for .NET
+- `OTEL_RESOURCE_ATTRIBUTES=version=1.0.0` for
+Splunk distribution of OpenTelemetry .NET
+
 ## Global management settings
 
 | Setting                               | Description                                                                                                                                          | SignalFx default                                           | OpenTelemetry equivalent                                                                                   |
