@@ -10,3 +10,4 @@ mktemp
 coreutils
 signalfx
 Bson
+opentracing
