@@ -13,9 +13,9 @@ The following settings are common to most instrumentation scenarios:
 
 | Setting                   | Description                                                                           | OpenTelemetry equivalent                       |
 |---------------------------|---------------------------------------------------------------------------------------|------------------------------------------------|
-| `SIGNALFX_ENV`            | The value for the `deployment.environment` tag added to every span.                   | Should be set using `OTEL_RESOURCE_ATTRIBUTES` |
+| `SIGNALFX_ENV`            | The value for the `deployment.environment` tag added to every span.                   | Use `OTEL_RESOURCE_ATTRIBUTES` |
 | `SIGNALFX_SERVICE_NAME`   | The name of the application or service.                                               | `OTEL_SERVICE_NAME`                            |
-| `SIGNALFX_VERSION`        | The version of the application. When set, it populates the `version` tag on spans.    | Should be set using `OTEL_RESOURCE_ATTRIBUTES` |
+| `SIGNALFX_VERSION`        | The version of the application. When set, it populates the `version` tag on spans.    |  Use `OTEL_RESOURCE_ATTRIBUTES` |
 
 ## Global management settings
 
