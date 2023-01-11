@@ -8,4 +8,6 @@ myapp
 TMPDIR
 mktemp
 coreutils
+signalfx
+Bson
 opentracing
