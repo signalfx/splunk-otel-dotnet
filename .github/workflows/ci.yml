@@ -25,8 +25,8 @@ jobs:
       - uses: actions/setup-dotnet@v3.0.3
         with:
           dotnet-version: | 
-            6.0.404
-            7.0.101
+            6.0.405
+            7.0.102
       - run: ./build.cmd Workflow
       - run: brew install coreutils
         if: ${{ runner.os == 'macOS' }}

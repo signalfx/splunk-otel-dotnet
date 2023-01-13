@@ -20,7 +20,7 @@ jobs:
     - uses: actions/checkout@v3.3.0
     - uses: actions/setup-dotnet@v3.0.3
       with:
-        dotnet-version: 6.0.404
+        dotnet-version: 6.0.405
 
     - name: dotnet format
       run: dotnet format ./Splunk.OpenTelemetry.AutoInstrumentation.sln --verify-no-changes
