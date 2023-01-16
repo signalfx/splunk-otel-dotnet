@@ -28,6 +28,8 @@ No changes in the code are needed to correctly version this package.
 
 1. Publish a release in GitHub:
 
+   - Use a draft created by `create-release` GitHub job in `ci` workflow.
    - Use the [CHANGELOG.md](CHANGELOG.md) content in the description.
-   - Add the artifacts from [the `ci` GitHub workflow](https://github.com/signalfx/splunk-otel-dotnet/actions/workflows/ci.yml)
-     related to the created tag.
+   - Ensure that following flags under the are correctly set
+      - `Set as a pre-release`
+      - `Set as the latest release`
