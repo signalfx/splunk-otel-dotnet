@@ -103,7 +103,7 @@ See [manual-instrumentation.md](https://github.com/open-telemetry/opentelemetry-
 
 If you're currently using the [SignalFx Instrumentation for .NET](https://github.com/signalfx/signalfx-dotnet-tracing)
 and want to migrate to the Splunk Distribution of OpenTelemetry .NET,
-see the [MIGRATING](..\MIGRATING.md) documentation.
+see the [MIGRATING](../MIGRATING.md) documentation.
 
 ## Troubleshooting
 
