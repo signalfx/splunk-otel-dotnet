@@ -97,7 +97,7 @@ the [Advanced configuration](advanced-config.md) documentation.
 
 ## Manual instrumentation
 
-See [manual-instrumentation.md](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v0.4.0-beta.1/docs/manual-instrumentation.md).
+See [manual-instrumentation.md](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v0.5.1-beta.3/docs/manual-instrumentation.md).
 
 ## Migrating
 
