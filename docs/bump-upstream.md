@@ -2,7 +2,7 @@
 
 1. Update the OpenTelemetry .NET AutoInstrumentation version in the following files:
 
-   - [`build/Build.cs)`](../build/Build.cs)
+   - [`build/Build.cs`](../build/Build.cs)
    - [`docs/advanced-config.md`](./advanced-config.md)
    - [`docs/README.md`](./README.md)
    - [`src/Splunk.OpenTelemetry.AutoInstrumentation/ResourceConfigurator.cs`](../src/Splunk.OpenTelemetry.AutoInstrumentation/ResourceConfigurator.cs)
