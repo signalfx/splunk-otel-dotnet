@@ -52,7 +52,7 @@ internal class UntilAsyncOperationIsSucceeded : IWaitUntil
         _maxCallCount = maxCallCount;
     }
 
-    public async Task<bool> Until(ITestcontainersContainer testcontainers, ILogger logger)
+    public async Task<bool> UntilAsync(IContainer container)
     {
         if (++_tryCount > _maxCallCount)
         {
