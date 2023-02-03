@@ -30,15 +30,8 @@
 // limitations under the License.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
-using VerifyXunit;
-using Xunit;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests;
 

@@ -32,8 +32,6 @@
 
 #nullable disable
 
-using System;
-using System.Threading.Tasks;
 using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 

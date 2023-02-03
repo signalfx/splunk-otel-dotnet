@@ -34,9 +34,7 @@
 
 #if NETFRAMEWORK
 
-using System;
 using System.Net;
-using System.Threading;
 using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;

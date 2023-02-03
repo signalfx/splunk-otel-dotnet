@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-using System;
 using FluentAssertions.Execution;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests

@@ -3,8 +3,6 @@ using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
-using System;
-using System.IO;
 using System.IO.Compression;
 
 using static Nuke.Common.Tools.DotNet.DotNetTasks;

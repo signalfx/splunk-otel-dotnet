@@ -30,8 +30,6 @@
 // limitations under the License.
 // </copyright>
 
-using System;
-
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 
 internal class EnvironmentConfigurationSource : StringConfigurationSource

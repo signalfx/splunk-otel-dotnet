@@ -16,12 +16,9 @@
 
 #if !NETFRAMEWORK
 
-using System.Net.Http;
-using System.Threading.Tasks;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests;
@@ -52,7 +49,7 @@ public class ServerTimingHeaderTests : TestHelper
         var client = new HttpClient();
         var response = await client.GetAsync($"{url}/request");
 
-        bool processTimeout = !process.WaitForExit((int)Timeout.ProcessExit.TotalMilliseconds);
+        bool processTimeout = !process.WaitForExit((int)Helpers.Timeout.ProcessExit.TotalMilliseconds);
         if (processTimeout)
         {
             process.Kill();

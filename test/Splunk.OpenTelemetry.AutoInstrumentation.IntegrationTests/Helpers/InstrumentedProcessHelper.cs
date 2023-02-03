@@ -32,7 +32,6 @@
 
 #nullable disable
 
-using System;
 using System.Diagnostics;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;

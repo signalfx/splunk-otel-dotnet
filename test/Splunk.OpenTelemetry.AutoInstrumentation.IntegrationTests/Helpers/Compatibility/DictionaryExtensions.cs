@@ -33,10 +33,8 @@
 #nullable disable
 
 #if NETFRAMEWORK
-using System;
 using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers.Compatibility;
 

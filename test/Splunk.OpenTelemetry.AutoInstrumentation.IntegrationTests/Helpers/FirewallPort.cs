@@ -32,7 +32,6 @@
 
 #nullable disable
 
-using System;
 using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;

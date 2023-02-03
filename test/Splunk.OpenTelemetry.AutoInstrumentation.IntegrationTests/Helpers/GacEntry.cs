@@ -33,7 +33,6 @@
 #nullable disable
 
 #if NETFRAMEWORK
-using System;
 using System.EnterpriseServices.Internal;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
