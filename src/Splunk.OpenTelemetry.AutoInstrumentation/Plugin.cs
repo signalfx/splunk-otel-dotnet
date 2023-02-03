@@ -15,9 +15,7 @@
 // </copyright>
 
 using OpenTelemetry.Exporter;
-using OpenTelemetry.Logs;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Trace;
+using OpenTelemetry.Resources;
 
 #if NETFRAMEWORK
 using OpenTelemetry.Instrumentation.AspNet;
@@ -36,7 +34,6 @@ public class Plugin
 
     private readonly Metrics _metrics = new(Settings);
     private readonly Traces _traces = new(Settings);
-    private readonly Logs _logs = new(Settings);
     private readonly Sdk _sdk = new();
 
     /// <summary>
@@ -48,13 +45,14 @@ public class Plugin
     }
 
     /// <summary>
-    /// Configures Metrics
+    /// Configure Resource Builder for Logs, Metrics and Traces
     /// </summary>
-    /// <param name="builder"><see cref="MeterProviderBuilder"/> to configure</param>
-    /// <returns>Returns <see cref="MeterProviderBuilder"/> for chaining.</returns>
-    public MeterProviderBuilder ConfigureMeterProvider(MeterProviderBuilder builder)
+    /// <param name="builder"><see cref="ResourceBuilder"/> to configure</param>
+    /// <returns>>Returns <see cref="ResourceBuilder"/> for chaining.</returns>
+    public ResourceBuilder ConfigureResource(ResourceBuilder builder)
     {
-        return _metrics.ConfigureMeterProvider(builder);
+        ResourceConfigurator.Configure(builder, Settings);
+        return builder;
     }
 
     /// <summary>
@@ -64,16 +62,6 @@ public class Plugin
     public void ConfigureMetricsOptions(OtlpExporterOptions options)
     {
         _metrics.ConfigureMetricsOptions(options);
-    }
-
-    /// <summary>
-    /// Configures Traces
-    /// </summary>
-    /// <param name="builder"><see cref="TracerProviderBuilder"/> to configure</param>
-    /// <returns>Returns <see cref="TracerProviderBuilder"/> for chaining.</returns>
-    public TracerProviderBuilder ConfigureTracerProvider(TracerProviderBuilder builder)
-    {
-        return _traces.ConfigureTracerProvider(builder);
     }
 
     /// <summary>
@@ -108,13 +96,4 @@ public class Plugin
     }
 
 #endif
-
-    /// <summary>
-    /// Configure metrics OpenTelemetryLoggerOptions options
-    /// </summary>
-    /// <param name="options"><see cref="OpenTelemetryLoggerOptions"/> to configure</param>
-    public void ConfigureLogsOptions(OpenTelemetryLoggerOptions options)
-    {
-        _logs.ConfigureLogsOptions(options);
-    }
 }

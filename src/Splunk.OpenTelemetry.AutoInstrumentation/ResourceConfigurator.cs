@@ -50,15 +50,4 @@ internal static class ResourceConfigurator
 
         resourceBuilder.AddAttributes(attributes);
     }
-
-    public static ResourceBuilder CreateResourceBuilder(PluginSettings settings)
-    {
-        var resourceBuilder = ResourceBuilder.CreateDefault();
-        // workaround, there is lack of ConfigureResource method for log options, configure same values as in OTel repository
-        resourceBuilder
-            .AddTelemetrySdk()
-            .AddAttributes(new KeyValuePair<string, object>[] { new("telemetry.auto.version", "0.5.1-beta.3") });
-        Configure(resourceBuilder, settings);
-        return resourceBuilder;
-    }
 }

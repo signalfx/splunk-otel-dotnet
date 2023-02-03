@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using OpenTelemetry.Exporter;
-using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
@@ -44,11 +43,6 @@ internal class Traces
     {
         _settings = settings;
         _log = logger;
-    }
-
-    public TracerProviderBuilder ConfigureTracerProvider(TracerProviderBuilder builder)
-    {
-        return builder.ConfigureResource(b => ResourceConfigurator.Configure(b, _settings));
     }
 
     public void ConfigureTracesOptions(OtlpExporterOptions options)

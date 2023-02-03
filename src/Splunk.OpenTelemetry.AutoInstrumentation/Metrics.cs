@@ -16,7 +16,6 @@
 
 using System;
 using OpenTelemetry.Exporter;
-using OpenTelemetry.Metrics;
 using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
@@ -36,11 +35,6 @@ internal class Metrics
     {
         _settings = settings;
         _log = logger;
-    }
-
-    public MeterProviderBuilder ConfigureMeterProvider(MeterProviderBuilder builder)
-    {
-        return builder.ConfigureResource(b => ResourceConfigurator.Configure(b, _settings));
     }
 
     public void ConfigureMetricsOptions(OtlpExporterOptions options)
