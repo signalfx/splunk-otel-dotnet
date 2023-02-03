@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-using System;
 using OpenTelemetry.Exporter;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests

@@ -30,10 +30,8 @@
 // limitations under the License.
 // </copyright>
 
-using System.Linq;
 using System.Reflection;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests;

@@ -14,12 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 
 namespace TestApplication.HttpServer;
 

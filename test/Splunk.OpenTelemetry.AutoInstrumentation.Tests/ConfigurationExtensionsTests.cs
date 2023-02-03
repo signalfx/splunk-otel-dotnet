@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-using System.Collections.Generic;
 using FluentAssertions.Execution;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 

@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-using Microsoft.AspNetCore.Builder;
 using TestApplication.Shared;
 
 namespace TestApplication.HttpServer;

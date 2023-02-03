@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-using System;
 using OpenTelemetry.Exporter;
 using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;

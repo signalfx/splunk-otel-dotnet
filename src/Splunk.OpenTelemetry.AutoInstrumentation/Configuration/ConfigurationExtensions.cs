@@ -14,9 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration
 {
     internal static class ConfigurationExtensions

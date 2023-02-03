@@ -30,10 +30,7 @@
 // limitations under the License.
 // </copyright>
 
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 

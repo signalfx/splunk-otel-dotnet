@@ -38,19 +38,12 @@ using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers.Compatib
 #else
 using Microsoft.AspNetCore.Http;
 #endif
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;

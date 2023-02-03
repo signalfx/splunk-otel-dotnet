@@ -32,8 +32,6 @@
 
 #nullable disable
 
-using System;
-
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 internal static class Timeout
