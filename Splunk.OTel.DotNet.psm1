@@ -1,4 +1,36 @@
-﻿#Requires -RunAsAdministrator
+﻿#
+# Copyright Splunk Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#
+# Copyright The OpenTelemetry Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#Requires -RunAsAdministrator
 
 $ServiceLocatorVariable = "SPLUNK_OTEL_DOTNET_AUTO_INSTALL_DIR"
 
@@ -173,6 +205,19 @@ function Filter-Env-List([string[]]$EnvValues, [string[]]$Filters) {
     return $remaining
 }
 
+function Get-OpenTelemetry-Archive([string] $Version, [string] $LocalPath) {
+    if ($LocalPath) {
+        if (Test-Path $LocalPath) {
+            return $LocalPath
+        }
+
+        throw "Could not find archive '$LocalPath'"
+    }
+
+    $tempDir = Get-Temp-Directory
+    return Download-OpenTelemetry $Version $tempDir
+}
+
 <#
     .SYNOPSIS
     Installs Splunk Distribution of OpenTelemetry .NET.
@@ -183,32 +228,53 @@ function Filter-Env-List([string[]]$EnvValues, [string[]]$Filters) {
 #>
 function Install-OpenTelemetryCore() {
     param(
-        [string]$InstallDir = "<auto>"
+        [Parameter(Mandatory = $false)]
+        [string]$InstallDir = "<auto>",
+        [Parameter(Mandatory = $false)]
+        [string]$LocalPath
     )
 
     $version = "v0.0.1-alpha.2"
     $installDir = Get-CLIInstallDir-From-InstallDir $InstallDir
-    $tempDir = Get-Temp-Directory
-    $dlPath = $null
+    $archivePath = $null
+    $deleteArchive = $true
 
     try {
-        $dlPath = Download-OpenTelemetry $version $tempDir
+        if ($LocalPath) {
+            # Keep the archive if it's user downloaded
+            $deleteArchive = $false
+        }
+
+        $archivePath = Get-OpenTelemetry-Archive $version $LocalPath
+
         Prepare-Install-Directory $installDir
 
         # Extract files from zip
-        Expand-Archive $dlPath $installDir -Force
+        Expand-Archive $archivePath $installDir -Force
 
-        # OpenTelemetry DotNet service locator
+        # OpenTelemetry service locator
         [System.Environment]::SetEnvironmentVariable($ServiceLocatorVariable, $installDir, [System.EnvironmentVariableTarget]::Machine)
+
+        # Register .NET Framweworks dlls in GAC
+        [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a") | Out-Null
+        $publish = New-Object System.EnterpriseServices.Internal.Publish 
+        $dlls = Get-ChildItem -Path $installDir\netfx\ -Filter *.dll -File
+        for ($i = 0; $i -le $dlls.Count; $i++) {
+            $percentageComplete = $i / $dlls.Count * 100
+            Write-Progress -Activity "Registering .NET Framweworks dlls in GAC" `
+                -Status "Module $($i+1) out of $($dlls.Count). Installing $($dlls[$i].Name):" `
+                -PercentComplete $percentageComplete
+            $publish.GacInstall($dlls[$i].FullName)
+        }
     } 
     catch {
         $message = $_
         Write-Error "Could not setup Splunk Distribution of OpenTelemetry .NET. $message"
     } 
     finally {
-        if ($dlPath) {
+        if ($archivePath -and $deleteArchive) {
             # Cleanup
-            Remove-Item $dlPath
+            Remove-Item $archivePath
         }
     }
 }
@@ -222,6 +288,14 @@ function Uninstall-OpenTelemetryCore() {
 
     if (-not $installDir) {
         throw "OpenTelemetry Core is already removed."
+    }
+
+    # Unregister .NET Framwework dlls from GAC
+    [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a") | Out-Null
+    $publish = New-Object System.EnterpriseServices.Internal.Publish 
+    $dlls = Get-ChildItem -Path $installDir\netfx\ -Filter *.dll -File
+    foreach ($dll in $dlls) {
+        $publish.GacRemove($dll.FullName)
     }
 
     Remove-Item -LiteralPath $installDir -Force -Recurse
@@ -265,6 +339,10 @@ function Register-OpenTelemetryForIIS() {
 
     if (-not $installDir) {
         throw "OpenTelemetry Core must be setup first. Run 'Install-OpenTelemetryCore' to setup OpenTelemetry Core."
+    }
+
+    if ($installDir -notlike "$env:ProgramFiles\*") {
+        Write-Warning "OpenTelemetry is installed to custom path. Make sure that IIS user has access to the path."
     }
 
     Setup-Windows-Service -InstallDir $installDir -WindowsServiceName "W3SVC"
