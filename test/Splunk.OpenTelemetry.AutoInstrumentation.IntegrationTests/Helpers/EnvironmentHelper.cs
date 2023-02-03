@@ -30,8 +30,6 @@
 // limitations under the License.
 // </copyright>
 
-#nullable disable
-
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -46,12 +44,11 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 public class EnvironmentHelper
 {
     private static readonly string RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
-    private static string _nukeOutputLocation;
 
     private readonly ITestOutputHelper _output;
     private readonly int _major;
     private readonly int _minor;
-    private readonly string _patch = null;
+    private readonly string? _patch = null;
 
     private readonly string _appNamePrepend;
     private readonly string _runtime;
@@ -59,19 +56,19 @@ public class EnvironmentHelper
     private readonly string _testApplicationDirectory;
     private readonly TargetFrameworkAttribute _targetFramework;
 
-    private string _integrationsFileLocation;
-    private string _profilerFileLocation;
+    private string? _integrationsFileLocation;
+    private string? _profilerFileLocation;
 
     public EnvironmentHelper(
         string testApplicationName,
         Type anchorType,
         ITestOutputHelper output,
-        string testApplicationDirectory = null,
+        string? testApplicationDirectory = null,
         bool prependTestApplicationToAppName = true)
     {
         TestApplicationName = testApplicationName;
         _testApplicationDirectory = testApplicationDirectory ?? Path.Combine("test", "test-applications", "integrations");
-        _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
+        _targetFramework = Assembly.GetAssembly(anchorType)?.GetCustomAttribute<TargetFrameworkAttribute>()!;
         _output = output;
 
         var parts = _targetFramework.FrameworkName.Split(',');
@@ -96,7 +93,7 @@ public class EnvironmentHelper
 
     public bool DebugModeEnabled { get; set; } = true;
 
-    public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
+    public Dictionary<string, string?> CustomEnvironmentVariables { get; set; } = new();
 
     public string TestApplicationName { get; }
 
@@ -109,16 +106,13 @@ public class EnvironmentHelper
 
     public static string GetNukeBuildOutput()
     {
-        var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
+        string nukeOutputPath = Path.Combine(
+            EnvironmentTools.GetSolutionDirectory(),
+            "OpenTelemetryDistribution");
 
-        var nukeOutputPath = solutionDirectory != null
-            ? Path.Combine(solutionDirectory, @"OpenTelemetryDistribution") : null;
-
-        if (nukeOutputPath != null && Directory.Exists(nukeOutputPath))
+        if (Directory.Exists(nukeOutputPath))
         {
-            _nukeOutputLocation = nukeOutputPath;
-
-            return _nukeOutputLocation;
+            return nukeOutputPath;
         }
 
         throw new Exception($"Unable to find Nuke output at: {nukeOutputPath}. Ensure Nuke has run first.");
@@ -129,7 +123,7 @@ public class EnvironmentHelper
         // https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
         // Github sets CI environment variable
 
-        string env = Environment.GetEnvironmentVariable("CI");
+        var env = Environment.GetEnvironmentVariable("CI");
         return !string.IsNullOrEmpty(env);
     }
 
@@ -158,9 +152,7 @@ public class EnvironmentHelper
 
         string fileName = $"OpenTelemetry.AutoInstrumentation.Native.{extension}";
         string nukeOutput = GetNukeBuildOutput();
-        string profilerPath = EnvironmentTools.IsWindows()
-            ? Path.Combine(nukeOutput, $"win-{EnvironmentTools.GetPlatform().ToLower()}", fileName)
-            : Path.Combine(nukeOutput, fileName);
+        string profilerPath = Path.Combine(nukeOutput, $"{EnvironmentTools.GetClrProfilerDirectoryName()}-{EnvironmentTools.GetPlatform().ToLower()}", fileName);
 
         if (File.Exists(profilerPath))
         {

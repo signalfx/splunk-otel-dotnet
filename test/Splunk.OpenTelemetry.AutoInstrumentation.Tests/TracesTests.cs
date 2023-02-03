@@ -17,7 +17,6 @@
 using System.Collections.Specialized;
 using FluentAssertions.Execution;
 using OpenTelemetry.Exporter;
-using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
@@ -25,14 +24,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
 public class TracesTests
 {
-    [Fact]
-    public void ConfigureTracerProvider()
-    {
-        var builder = Mock.Of<TracerProviderBuilder>();
-        var returnedBuilder = new Traces(PluginSettings.FromDefaultSources()).ConfigureTracerProvider(builder);
-        returnedBuilder.Should().Be(builder);
-    }
-
     [Fact]
     public void ConfigureOtlpOptions()
     {

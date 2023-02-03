@@ -30,8 +30,6 @@
 // limitations under the License.
 // </copyright>
 
-#nullable disable
-
 using System;
 using System.IO;
 using System.Linq;
@@ -48,8 +46,31 @@ public static class EnvironmentTools
     public const string ProfilerClsId = "{918728DD-259F-4A6A-AC2B-B85E1B658318}";
     public const string DotNetFramework = ".NETFramework";
     public const string CoreFramework = ".NETCoreApp";
+    private static readonly Lazy<string> SolutionDirectory = new(() =>
+    {
+        var startDirectory = Environment.CurrentDirectory;
+        var currentDirectory = Directory.GetParent(startDirectory);
+        const string searchItem = @"Splunk.OpenTelemetry.AutoInstrumentation.sln";
 
-    private static string _solutionDirectory = null;
+        while (true)
+        {
+            var slnFile = currentDirectory?.GetFiles(searchItem).SingleOrDefault();
+
+            if (slnFile != null)
+            {
+                break;
+            }
+
+            currentDirectory = currentDirectory?.Parent;
+
+            if (currentDirectory == null || !currentDirectory.Exists)
+            {
+                throw new Exception($"Unable to find solution directory from: {startDirectory}");
+            }
+        }
+
+        return currentDirectory!.FullName;
+    });
 
     /// <summary>
     /// Find the solution directory from anywhere in the hierarchy.
@@ -57,33 +78,7 @@ public static class EnvironmentTools
     /// <returns>The solution directory.</returns>
     public static string GetSolutionDirectory()
     {
-        if (_solutionDirectory == null)
-        {
-            var startDirectory = Environment.CurrentDirectory;
-            var currentDirectory = Directory.GetParent(startDirectory);
-            const string searchItem = @"Splunk.OpenTelemetry.AutoInstrumentation.sln";
-
-            while (true)
-            {
-                var slnFile = currentDirectory.GetFiles(searchItem).SingleOrDefault();
-
-                if (slnFile != null)
-                {
-                    break;
-                }
-
-                currentDirectory = currentDirectory.Parent;
-
-                if (currentDirectory == null || !currentDirectory.Exists)
-                {
-                    throw new Exception($"Unable to find solution directory from: {startDirectory}");
-                }
-            }
-
-            _solutionDirectory = currentDirectory.FullName;
-        }
-
-        return _solutionDirectory;
+        return SolutionDirectory.Value;
     }
 
     public static string GetOS()
@@ -136,5 +131,31 @@ public static class EnvironmentTools
 #else
         return "Release";
 #endif
+    }
+
+    public static string? GetClrProfilerDirectoryName()
+    {
+        string? clrProfilerDirectoryName = Environment.GetEnvironmentVariable("OS_TYPE") switch
+        {
+            "windows" => "win",
+            "linux-glibc" => "linux",
+            "linux-musl" => "linux-musl",
+            "macos" => "osx",
+            _ => null
+        };
+
+        // If OS_TYPE is null, then fallback to default value.
+        if (clrProfilerDirectoryName == null)
+        {
+            clrProfilerDirectoryName = EnvironmentTools.GetOS() switch
+            {
+                "win" => "win",
+                "linux" => "linux",
+                "osx" => "osx",
+                _ => null
+            };
+        }
+
+        return clrProfilerDirectoryName;
     }
 }

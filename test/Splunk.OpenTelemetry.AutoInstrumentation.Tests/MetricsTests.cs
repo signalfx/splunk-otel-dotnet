@@ -17,7 +17,6 @@
 using System.Collections.Specialized;
 using FluentAssertions.Execution;
 using OpenTelemetry.Exporter;
-using OpenTelemetry.Metrics;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
@@ -25,14 +24,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
 public class MetricsTests
 {
-    [Fact]
-    public void ConfigureMeterProvider()
-    {
-        var builder = Mock.Of<MeterProviderBuilder>();
-        var returnedBuilder = new Metrics(PluginSettings.FromDefaultSources()).ConfigureMeterProvider(builder);
-        returnedBuilder.Should().Be(builder);
-    }
-
     [Fact]
     public void ConfigureOtlpOptions()
     {
