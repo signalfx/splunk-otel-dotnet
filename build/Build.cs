@@ -117,8 +117,36 @@ class Build : NukeBuild
             FileSystemTasks.CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
         });
 
+    Target ExtendLicenseFile => _ => _
+        .After(AddSplunkPlugins)
+        .Executes(() =>
+        {
+            var licenseFilePath = OpenTelemetryDistributionFolder / "LICENSE";
+
+            var licenseContent = TextTasks.ReadAllText(licenseFilePath);
+
+            var additionalOTelNetAutoInstrumentationContent = @"
+Libraries
+
+- OpenTelemetry.AutoInstrumentation.Native
+- OpenTelemetry.AutoInstrumentation.AspNetCoreBootstrapper
+- OpenTelemetry.AutoInstrumentation.Loader,
+- OpenTelemetry.AutoInstrumentation.StartupHook,
+- OpenTelemetry.AutoInstrumentation,
+are under the following copyright:
+Copyright The OpenTelemetry Authors under Apache License Version 2.0
+(<https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/main/LICENSE>).
+";
+
+            if (!licenseContent.Contains(additionalOTelNetAutoInstrumentationContent))
+            {
+                TextTasks.WriteAllText(licenseFilePath, licenseContent + additionalOTelNetAutoInstrumentationContent);
+            }
+        });
+
     Target PackSplunkDistribution => _ => _
         .After(CopyInstrumentScripts)
+        .After(ExtendLicenseFile)
         .Executes(() =>
         {
             var fileName = GetOTelAutoInstrumentationFileName();
@@ -169,6 +197,7 @@ class Build : NukeBuild
         .DependsOn(Compile)
         .DependsOn(AddSplunkPlugins)
         .DependsOn(CopyInstrumentScripts)
+        .DependsOn(ExtendLicenseFile)
         .DependsOn(RunUnitTests)
         .DependsOn(RunIntegrationTests)
         .DependsOn(PackSplunkDistribution);
