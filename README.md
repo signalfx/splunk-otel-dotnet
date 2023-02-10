@@ -6,7 +6,7 @@
 [![Keep a Changelog](https://img.shields.io/badge/changelog-Keep%20a%20Changelog-%23E05735)](CHANGELOG.md)
 [![LICENSE](https://img.shields.io/github/license/signalfx/splunk-otel-dotnet)](LICENSE)
 
-[![Build Status](https://img.shields.io/github/workflow/status/signalfx/splunk-otel-dotnet/ci)](https://github.com/signalfx/splunk-otel-dotnet/actions?query=branch%3Amain)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/signalfx/splunk-otel-dotnet/ci.yml?branch=main)](https://github.com/signalfx/splunk-otel-dotnet/actions?query=branch%3Amain)
 
 The Splunk Distribution of
 [OpenTelemetry .NET Automatic Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation).
