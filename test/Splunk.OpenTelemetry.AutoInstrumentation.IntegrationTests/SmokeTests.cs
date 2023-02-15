@@ -125,7 +125,7 @@ public class SmokeTests : TestHelper
         collector.ResourceExpector.Expect("telemetry.sdk.name", "opentelemetry");
         collector.ResourceExpector.Expect("telemetry.sdk.language", "dotnet");
         collector.ResourceExpector.Expect("telemetry.sdk.version", typeof(global::OpenTelemetry.Resources.Resource).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
-        collector.ResourceExpector.Expect("telemetry.auto.version", "0.6.0-beta.1");
+        collector.ResourceExpector.Expect("telemetry.auto.version", "0.6.0-beta.2");
         collector.ResourceExpector.Expect("splunk.distro.version", typeof(Plugin).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
@@ -144,7 +144,7 @@ public class SmokeTests : TestHelper
         collector.ResourceExpector.Expect("telemetry.sdk.name", "opentelemetry");
         collector.ResourceExpector.Expect("telemetry.sdk.language", "dotnet");
         collector.ResourceExpector.Expect("telemetry.sdk.version", typeof(global::OpenTelemetry.Resources.Resource).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
-        collector.ResourceExpector.Expect("telemetry.auto.version", "0.6.0-beta.1");
+        collector.ResourceExpector.Expect("telemetry.auto.version", "0.6.0-beta.2");
         collector.ResourceExpector.Expect("splunk.distro.version", typeof(Plugin).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
@@ -164,7 +164,7 @@ public class SmokeTests : TestHelper
         collector.ResourceExpector.Expect("telemetry.sdk.name", "opentelemetry");
         collector.ResourceExpector.Expect("telemetry.sdk.language", "dotnet");
         collector.ResourceExpector.Expect("telemetry.sdk.version", typeof(global::OpenTelemetry.Resources.Resource).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
-        collector.ResourceExpector.Expect("telemetry.auto.version", "0.6.0-beta.1");
+        collector.ResourceExpector.Expect("telemetry.auto.version", "0.6.0-beta.2");
         collector.ResourceExpector.Expect("splunk.distro.version", typeof(Plugin).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
 
         EnableBytecodeInstrumentation();
