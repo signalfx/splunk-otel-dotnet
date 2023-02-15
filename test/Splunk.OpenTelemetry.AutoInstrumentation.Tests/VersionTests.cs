@@ -31,7 +31,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             using (new AssertionScope())
             {
                 info.FileVersion.Should().NotBe("0.0.0.0");
-                info.ProductVersion.Should().NotBe("0.0.0-alpha.0");
+                info.ProductVersion.Should().NotContain("0.0.0-alpha.0");
             }
         }
     }
