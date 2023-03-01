@@ -21,7 +21,7 @@ and instrument your .NET application using the official shell scripts.
 For example:
 
 ```sh
-curl -sSfL https://raw.githubusercontent.com/signalfx/splunk-otel-dotnet/v0.0.1-alpha.2/splunk-otel-dotnet-install.sh -O
+curl -sSfL https://raw.githubusercontent.com/signalfx/splunk-otel-dotnet/v0.1.0-beta.1/splunk-otel-dotnet-install.sh -O
 sh ./splunk-otel-dotnet-install.sh
 . $HOME/.splunk-otel-dotnet/instrument.sh
 OTEL_SERVICE_NAME=myapp OTEL_RESOURCE_ATTRIBUTES=deployment.environment=staging,service.version=1.0.0 dotnet run
@@ -32,23 +32,23 @@ downloads and installs the distribution.
 It has to be invoked only once.
 It uses environment variables as parameters:
 
-| Parameter               | Description                                                      | Required | Default value             |
-|-------------------------|------------------------------------------------------------------|----------|---------------------------|
+| Parameter               | Description                                                      | Required | Default value               |
+|-------------------------|------------------------------------------------------------------|----------|-----------------------------|
 | `OTEL_DOTNET_AUTO_HOME` | Location where binaries are to be installed                      | No       | `$HOME/.splunk-otel-dotnet` |
-| `OS_TYPE`               | Possible values: `linux-glibc`, `linux-musl`, `macos`, `windows` | No       | *Calculated*              |
-| `TMPDIR`                | Temporary directory used when downloading the files              | No       | `$(mktemp -d)`            |
-| `VERSION`               | Version to download                                              | No       | `v0.0.1-alpha.2`           |
+| `OS_TYPE`               | Possible values: `linux-glibc`, `linux-musl`, `macos`, `windows` | No       | *Calculated*                |
+| `TMPDIR`                | Temporary directory used when downloading the files              | No       | `$(mktemp -d)`              |
+| `VERSION`               | Version to download                                              | No       | `v0.1.0-beta.1`             |
 
 The [instrument.sh](../instrument.sh) script
 enables the instrumentation in the current shell session.
 It has to be run before you run a .NET application.
 uses environment variables as parameters:
 
-| Parameter               | Description                                                            | Required | Default value             |
-|-------------------------|------------------------------------------------------------------------|----------|---------------------------|
-| `ENABLE_PROFILING`      | Whether to set the .NET CLR Profiler, possible values: `true`, `false` | No       | `true`                    |
+| Parameter               | Description                                                            | Required | Default value               |
+|-------------------------|------------------------------------------------------------------------|----------|-----------------------------|
+| `ENABLE_PROFILING`      | Whether to set the .NET CLR Profiler, possible values: `true`, `false` | No       | `true`                      |
 | `OTEL_DOTNET_AUTO_HOME` | Location where binaries are to be installed                            | No       | `$HOME/.splunk-otel-dotnet` |
-| `OS_TYPE`               | Possible values: `linux-glibc`, `linux-musl`, `macos`, `windows`       | No       | *Calculated*              |
+| `OS_TYPE`               | Possible values: `linux-glibc`, `linux-musl`, `macos`, `windows`       | No       | *Calculated*                |
 
 > On macOS [`coreutils`](https://formulae.brew.sh/formula/coreutils) is required.
 
@@ -61,7 +61,7 @@ For example:
 
 ```powershell
 # Download and import the module
-$module_url = "https://github.com/signalfx/splunk-otel-dotnet/releases/download/v0.0.1-alpha.2/Splunk.OTel.DotNet.psm1"
+$module_url = "https://github.com/signalfx/splunk-otel-dotnet/releases/download/v0.1.0-beta.1/Splunk.OTel.DotNet.psm1"
 $download_path = Join-Path $env:temp "Splunk.OTel.DotNet.psm1"
 Invoke-WebRequest -Uri $module_url -OutFile $download_path
 Import-Module $download_path
