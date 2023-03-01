@@ -1,6 +1,7 @@
 #!/bin/sh
 
 # guess OS_TYPE if not provided
+OS_TYPE=${OS_TYPE:-}
 if [ -z "$OS_TYPE" ]; then
   case "$(uname -s | tr '[:upper:]' '[:lower:]')" in
     cygwin_nt*|mingw*|msys_nt*)
@@ -21,7 +22,16 @@ fi
 
 # validate input
 case "$OS_TYPE" in
-  "linux-glibc"|"linux-musl"|"macos"|"windows")
+  "linux-glibc")
+    DOTNET_RUNTIME_ID="linux-x64"
+    ;;
+  "linux-musl")
+    DOTNET_RUNTIME_ID="linux-musl-x64"
+    ;;
+  "macos")
+    DOTNET_RUNTIME_ID="osx-x64"
+    ;;
+  "windows")
     ;;
   *)
     echo "Set the operating system type using the OS_TYPE environment variable. Supported values: linux-glibc, linux-musl, macos, windows." >&2
@@ -29,11 +39,9 @@ case "$OS_TYPE" in
     ;;
 esac
 
+ENABLE_PROFILING=${ENABLE_PROFILING:-true}
 case "$ENABLE_PROFILING" in
   "true"|"false")
-    ;;
-  "")
-    ENABLE_PROFILING="true"
     ;;
   *)
     echo "Invalid ENABLE_PROFILING. Supported values: true, false." >&2
@@ -80,18 +88,21 @@ fi
 export OTEL_DOTNET_AUTO_HOME
 
 # Configure .NET Core Runtime
+DOTNET_ADDITIONAL_DEPS=${DOTNET_ADDITIONAL_DEPS:-}
 if [ -z "$DOTNET_ADDITIONAL_DEPS" ]; then
   export DOTNET_ADDITIONAL_DEPS="${OTEL_DOTNET_AUTO_HOME}/AdditionalDeps"
 else
   export DOTNET_ADDITIONAL_DEPS="${OTEL_DOTNET_AUTO_HOME}/AdditionalDeps${SEPARATOR}${DOTNET_ADDITIONAL_DEPS}"
 fi
 
+DOTNET_SHARED_STORE=${DOTNET_SHARED_STORE:-}
 if [ -z "$DOTNET_SHARED_STORE" ]; then
   export DOTNET_SHARED_STORE="${OTEL_DOTNET_AUTO_HOME}/store"
 else
   export DOTNET_SHARED_STORE="${OTEL_DOTNET_AUTO_HOME}/store${SEPARATOR}${DOTNET_SHARED_STORE}"
 fi
 
+DOTNET_STARTUP_HOOKS=${DOTNET_STARTUP_HOOKS:-}
 if [ -z "$DOTNET_STARTUP_HOOKS" ]; then
   export DOTNET_STARTUP_HOOKS="${OTEL_DOTNET_AUTO_HOME}/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
 else
@@ -136,7 +147,7 @@ if [ "$ENABLE_PROFILING" = "true" ]; then
     export CORECLR_PROFILER_PATH_64="$OTEL_DOTNET_AUTO_HOME/win-x64/OpenTelemetry.AutoInstrumentation.Native.$SUFIX"
     export CORECLR_PROFILER_PATH_32="$OTEL_DOTNET_AUTO_HOME/win-x86/OpenTelemetry.AutoInstrumentation.Native.$SUFIX"
   else
-    export CORECLR_PROFILER_PATH="$OTEL_DOTNET_AUTO_HOME/OpenTelemetry.AutoInstrumentation.Native.$SUFIX"
+    export CORECLR_PROFILER_PATH="$OTEL_DOTNET_AUTO_HOME/$DOTNET_RUNTIME_ID/OpenTelemetry.AutoInstrumentation.Native.$SUFIX"
   fi
 
   # Configure the bytecode instrumentation configuration file
