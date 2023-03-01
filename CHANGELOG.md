@@ -21,7 +21,7 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [0.1.0-beta.1](https://github.com/signalfx/splunk-otel-dotnet/releases/tag/v0.1.0-beta.1)
 
-The is an alpha release,
+The is a beta release,
 built on top of [OpenTelemetry .NET Auto Instrumentation v0.6.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.6.0).
 
 ### Added
