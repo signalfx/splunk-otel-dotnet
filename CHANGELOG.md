@@ -5,15 +5,9 @@ All notable changes to this component are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v0.0.1-alpha.2...HEAD)
+## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v0.1.0-beta.1...HEAD)
 
 ### Added
-
-* .NET Framework settings can read configuration from Web.config and App.config
-* Add `SPLUNK_REALM` configuration key to specify direct ingest realm.
-* Add `SPLUNK_ACCESS_TOKEN` configuration key to authorize direct ingest.
-* Add `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED` configuration key
-  to support Splunk RUM.
 
 ### Changed
 
@@ -24,6 +18,24 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 ### Fixed
 
 ### Security
+
+## [0.1.0-beta.1](https://github.com/signalfx/splunk-otel-dotnet/releases/tag/v0.1.0-beta.1)
+
+The is an alpha release,
+built on top of [OpenTelemetry .NET Auto Instrumentation v0.6.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.6.0).
+
+### Added
+
+- .NET Framework settings can read configuration from Web.config and App.config
+- Add `SPLUNK_REALM` configuration key to specify direct ingest realm.
+- Add `SPLUNK_ACCESS_TOKEN` configuration key to authorize direct ingest.
+- Add `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED` configuration key
+  to support Splunk RUM.
+
+### Changed
+
+- Updated [OpenTelemetry .NET Auto Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation):
+  [`0.6.0`](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v0.6.0).
 
 ## [0.0.1-alpha.2](https://github.com/signalfx/splunk-otel-dotnet/releases/tag/v0.0.1-alpha.2)
 
