@@ -87,7 +87,7 @@ jobs:
         docker run --rm \
           -e OS_TYPE=linux-musl --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project \
           splunk-otel-dotnet/${{ matrix.base-image }} \
-          git config --global --add safe.directory /project && ./build.sh Workflow
+          /bin/sh -c 'git config --global --add safe.directory /project && ./build.sh Workflow'
     - name: Test the Shell scripts from README.md in Docker container
       run: |
         set -e
