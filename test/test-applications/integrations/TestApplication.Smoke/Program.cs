@@ -62,7 +62,11 @@ public class Program
             activity?.SetTag("long", new string('*', 13000));
         }
 
-        var client = new HttpClient();
+        using var client = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(1)
+        };
+
         try
         {
             client.GetStringAsync("http://httpstat.us/200").Wait();
