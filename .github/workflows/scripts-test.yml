@@ -93,7 +93,7 @@ jobs:
             dotnet new console
             dotnet publish /p:TreatWarningsAsErrors=false -f net7.0 -c Release
             curl -sSfL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/splunk-otel-dotnet-install.sh -O
-            sh ./splunk-otel-dotnet-install
+            sh ./splunk-otel-dotnet-install.sh
               test "$(ls -A "$HOME/.splunk-otel-dotnet")"
             curl -sSfL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/instrument.sh -O
             . ./instrument.sh
