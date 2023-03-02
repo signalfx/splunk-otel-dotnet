@@ -118,12 +118,10 @@ jobs:
       - uses: actions/download-artifact@v3.0.2
         with:
           path: .
-      - name: Install zip
-        uses: montudor/action-zip@v1.0.0
-      - run: cd bin-alpine ; zip -qq -r ../splunk-opentelemetry-dotnet-linux-glibc.zip . * ; cd ..
-      - run: cd bin-ubuntu-20.04 ; zip -qq -r ../splunk-opentelemetry-dotnet-linux-musl.zip . * ; cd ..
-      - run: cd bin-windows-2022 ; zip -qq -r ../splunk-opentelemetry-dotnet-windows.zip . * ; cd ..
-      - run: cd bin-macos-11 ; zip -qq -r ../splunk-opentelemetry-dotnet-macos.zip . * ; cd ..
+      - run: cp bin-alpine/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-musl.zip
+      - run: cp bin-ubuntu-20.04/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-glibc.zip
+      - run: cp bin-windows-2022/splunk-*.zip ./splunk-opentelemetry-dotnet-windows.zip
+      - run: cp bin-macos-11/splunk-*.zip ./splunk-opentelemetry-dotnet-macos.zip
       - name: Calculate checksum
         run: sha256sum ./*.zip ./splunk-otel-dotnet-install.sh ./Splunk.OTel.DotNet.psm1 >> checksum.txt
       - name: Create Release
