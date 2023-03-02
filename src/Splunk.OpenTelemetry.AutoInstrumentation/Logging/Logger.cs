@@ -29,13 +29,13 @@ internal class Logger : ILogger
     {
         try
         {
-            var otelLoggingtype = Type.GetType("OpenTelemetry.AutoInstrumentation.Logging.OtelLogging, OpenTelemetry.AutoInstrumentation")!;
+            var otelLoggingType = Type.GetType("OpenTelemetry.AutoInstrumentation.Logging.OtelLogging, OpenTelemetry.AutoInstrumentation")!;
             // Call the constructor to initialize (this method guarantees that the static constructor is only called once, regardless how many times the method is called)
-            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(otelLoggingtype.TypeHandle);
+            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(otelLoggingType.TypeHandle);
 
-            var method = otelLoggingtype.GetMethod("GetLogger", BindingFlags.Static | BindingFlags.NonPublic)!;
+            var method = otelLoggingType.GetMethod("GetLogger", new[] { typeof(string) })!;
 
-            Log = method.Invoke(null, null)!;
+            Log = method.Invoke(null, new object[] { "Splunk" })!;
 
             WarningMethod = GetMethod("Warning");
             ErrorMethod = GetMethod("Error");
@@ -49,39 +49,37 @@ internal class Logger : ILogger
 
     public void Warning(string message)
     {
-        WarningMethod?.Invoke(Log, new object[] { message, 0, string.Empty });
+        WarningMethod?.Invoke(Log, new object[] { message, true });
     }
 
     public void Error(string message)
     {
-        ErrorMethod?.Invoke(Log, new object[] { message, 0, string.Empty });
+        ErrorMethod?.Invoke(Log, new object[] { message, true });
     }
 
     public void Error(Exception ex, string message)
     {
-        ErrorWithExceptionMethod?.Invoke(Log, new object[] { ex, message, 0, string.Empty });
+        ErrorWithExceptionMethod?.Invoke(Log, new object[] { ex, message, true });
     }
 
     private static MethodInfo? GetMethod(string method)
     {
         // First type is 'string messageTemplate'
-        // Last but one is '[CallerLineNumber] int sourceLine = 0'
-        // Last type is '[CallerFilePath] string sourceFile = ""'
+        // Second type is 'bool writeToEventLog = true'
 
         return Log?
             .GetType()
-            .GetMethod(method, types: new[] { typeof(string), typeof(int), typeof(string) });
+            .GetMethod(method, types: new[] { typeof(string), typeof(bool) });
     }
 
     private static MethodInfo? GetMethodWithException(string method)
     {
-        // First type is 'Exception ex'
+        // First type is 'Exception exception'
         // Second type is 'string messageTemplate'
-        // Last but one is '[CallerLineNumber] int sourceLine = 0'
-        // Last type is '[CallerFilePath] string sourceFile = ""'
+        // Third type is 'bool writeToEventLog = true'
 
         return Log?
             .GetType()
-            .GetMethod(method, types: new[] { typeof(Exception), typeof(string), typeof(int), typeof(string) });
+            .GetMethod(method, types: new[] { typeof(Exception), typeof(string), typeof(bool) });
     }
 }
