@@ -40,7 +40,7 @@ public class MetricsTests
 
         using (new AssertionScope())
         {
-            options.Endpoint.Should().Be("https://ingest.my-realm.signalfx.com/v2/datapoint");
+            options.Endpoint.Should().Be("https://ingest.my-realm.signalfx.com/v2/datapoint/otlp");
             options.Headers.Should().Be("X-Sf-Token=MyToken");
         }
     }
