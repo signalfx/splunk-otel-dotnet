@@ -39,7 +39,7 @@ Prescriptive guidance consists of step-by-step instructions, conceptual material
 and decision support for customers. Reference documentation and development 
 documentation is hosted on this repository.
 
-To contribute documentation for this project, open a pull request in the 
+To contribute to the Splunk Observability documentation, open a pull request in the 
 https://github.com/splunk/public-o11y-docs repository. See the [CONTRIBUTING.md](https://github.com/splunk/public-o11y-docs/blob/main/CONTRIBUTING.md) guide for documentation for more information.
 
 ## Contributing via Pull Requests
