@@ -19,15 +19,19 @@ telemetry to [Splunk APM](https://docs.splunk.com/Observability/apm/intro-to-apm
 Read the official documentation for this distribution in the
 [Splunk Docs site](https://quickdraw.splunk.com/redirect/?product=Observability&version=current&location=otel.net.application).
 
+## Examples
+
+You can find official examples in the [tracing examples repository](https://github.com/signalfx/tracing-examples/tree/main/opentelemetry-tracing/opentelemetry-dotnet).
+
+## Migrate from the SignalFx Instrumentation for .NET
+
+For instructions on how to migrate from the SignalFx Instrumentation for .NET to the Splunk Distribution of OpenTelemetry .NET, see [Migrate from the SignalFx .NET Instrumentation](https://quickdraw.splunk.com/redirect/?product=Observability&version=current&location=otel.net.migrate) in the official documentation.
+
 ## Troubleshooting
 
 For troubleshooting information, see the
 [Troubleshooting](https://quickdraw.splunk.com/redirect/?product=Observability&version=current&location=otel.net.tshoot)
 documentation.
-
-## Examples
-
-You can find our official examples in the [tracing examples repository](https://github.com/signalfx/tracing-examples/tree/main/opentelemetry-tracing/opentelemetry-dotnet).
 
 ## Contributing
 
