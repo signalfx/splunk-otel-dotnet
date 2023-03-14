@@ -27,7 +27,8 @@ You can find official examples in the [tracing examples repository](https://gith
 
 For instructions on how to migrate from the SignalFx Instrumentation for .NET to
 the Splunk Distribution of OpenTelemetry .NET, see
-[Migrate from the SignalFx .NET Instrumentation](https://quickdraw.splunk.com/redirect/?product=Observability&version=current&location=otel.net.migrate) in the official documentation.
+[Migrate from the SignalFx .NET Instrumentation](https://quickdraw.splunk.com/redirect/?product=Observability&version=current&location=otel.net.migrate)
+in the official documentation.
 
 ## Troubleshooting
 
