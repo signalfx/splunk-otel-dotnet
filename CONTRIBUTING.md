@@ -40,7 +40,7 @@ consists of step-by-step instructions, conceptual material, and decision support
 for customers. Reference documentation and development documentation is still
 hosted on this repository.
 
-To contribute documentation for this project, open a pull request in the 
+To contribute documentation for this project, open a pull request in the
 [public-o11y-docs](https://github.com/splunk/public-o11y-docs) repository. See
 the [CONTRIBUTING.md](https://github.com/splunk/public-o11y-docs/blob/main/CONTRIBUTING.md)
 guide of our documentation for more information.

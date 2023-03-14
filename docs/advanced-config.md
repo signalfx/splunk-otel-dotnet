@@ -1,6 +1,9 @@
-> # The official Splunk documentation for this page is [Configure the Splunk Distribution of OTel .NET](https://quickdraw.splunk.com/redirect/?product=Observability&version=current&location=otel.net.configuration).
+# Advanced configuration
+
+> **The official Splunk documentation for this page is
+> [Configure the Splunk Distribution of OTel .NET](https://quickdraw.splunk.com/redirect/?product=Observability&version=current&location=otel.net.configuration).**
 >
-> ## For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING.md#documentation)
+> **For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING.md#documentation).**
 
 ## OpenTelemetry configuration
 
