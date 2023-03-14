@@ -14,34 +14,27 @@ provides a .NET Profiler and startup hooks
 that automatically instrument your .NET application to capture and report
 telemetry to [Splunk APM](https://docs.splunk.com/Observability/apm/intro-to-apm.html).
 
-## Documentation
+## Get started
 
-### Getting Started
-
-Read the draft documentation for this distribution in the
-[docs](docs/README.md).
-
-<!-- To be used when we have our official docs:
 Read the official documentation for this distribution in the
-[Splunk Docs site](https://docs.splunk.com/Observability/gdi/get-data-in/application/dotnet/get-started.html).
--->
-
-### Troubleshooting
-
-For troubleshooting information, see the
-[Troubleshooting](docs/troubleshooting.md)
-documentation.
-
-<!-- To be used when we have our official docs:
-For troubleshooting information, see the
-[Troubleshooting](https://docs.splunk.com/Observability/gdi/get-data-in/application/dotnet/troubleshooting/common-dotnet-troubleshooting.html)
-documentation.
--->
+[Splunk Docs site](https://quickdraw.splunk.com/redirect/?product=Observability&version=current&location=otel.net.application).
 
 ## Examples
 
-You can find our official "user-facing" examples
-[here](https://github.com/signalfx/tracing-examples/tree/main/opentelemetry-tracing/opentelemetry-dotnet).
+You can find official examples in the [tracing examples repository](https://github.com/signalfx/tracing-examples/tree/main/opentelemetry-tracing/opentelemetry-dotnet).
+
+## Migrate from the SignalFx Instrumentation for .NET
+
+For instructions on how to migrate from the SignalFx Instrumentation for .NET to
+the Splunk Distribution of OpenTelemetry .NET, see
+[Migrate from the SignalFx .NET Instrumentation](https://quickdraw.splunk.com/redirect/?product=Observability&version=current&location=otel.net.migrate)
+in the official documentation.
+
+## Troubleshooting
+
+For troubleshooting information, see the
+[Troubleshooting](https://quickdraw.splunk.com/redirect/?product=Observability&version=current&location=otel.net.tshoot)
+documentation.
 
 ## Contributing
 
