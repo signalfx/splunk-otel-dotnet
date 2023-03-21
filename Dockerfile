@@ -16,6 +16,8 @@
 #    OTEL_DOTNET_AUTO_HOME=%InstallationLocation%
 #  - For auto-instrumentation by container injection, the Linux command cp is
 #    used and must be availabe in the image.
+#    Code Reference: https://github.com/open-telemetry/opentelemetry-operator/blob/main/pkg/instrumentation/dotnet.go
+/main/pkg/instrumentation/dotnet.go
 FROM busybox
 
 ARG RELEASE_VER
