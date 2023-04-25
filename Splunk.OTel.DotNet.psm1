@@ -1,4 +1,4 @@
-﻿#
+#
 # Copyright Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -79,7 +79,7 @@ function Download-OpenTelemetry([string]$Version, [string]$Path) {
     $dlUrl = "https://github.com/signalfx/splunk-otel-dotnet/releases/download/$Version/$archive"
     $dlPath = Join-Path $Path $archive
 
-    Invoke-WebRequest -Uri $dlUrl -OutFile $dlPath
+    Invoke-WebRequest -Uri $dlUrl -OutFile $dlPath -UseBasicParsing
 
     return $dlPath
 }
@@ -95,7 +95,6 @@ function Get-Environment-Variables-Table([string]$InstallDir, [string]$OTelServi
     $DOTNET_STARTUP_HOOKS = Join-Path $InstallDir "net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
 
     $OTEL_DOTNET_AUTO_HOME = $InstallDir
-    $OTEL_DOTNET_AUTO_INTEGRATIONS_FILE = Join-Path $InstallDir "integrations.json"
     
     $vars = @{
         # .NET Framework
@@ -116,7 +115,6 @@ function Get-Environment-Variables-Table([string]$InstallDir, [string]$OTelServi
         "DOTNET_STARTUP_HOOKS"                = $DOTNET_STARTUP_HOOKS;
         # OpenTelemetry
         "OTEL_DOTNET_AUTO_HOME"               = $OTEL_DOTNET_AUTO_HOME;
-        "OTEL_DOTNET_AUTO_INTEGRATIONS_FILE"  = $OTEL_DOTNET_AUTO_INTEGRATIONS_FILE;
         "OTEL_DOTNET_AUTO_PLUGINS"            = "Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation";
     }
 
@@ -264,13 +262,13 @@ function Install-OpenTelemetryCore() {
         # OpenTelemetry service locator
         [System.Environment]::SetEnvironmentVariable($ServiceLocatorVariable, $installDir, [System.EnvironmentVariableTarget]::Machine)
 
-        # Register .NET Framweworks dlls in GAC
+        # Register .NET Framework dlls in GAC
         [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a") | Out-Null
         $publish = New-Object System.EnterpriseServices.Internal.Publish 
         $dlls = Get-ChildItem -Path $installDir\netfx\ -Filter *.dll -File
         for ($i = 0; $i -lt $dlls.Count; $i++) {
             $percentageComplete = $i / $dlls.Count * 100
-            Write-Progress -Activity "Registering .NET Framweworks dlls in GAC" `
+            Write-Progress -Activity "Registering .NET Framework dlls in GAC" `
                 -Status "Module $($i+1) out of $($dlls.Count). Installing $($dlls[$i].Name):" `
                 -PercentComplete $percentageComplete
 
@@ -280,7 +278,7 @@ function Install-OpenTelemetryCore() {
 
             $publish.GacInstall($dlls[$i].FullName)
         }
-        Write-Progress -Activity "Registering .NET Framweworks dlls in GAC" -Status "Ready" -Completed
+        Write-Progress -Activity "Registering .NET Framework dlls in GAC" -Status "Ready" -Completed
     } 
     catch {
         $message = $_
@@ -311,7 +309,7 @@ function Uninstall-OpenTelemetryCore() {
     $dlls = Get-ChildItem -Path $installDir\netfx\ -Filter *.dll -File
     for ($i = 0; $i -lt $dlls.Count; $i++) {
         $percentageComplete = $i / $dlls.Count * 100
-        Write-Progress -Activity "Unregistering .NET Framweworks dlls from GAC" `
+        Write-Progress -Activity "Unregistering .NET Framework dlls from GAC" `
             -Status "Module $($i+1) out of $($dlls.Count). Uninstalling $($dlls[$i].Name):" `
             -PercentComplete $percentageComplete
 
@@ -321,7 +319,7 @@ function Uninstall-OpenTelemetryCore() {
 
         $publish.GacRemove($dlls[$i].FullName)
     }
-    Write-Progress -Activity "Unregistering .NET Framweworks dlls from GAC" -Status "Ready" -Completed
+    Write-Progress -Activity "Unregistering .NET Framework dlls from GAC" -Status "Ready" -Completed
 
     Remove-Item -LiteralPath $installDir -Force -Recurse
 
