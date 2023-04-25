@@ -1,4 +1,4 @@
-#
+﻿#
 # Copyright Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -241,7 +241,7 @@ function Install-OpenTelemetryCore() {
         [string]$LocalPath
     )
 
-    $version = "v0.1.0-beta.1"
+    $version = "v0.2.0-beta.1"
     $installDir = Get-CLIInstallDir-From-InstallDir $InstallDir
     $archivePath = $null
     $deleteArchive = $true
