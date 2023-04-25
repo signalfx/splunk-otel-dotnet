@@ -18,7 +18,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration
 {
     internal static class ConfigurationExtensions
     {
-        public static IReadOnlyCollection<KeyValuePair<string, string>> ToNameValueCollection(this string configurationValue)
+        public static IReadOnlyCollection<KeyValuePair<string, string>> ToNameValueCollection(this string? configurationValue)
         {
             if (configurationValue == null)
             {

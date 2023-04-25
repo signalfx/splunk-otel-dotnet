@@ -37,7 +37,7 @@ internal class PluginSettings
         ServiceName = source.GetString(ConfigurationKeys.OpenTelemetry.ServiceName);
         TraceResponseHeaderEnabled = source.GetBool(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled) ?? true;
         IsOtlpEndpointSet = !string.IsNullOrEmpty(source.GetString(ConfigurationKeys.OpenTelemetry.OtlpEndpoint));
-        ResourceAttributes = source.GetString(ConfigurationKeys.OpenTelemetry.ResourceAttributes)!.ToNameValueCollection();
+        ResourceAttributes = source.GetString(ConfigurationKeys.OpenTelemetry.ResourceAttributes).ToNameValueCollection();
     }
 
     public string Realm { get; }

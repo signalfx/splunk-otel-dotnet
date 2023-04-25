@@ -17,14 +17,11 @@
 using System.Diagnostics;
 using OpenTelemetry.Resources;
 
-using static Splunk.OpenTelemetry.AutoInstrumentation.Helpers.ServiceNameHelper;
-
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal static class ResourceConfigurator
 {
     private const string SplunkDistroVersionName = "splunk.distro.version";
-    private const string ServiceName = "service.name";
 
     private static readonly string Version;
 
@@ -41,11 +38,6 @@ internal static class ResourceConfigurator
         {
             new(SplunkDistroVersionName, Version)
         };
-
-        if (!HasServiceName(settings))
-        {
-            attributes.Add(new(ServiceName, GetGeneratedServiceName()));
-        }
 
         resourceBuilder.AddAttributes(attributes);
     }
