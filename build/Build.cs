@@ -28,8 +28,8 @@ class Build : NukeBuild
         .Executes(() =>
         {
             DotNetClean();
-            FileSystemTasks.DeleteDirectory(OpenTelemetryDistributionFolder);
-            FileSystemTasks.DeleteDirectory(RootDirectory / GetOTelAutoInstrumentationFileName());
+            OpenTelemetryDistributionFolder.DeleteDirectory();
+            (RootDirectory / GetOTelAutoInstrumentationFileName()).DeleteDirectory();
         });
 
     Target Restore => _ => _
@@ -60,9 +60,9 @@ class Build : NukeBuild
         .Executes(() =>
         {
             var fileName = GetOTelAutoInstrumentationFileName();
-            FileSystemTasks.DeleteDirectory(OpenTelemetryDistributionFolder);
-            CompressionTasks.UncompressZip(fileName, OpenTelemetryDistributionFolder);
-            FileSystemTasks.DeleteFile(RootDirectory / fileName);
+            OpenTelemetryDistributionFolder.DeleteDirectory();
+            (RootDirectory / fileName).UnZipTo(OpenTelemetryDistributionFolder);
+            (RootDirectory / fileName).DeleteFile();
         });
 
     static string GetOTelAutoInstrumentationFileName()
@@ -123,7 +123,7 @@ class Build : NukeBuild
         {
             var licenseFilePath = OpenTelemetryDistributionFolder / "LICENSE";
 
-            var licenseContent = TextTasks.ReadAllText(licenseFilePath);
+            var licenseContent = licenseFilePath.ReadAllText();
 
             var additionalOTelNetAutoInstrumentationContent = @"
 Libraries
@@ -140,7 +140,7 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
 
             if (!licenseContent.Contains(additionalOTelNetAutoInstrumentationContent))
             {
-                TextTasks.WriteAllText(licenseFilePath, licenseContent + additionalOTelNetAutoInstrumentationContent);
+                licenseFilePath.WriteAllText(licenseContent + additionalOTelNetAutoInstrumentationContent);
             }
         });
 
@@ -150,7 +150,7 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
         .Executes(() =>
         {
             var fileName = GetOTelAutoInstrumentationFileName();
-            CompressionTasks.CompressZip(OpenTelemetryDistributionFolder, RootDirectory / "bin" / ("splunk-" + fileName), compressionLevel: CompressionLevel.SmallestSize, fileMode: FileMode.Create);
+            OpenTelemetryDistributionFolder.ZipTo(RootDirectory / "bin" / ("splunk-" + fileName), compressionLevel: CompressionLevel.SmallestSize, fileMode: FileMode.Create);
         });
 
     Target Compile => _ => _
