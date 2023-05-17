@@ -168,7 +168,7 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
         .After(Compile)
         .Executes(() =>
         {
-            var project = Solution.GetProject("Splunk.OpenTelemetry.AutoInstrumentation.Tests");
+            var project = Solution.AllProjects.First(project => project.Name == "Splunk.OpenTelemetry.AutoInstrumentation.Tests");
 
             DotNetTest(s => s
                 .SetNoBuild(true)
@@ -181,7 +181,7 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
         .After(AddSplunkPlugins)
         .Executes(() =>
         {
-            var project = Solution.GetProject("Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests");
+            var project = Solution.AllProjects.First(project => project.Name == "Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests");
 
             DotNetTest(s => s
                 .SetNoBuild(true)
