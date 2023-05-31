@@ -35,3 +35,5 @@ No changes in the code are needed to correctly version this package.
 
 1. Ask [o11y-docs team](https://github.com/orgs/splunk/teams/o11y-docs)
 to publish necessary updates to the [documentation](https://github.com/splunk/public-o11y-docs).
+
+1. Update version in [microservices-demo](https://github.com/signalfx/microservices-demo/blob/main/src/cartservice/Dockerfile).
