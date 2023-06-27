@@ -18,5 +18,3 @@
    - [`Splunk.OTel.DotNet.psm1`](../Splunk.OTel.DotNet.psm1)
 
 1. Update the [GitHub workflows](../.github/workflows) on changes in upstream.
-
-1. Update internal repository. Follow internal documentation.
