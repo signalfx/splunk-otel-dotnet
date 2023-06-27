@@ -19,4 +19,4 @@
 
 1. Update the [GitHub workflows](../.github/workflows) on changes in upstream.
 
-1. Update `splunk-otel-dotnet-signer` in the GitLab to aquire checksums (See releasing docs in the repo).
+1. Update internal repository. Follow internal documentation.
