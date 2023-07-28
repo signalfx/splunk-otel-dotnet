@@ -21,4 +21,34 @@
   <PropertyGroup>
     <MinVerTagPrefix>v</MinVerTagPrefix>
   </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(_IsPacking)' == 'true' ">
+    <!-- NuGet packages -->
+    <IsPackable>true</IsPackable>
+    <PackageIcon>images\splunk-logo-256x256.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/signalfx/splunk-otel-dotnet/</PackageProjectUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>docs\readme.md</PackageReadmeFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReleaseNotes>See release notes at https://github.com/signalfx/splunk-otel-dotnet/releases</PackageReleaseNotes>
+    <PackageTags>OpenTelemetry;OTEL;APM;tracing;profiling;instrumentation;Splunk</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/signalfx/splunk-otel-dotnet.git</RepositoryUrl>
+    <Copyright>Copyright 2022 Splunk Inc.</Copyright>
+    <Company>Splunk Inc.</Company>
+    <Authors>Splunk Inc.</Authors>
+  </PropertyGroup>
+
+  <!-- Items that are only added when building the NuGet package -->
+  <ItemGroup Condition=" '$(_IsPacking)' == 'true' ">
+    <Content Include="splunk-launch.*">
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+    <PackageReference Include="OpenTelemetry.AutoInstrumentation" Version="1.0.0-rc.1">
+      <PrivateAssets>none</PrivateAssets> <!-- Ensures that content and build transitive dependencies are properly delivered -->
+    </PackageReference>
+    <None Include="splunk-logo-256x256.png" Pack="true" PackagePath="images" />
+    <None Include="nuget-readme.md" Pack="true" PackagePath="\docs\readme.md" />
+  </ItemGroup>
+
 </Project>
