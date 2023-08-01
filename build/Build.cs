@@ -43,7 +43,9 @@ partial class Build : NukeBuild
         {
             foreach (var project in AllProjectsExceptNuGetTestApps())
             {
-                DotNetRestore(s => s.SetProjectFile(project));
+                DotNetRestore(s => s
+                    .SetProjectFile(project)
+                    .SetPlatform(Platform));
             }
         });
 
