@@ -120,7 +120,7 @@ jobs:
       - uses: actions/upload-artifact@v3.1.2
         with:
           name: nuget-package
-          path: NuGetPacake/
+          path: NuGetPackage/
 
   test-nuget-package:
     needs: build-nuget-package
