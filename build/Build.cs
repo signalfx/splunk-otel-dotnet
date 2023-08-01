@@ -39,7 +39,17 @@ partial class Build : NukeBuild
         .After(Clean)
         .Executes(() =>
         {
-            DotNetRestore();
+            foreach (var project in Solution.AllProjects)
+            {
+                if (TestNuGetPackageApps.Contains(project.Directory))
+                {
+                    // Project that depends on the NuGet package can only be restored if the NuGet package is already built.
+                    // Restore such projects in NuGet dedicated targets.
+                    continue;
+                }
+
+                DotNetRestore();
+            }
         });
 
     Target DownloadAutoInstrumentationDistribution => _ => _
