@@ -9,6 +9,8 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 partial class Build : NukeBuild
 {
+    private readonly static AbsolutePath TestNuGetPackageApps = NukeBuild.RootDirectory / "test" / "test-applications" / "nuget-package";
+
     [Solution("Splunk.OpenTelemetry.AutoInstrumentation.sln")] readonly Solution Solution;
     public static int Main() => Execute<Build>(x => x.Workflow);
 
@@ -159,10 +161,20 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
         .After(UnpackAutoInstrumentationDistribution)
         .Executes(() =>
         {
-            DotNetBuild(s => s
-                .SetNoRestore(true)
-                .SetConfiguration(Configuration)
-                .SetPlatform(Platform));
+            foreach (var project in Solution.AllProjects)
+            {
+                if (TestNuGetPackageApps.Contains(project.Directory))
+                {
+                    // Project that depends on the NuGet package can only be built if the NuGet package is already built.
+                    // Build such projects in NuGet dedicated targets.
+                    continue;
+                }
+
+                DotNetBuild(s => s
+                    .SetNoRestore(true)
+                    .SetConfiguration(Configuration)
+                    .SetPlatform(Platform));
+            }
         });
 
     Target RunUnitTests => _ => _
