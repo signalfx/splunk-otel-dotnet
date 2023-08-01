@@ -201,6 +201,7 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
             DotNetTest(s => s
                 .SetNoBuild(true)
                 .SetProjectFile(project)
+                .SetFilter("Category!=NuGetPackage")
                 .SetConfiguration(Configuration)
                 .SetProperty("Platform", Platform));
         });
