@@ -26,6 +26,8 @@ partial class Build : NukeBuild
 
     readonly AbsolutePath OpenTelemetryDistributionFolder = RootDirectory / "OpenTelemetryDistribution";
 
+    private IEnumerable<Project> AllProjectsExceptNuGetTestApps() => Solution.AllProjects.Where(project => !TestNuGetPackageApps.Contains(project.Directory));
+
     Target Clean => _ => _
         .Executes(() =>
         {
@@ -39,16 +41,9 @@ partial class Build : NukeBuild
         .After(Clean)
         .Executes(() =>
         {
-            foreach (var project in Solution.AllProjects)
+            foreach (var project in AllProjectsExceptNuGetTestApps())
             {
-                if (TestNuGetPackageApps.Contains(project.Directory))
-                {
-                    // Project that depends on the NuGet package can only be restored if the NuGet package is already built.
-                    // Restore such projects in NuGet dedicated targets.
-                    continue;
-                }
-
-                DotNetRestore();
+                DotNetRestore(s => s.SetProjectFile(project));
             }
         });
 
@@ -171,16 +166,10 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
         .After(UnpackAutoInstrumentationDistribution)
         .Executes(() =>
         {
-            foreach (var project in Solution.AllProjects)
+            foreach (var project in AllProjectsExceptNuGetTestApps())
             {
-                if (TestNuGetPackageApps.Contains(project.Directory))
-                {
-                    // Project that depends on the NuGet package can only be built if the NuGet package is already built.
-                    // Build such projects in NuGet dedicated targets.
-                    continue;
-                }
-
                 DotNetBuild(s => s
+                    .SetProjectFile(project)
                     .SetNoRestore(true)
                     .SetConfiguration(Configuration)
                     .SetPlatform(Platform));
