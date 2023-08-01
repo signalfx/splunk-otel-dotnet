@@ -105,14 +105,14 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             FileSystemTasks.CopyFileToDirectory(
-                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
+                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Platform / Configuration /
                 "net6.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
                 OpenTelemetryDistributionFolder / "net");
 
             if (EnvironmentInfo.IsWin)
             {
                 FileSystemTasks.CopyFileToDirectory(
-                    RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
+                    RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Platform / Configuration /
                     "net462" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
                     OpenTelemetryDistributionFolder / "netfx");
             }
