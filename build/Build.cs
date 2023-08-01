@@ -187,7 +187,8 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
             DotNetTest(s => s
                 .SetNoBuild(true)
                 .SetProjectFile(project)
-                .SetConfiguration(Configuration));
+                .SetConfiguration(Configuration)
+                .SetProperty("Platform", Platform));
         });
 
     Target RunIntegrationTests => _ => _
@@ -200,7 +201,8 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
             DotNetTest(s => s
                 .SetNoBuild(true)
                 .SetProjectFile(project)
-                .SetConfiguration(Configuration));
+                .SetConfiguration(Configuration)
+                .SetProperty("Platform", Platform));
         });
 
     Target Workflow => _ => _
