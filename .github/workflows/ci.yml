@@ -105,6 +105,49 @@ jobs:
         name: bin-${{ matrix.base-image }}
         path: bin/splunk-*.zip
 
+  build-nuget-package:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v3.5.3
+        with:
+          fetch-depth: 0 # fetching all, needed to correctly calculate version
+      - uses: actions/setup-dotnet@v3.2.0
+        with:
+          dotnet-version: | 
+            6.0.410
+            7.0.304
+      - run: ./build.cmd NuGetWorkflow
+      - uses: actions/upload-artifact@v3.1.2
+        with:
+          name: nuget-package
+          path: NuGetPacake/
+
+  test-nuget-package:
+    needs: build-nuget-package
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - machine: ubuntu-20.04
+          - machine: macos-11
+    runs-on: ${{ matrix.machine }}
+    steps:
+      - uses: actions/checkout@v3.5.3
+        with:
+          fetch-depth: 0 # fetching all, needed to correctly calculate version
+      - uses: actions/setup-dotnet@v3.2.0
+        with:
+          dotnet-version: | 
+            6.0.410
+            7.0.304
+      - name: Download NuGet Artifacts from build-nuget-package job
+        uses: actions/download-artifact@v3.0.2
+        with:
+          name: nuget-package
+          path: NuGetPackage/
+      - name: Test NuGet Package
+        run: ./build.cmd TestNuGetPackage
+
   create-release:
     if: github.ref_type == 'tag'
     name: Create GitHub release

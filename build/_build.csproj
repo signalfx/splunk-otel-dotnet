@@ -15,4 +15,15 @@
     <PackageReference Include="Nuke.Common" Version="7.0.2" />
   </ItemGroup>
 
+  <!-- Reference MinVer so the locally built NuGet version is available when building test applications -->
+  <ItemGroup>
+    <PackageReference Include="MinVer" Version="4.3.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <PropertyGroup>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+  </PropertyGroup>
+
 </Project>

@@ -7,7 +7,7 @@ using System.IO.Compression;
 
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
-class Build : NukeBuild
+partial class Build : NukeBuild
 {
     [Solution("Splunk.OpenTelemetry.AutoInstrumentation.sln")] readonly Solution Solution;
     public static int Main() => Execute<Build>(x => x.Workflow);
@@ -28,6 +28,7 @@ class Build : NukeBuild
         .Executes(() =>
         {
             DotNetClean();
+            NuGetPackageFolder.DeleteDirectory();
             OpenTelemetryDistributionFolder.DeleteDirectory();
             (RootDirectory / GetOTelAutoInstrumentationFileName()).DeleteDirectory();
         });
