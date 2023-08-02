@@ -152,7 +152,7 @@ jobs:
     if: github.ref_type == 'tag'
     name: Create GitHub release
     runs-on: ubuntu-20.04
-    needs: [ build, container-build ]
+    needs: [ build, container-build, build-nuget-package, test-nuget-package ]
     permissions:
       contents: write
     timeout-minutes: 10
@@ -166,8 +166,8 @@ jobs:
       - run: cp bin-windows-2022/splunk-*.zip ./splunk-opentelemetry-dotnet-windows.zip
       - run: cp bin-macos-11/splunk-*.zip ./splunk-opentelemetry-dotnet-macos.zip
       - name: Calculate checksum
-        run: sha256sum ./*.zip ./splunk-otel-dotnet-install.sh ./Splunk.OTel.DotNet.psm1 >> checksum.txt
+        run: sha256sum ./*.zip ./NuGetPackage/*.nupkg ./splunk-otel-dotnet-install.sh ./Splunk.OTel.DotNet.psm1 >> checksum.txt
       - name: Create Release
-        run: gh release create ${{ github.ref_name }} --title ${{ github.ref_name }} --verify-tag --draft ./*.zip ./splunk-otel-dotnet-install.sh ./Splunk.OTel.DotNet.psm1 checksum.txt
+        run: gh release create ${{ github.ref_name }} --title ${{ github.ref_name }} --verify-tag --draft ./*.zip ./NuGetPackage/*.nupkg ./splunk-otel-dotnet-install.sh ./Splunk.OTel.DotNet.psm1 checksum.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
