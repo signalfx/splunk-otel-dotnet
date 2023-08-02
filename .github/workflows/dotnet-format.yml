@@ -23,4 +23,4 @@ jobs:
         dotnet-version: 7.0.304
 
     - name: dotnet format
-      run: dotnet format ./Splunk.OpenTelemetry.AutoInstrumentation.sln --verify-no-changes
+      run: dotnet format ./Splunk.OpenTelemetry.AutoInstrumentation.sln --no-restore --verify-no-changes
