@@ -104,8 +104,8 @@ public sealed class SelfContainedTests : TestHelper
         Output.WriteLine("Exit Code: " + process.ExitCode);
         Output.WriteResult(helper);
 
-        processTimeout.Should().BeFalse("Test application timed out");
-        process.ExitCode.Should().Be(0, "Test application exited with non-zero exit code");
+        processTimeout.Should().BeFalse("test application should NOT have timed out");
+        process.ExitCode.Should().Be(0, "test application should NOT have non-zero exit code");
     }
 
     private void RunAndAssertHttpSpans(Action appLauncherAction)
