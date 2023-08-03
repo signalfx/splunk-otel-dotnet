@@ -6,11 +6,11 @@ Use the NuGet package in the following scenarios:
 
 1. You control the application build, but, not the machine/container where
   the application is running.
-1. Support instrumentation of [`self-contained`](https://learn.microsoft.com/en-us/dotnet/core/deploying/#publish-self-contained)
+2. Support instrumentation of [`self-contained`](https://learn.microsoft.com/en-us/dotnet/core/deploying/#publish-self-contained)
   applications.
-1. Facilitate developer experimentation with automatic instrumentation through
+3. Facilitate developer experimentation with automatic instrumentation through
   NuGet packages.
-1. Solve version conflicts between the dependencies used by the application and the
+4. Solve version conflicts between the dependencies used by the application and the
   automatic instrumentation.
 
 ## Limitations
@@ -21,10 +21,10 @@ reasons for not using NuGet packages include the following:
 
 1. You can't add the package to the application project. For example,
 the application is from a third party that can't add the package.
-1. Reduce disk usage, or the size of a virtual machine, when multiple applications
+2. Reduce disk usage, or the size of a virtual machine, when multiple applications
 to be instrumented are installed in a single machine. In this case you can use
 a single deployment for all .NET applications running on the machine.
-1. A legacy application that can't be migrated to the [SDK-style project](https://learn.microsoft.com/en-us/nuget/resources/check-project-format#check-the-project-format).
+3. A legacy application that can't be migrated to the [SDK-style project](https://learn.microsoft.com/en-us/nuget/resources/check-project-format#check-the-project-format).
 
 ## Using the NuGet packages
 
