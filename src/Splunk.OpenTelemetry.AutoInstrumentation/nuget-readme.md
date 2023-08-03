@@ -4,7 +4,8 @@
 
 Use the NuGet package in the following scenarios:
 
-1. Simplify deployment. For example, a container running a single application.
+1. You control the application build, but, not the machine/container where
+  the application is running.
 1. Support instrumentation of [`self-contained`](https://learn.microsoft.com/en-us/dotnet/core/deploying/#publish-self-contained)
   applications.
 1. Facilitate developer experimentation with automatic instrumentation through
