@@ -55,7 +55,7 @@ property, example:
 ```
 
 The same property can be also specified directly via the CLI, notice that the
-separator, `;`, needs to be properly escaped as '%3B':
+`;` separator needs to be properly escaped as '%3B':
 
 ```powershell
   dotnet build -p:SkippedInstrumentations=StackExchange.Redis%3BMongoDB.Driver.Core
