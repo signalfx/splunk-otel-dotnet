@@ -35,7 +35,7 @@ the `Splunk.OpenTelemetry.AutoInstrumentation` package to your project:
 dotnet add [<PROJECT>] package Splunk.OpenTelemetry.AutoInstrumentation --prerelease
 ```
 
-If the application references packages that can be instrumented, but, require
+If the application references packages that can be instrumented, but require
 other packages for the instrumentation to work the build will fail and prompt
 you to either add the missing instrumentation package or to skip the
 instrumentation of the corresponding package:
