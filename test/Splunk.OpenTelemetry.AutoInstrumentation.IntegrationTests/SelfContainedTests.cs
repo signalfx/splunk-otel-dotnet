@@ -121,6 +121,8 @@ public sealed class SelfContainedTests : TestHelper
         collector.Expect("OpenTelemetry.Instrumentation.Http.HttpClient");
 #endif
 
+        collector.ResourceExpector.ExpectDistributionResources(serviceName: EnvironmentHelper.FullTestApplicationName);
+
         appLauncherAction();
 
         collector.AssertExpectations();

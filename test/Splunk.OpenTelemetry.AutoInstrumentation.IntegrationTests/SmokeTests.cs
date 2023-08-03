@@ -30,7 +30,6 @@
 // limitations under the License.
 // </copyright>
 
-using System.Reflection;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 using Xunit.Abstractions;
 
@@ -122,7 +121,7 @@ public class SmokeTests : TestHelper
         using var collector = new MockSpansCollector(Output);
         SetExporter(collector);
 
-        ExpectResources(collector.ResourceExpector);
+        collector.ResourceExpector.ExpectDistributionResources(ServiceName);
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
         RunTestApplication();
@@ -137,7 +136,7 @@ public class SmokeTests : TestHelper
         using var collector = new MockMetricsCollector(Output);
         SetExporter(collector);
 
-        ExpectResources(collector.ResourceExpector);
+        collector.ResourceExpector.ExpectDistributionResources(ServiceName);
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
         RunTestApplication();
@@ -153,7 +152,7 @@ public class SmokeTests : TestHelper
         using var collector = new MockLogsCollector(Output);
         SetExporter(collector);
 
-        ExpectResources(collector.ResourceExpector);
+        collector.ResourceExpector.ExpectDistributionResources(ServiceName);
 
         EnableBytecodeInstrumentation();
         RunTestApplication();
@@ -161,14 +160,4 @@ public class SmokeTests : TestHelper
         collector.ResourceExpector.AssertExpectations();
     }
 #endif
-
-    private static void ExpectResources(OtlpResourceExpector resourceExpector)
-    {
-        resourceExpector.Expect("service.name", ServiceName);
-        resourceExpector.Expect("telemetry.sdk.name", "opentelemetry");
-        resourceExpector.Expect("telemetry.sdk.language", "dotnet");
-        resourceExpector.Expect("telemetry.sdk.version", typeof(global::OpenTelemetry.Resources.Resource).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0]);
-        resourceExpector.Expect("telemetry.auto.version", "1.0.0-rc.2");
-        resourceExpector.Expect("splunk.distro.version", typeof(Plugin).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
-    }
 }
