@@ -54,7 +54,7 @@ property, example:
   </PropertyGroup>
 ```
 
-The same property can be also specified directly via the CLI, notice that the
+The same property can be also specified directly using the terminal. Notice that the
 `;` separator needs to be properly escaped as '%3B':
 
 ```powershell
