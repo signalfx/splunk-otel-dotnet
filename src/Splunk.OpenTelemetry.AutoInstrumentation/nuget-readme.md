@@ -55,8 +55,8 @@ property. For example:
   </PropertyGroup>
 ```
 
-The same property can be also specified directly using the terminal. Notice that the
-`;` separator needs to be properly escaped as '%3B':
+The same property can be also specified directly using the terminal.
+Notice that the `;` separator needs to be properly escaped as '%3B':
 
 ```powershell
   dotnet build -p:SkippedInstrumentations=StackExchange.Redis%3BMongoDB.Driver.Core
