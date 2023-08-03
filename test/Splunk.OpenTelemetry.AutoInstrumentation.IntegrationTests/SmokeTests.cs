@@ -121,12 +121,8 @@ public class SmokeTests : TestHelper
     {
         using var collector = new MockSpansCollector(Output);
         SetExporter(collector);
-        collector.ResourceExpector.Expect("service.name", ServiceName);
-        collector.ResourceExpector.Expect("telemetry.sdk.name", "opentelemetry");
-        collector.ResourceExpector.Expect("telemetry.sdk.language", "dotnet");
-        collector.ResourceExpector.Expect("telemetry.sdk.version", typeof(global::OpenTelemetry.Resources.Resource).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0]);
-        collector.ResourceExpector.Expect("telemetry.auto.version", "1.0.0-rc.1");
-        collector.ResourceExpector.Expect("splunk.distro.version", typeof(Plugin).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
+
+        ExpectResources(collector.ResourceExpector);
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
         RunTestApplication();
@@ -140,12 +136,8 @@ public class SmokeTests : TestHelper
     {
         using var collector = new MockMetricsCollector(Output);
         SetExporter(collector);
-        collector.ResourceExpector.Expect("service.name", ServiceName);
-        collector.ResourceExpector.Expect("telemetry.sdk.name", "opentelemetry");
-        collector.ResourceExpector.Expect("telemetry.sdk.language", "dotnet");
-        collector.ResourceExpector.Expect("telemetry.sdk.version", typeof(global::OpenTelemetry.Resources.Resource).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0]);
-        collector.ResourceExpector.Expect("telemetry.auto.version", "1.0.0-rc.1");
-        collector.ResourceExpector.Expect("splunk.distro.version", typeof(Plugin).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
+
+        ExpectResources(collector.ResourceExpector);
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
         RunTestApplication();
@@ -160,12 +152,8 @@ public class SmokeTests : TestHelper
     {
         using var collector = new MockLogsCollector(Output);
         SetExporter(collector);
-        collector.ResourceExpector.Expect("service.name", ServiceName);
-        collector.ResourceExpector.Expect("telemetry.sdk.name", "opentelemetry");
-        collector.ResourceExpector.Expect("telemetry.sdk.language", "dotnet");
-        collector.ResourceExpector.Expect("telemetry.sdk.version", typeof(global::OpenTelemetry.Resources.Resource).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0]);
-        collector.ResourceExpector.Expect("telemetry.auto.version", "1.0.0-rc.1");
-        collector.ResourceExpector.Expect("splunk.distro.version", typeof(Plugin).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
+
+        ExpectResources(collector.ResourceExpector);
 
         EnableBytecodeInstrumentation();
         RunTestApplication();
@@ -173,4 +161,14 @@ public class SmokeTests : TestHelper
         collector.ResourceExpector.AssertExpectations();
     }
 #endif
+
+    private static void ExpectResources(OtlpResourceExpector resourceExpector)
+    {
+        resourceExpector.Expect("service.name", ServiceName);
+        resourceExpector.Expect("telemetry.sdk.name", "opentelemetry");
+        resourceExpector.Expect("telemetry.sdk.language", "dotnet");
+        resourceExpector.Expect("telemetry.sdk.version", typeof(global::OpenTelemetry.Resources.Resource).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0]);
+        resourceExpector.Expect("telemetry.auto.version", "1.0.0-rc.2");
+        resourceExpector.Expect("splunk.distro.version", typeof(Plugin).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
+    }
 }
