@@ -34,7 +34,7 @@
     <PackageTags>OpenTelemetry;OTEL;APM;tracing;profiling;instrumentation;Splunk</PackageTags>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/signalfx/splunk-otel-dotnet.git</RepositoryUrl>
-    <Copyright>Copyright 2022 Splunk Inc.</Copyright>
+    <Copyright>Copyright 2023 Splunk Inc.</Copyright>
     <Company>Splunk Inc.</Company>
     <Authors>Splunk Inc.</Authors>
   </PropertyGroup>
