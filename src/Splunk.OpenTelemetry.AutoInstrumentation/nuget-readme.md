@@ -47,7 +47,7 @@ instrumentation of the corresponding package:
 
 To resolve the error either add the recommended instrumentation package or skip
 the instrumentation of the listed package by adding it to the `SkippedInstrumentation`
-property, example:
+property. For example:
 
 ```csproj
   <PropertyGroup>
