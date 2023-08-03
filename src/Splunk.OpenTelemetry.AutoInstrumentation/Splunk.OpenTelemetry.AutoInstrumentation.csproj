@@ -44,7 +44,7 @@
     <Content Include="splunk-launch.*">
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>
-    <PackageReference Include="OpenTelemetry.AutoInstrumentation" Version="1.0.0-rc.1">
+    <PackageReference Include="OpenTelemetry.AutoInstrumentation" Version="1.0.0-rc.2">
       <PrivateAssets>none</PrivateAssets> <!-- Ensures that content and build transitive dependencies are properly delivered -->
     </PackageReference>
     <None Include="splunk-logo-256x256.png" Pack="true" PackagePath="images" />
