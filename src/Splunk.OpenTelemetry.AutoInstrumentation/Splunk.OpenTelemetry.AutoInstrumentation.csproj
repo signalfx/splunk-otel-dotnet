@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="MinVer" Version="4.3.0">
       <PrivateAssets>all</PrivateAssets>
@@ -32,6 +32,7 @@
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>See release notes at https://github.com/signalfx/splunk-otel-dotnet/releases</PackageReleaseNotes>
     <PackageTags>OpenTelemetry;OTEL;APM;tracing;profiling;instrumentation;Splunk</PackageTags>
+    <Description>Splunk Distribution of OpenTelemetry .NET package with all required components to enable automatic instrumentation.</Description>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/signalfx/splunk-otel-dotnet.git</RepositoryUrl>
     <Copyright>Copyright 2023 Splunk Inc.</Copyright>
