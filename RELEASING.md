@@ -33,6 +33,11 @@ No changes in the code are needed to correctly version this package.
       - `Set as a pre-release`
       - `Set as the latest release`
 
+1. Publish the NuGet packages:
+    1. Download `Splunk.OpenTelemetry.AutoInstrumentation.*.nupkg` to a local
+    folder.
+    1. Upload and publish the package to nuget.org.
+
 1. Ask [o11y-docs team](https://github.com/orgs/splunk/teams/o11y-docs)
 to publish necessary updates to the [documentation](https://github.com/splunk/public-o11y-docs).
 
