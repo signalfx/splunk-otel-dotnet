@@ -7,8 +7,10 @@ using System.IO.Compression;
 
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
-class Build : NukeBuild
+partial class Build : NukeBuild
 {
+    private readonly static AbsolutePath TestNuGetPackageApps = NukeBuild.RootDirectory / "test" / "test-applications" / "nuget-package";
+
     [Solution("Splunk.OpenTelemetry.AutoInstrumentation.sln")] readonly Solution Solution;
     public static int Main() => Execute<Build>(x => x.Workflow);
 
@@ -24,10 +26,13 @@ class Build : NukeBuild
 
     readonly AbsolutePath OpenTelemetryDistributionFolder = RootDirectory / "OpenTelemetryDistribution";
 
+    private IEnumerable<Project> AllProjectsExceptNuGetTestApps() => Solution.AllProjects.Where(project => !TestNuGetPackageApps.Contains(project.Directory));
+
     Target Clean => _ => _
         .Executes(() =>
         {
             DotNetClean();
+            NuGetPackageFolder.DeleteDirectory();
             OpenTelemetryDistributionFolder.DeleteDirectory();
             (RootDirectory / GetOTelAutoInstrumentationFileName()).DeleteDirectory();
         });
@@ -36,7 +41,12 @@ class Build : NukeBuild
         .After(Clean)
         .Executes(() =>
         {
-            DotNetRestore();
+            foreach (var project in AllProjectsExceptNuGetTestApps())
+            {
+                DotNetRestore(s => s
+                    .SetProjectFile(project)
+                    .SetPlatform(Platform));
+            }
         });
 
     Target DownloadAutoInstrumentationDistribution => _ => _
@@ -95,14 +105,14 @@ class Build : NukeBuild
         .Executes(() =>
         {
             FileSystemTasks.CopyFileToDirectory(
-                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
+                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / ((string)Platform).ToLower() / Configuration /
                 "net6.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
                 OpenTelemetryDistributionFolder / "net");
 
             if (EnvironmentInfo.IsWin)
             {
                 FileSystemTasks.CopyFileToDirectory(
-                    RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
+                    RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / ((string)Platform).ToLower() / Configuration /
                     "net462" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
                     OpenTelemetryDistributionFolder / "netfx");
             }
@@ -158,10 +168,14 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
         .After(UnpackAutoInstrumentationDistribution)
         .Executes(() =>
         {
-            DotNetBuild(s => s
-                .SetNoRestore(true)
-                .SetConfiguration(Configuration)
-                .SetPlatform(Platform));
+            foreach (var project in AllProjectsExceptNuGetTestApps())
+            {
+                DotNetBuild(s => s
+                    .SetProjectFile(project)
+                    .SetNoRestore(true)
+                    .SetConfiguration(Configuration)
+                    .SetPlatform(Platform));
+            }
         });
 
     Target RunUnitTests => _ => _
@@ -173,7 +187,8 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
             DotNetTest(s => s
                 .SetNoBuild(true)
                 .SetProjectFile(project)
-                .SetConfiguration(Configuration));
+                .SetConfiguration(Configuration)
+                .SetProperty("Platform", Platform));
         });
 
     Target RunIntegrationTests => _ => _
@@ -186,7 +201,9 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
             DotNetTest(s => s
                 .SetNoBuild(true)
                 .SetProjectFile(project)
-                .SetConfiguration(Configuration));
+                .SetFilter("Category!=NuGetPackage")
+                .SetConfiguration(Configuration)
+                .SetProperty("Platform", Platform));
         });
 
     Target Workflow => _ => _

@@ -12,6 +12,8 @@ built on top of [OpenTelemetry .NET Auto Instrumentation v1.0.0-rc.2](https://gi
 
 ### Added
 
+- Added NuGet package `Splunk.OpenTelemetry.AutoInstrumentation`.
+
 ### Changed
 
 - Updated [OpenTelemetry .NET Auto Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation):

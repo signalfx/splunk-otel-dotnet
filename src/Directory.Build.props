@@ -4,22 +4,6 @@
   <PropertyGroup>
     <TargetFrameworks>net6.0;net462</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-
-    <!-- NuGet packages -->
-    <!-- <IsPackable>true</IsPackable>
-    <PackageIconUrl></PackageIconUrl>
-    <PackageIcon>packageIcon.png</PackageIcon>
-    <PackageProjectUrl>https://github.com/signalfx/splunk-otel-dotnet/</PackageProjectUrl>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>See release notes at https://github.com/signalfx/splunk-otel-dotnet/releases</PackageReleaseNotes>
-    <PackageTags>OpenTelemetry;OTEL;APM;tracing;profiling;instrumentation;Splunk</PackageTags>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/signalfx/splunk-otel-dotnet.git</RepositoryUrl>
-    <Copyright>Copyright 2022 Splunk Inc.</Copyright>
-    <Company>Splunk Inc.</Company>
-    <Authors>Splunk Inc.</Authors>
-    -->
   </PropertyGroup>
 
   <ItemGroup>
