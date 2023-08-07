@@ -24,6 +24,11 @@
 
   <PropertyGroup>
     <MinVerTagPrefix>v</MinVerTagPrefix>
+
+    <Authors>Splunk Inc.</Authors>
+    <Company>Splunk Inc.</Company>
+    <Copyright>Copyright 2023 Splunk Inc.</Copyright>
+    <Description>Splunk Distribution of OpenTelemetry .NET package with all required components to enable automatic instrumentation.</Description>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(_IsPacking)' == 'true' ">
@@ -36,12 +41,8 @@
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>See release notes at https://github.com/signalfx/splunk-otel-dotnet/releases</PackageReleaseNotes>
     <PackageTags>OpenTelemetry;OTEL;APM;tracing;profiling;instrumentation;Splunk</PackageTags>
-    <Description>Splunk Distribution of OpenTelemetry .NET package with all required components to enable automatic instrumentation.</Description>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/signalfx/splunk-otel-dotnet.git</RepositoryUrl>
-    <Copyright>Copyright 2023 Splunk Inc.</Copyright>
-    <Company>Splunk Inc.</Company>
-    <Authors>Splunk Inc.</Authors>
   </PropertyGroup>
 
   <!-- Items that are only added when building the NuGet package -->
