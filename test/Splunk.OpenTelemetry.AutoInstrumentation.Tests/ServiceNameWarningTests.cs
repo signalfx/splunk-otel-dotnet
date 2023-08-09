@@ -20,24 +20,24 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
 public class ServiceNameWarningTests : IDisposable
 {
-    private Mock<ILogger> _logger = new();
+    private ILogger _logger = Substitute.For<ILogger>();
 
     [Fact]
     public void ServiceNameNotSet()
     {
         var serviceNameWarning = new ServiceNameWarning();
-        serviceNameWarning.SendOnMissingServiceName(_logger.Object);
-        _logger.Verify(logger => logger.Warning(It.IsAny<string>()), Times.Exactly(1));
+        serviceNameWarning.SendOnMissingServiceName(_logger);
+        _logger.Received(1).Warning(Arg.Any<string>());
     }
 
     [Fact]
     public void ServiceNameNotSetCalledMoreThanOnce()
     {
         var serviceNameWarning = new ServiceNameWarning();
-        serviceNameWarning.SendOnMissingServiceName(_logger.Object);
-        serviceNameWarning.SendOnMissingServiceName(_logger.Object);
-        serviceNameWarning.SendOnMissingServiceName(_logger.Object);
-        _logger.Verify(logger => logger.Warning(It.IsAny<string>()), Times.Exactly(1));
+        serviceNameWarning.SendOnMissingServiceName(_logger);
+        serviceNameWarning.SendOnMissingServiceName(_logger);
+        serviceNameWarning.SendOnMissingServiceName(_logger);
+        _logger.Received(1).Warning(Arg.Any<string>());
     }
 
     [Fact]
@@ -45,8 +45,8 @@ public class ServiceNameWarningTests : IDisposable
     {
         Environment.SetEnvironmentVariable("OTEL_SERVICE_NAME", "nameset");
         var serviceNameWarning = new ServiceNameWarning();
-        serviceNameWarning.SendOnMissingServiceName(_logger.Object);
-        _logger.Verify(logger => logger.Warning(It.IsAny<string>()), Times.Exactly(0));
+        serviceNameWarning.SendOnMissingServiceName(_logger);
+        _logger.DidNotReceive().Warning(Arg.Any<string>());
     }
 
     [Fact]
@@ -54,8 +54,8 @@ public class ServiceNameWarningTests : IDisposable
     {
         Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "something=2,service.name=nameset");
         var serviceNameWarning = new ServiceNameWarning();
-        serviceNameWarning.SendOnMissingServiceName(_logger.Object);
-        _logger.Verify(logger => logger.Warning(It.IsAny<string>()), Times.Exactly(0));
+        serviceNameWarning.SendOnMissingServiceName(_logger);
+        _logger.DidNotReceive().Warning(Arg.Any<string>());
     }
 
     [Fact]
@@ -63,8 +63,8 @@ public class ServiceNameWarningTests : IDisposable
     {
         Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "something=2,other=whatever");
         var serviceNameWarning = new ServiceNameWarning();
-        serviceNameWarning.SendOnMissingServiceName(_logger.Object);
-        _logger.Verify(logger => logger.Warning(It.IsAny<string>()), Times.Exactly(1));
+        serviceNameWarning.SendOnMissingServiceName(_logger);
+        _logger.Received(1).Warning(Arg.Any<string>());
     }
 
     [Fact]
@@ -72,8 +72,8 @@ public class ServiceNameWarningTests : IDisposable
     {
         Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "something=2,service.name=,b=3");
         var serviceNameWarning = new ServiceNameWarning();
-        serviceNameWarning.SendOnMissingServiceName(_logger.Object);
-        _logger.Verify(logger => logger.Warning(It.IsAny<string>()), Times.Exactly(1));
+        serviceNameWarning.SendOnMissingServiceName(_logger);
+        _logger.Received(1).Warning(Arg.Any<string>());
     }
 
     [Fact]
@@ -81,8 +81,8 @@ public class ServiceNameWarningTests : IDisposable
     {
         Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "something=2,service.name==,b=3,");
         var serviceNameWarning = new ServiceNameWarning();
-        serviceNameWarning.SendOnMissingServiceName(_logger.Object);
-        _logger.Verify(logger => logger.Warning(It.IsAny<string>()), Times.Exactly(1));
+        serviceNameWarning.SendOnMissingServiceName(_logger);
+        _logger.Received(1).Warning(Arg.Any<string>());
     }
 
     public void Dispose()

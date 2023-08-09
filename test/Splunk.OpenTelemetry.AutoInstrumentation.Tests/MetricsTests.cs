@@ -58,13 +58,13 @@ public class MetricsTests
 
         var settings = new PluginSettings(new NameValueConfigurationSource(configuration));
         var options = new OtlpExporterOptions();
-        var loggerMock = new Mock<ILogger>();
+        var loggerMock = Substitute.For<ILogger>();
 
-        new Metrics(settings, loggerMock.Object).ConfigureMetricsOptions(options);
+        new Metrics(settings, loggerMock).ConfigureMetricsOptions(options);
 
         using (new AssertionScope())
         {
-            loggerMock.Verify(x => x.Error(It.IsAny<string>()), Times.Once());
+            loggerMock.Received(1).Error(Arg.Any<string>());
 
             options.Endpoint.ToString().Should().NotContain("my-realm");
             options.Headers.Should().BeNull();

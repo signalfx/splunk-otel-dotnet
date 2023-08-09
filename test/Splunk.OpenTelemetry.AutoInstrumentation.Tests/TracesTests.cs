@@ -55,13 +55,13 @@ public class TracesTests
 
         var settings = new PluginSettings(new NameValueConfigurationSource(configuration));
         var options = new OtlpExporterOptions();
-        var loggerMock = new Mock<ILogger>();
+        var loggerMock = Substitute.For<ILogger>();
 
-        new Traces(settings, loggerMock.Object).ConfigureTracesOptions(options);
+        new Traces(settings, loggerMock).ConfigureTracesOptions(options);
 
         using (new AssertionScope())
         {
-            loggerMock.Verify(x => x.Error(It.IsAny<string>()), Times.Once());
+            loggerMock.Received().Error(Arg.Any<string>());
 
             options.Endpoint.ToString().Should().NotContain("my-realm");
             options.Headers.Should().BeNull();
