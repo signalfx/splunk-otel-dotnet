@@ -43,7 +43,7 @@ hosted on this repository.
 To contribute documentation for this project, open a pull request in the
 [public-o11y-docs](https://github.com/splunk/public-o11y-docs) repository. See
 the [CONTRIBUTING.md](https://github.com/splunk/public-o11y-docs/blob/main/CONTRIBUTING.md)
-guide of our documentation for more information.
+guide of the Splunk Observability Cloud documentation for more information.
 
 ## Contributing via Pull Requests
 
