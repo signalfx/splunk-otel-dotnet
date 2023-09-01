@@ -43,4 +43,6 @@ to publish necessary updates to the [documentation](https://github.com/splunk/pu
 
 1. Update version in [microservices-demo](https://github.com/signalfx/microservices-demo/blob/main/src/cartservice/Dockerfile).
 
+1. Update version in [tracing-examples](https://github.com/signalfx/tracing-examples/blob/main/opentelemetry-tracing/opentelemetry-dotnet/automatic/aspnetcore-and-mongodb/InstrumentContainer/Dockerfile).
+
 1. Update internal repository. Follow internal documentation.
