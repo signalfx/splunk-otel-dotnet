@@ -20,7 +20,7 @@ partial class Build : NukeBuild
     [Parameter("Platform to build - x86 or x64. Default is 'x64'")]
     readonly MSBuildTargetPlatform Platform = MSBuildTargetPlatform.x64;
 
-    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.0.0-rc.2";
+    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.0.0";
     [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
     readonly string OpenTelemetryAutoInstrumentationVersion = OpenTelemetryAutoInstrumentationDefaultVersion;
 
