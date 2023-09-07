@@ -4,6 +4,7 @@
 
    - [`build/Build.cs`](../build/Build.cs)
    - [`docs/advanced-config.md`](./advanced-config.md)
+   - [`docs/README.md`](./README.md)
    - [`src/Splunk.OpenTelemetry.AutoInstrumentation/Splunk.OpenTelemetry.AutoInstrumentation.csproj`](../src/Splunk.OpenTelemetry.AutoInstrumentation/Splunk.OpenTelemetry.AutoInstrumentation.csproj)
    - [`test/Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests/SmokeTests.cs`](../test/Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests/Helpers/ResourceExpectorExtensions.cs)
 
