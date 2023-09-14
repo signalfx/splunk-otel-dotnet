@@ -79,7 +79,7 @@ internal class ServiceNameWarning
     private static void SendWarning(ILogger logger)
     {
         logger.Warning(
-            "The service.name attribute is not set, your service is unnamed and will be difficult to identify. " +
+            "The service.name resource attribute is not set. Your service is unnamed and will be difficult to identify. " +
             "Set your service name using the OTEL_SERVICE_NAME or OTEL_RESOURCE_ATTRIBUTES environment variable.");
     }
 }

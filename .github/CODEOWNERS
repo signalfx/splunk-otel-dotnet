@@ -1,6 +1,9 @@
-* @signalfx/gdi-dotnet-approvers
+#  https://help.github.com/en/articles/about-code-owners
+#
+# Global Owners
+* @signalfx/gdi-dotnet-maintainers @signalfx/gdi-dotnet-approvers
 
-CODEOWNERS @signalfx/gdi-dotnet-maintainers
+.github/CODEOWNERS @signalfx/gdi-dotnet-maintainers
 
 #####################################################
 #
@@ -8,7 +11,7 @@ CODEOWNERS @signalfx/gdi-dotnet-maintainers
 #
 #####################################################
 
-*.md @signalfx/gdi-docs @signalfx/gdi-dotnet-approvers
-*.rst @signalfx/gdi-docs @signalfx/gdi-dotnet-approvers
-docs/ @signalfx/gdi-docs @signalfx/gdi-dotnet-approvers
-README* @signalfx/gdi-docs @signalfx/gdi-dotnet-approvers
+*.md    @signalfx/gdi-dotnet-maintainers @signalfx/gdi-dotnet-approvers @signalfx/gdi-docs
+*.rst   @signalfx/gdi-dotnet-maintainers @signalfx/gdi-dotnet-approvers @signalfx/gdi-docs
+docs/   @signalfx/gdi-dotnet-maintainers @signalfx/gdi-dotnet-approvers @signalfx/gdi-docs
+README* @signalfx/gdi-dotnet-maintainers @signalfx/gdi-dotnet-approvers @signalfx/gdi-docs
