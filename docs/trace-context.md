@@ -4,6 +4,9 @@ Use the trace metadata to correlate traces with log events.
 
 ## Automatic correlation
 
+> **NOTE**
+> Automatic correlation currently works only for .NET applications.
+
 By default, if application uses `Microsoft.Extensions.Logging` for logging,
 additional [`LoggingProvider`](https://learn.microsoft.com/en-us/dotnet/core/extensions/logging-providers)
 that exports logs in `OTLP` format to a local collector will be added.
