@@ -1,3 +1,8 @@
 CORECLR
 netcoreapp
 nupkg
+serilog
+nlog
+logfile
+longdate
+tostring

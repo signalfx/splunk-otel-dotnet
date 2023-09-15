@@ -82,7 +82,7 @@ to add trace context as properties to log events.
 - implement enricher that adds trace context properties, e.g:
 
 > **Note**
-> Implementation below is simple and nonefficient
+> Implementation below is simple and inefficient
 
 ```c#
 private class TestEnricher : ILogEventEnricher
