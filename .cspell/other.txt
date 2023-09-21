@@ -4,6 +4,7 @@ buildtasks
 Configurator
 coreutils
 dylib
+Expector
 mktemp
 myapp
 opentelemetry
