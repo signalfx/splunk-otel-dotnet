@@ -3,10 +3,6 @@
 Versioning is using [MinVer](https://github.com/adamralph/minver).
 No changes in the code are needed to correctly version this package.
 
-1. Update the version in the following files:
-   - [`splunk-otel-dotnet-install.sh`](splunk-otel-dotnet-install.sh#L34)
-   - [`Splunk.OTel.DotNet.psm1`](Splunk.OTel.DotNet.psm1#L244)
-
 1. Update the [CHANGELOG.md](CHANGELOG.md) with the new release.
 
 1. Create a pull request on GitHub with the changes described in the changelog.

@@ -18,7 +18,8 @@ jobs:
           cd testapp
           dotnet new console
           dotnet publish -f net7.0 -c Release
-          $module_url = "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/Splunk.OTel.DotNet.psm1"
+
+          $module_url = "https://github.com/signalfx/splunk-otel-dotnet/releases/download/${{ github.event.release.tag_name }}/Splunk.OTel.DotNet.psm1"
           $dl_path = Join-Path $env:temp "Splunk.OTel.DotNet.psm1"
           $log_path = "C:\ProgramData\OpenTelemetry .NET AutoInstrumentation\logs\*"
           Invoke-WebRequest -Uri $module_url -OutFile $dl_path
@@ -66,7 +67,7 @@ jobs:
           dotnet new console
           dotnet publish -f net7.0 -c Release
           set -e
-          curl -sSfL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/splunk-otel-dotnet-install.sh -O
+          curl -sSfL https://github.com/signalfx/splunk-otel-dotnet/releases/download/${{ github.event.release.tag_name }}/splunk-otel-dotnet-install.sh -O
           sh ./splunk-otel-dotnet-install.sh
             test "$(ls -A "$HOME/.splunk-otel-dotnet")"
           curl -sSfL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/instrument.sh -O
@@ -92,7 +93,7 @@ jobs:
             cd testapp
             dotnet new console
             dotnet publish /p:TreatWarningsAsErrors=false -f net7.0 -c Release
-            curl -sSfL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/splunk-otel-dotnet-install.sh -O
+            curl -sSfL https://github.com/signalfx/splunk-otel-dotnet/releases/download/${{ github.event.release.tag_name }}/splunk-otel-dotnet-install.sh -O
             sh ./splunk-otel-dotnet-install.sh
               test "$(ls -A "$HOME/.splunk-otel-dotnet")"
             curl -sSfL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/instrument.sh -O
