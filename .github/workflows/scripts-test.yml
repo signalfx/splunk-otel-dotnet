@@ -18,7 +18,6 @@ jobs:
           cd testapp
           dotnet new console
           dotnet publish -f net7.0 -c Release
-
           $module_url = "https://github.com/signalfx/splunk-otel-dotnet/releases/download/${{ github.event.release.tag_name }}/Splunk.OTel.DotNet.psm1"
           $dl_path = Join-Path $env:temp "Splunk.OTel.DotNet.psm1"
           $log_path = "C:\ProgramData\OpenTelemetry .NET AutoInstrumentation\logs\*"
