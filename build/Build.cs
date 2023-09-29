@@ -21,6 +21,7 @@ partial class Build : NukeBuild
     readonly MSBuildTargetPlatform Platform = MSBuildTargetPlatform.x64;
 
     const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.0.2";
+
     [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
     readonly string OpenTelemetryAutoInstrumentationVersion = OpenTelemetryAutoInstrumentationDefaultVersion;
 
@@ -33,6 +34,7 @@ partial class Build : NukeBuild
         {
             DotNetClean();
             NuGetPackageFolder.DeleteDirectory();
+            InstallationScriptsFolder.DeleteDirectory();
             OpenTelemetryDistributionFolder.DeleteDirectory();
             (RootDirectory / GetOTelAutoInstrumentationFileName()).DeleteDirectory();
         });
@@ -209,6 +211,7 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
     Target Workflow => _ => _
         .DependsOn(Clean)
         .DependsOn(Restore)
+        .DependsOn(BuildInstallationScripts)
         .DependsOn(DownloadAutoInstrumentationDistribution)
         .DependsOn(UnpackAutoInstrumentationDistribution)
         .DependsOn(Compile)
