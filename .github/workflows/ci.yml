@@ -49,7 +49,7 @@ jobs:
         shell: powershell
         run: |
           $log_path = "C:\ProgramData\OpenTelemetry .NET AutoInstrumentation\logs\*"
-          Import-Module "${PWD}/InstallationScripts/Splunk.OTel.DotNet.psm1"
+          Import-Module "${PWD}/bin/InstallationScripts/Splunk.OTel.DotNet.psm1"
           [System.Environment]::SetEnvironmentVariable("SPLUNK_OTEL_DOTNET_AUTO_INSTALL_DIR", "${PWD}\OpenTelemetryDistribution", [System.EnvironmentVariableTarget]::Machine)
           Register-OpenTelemetryForCurrentSession -OTelServiceName "MyServiceDisplayName"
           ./test/test-applications/integrations/TestApplication.Smoke/bin/x64/Release/net7.0/TestApplication.Smoke.exe
@@ -65,8 +65,8 @@ jobs:
           name: bin-${{ matrix.machine }}
           path: |
             bin/splunk-*.zip
-            InstallationScripts/splunk-otel-dotnet-install.sh
-            InstallationScripts/Splunk.OTel.DotNet.psm1
+            bin/InstallationScripts/splunk-otel-dotnet-install.sh
+            bin/InstallationScripts/Splunk.OTel.DotNet.psm1
 
   container-build:
     strategy:
@@ -165,9 +165,9 @@ jobs:
         with:
           path: .
       - run: cp bin-alpine/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-musl.zip
-      - run: cp bin-ubuntu-20.04/bin/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-glibc.zip
-      - run: cp bin-windows-2022/bin/splunk-*.zip ./splunk-opentelemetry-dotnet-windows.zip
-      - run: cp bin-macos-11/bin/splunk-*.zip ./splunk-opentelemetry-dotnet-macos.zip
+      - run: cp bin-ubuntu-20.04/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-glibc.zip
+      - run: cp bin-windows-2022/splunk-*.zip ./splunk-opentelemetry-dotnet-windows.zip
+      - run: cp bin-macos-11/splunk-*.zip ./splunk-opentelemetry-dotnet-macos.zip
       - run: cp bin-windows-2022/InstallationScripts/splunk-otel-dotnet-install.sh ./splunk-otel-dotnet-install.sh
       - run: cp bin-windows-2022/InstallationScripts/Splunk.OTel.DotNet.psm1 ./Splunk.OTel.DotNet.psm1
       - name: Calculate checksum

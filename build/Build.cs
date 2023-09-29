@@ -9,8 +9,7 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 partial class Build : NukeBuild
 {
-    private readonly static AbsolutePath TestNuGetPackageApps =
-        NukeBuild.RootDirectory / "test" / "test-applications" / "nuget-package";
+    private readonly static AbsolutePath TestNuGetPackageApps = NukeBuild.RootDirectory / "test" / "test-applications" / "nuget-package";
 
     [Solution("Splunk.OpenTelemetry.AutoInstrumentation.sln")] readonly Solution Solution;
     public static int Main() => Execute<Build>(x => x.Workflow);
@@ -23,14 +22,12 @@ partial class Build : NukeBuild
 
     const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.0.2";
 
-    [Parameter(
-        $"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
+    [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
     readonly string OpenTelemetryAutoInstrumentationVersion = OpenTelemetryAutoInstrumentationDefaultVersion;
 
     readonly AbsolutePath OpenTelemetryDistributionFolder = RootDirectory / "OpenTelemetryDistribution";
 
-    private IEnumerable<Project> AllProjectsExceptNuGetTestApps() =>
-        Solution.AllProjects.Where(project => !TestNuGetPackageApps.Contains(project.Directory));
+    private IEnumerable<Project> AllProjectsExceptNuGetTestApps() => Solution.AllProjects.Where(project => !TestNuGetPackageApps.Contains(project.Directory));
 
     Target Clean => _ => _
         .Executes(() =>
@@ -110,16 +107,14 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             FileSystemTasks.CopyFileToDirectory(
-                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" /
-                ((string)Platform).ToLower() / Configuration /
+                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / ((string)Platform).ToLower() / Configuration /
                 "net6.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
                 OpenTelemetryDistributionFolder / "net");
 
             if (EnvironmentInfo.IsWin)
             {
                 FileSystemTasks.CopyFileToDirectory(
-                    RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" /
-                    ((string)Platform).ToLower() / Configuration /
+                    RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / ((string)Platform).ToLower() / Configuration /
                     "net462" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
                     OpenTelemetryDistributionFolder / "netfx");
             }
@@ -167,8 +162,7 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
         .Executes(() =>
         {
             var fileName = GetOTelAutoInstrumentationFileName();
-            OpenTelemetryDistributionFolder.ZipTo(RootDirectory / "bin" / ("splunk-" + fileName),
-                compressionLevel: CompressionLevel.SmallestSize, fileMode: FileMode.Create);
+            OpenTelemetryDistributionFolder.ZipTo(RootDirectory / "bin" / ("splunk-" + fileName), compressionLevel: CompressionLevel.SmallestSize, fileMode: FileMode.Create);
         });
 
     Target Compile => _ => _
@@ -190,8 +184,7 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
         .After(Compile)
         .Executes(() =>
         {
-            var project = Solution.AllProjects.First(project =>
-                project.Name == "Splunk.OpenTelemetry.AutoInstrumentation.Tests");
+            var project = Solution.AllProjects.First(project => project.Name == "Splunk.OpenTelemetry.AutoInstrumentation.Tests");
 
             DotNetTest(s => s
                 .SetNoBuild(true)
@@ -205,8 +198,7 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
         .After(AddSplunkPlugins)
         .Executes(() =>
         {
-            var project = Solution.AllProjects.First(project =>
-                project.Name == "Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests");
+            var project = Solution.AllProjects.First(project => project.Name == "Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests");
 
             DotNetTest(s => s
                 .SetNoBuild(true)

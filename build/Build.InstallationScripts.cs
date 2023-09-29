@@ -3,7 +3,7 @@ using Nuke.Common.IO;
 
 partial class Build : NukeBuild
 {
-    readonly AbsolutePath InstallationScriptsFolder = RootDirectory / "InstallationScripts";
+    readonly AbsolutePath InstallationScriptsFolder = RootDirectory / "bin" / "InstallationScripts";
 
     Target BuildInstallationScripts => _ => _
         .After(Clean)
@@ -16,7 +16,7 @@ partial class Build : NukeBuild
                 var scriptFile = InstallationScriptsFolder / templateFile.Name.Replace(".template", "");
                 FileSystemTasks.CopyFile(templateFile, scriptFile);
                 scriptFile.UpdateText(x =>
-                    x.Replace("VERSION_PLACEHOLDER", VersionHelper.GetVersion()));
+                    x.Replace("{{VERSION}}", VersionHelper.GetVersion()));
             }
         });
 }

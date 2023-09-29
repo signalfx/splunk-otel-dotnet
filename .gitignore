@@ -458,5 +458,4 @@ $RECYCLE.BIN/
 .nuke/build.schema.json
 
 NuGetPackage/
-InstallationScripts/
 OpenTelemetryDistribution/*
