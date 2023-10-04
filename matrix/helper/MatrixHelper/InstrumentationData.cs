@@ -6,23 +6,28 @@ public static class InstrumentationData
     {
         var instrumentations = new Instrumentation[]
         {
-            new(new [] {"ASPNET"}, "ASP.NET Framework (.NET Framework)", "See :ref:`dotnet-otel-versions`", "MVC / WebApi (Only integrated pipeline mode supported)", "beta", "community", new [] {new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet", "1.0.0-rc9.9", "beta"), new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet.TelemetryHttpModule", "1.0.0-rc9.9", "beta") }) {ToDoComment = "version with ref link"},
-            new("ASPNETCORE", "ASP.NET Core", "See :ref:`dotnet-otel-versions`", null, "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.AspNetCore", "1.5.1-beta.1", "beta")) {ToDoComment = "reflink in version"},
-            new("AZURE", "Azure SDK", "`Azure.` prefixed packages, released after October 1, 2021", null, "beta", "third-party"),
-            new("ELASTICSEARCH", "Elastic.Clients.Elasticsearch", "8.0.0 and higher", null, "beta", "third-party"),
-            new("ENTITYFRAMEWORKCORE", "Microsoft.EntityFrameworkCore", "6.0.12 and higher", "Not supported on .NET Framework", "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.EntityFrameworkCore", "1.0.0-beta.7", "beta")),
-            new("GRAPHQL", "GraphQL", "7.5.0 and higher", "Not supported on .NET Framework", "beta", "third-party"),
-            new("GRPCNETCLIENT", "Grpc.Net.Client", "2.52.0 to 3.0.0", null, "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.GrpcNetClient", "1.5.1-beta.1", "beta")),
-            new("HTTPCLIENT", "System.Net.Http.HttpClient and System.Net.HttpWebRequest", "See :ref:`dotnet-otel-versions`", null, "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.Http", "1.5.1-beta.1", "beta") ) {ToDoComment = "how to handle two libraries? convert to array?, reflink in versions"},
-            new("MASSTRANSIT", "MassTransit", "8.0.0 and higher", "Not supported on .NET Framework", "beta", "third-party"),
-            new("MONGODB", "MongoDB.Driver.Core", "2.13.3 to 3.0.0", "Not supported on .NET Framework", "beta", "third-party"),
-            new("MYSQLCONNECTOR", "MySqlConnector", "2.0.0 and higher", null, "beta", "third-party"),
-            new("MYSQLDATA", "MySql.Data", "8.1.0 and higher", "Not supported on .NET Framework", "beta", "third-party"),
-            new("NPGSQL", "Npgsql", "6.0.0 and higher", null, "beta", "third-party"),
-            new("NSERVICEBUS", "NServiceBus", "8.0.0 and higher", null, "beta", "third-party"),
-            new("QUARTZ", "Quartz", "3.4.0 and higher", "Not supported on .NET Framework 4.7.1 and lower", "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Quartz", "1.0.0-alpha.3", "alpha") ),
-            new ("STACKEXCHANGEREDIS", "StackExchange.Redis", "2.0.405 to 3.0.0", "Not supported on .NET Framework", "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.StackExchangeRedis", "1.0.0-rc9.10", "beta") ),
-            new(new []{"WCFCLIENT", "WCFSERVICE" }, "System.ServiceModel", "4.7.0 and higher of `System.ServiceModel.Primitives`", "Service side not supported on .NET. `WCFCLIENT for client side instrumentation and `WCFSERVICE` for service side instrumentation", "beta", "community", new []{ new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Wcf", "1.0.0-rc.12", "beta") }),
+            new(new[] {"ASPNET"}, "ASP.NET Framework (.NET Framework)", "See :ref:`dotnet-otel-versions`", "MVC / WebApi (Only integrated pipeline mode supported). Metrics requires trace instrumentation.", "beta", "community", new [] {new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet", "1.0.0-rc9.9", "beta"), new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet.TelemetryHttpModule", "1.0.0-rc9.9", "beta") }, new SignalsList[]{new TracesList(), new MetricList()}) {ToDoComment = "version with ref link"},
+            new("ASPNETCORE", "ASP.NET Core", "See :ref:`dotnet-otel-versions`", "Metrics automatically activates `Microsoft.AspNetCore.Hosting.HttpRequestIn` spans.", "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.AspNetCore", "1.5.1-beta.1", "beta"), new SignalsList[]{new TracesList(), new MetricList()}) {ToDoComment = "reflink in version"},
+            new("AZURE", "Azure SDK", "`Azure.` prefixed packages, released after October 1, 2021", null, "beta", "third-party", new TracesList()),
+            new("ELASTICSEARCH", "Elastic.Clients.Elasticsearch", "8.0.0 and higher", null, "beta", "third-party", new TracesList()),
+            new("ENTITYFRAMEWORKCORE", "Microsoft.EntityFrameworkCore", "6.0.12 and higher", "Not supported on .NET Framework", "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.EntityFrameworkCore", "1.0.0-beta.7", "beta"), new SignalsList[]{new TracesList()}),
+            new("GRAPHQL", "GraphQL", "7.5.0 and higher", "Not supported on .NET Framework", "beta", "third-party", new TracesList()),
+            new("GRPCNETCLIENT", "Grpc.Net.Client", "2.52.0 to 3.0.0", null, "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.GrpcNetClient", "1.5.1-beta.1", "beta"), new SignalsList[] { new TracesList() }),
+            new("HTTPCLIENT", "System.Net.Http.HttpClient and System.Net.HttpWebRequest", "See :ref:`dotnet-otel-versions`", null, "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.Http", "1.5.1-beta.1", "beta"), new SignalsList[] { new TracesList(), new MetricList() } ) {ToDoComment = "how to handle two libraries? convert to array?, reflink in versions"},
+            new("MASSTRANSIT", "MassTransit", "8.0.0 and higher", "Not supported on .NET Framework", "beta", "third-party", new TracesList()),
+            new("MONGODB", "MongoDB.Driver.Core", "2.13.3 to 3.0.0", "Not supported on .NET Framework", "beta", "third-party", new TracesList()),
+            new("MYSQLCONNECTOR", "MySqlConnector", "2.0.0 and higher", null, "beta", "third-party", new TracesList()),
+            new("MYSQLDATA", "MySql.Data", "8.1.0 and higher", "Not supported on .NET Framework", "beta", "third-party", new TracesList()),
+            new("NPGSQL", "Npgsql", "6.0.0 and higher", null, "beta", "third-party", new TracesList()),
+            new(new[] {"NSERVICEBUS"}, "NServiceBus", "8.0.0 and higher", null, "beta", "third-party", Array.Empty<Dependency>(), new SignalsList[]{new TracesList(), new MetricList()}),
+            new("QUARTZ", "Quartz", "3.4.0 and higher", "Not supported on .NET Framework 4.7.1 and lower", "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Quartz", "1.0.0-alpha.3", "alpha"), new SignalsList[] { new TracesList() } ),
+            new("STACKEXCHANGEREDIS", "StackExchange.Redis", "2.0.405 to 3.0.0", "Not supported on .NET Framework", "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.StackExchangeRedis", "1.0.0-rc9.10", "beta"), new SignalsList[] { new TracesList() } ),
+            new(new []{"WCFCLIENT", "WCFSERVICE" }, "System.ServiceModel", "4.7.0 and higher of `System.ServiceModel.Primitives`", "Service side not supported on .NET. `WCFCLIENT for client side instrumentation and `WCFSERVICE` for service side instrumentation", "beta", "community", new []{ new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Wcf", "1.0.0-rc.12", "beta") }, new SignalsList[] { new TracesList() }),
+
+            new("NETRUNTIME", ".NET runtime", "any", null, "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Runtime", "1.5.1", "stable"), new SignalsList[]{new MetricList()}),
+            new("PROCESS", "Process", "any", null, "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Process", "0.5.0-beta.3", "beta"), new SignalsList[]{new MetricList()}),
+
+            new("ILOGGER", "Microsoft.Extensions.Logging", "6.0.0 and higher", "Not supported on .NET Framework", "beta", "community", new LogLists())
         };
 
         return instrumentations;
@@ -31,18 +36,17 @@ public static class InstrumentationData
 
 public class Instrumentation
 {
-    public Instrumentation(string key, string library, string version, string? comment, string stability,
-        string supportabilityLevel)
-        : this(new[] {key}, library, version, comment, stability, supportabilityLevel, Array.Empty<Dependency>())
+    public Instrumentation(string key, string library, string version, string? comment, string stability, string supportabilityLevel, SignalsList signalsList)
+        : this(new[] {key}, library, version, comment, stability, supportabilityLevel, Array.Empty<Dependency>(), new[] {signalsList})
     {
     }
 
-    public Instrumentation(string key, string library, string version, string? comment, string stability, string supportabilityLevel, Dependency dependency)
-        : this(new[] { key }, library, version, comment, stability, supportabilityLevel, new[] { dependency })
+    public Instrumentation(string key, string library, string version, string? comment, string stability, string supportabilityLevel, Dependency dependency, SignalsList[] signalsList)
+        : this(new[] { key }, library, version, comment, stability, supportabilityLevel, new[] { dependency }, signalsList)
     {
     }
 
-    public Instrumentation(string[] keys, string library, string version, string? comment, string stability, string supportabilityLevel, Dependency[] dependencies)
+    public Instrumentation(string[] keys, string library, string version, string? comment, string stability, string supportabilityLevel, Dependency[] dependencies, SignalsList[] signalsList)
     {
         Keys = keys;
         Library = library;
@@ -51,6 +55,7 @@ public class Instrumentation
         Stability = stability;
         SupportabilityLevel = supportabilityLevel;
         Dependencies = dependencies;
+        Signals = signalsList;
     }
 
     public string[] Keys { get; set; }
@@ -72,4 +77,37 @@ public class Instrumentation
     // TODO remove this property
     [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public string? ToDoComment { get; set; }
+
+    public SignalsList[] Signals { get; set; }
+}
+
+public class SignalsList
+{
+}
+
+public class Metric
+{
+}
+
+public class MetricList : SignalsList
+{
+    public Metric[] Metrics { get; set; }
+}
+
+public class Log
+{
+}
+
+public class LogLists: SignalsList
+{
+    public Log[] Logs { get; set; }
+}
+
+public class Trace
+{
+}
+
+public class TracesList: SignalsList
+{
+    public Trace[] Traces { get; set; }
 }

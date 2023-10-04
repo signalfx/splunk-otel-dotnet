@@ -2,7 +2,7 @@
     - ASPNET
   library: ASP.NET Framework (.NET Framework)
   version: See :ref:`dotnet-otel-versions`
-  comment: MVC / WebApi (Only integrated pipeline mode supported)
+  comment: MVC / WebApi (Only integrated pipeline mode supported). Metrics requires trace instrumentation.
   stability: beta
   supportabilityLevel: community
   dependencies:
@@ -13,10 +13,14 @@
       version: 1.0.0-rc9.9
       stability: beta
   toDoComment: version with ref link
+  signals:
+    - traces: 
+    - metrics: 
 - keys:
     - ASPNETCORE
   library: ASP.NET Core
   version: See :ref:`dotnet-otel-versions`
+  comment: Metrics automatically activates `Microsoft.AspNetCore.Hosting.HttpRequestIn` spans.
   stability: beta
   supportabilityLevel: community
   dependencies:
@@ -24,18 +28,25 @@
       version: 1.5.1-beta.1
       stability: beta
   toDoComment: reflink in version
+  signals:
+    - traces: 
+    - metrics: 
 - keys:
     - AZURE
   library: Azure SDK
   version: '`Azure.` prefixed packages, released after October 1, 2021'
   stability: beta
   supportabilityLevel: third-party
+  signals:
+    - traces: 
 - keys:
     - ELASTICSEARCH
   library: Elastic.Clients.Elasticsearch
   version: 8.0.0 and higher
   stability: beta
   supportabilityLevel: third-party
+  signals:
+    - traces: 
 - keys:
     - ENTITYFRAMEWORKCORE
   library: Microsoft.EntityFrameworkCore
@@ -47,6 +58,8 @@
     - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.EntityFrameworkCore
       version: 1.0.0-beta.7
       stability: beta
+  signals:
+    - traces: 
 - keys:
     - GRAPHQL
   library: GraphQL
@@ -54,6 +67,8 @@
   comment: Not supported on .NET Framework
   stability: beta
   supportabilityLevel: third-party
+  signals:
+    - traces: 
 - keys:
     - GRPCNETCLIENT
   library: Grpc.Net.Client
@@ -64,6 +79,8 @@
     - link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.GrpcNetClient
       version: 1.5.1-beta.1
       stability: beta
+  signals:
+    - traces: 
 - keys:
     - HTTPCLIENT
   library: System.Net.Http.HttpClient and System.Net.HttpWebRequest
@@ -75,6 +92,9 @@
       version: 1.5.1-beta.1
       stability: beta
   toDoComment: how to handle two libraries? convert to array?, reflink in versions
+  signals:
+    - traces: 
+    - metrics: 
 - keys:
     - MASSTRANSIT
   library: MassTransit
@@ -82,6 +102,8 @@
   comment: Not supported on .NET Framework
   stability: beta
   supportabilityLevel: third-party
+  signals:
+    - traces: 
 - keys:
     - MONGODB
   library: MongoDB.Driver.Core
@@ -89,12 +111,16 @@
   comment: Not supported on .NET Framework
   stability: beta
   supportabilityLevel: third-party
+  signals:
+    - traces: 
 - keys:
     - MYSQLCONNECTOR
   library: MySqlConnector
   version: 2.0.0 and higher
   stability: beta
   supportabilityLevel: third-party
+  signals:
+    - traces: 
 - keys:
     - MYSQLDATA
   library: MySql.Data
@@ -102,18 +128,25 @@
   comment: Not supported on .NET Framework
   stability: beta
   supportabilityLevel: third-party
+  signals:
+    - traces: 
 - keys:
     - NPGSQL
   library: Npgsql
   version: 6.0.0 and higher
   stability: beta
   supportabilityLevel: third-party
+  signals:
+    - traces: 
 - keys:
     - NSERVICEBUS
   library: NServiceBus
   version: 8.0.0 and higher
   stability: beta
   supportabilityLevel: third-party
+  signals:
+    - traces: 
+    - metrics: 
 - keys:
     - QUARTZ
   library: Quartz
@@ -125,6 +158,8 @@
     - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Quartz
       version: 1.0.0-alpha.3
       stability: alpha
+  signals:
+    - traces: 
 - keys:
     - STACKEXCHANGEREDIS
   library: StackExchange.Redis
@@ -136,6 +171,8 @@
     - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.StackExchangeRedis
       version: 1.0.0-rc9.10
       stability: beta
+  signals:
+    - traces: 
 - keys:
     - WCFCLIENT
     - WCFSERVICE
@@ -148,3 +185,38 @@
     - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Wcf
       version: 1.0.0-rc.12
       stability: beta
+  signals:
+    - traces: 
+- keys:
+    - NETRUNTIME
+  library: .NET runtime
+  version: any
+  stability: beta
+  supportabilityLevel: community
+  dependencies:
+    - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Runtime
+      version: 1.5.1
+      stability: stable
+  signals:
+    - metrics: 
+- keys:
+    - PROCESS
+  library: Process
+  version: any
+  stability: beta
+  supportabilityLevel: community
+  dependencies:
+    - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Process
+      version: 0.5.0-beta.3
+      stability: beta
+  signals:
+    - metrics: 
+- keys:
+    - ILOGGER
+  library: Microsoft.Extensions.Logging
+  version: 6.0.0 and higher
+  comment: Not supported on .NET Framework
+  stability: beta
+  supportabilityLevel: community
+  signals:
+    - logs: 
