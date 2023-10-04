@@ -11,5 +11,6 @@ var serializer = new SerializerBuilder()
 
 File.WriteAllText("..\\..\\..\\..\\..\\settings.yaml", serializer.Serialize(SettingsData.GetSettings()));
 
-File.WriteAllText($"..\\..\\..\\..\\..\\instrumentations.yaml", serializer.Serialize(InstrumentationData.GetInstrumentations()));
+File.WriteAllText("..\\..\\..\\..\\..\\instrumentations.yaml", serializer.Serialize(InstrumentationData.GetInstrumentations()));
 
+File.WriteAllText("..\\..\\..\\..\\..\\resource-detectors.yaml", serializer.Serialize(ResourceDetectorsData.GetResourceDetectors()));

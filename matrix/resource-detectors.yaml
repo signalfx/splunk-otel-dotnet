@@ -1,0 +1,28 @@
+- key: AZUREAPPSERVICE
+  description: Azure App Service detector.
+  attributes:
+    - azure.app.service.stamp
+    - cloud.platform
+    - cloud.provider
+    - cloud.resource_id
+    - cloud.region
+    - deployment.environment
+    - host.id
+    - service.instance.id
+    - service.name
+  stability: beta
+  supportabilityLevel: community
+  dependencies:
+    - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.Azure
+      version: 1.0.0-beta.3
+      stability: beta
+- key: CONTAINER
+  description: Container detector. For example, Docker or Podman containers.
+  attributes:
+    - container.id
+  stability: beta
+  supportabilityLevel: community
+  dependencies:
+    - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.Container
+      version: 1.0.0-beta.4
+      stability: beta
