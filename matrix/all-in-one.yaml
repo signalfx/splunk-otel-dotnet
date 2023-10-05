@@ -1,0 +1,534 @@
+component: Splunk Distribution of OpenTelemetry .NET
+version: 1.0.2
+dependencies:
+  - link: https://github.com/open-telemetry/opentelemetry-dotnet
+    version: 1.6.0
+    stability: stable
+  - link: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation
+    version: 1.0.2
+    stability: stable
+settings:
+  - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
+    description: Activated by default. Adds server trace information to HTTP response headers. For more information, see :ref:`server-trace-information-dotnet-otel`. The default value is `true`.
+    default: true
+    type: boolean
+    category: general
+    toDoComment: How to handle ref links?
+  - name: OTEL_DOTNET_AUTO_EXCLUDE_PROCESSES
+    description: "Names of the executable files that you don't want the profiler to instrument. Supports multiple semicolon-separated values, for example: `ReservedProcess.exe;powershell.exe`. Notice that applications launched using dotnet MyApp.dll have process name `dotnet` or `dotnet.exe`. Can't be set using the web.config or app.config files."
+    default: ''
+    type: general
+    category: string
+  - name: OTEL_DOTNET_AUTO_TRACES_ENABLED
+    description: Long Traces are collected by default. To deactivate trace collection, set the environment variable to `false`. Data from custom or manual instrumentation is not affected.
+    default: true
+    type: boolean
+    category: general
+  - name: OTEL_DOTNET_AUTO_METRICS_ENABLED
+    description: etrics are collected by default. To deactivate metric collection, set the environment variable to `false`. Data from custom or manual instrumentation is not affected.
+    default: true
+    type: boolean
+    category: general
+  - name: OTEL_DOTNET_AUTO_LOGS_ENABLED
+    description: Logs are collected by default. To deactivate log collection, set the environment variable to `false`. Data from custom or manual instrumentation is not affected.
+    default: true
+    type: boolean
+    category: general
+  - name: OTEL_DOTNET_AUTO_OPENTRACING_ENABLED
+    description: Activates the OpenTracing tracer. The default value is `false`. See :ref:`migrate-signalfx-dotnet-to-dotnet-otel` for more information.
+    default: false
+    type: boolean
+    category: general
+    toDoComment: ref link
+  - name: OTEL_DOTNET_AUTO_NETFX_REDIRECT_ENABLED
+    description: Activates immediate redirection of the assemblies used by the automatic instrumentation on the .NET Framework. The default values is `true`. Can't be set using the web.config or app.config files.
+    default: true
+    type: boolean
+    category: general
+    toDoComment: default value in description, also in other records
+  - name: OTEL_DOTNET_AUTO_FLUSH_ON_UNHANDLEDEXCEPTION
+    description: Controls whether the telemetry data is flushed when an `AppDomain.UnhandledException` event is raised. Set to `true` when experiencing missing telemetry at the same time of unhandled exceptions.
+    default: false
+    type: boolean
+    category: general
+  - name: OTEL_DOTNET_AUTO_RULE_ENGINE_ENABLED
+    description: Activates RuleEngine. The default values is `true`. RuleEngine increases the stability of the instrumentation by validating assemblies for unsupported scenarios.
+    default: true
+    type: boolean
+    category: general
+  - name: OTEL_DOTNET_AUTO_FAIL_FAST_ENABLED
+    description: Activate to let the process fail when automatic instrumentation can't be executed. This setting is for debugging purposes, don't use it in production environments. The default value is `false`. Can't be set using the web.config or app.config files.
+    default: false
+    type: boolean
+    category: general
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    description: The URL to where traces and metrics are sent. The default value is `http://localhost:4318`. Setting a value overrides the `SPLUNK_REALM` environment variable.
+    default: ''
+    type: string
+    category: exporter
+  - name: SPLUNK_REALM
+    description: The name of your organization's realm, for example, `us0`. When you set the realm, telemetry is sent directly to the ingest endpoint of Splunk Observability Cloud, bypassing the Splunk Distribution of OpenTelemetry Collector.
+    default: ''
+    type: string
+    category: exporter
+  - name: SPLUNK_ACCESS_TOKEN
+    description: A Splunk authentication token that lets exporters send data directly to Splunk Observability Cloud. Unset by default. Required if you need to send data to the Splunk Observability Cloud ingest endpoint. See :ref:`admin-tokens`.
+    default: ''
+    type: string
+    category: exporter
+    toDoComment: ref link
+  - name: OTEL_PROPAGATORS
+    description: Comma-separated list of propagators for the tracer. The default value is `tracecontext,baggage`. Supported values are `b3multi`, `b3`, `tracecontext`, and `baggage`.
+    default: tracecontext,baggage
+    type: string
+    category: trace propagation
+    toDoComment: potential enum values
+  - name: OTEL_TRACES_SAMPLER
+    description: Sampler to use. The default value is `parentbased_always_on`. Supported values are `always_on`, `always_off`, `traceidratio`, `parentbased_always_on`, `parentbased_always_off`, and `parentbased_traceidratio`.
+    default: parentbased_always_on
+    type: string
+    category: sampler
+    toDoComment: enum?
+  - name: OTEL_TRACES_SAMPLER_ARG
+    description: Semicolon-separated list of rules for the `rules` sampler. The default value is `1.0`.
+    default: 1,0
+    type: string
+    category: sampler
+    toDoComment: default value 1.0 is true only for parentbased_always_on, other may have different default values
+  - name: OTEL_DOTNET_AUTO_RESOURCE_DETECTOR_ENABLED
+    description: Activates or deactivates all resource detectors. The default values is `true`.
+    default: true
+    type: boolean
+    category: resource detector
+  - name: OTEL_DOTNET_AUTO_{DECTECTOR}_RESOURCE_DETECTOR_ENABLED
+    description: Activates or deactivates a specific resource detector, where `{DETECTOR}` is the uppercase identifier of the resource detector you want to activate. Overrides `OTEL_DOTNET_AUTO_RESOURCE_DETECTOR_ENABLED`.
+    default: depends on `OTEL_DOTNET_AUTO_RESOURCE_DETECTOR_ENABLED`
+    type: boolean
+    category: resource detector
+    toDoComment: how to handle this default value? description is enough?
+  - name: OTEL_SERVICE_NAME
+    description: Name of the service or application you're instrumenting. Takes precedence over the service name defined in the `OTEL_RESOURCE_ATTRIBUTES` variable.
+    default: 'we have some logic here if it is not manually set: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/9ccd2174be3c5e14f0b159a7e0e7543516318d28/src/OpenTelemetry.AutoInstrumentation/Configurations/ServiceNameConfigurator.cs'
+    type: string
+    category: instrumentation
+    toDoComment: default value description
+  - name: OTEL_RESOURCE_ATTRIBUTES
+    description: Comma-separated list of resource attributes added to every reported span. For example, `key1=val1,key2=val2`.
+    default: ''
+    type: string
+    category: instrumentation
+  - name: OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES
+    description: Comma-separated list of additional `System.Diagnostics.ActivitySource` names to be added to the tracer at startup. Use it to capture spans from manual instrumentation.
+    default: ''
+    type: string
+    category: instrumentation
+  - name: OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES
+    description: Comma-separated list of additional `System.Diagnostics.Metrics.Meter` names to be added to the meter at the startup. Use it to capture custom metrics.
+    default: ''
+    type: string
+    category: instrumentation
+  - name: OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT
+    description: Maximum number of attributes per span. Default value is unlimited.
+    default: ''
+    type: int
+    category: instrumentation
+    toDoComment: int?
+  - name: OTEL_SPAN_EVENT_COUNT_LIMIT
+    description: Maximum number of events per span. Default value is unlimited.
+    default: ''
+    type: int
+    category: instrumentation
+    toDoComment: int?
+  - name: OTEL_SPAN_LINK_COUNT_LIMIT
+    description: Maximum number of links per span. Default value is `1000`.
+    default: 1000
+    type: int
+    category: instrumentation
+    toDoComment: int?
+  - name: OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT
+    description: Maximum length of strings for attribute values. Values larger than the limit are truncated. Default value is `1200`. Empty values are treated as infinity.
+    default: 1200
+    type: int
+    category: instrumentation
+    toDoComment: int?
+  - name: OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT
+    description: Whether the GraphQL instrumentation can pass raw queries as a `graphql.document` attribute. As queries might contain sensitive information, the default value is `false`.
+    default: false
+    type: boolean
+    category: instrumentation
+  - name: OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_LEGACY_SOURCES
+    description: Comma-separated list of additional legacy source names to be added to the tracer at the startup. Use it to capture `System.Diagnostics.Activity` objects created without using the `System.Diagnostics.ActivitySource` API.
+    default: ''
+    type: string
+    category: instrumentation
+  - name: OTEL_LOG_LEVEL
+    description: Sets the logging level for instrumentation log messages. Possible values are `none`, `error`, `warn`, `info`, and `debug`. The default value is `info`. Can't be set using the web.config or app.config files.
+    default: info
+    type: enum
+    category: diagnostic logging
+    toDoComment: handle enum values/mark as string
+  - name: OTEL_DOTNET_AUTO_LOG_DIRECTORY
+    description: Directory of the .NET tracer logs. The default value is `/var/log/opentelemetry/dotnet` for Linux, and `%ProgramData%\OpenTelemetry .NET AutoInstrumentation\logs` for Windows. Can't be set using the web.config or app.config files.
+    default: see descruotuin
+    type: string
+    category: diagnostic logging
+    toDoComment: defaultvalue
+  - name: OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED
+    description: Whether the traces console exporter is activated. The default value is `false`.
+    default: false
+    type: boolean
+    category: diagnostic logging
+  - name: OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED
+    description: Whether the metrics console exporter is activated. The default value is `false`.
+    default: false
+    type: boolean
+    category: diagnostic logging
+  - name: OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED
+    description: Whether the logs console exporter is activated. The default value is `false`.The default value is `false`.
+    default: false
+    type: boolean
+    category: diagnostic logging
+  - name: OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE
+    description: Whether the log state have to be formatted. The default value is `false`.
+    default: false
+    type: boolean
+    category: diagnostic logging
+  - name: MANUAL SETTINGS
+    description: How to handle https://docs.splunk.com/observability/en/gdi/get-data-in/application/otel-dotnet/configuration/advanced-dotnet-configuration.html#environment-variables-for-manual-installation?
+    default: N/A
+    type: N/A
+    category: manual
+    toDoComment: See description
+instrumentations:
+  - keys:
+      - ASPNET
+    library: ASP.NET Framework (.NET Framework)
+    version: See :ref:`dotnet-otel-versions`
+    comment: MVC / WebApi (Only integrated pipeline mode supported). Metrics requires trace instrumentation.
+    stability: beta
+    supportabilityLevel: community
+    dependencies:
+      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet
+        version: 1.0.0-rc9.9
+        stability: beta
+      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet.TelemetryHttpModule
+        version: 1.0.0-rc9.9
+        stability: beta
+    toDoComment: version with ref link
+    signals:
+      - traces: 
+      - metrics: 
+  - keys:
+      - ASPNETCORE
+    library: ASP.NET Core
+    version: See :ref:`dotnet-otel-versions`
+    comment: Metrics automatically activates `Microsoft.AspNetCore.Hosting.HttpRequestIn` spans.
+    stability: beta
+    supportabilityLevel: community
+    dependencies:
+      - link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.AspNetCore
+        version: 1.5.1-beta.1
+        stability: beta
+    toDoComment: reflink in version
+    signals:
+      - traces: 
+      - metrics: 
+  - keys:
+      - AZURE
+    library: Azure SDK
+    version: '`Azure.` prefixed packages, released after October 1, 2021'
+    stability: beta
+    supportabilityLevel: third-party
+    signals:
+      - traces: 
+  - keys:
+      - ELASTICSEARCH
+    library: Elastic.Clients.Elasticsearch
+    version: 8.0.0 and higher
+    stability: beta
+    supportabilityLevel: third-party
+    signals:
+      - traces: 
+  - keys:
+      - ENTITYFRAMEWORKCORE
+    library: Microsoft.EntityFrameworkCore
+    version: 6.0.12 and higher
+    comment: Not supported on .NET Framework
+    stability: beta
+    supportabilityLevel: community
+    dependencies:
+      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.EntityFrameworkCore
+        version: 1.0.0-beta.7
+        stability: beta
+    signals:
+      - traces: 
+  - keys:
+      - GRAPHQL
+    library: GraphQL
+    version: 7.5.0 and higher
+    comment: Not supported on .NET Framework
+    stability: beta
+    supportabilityLevel: third-party
+    signals:
+      - traces: 
+  - keys:
+      - GRPCNETCLIENT
+    library: Grpc.Net.Client
+    version: 2.52.0 to 3.0.0
+    stability: beta
+    supportabilityLevel: community
+    dependencies:
+      - link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.GrpcNetClient
+        version: 1.5.1-beta.1
+        stability: beta
+    signals:
+      - traces: 
+  - keys:
+      - HTTPCLIENT
+    library: System.Net.Http.HttpClient and System.Net.HttpWebRequest
+    version: See :ref:`dotnet-otel-versions`
+    stability: beta
+    supportabilityLevel: community
+    dependencies:
+      - link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.Http
+        version: 1.5.1-beta.1
+        stability: beta
+    toDoComment: how to handle two libraries? convert to array?, reflink in versions
+    signals:
+      - traces: 
+      - metrics:
+          - metric: http.client.duration_{bucket|count|sum}
+            type: Cumulative counters (histogram)
+            description: Duration of outbound HTTP requests, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
+          - metric: http.server.duration_{bucket|count|sum}
+            type: Cumulative counters (histogram)
+            description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
+  - keys:
+      - MASSTRANSIT
+    library: MassTransit
+    version: 8.0.0 and higher
+    comment: Not supported on .NET Framework
+    stability: beta
+    supportabilityLevel: third-party
+    signals:
+      - traces: 
+  - keys:
+      - MONGODB
+    library: MongoDB.Driver.Core
+    version: 2.13.3 to 3.0.0
+    comment: Not supported on .NET Framework
+    stability: beta
+    supportabilityLevel: third-party
+    signals:
+      - traces: 
+  - keys:
+      - MYSQLCONNECTOR
+    library: MySqlConnector
+    version: 2.0.0 and higher
+    stability: beta
+    supportabilityLevel: third-party
+    signals:
+      - traces: 
+  - keys:
+      - MYSQLDATA
+    library: MySql.Data
+    version: 8.1.0 and higher
+    comment: Not supported on .NET Framework
+    stability: beta
+    supportabilityLevel: third-party
+    signals:
+      - traces: 
+  - keys:
+      - NPGSQL
+    library: Npgsql
+    version: 6.0.0 and higher
+    stability: beta
+    supportabilityLevel: third-party
+    signals:
+      - traces: 
+  - keys:
+      - NSERVICEBUS
+    library: NServiceBus
+    version: 8.0.0 and higher
+    stability: beta
+    supportabilityLevel: third-party
+    signals:
+      - traces: 
+      - metrics:
+          - metric: nservicebus.messaging.successes
+            type: Cumulative counter
+            description: Number of messages successfully processed by the endpoint.
+          - metric: nservicebus.messaging.fetches
+            type: Cumulative counter
+            description: Number of messages retrieved from the queue by the endpoint.
+          - metric: nservicebus.messaging.failures
+            type: Cumulative counter
+            description: Number of messages unsuccessfully processed by the endpoint.
+  - keys:
+      - QUARTZ
+    library: Quartz
+    version: 3.4.0 and higher
+    comment: Not supported on .NET Framework 4.7.1 and lower
+    stability: beta
+    supportabilityLevel: community
+    dependencies:
+      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Quartz
+        version: 1.0.0-alpha.3
+        stability: alpha
+    signals:
+      - traces: 
+  - keys:
+      - STACKEXCHANGEREDIS
+    library: StackExchange.Redis
+    version: 2.0.405 to 3.0.0
+    comment: Not supported on .NET Framework
+    stability: beta
+    supportabilityLevel: community
+    dependencies:
+      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.StackExchangeRedis
+        version: 1.0.0-rc9.10
+        stability: beta
+    signals:
+      - traces: 
+  - keys:
+      - WCFCLIENT
+      - WCFSERVICE
+    library: System.ServiceModel
+    version: 4.7.0 and higher of `System.ServiceModel.Primitives`
+    comment: Service side not supported on .NET. `WCFCLIENT for client side instrumentation and `WCFSERVICE` for service side instrumentation
+    stability: beta
+    supportabilityLevel: community
+    dependencies:
+      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Wcf
+        version: 1.0.0-rc.12
+        stability: beta
+    signals:
+      - traces: 
+  - keys:
+      - NETRUNTIME
+    library: .NET runtime
+    version: any
+    stability: beta
+    supportabilityLevel: community
+    dependencies:
+      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Runtime
+        version: 1.5.1
+        stability: stable
+    signals:
+      - metrics:
+          - metric: process.runtime.dotnet.gc.collections.count
+            type: Cumulative counter
+            description: Number of garbage collections since the process started.
+          - metric: process.runtime.dotnet.gc.heap.size
+            type: Gauge
+            description: Heap size, as observed during the last garbage collection. Only available for .NET 6 or higher.
+          - metric: rocess.runtime.dotnet.gc.heap.fragmentation.size
+            type: Gauge
+            description: Heap fragmentation, as observed during the last garbage collection. Only available for .NET 7 or higher.
+          - metric: process.runtime.dotnet.gc.objects.size
+            type: Gauge
+            description: Count of bytes currently in use by live objects in the GC heap.
+          - metric: process.runtime.dotnet.gc.allocations.size
+            type: Cumulative counter
+            description: Count of bytes allocated on the managed GC heap since the process started. Only available for .NET 6 or higher.
+          - metric: process.runtime.dotnet.gc.committed_memory.size
+            type: Gauge
+            description: Amount of committed virtual memory for the managed GC heap, as observed during the last garbage collection. Only available for .NET 6 and higher.
+          - metric: process.runtime.dotnet.gc.duration
+            type: Cumulative counter
+            description: The total amount of time paused in GC since the process start. Only available for .NET 7 and higher.
+          - metric: process.runtime.dotnet.monitor.lock_contention.count
+            type: Cumulative counter
+            description: Contentions count when trying to acquire a monitor lock since the process started.
+          - metric: process.runtime.dotnet.thread_pool.threads.count
+            type: Cumulative counter
+            description: Number of thread pool threads, as observed during the last measurement. Only available for .NET 6 or higher.
+          - metric: process.runtime.dotnet.thread_pool.completed_items.count
+            type: Cumulative counter
+            description: Number of work items processed by the thread pool since the process started. Only available for .NET 6 or higher.
+          - metric: process.runtime.dotnet.thread_pool.queue.length
+            type: Gauge
+            description: Number of work items currently queued for processing by the thread pool. Only available for .NET 6 or higher.
+          - metric: process.runtime.dotnet.jit.il_compiled.size
+            type: Cumulative counter
+            description: Bytes of intermediate language that have been compiled since the process started. Only available for .NET 6 or higher.
+          - metric: process.runtime.dotnet.jit.methods_compiled.count
+            type: Cumulative counter
+            description: Number of times the JIT compiler compiled a method since the process started. Only available for .NET 6 or higher.
+          - metric: process.runtime.dotnet.jit.compilation_time
+            type: Cumulative counter
+            description: Amount of time the compiler spent compiling methods since the process started. Only available for .NET 6 or higher.
+          - metric: process.runtime.dotnet.timer.count
+            type: Gauge
+            description: Number of timer instances currently active. Only available for .NET 6 or higher.
+          - metric: process.runtime.dotnet.assemblies.count
+            type: Gauge
+            description: Number of .NET assemblies that are currently loaded.
+          - metric: process.runtime.dotnet.exceptions.count
+            type: Cumulative counter
+            description: Count of exceptions thrown in managed code since the observation started.
+  - keys:
+      - PROCESS
+    library: Process
+    version: any
+    stability: beta
+    supportabilityLevel: community
+    dependencies:
+      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Process
+        version: 0.5.0-beta.3
+        stability: beta
+    signals:
+      - metrics:
+          - metric: process.memory.usage
+            type: Gauge
+            description: The amount of physical memory allocated for this process.
+          - metric: process.memory.virtual
+            type: Gauge
+            description: The amount of committed virtual memory for this process.
+          - metric: process.cpu.time
+            type: Cumulative counter
+            description: Total CPU seconds broken down by different states, such as user and system.
+          - metric: process.cpu.count
+            type: Gauge
+            description: Total CPU seconds broken down by different states, such as user and system.
+          - metric: process.threads
+            type: Gauge
+            description: Process threads count.
+  - keys:
+      - ILOGGER
+    library: Microsoft.Extensions.Logging
+    version: 6.0.0 and higher
+    comment: Not supported on .NET Framework
+    stability: beta
+    supportabilityLevel: community
+    signals:
+      - logs: 
+resourceDetectors:
+  - key: AZUREAPPSERVICE
+    description: Azure App Service detector.
+    attributes:
+      - azure.app.service.stamp
+      - cloud.platform
+      - cloud.provider
+      - cloud.resource_id
+      - cloud.region
+      - deployment.environment
+      - host.id
+      - service.instance.id
+      - service.name
+    stability: beta
+    supportabilityLevel: community
+    dependencies:
+      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.Azure
+        version: 1.0.0-beta.3
+        stability: beta
+  - key: CONTAINER
+    description: Container detector. For example, Docker or Podman containers.
+    attributes:
+      - container.id
+    stability: beta
+    supportabilityLevel: community
+    dependencies:
+      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.Container
+        version: 1.0.0-beta.4
+        stability: beta

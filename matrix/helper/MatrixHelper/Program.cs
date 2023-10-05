@@ -14,3 +14,7 @@ File.WriteAllText("..\\..\\..\\..\\..\\settings.yaml", serializer.Serialize(Sett
 File.WriteAllText("..\\..\\..\\..\\..\\instrumentations.yaml", serializer.Serialize(InstrumentationData.GetInstrumentations()));
 
 File.WriteAllText("..\\..\\..\\..\\..\\resource-detectors.yaml", serializer.Serialize(ResourceDetectorsData.GetResourceDetectors()));
+
+File.WriteAllText("..\\..\\..\\..\\..\\metadata.yaml", serializer.Serialize(MetaDataData.GetMetaData()));
+
+File.WriteAllText("..\\..\\..\\..\\..\\all-in-one.yaml", serializer.Serialize(MetaDataData.GetAllInOne()));
