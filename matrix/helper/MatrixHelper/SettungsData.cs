@@ -1,4 +1,5 @@
-﻿using YamlDotNet.Serialization;
+﻿using YamlDotNet.Core;
+using YamlDotNet.Serialization;
 
 namespace MatrixHelper;
 
@@ -77,6 +78,7 @@ public class Setting(string name, string description, string defaultValue, strin
     public string Name { get; set; } = name;
     public string Description { get; set; } = description;
 
+    [YamlMember(ScalarStyle = ScalarStyle.SingleQuoted)]
     public string Default { get; set; } = defaultValue;
 
     public string Type { get; set; } = type;
