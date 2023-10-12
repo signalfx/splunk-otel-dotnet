@@ -513,15 +513,15 @@ resourceDetectors:
   - key: AZUREAPPSERVICE
     description: Azure App Service detector.
     attributes:
-      - azure.app.service.stamp
-      - cloud.platform
-      - cloud.provider
-      - cloud.resource_id
-      - cloud.region
-      - deployment.environment
-      - host.id
-      - service.instance.id
-      - service.name
+      - id: azure.app.service.stamp
+      - id: cloud.platform
+      - id: cloud.provider
+      - id: cloud.resource_id
+      - id: cloud.region
+      - id: deployment.environment
+      - id: host.id
+      - id: service.instance.id
+      - id: service.name
     stability: beta
     supportabilityLevel: community
     dependencies:
@@ -531,7 +531,7 @@ resourceDetectors:
   - key: CONTAINER
     description: Container detector. For example, Docker or Podman containers.
     attributes:
-      - container.id
+      - id: container.id
     stability: beta
     supportabilityLevel: community
     dependencies:
