@@ -202,8 +202,9 @@ settings:
 instrumentations:
   - keys:
       - ASPNET
-    library: ASP.NET Framework (.NET Framework)
-    supportedVersions: See :ref:`dotnet-otel-versions`
+    instrumentedLibraries:
+      - name: ASP.NET Framework (.NET Framework)
+        supportedVersions: See :ref:`dotnet-otel-versions`
     comment: MVC / WebApi (Only integrated pipeline mode supported). Metrics requires trace instrumentation.
     stability: beta
     supportabilityLevel: community
@@ -223,8 +224,9 @@ instrumentations:
             description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
   - keys:
       - ASPNETCORE
-    library: ASP.NET Core
-    supportedVersions: See :ref:`dotnet-otel-versions`
+    instrumentedLibraries:
+      - name: ASP.NET Core
+        supportedVersions: See :ref:`dotnet-otel-versions`
     comment: Metrics automatically activates `Microsoft.AspNetCore.Hosting.HttpRequestIn` spans.
     stability: beta
     supportabilityLevel: community
@@ -241,24 +243,27 @@ instrumentations:
             description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
   - keys:
       - AZURE
-    library: Azure SDK
-    supportedVersions: '`Azure.` prefixed packages, released after October 1, 2021'
+    instrumentedLibraries:
+      - name: Azure SDK
+        supportedVersions: '`Azure.` prefixed packages, released after October 1, 2021'
     stability: beta
     supportabilityLevel: third-party
     signals:
       - traces: 
   - keys:
       - ELASTICSEARCH
-    library: Elastic.Clients.Elasticsearch
-    supportedVersions: 8.0.0 and higher
+    instrumentedLibraries:
+      - name: Elastic.Clients.Elasticsearch
+        supportedVersions: 8.0.0 and higher
     stability: beta
     supportabilityLevel: third-party
     signals:
       - traces: 
   - keys:
       - ENTITYFRAMEWORKCORE
-    library: Microsoft.EntityFrameworkCore
-    supportedVersions: 6.0.12 and higher
+    instrumentedLibraries:
+      - name: Microsoft.EntityFrameworkCore
+        supportedVersions: 6.0.12 and higher
     comment: Not supported on .NET Framework
     stability: beta
     supportabilityLevel: community
@@ -270,8 +275,9 @@ instrumentations:
       - traces: 
   - keys:
       - GRAPHQL
-    library: GraphQL
-    supportedVersions: 7.5.0 and higher
+    instrumentedLibraries:
+      - name: GraphQL
+        supportedVersions: 7.5.0 and higher
     comment: Not supported on .NET Framework
     stability: beta
     supportabilityLevel: third-party
@@ -279,8 +285,9 @@ instrumentations:
       - traces: 
   - keys:
       - GRPCNETCLIENT
-    library: Grpc.Net.Client
-    supportedVersions: 2.52.0 to 3.0.0
+    instrumentedLibraries:
+      - name: Grpc.Net.Client
+        supportedVersions: 2.52.0 to 3.0.0
     stability: beta
     supportabilityLevel: community
     dependencies:
@@ -291,8 +298,11 @@ instrumentations:
       - traces: 
   - keys:
       - HTTPCLIENT
-    library: System.Net.Http.HttpClient and System.Net.HttpWebRequest
-    supportedVersions: See :ref:`dotnet-otel-versions`
+    instrumentedLibraries:
+      - name: System.Net.Http.HttpClient
+        supportedVersions: See :ref:`dotnet-otel-versions`
+      - name: System.Net.HttpWebRequest
+        supportedVersions: See :ref:`dotnet-otel-versions`
     stability: beta
     supportabilityLevel: community
     dependencies:
@@ -311,8 +321,9 @@ instrumentations:
             description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
   - keys:
       - MASSTRANSIT
-    library: MassTransit
-    supportedVersions: 8.0.0 and higher
+    instrumentedLibraries:
+      - name: MassTransit
+        supportedVersions: 8.0.0 and higher
     comment: Not supported on .NET Framework
     stability: beta
     supportabilityLevel: third-party
@@ -320,8 +331,9 @@ instrumentations:
       - traces: 
   - keys:
       - MONGODB
-    library: MongoDB.Driver.Core
-    supportedVersions: 2.13.3 to 3.0.0
+    instrumentedLibraries:
+      - name: MongoDB.Driver.Core
+        supportedVersions: 2.13.3 to 3.0.0
     comment: Not supported on .NET Framework
     stability: beta
     supportabilityLevel: third-party
@@ -329,16 +341,18 @@ instrumentations:
       - traces: 
   - keys:
       - MYSQLCONNECTOR
-    library: MySqlConnector
-    supportedVersions: 2.0.0 and higher
+    instrumentedLibraries:
+      - name: MySqlConnector
+        supportedVersions: 2.0.0 and higher
     stability: beta
     supportabilityLevel: third-party
     signals:
       - traces: 
   - keys:
       - MYSQLDATA
-    library: MySql.Data
-    supportedVersions: 8.1.0 and higher
+    instrumentedLibraries:
+      - name: MySql.Data
+        supportedVersions: 8.1.0 and higher
     comment: Not supported on .NET Framework
     stability: beta
     supportabilityLevel: third-party
@@ -346,16 +360,18 @@ instrumentations:
       - traces: 
   - keys:
       - NPGSQL
-    library: Npgsql
-    supportedVersions: 6.0.0 and higher
+    instrumentedLibraries:
+      - name: Npgsql
+        supportedVersions: 6.0.0 and higher
     stability: beta
     supportabilityLevel: third-party
     signals:
       - traces: 
   - keys:
       - NSERVICEBUS
-    library: NServiceBus
-    supportedVersions: 8.0.0 and higher
+    instrumentedLibraries:
+      - name: NServiceBus
+        supportedVersions: 8.0.0 and higher
     stability: beta
     supportabilityLevel: third-party
     signals:
@@ -372,8 +388,9 @@ instrumentations:
             description: Number of messages unsuccessfully processed by the endpoint.
   - keys:
       - QUARTZ
-    library: Quartz
-    supportedVersions: 3.4.0 and higher
+    instrumentedLibraries:
+      - name: Quartz
+        supportedVersions: 3.4.0 and higher
     comment: Not supported on .NET Framework 4.7.1 and lower
     stability: beta
     supportabilityLevel: community
@@ -385,8 +402,9 @@ instrumentations:
       - traces: 
   - keys:
       - STACKEXCHANGEREDIS
-    library: StackExchange.Redis
-    supportedVersions: 2.0.405 to 3.0.0
+    instrumentedLibraries:
+      - name: StackExchange.Redis
+        supportedVersions: 2.0.405 to 3.0.0
     comment: Not supported on .NET Framework
     stability: beta
     supportabilityLevel: community
@@ -399,8 +417,9 @@ instrumentations:
   - keys:
       - WCFCLIENT
       - WCFSERVICE
-    library: System.ServiceModel
-    supportedVersions: 4.7.0 and higher of `System.ServiceModel.Primitives`
+    instrumentedLibraries:
+      - name: System.ServiceModel
+        supportedVersions: 4.7.0 and higher of `System.ServiceModel.Primitives`
     comment: Service side not supported on .NET. `WCFCLIENT for client side instrumentation and `WCFSERVICE` for service side instrumentation
     stability: beta
     supportabilityLevel: community
@@ -412,8 +431,8 @@ instrumentations:
       - traces: 
   - keys:
       - NETRUNTIME
-    library: .NET runtime
-    supportedVersions: any
+    instrumentedLibraries:
+      - name: .NET runtime
     stability: beta
     supportabilityLevel: community
     dependencies:
@@ -475,8 +494,8 @@ instrumentations:
             description: Count of exceptions thrown in managed code since the observation started.
   - keys:
       - PROCESS
-    library: Process
-    supportedVersions: any
+    instrumentedLibraries:
+      - name: Process
     stability: beta
     supportabilityLevel: community
     dependencies:
@@ -502,8 +521,9 @@ instrumentations:
             description: Process threads count.
   - keys:
       - ILOGGER
-    library: Microsoft.Extensions.Logging
-    supportedVersions: 6.0.0 and higher
+    instrumentedLibraries:
+      - name: Microsoft.Extensions.Logging
+        supportedVersions: 6.0.0 and higher
     comment: Not supported on .NET Framework
     stability: beta
     supportabilityLevel: community
