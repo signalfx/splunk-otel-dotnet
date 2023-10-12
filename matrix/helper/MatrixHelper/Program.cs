@@ -4,7 +4,7 @@ using YamlDotNet.Serialization.NamingConventions;
 
 
 var serializer = new SerializerBuilder()
-    .WithNamingConvention(CamelCaseNamingConvention.Instance)
+    .WithNamingConvention(UnderscoredNamingConvention.Instance)
     .WithIndentedSequences()
     .Build();
 

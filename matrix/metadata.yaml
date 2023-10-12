@@ -9,9 +9,9 @@ dependencies:
     link: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation
     version: 1.0.2
     stability: stable
-settingsFiles:
+settings_files:
   - settings.yaml
-instrumentationFiles:
+instrumentation_files:
   - instrumentations.yaml
-resourceDetectorFiles:
+resource_detector_files:
   - resource-detectors.yaml

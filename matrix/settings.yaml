@@ -3,7 +3,7 @@
   default: 'true'
   type: boolean
   category: general
-  toDoComment: How to handle ref links?
+  to_do_comment: How to handle ref links?
 - name: OTEL_DOTNET_AUTO_EXCLUDE_PROCESSES
   description: "Names of the executable files that you don't want the profiler to instrument. Supports multiple semicolon-separated values, for example: `ReservedProcess.exe;powershell.exe`. Notice that applications launched using dotnet MyApp.dll have process name `dotnet` or `dotnet.exe`. Can't be set using the web.config or app.config files."
   default: ''
@@ -29,13 +29,13 @@
   default: 'false'
   type: boolean
   category: general
-  toDoComment: ref link
+  to_do_comment: ref link
 - name: OTEL_DOTNET_AUTO_NETFX_REDIRECT_ENABLED
   description: Activates immediate redirection of the assemblies used by the automatic instrumentation on the .NET Framework. The default values is `true`. Can't be set using the web.config or app.config files.
   default: 'true'
   type: boolean
   category: general
-  toDoComment: default value in description, also in other records
+  to_do_comment: default value in description, also in other records
 - name: OTEL_DOTNET_AUTO_FLUSH_ON_UNHANDLEDEXCEPTION
   description: Controls whether the telemetry data is flushed when an `AppDomain.UnhandledException` event is raised. Set to `true` when experiencing missing telemetry at the same time of unhandled exceptions.
   default: 'false'
@@ -66,25 +66,25 @@
   default: ''
   type: string
   category: exporter
-  toDoComment: ref link
+  to_do_comment: ref link
 - name: OTEL_PROPAGATORS
   description: Comma-separated list of propagators for the tracer. The default value is `tracecontext,baggage`. Supported values are `b3multi`, `b3`, `tracecontext`, and `baggage`.
   default: 'tracecontext,baggage'
   type: string
   category: trace propagation
-  toDoComment: potential enum values
+  to_do_comment: potential enum values
 - name: OTEL_TRACES_SAMPLER
   description: Sampler to use. The default value is `parentbased_always_on`. Supported values are `always_on`, `always_off`, `traceidratio`, `parentbased_always_on`, `parentbased_always_off`, and `parentbased_traceidratio`.
   default: 'parentbased_always_on'
   type: string
   category: sampler
-  toDoComment: enum?
+  to_do_comment: enum?
 - name: OTEL_TRACES_SAMPLER_ARG
   description: Semicolon-separated list of rules for the `rules` sampler. The default value is `1.0`.
   default: '1,0'
   type: string
   category: sampler
-  toDoComment: default value 1.0 is true only for parentbased_always_on, other may have different default values
+  to_do_comment: default value 1.0 is true only for parentbased_always_on, other may have different default values
 - name: OTEL_DOTNET_AUTO_RESOURCE_DETECTOR_ENABLED
   description: Activates or deactivates all resource detectors. The default values is `true`.
   default: 'true'
@@ -95,13 +95,13 @@
   default: 'depends on `OTEL_DOTNET_AUTO_RESOURCE_DETECTOR_ENABLED`'
   type: boolean
   category: resource detector
-  toDoComment: how to handle this default value? description is enough?
+  to_do_comment: how to handle this default value? description is enough?
 - name: OTEL_SERVICE_NAME
   description: Name of the service or application you're instrumenting. Takes precedence over the service name defined in the `OTEL_RESOURCE_ATTRIBUTES` variable.
   default: 'we have some logic here if it is not manually set: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/9ccd2174be3c5e14f0b159a7e0e7543516318d28/src/OpenTelemetry.AutoInstrumentation/Configurations/ServiceNameConfigurator.cs'
   type: string
   category: instrumentation
-  toDoComment: default value description
+  to_do_comment: default value description
 - name: OTEL_RESOURCE_ATTRIBUTES
   description: Comma-separated list of resource attributes added to every reported span. For example, `key1=val1,key2=val2`.
   default: ''
@@ -122,25 +122,25 @@
   default: ''
   type: int
   category: instrumentation
-  toDoComment: int?
+  to_do_comment: int?
 - name: OTEL_SPAN_EVENT_COUNT_LIMIT
   description: Maximum number of events per span. Default value is unlimited.
   default: ''
   type: int
   category: instrumentation
-  toDoComment: int?
+  to_do_comment: int?
 - name: OTEL_SPAN_LINK_COUNT_LIMIT
   description: Maximum number of links per span. Default value is `1000`.
   default: '1000'
   type: int
   category: instrumentation
-  toDoComment: int?
+  to_do_comment: int?
 - name: OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT
   description: Maximum length of strings for attribute values. Values larger than the limit are truncated. Default value is `1200`. Empty values are treated as infinity.
   default: '1200'
   type: int
   category: instrumentation
-  toDoComment: int?
+  to_do_comment: int?
 - name: OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT
   description: Whether the GraphQL instrumentation can pass raw queries as a `graphql.document` attribute. As queries might contain sensitive information, the default value is `false`.
   default: 'false'
@@ -156,13 +156,13 @@
   default: 'info'
   type: enum
   category: diagnostic logging
-  toDoComment: handle enum values/mark as string
+  to_do_comment: handle enum values/mark as string
 - name: OTEL_DOTNET_AUTO_LOG_DIRECTORY
   description: Directory of the .NET tracer logs. The default value is `/var/log/opentelemetry/dotnet` for Linux, and `%ProgramData%\OpenTelemetry .NET AutoInstrumentation\logs` for Windows. Can't be set using the web.config or app.config files.
   default: 'see descruotuin'
   type: string
   category: diagnostic logging
-  toDoComment: defaultvalue
+  to_do_comment: defaultvalue
 - name: OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED
   description: Whether the traces console exporter is activated. The default value is `false`.
   default: 'false'
@@ -188,4 +188,4 @@
   default: 'N/A'
   type: N/A
   category: manual
-  toDoComment: See description
+  to_do_comment: See description

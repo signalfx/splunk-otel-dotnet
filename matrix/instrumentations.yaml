@@ -1,11 +1,11 @@
 - keys:
     - ASPNET
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: ASP.NET Framework (.NET Framework)
-      supportedVersions: See :ref:`dotnet-otel-versions`
+      supported_versions: See :ref:`dotnet-otel-versions`
   comment: MVC / WebApi (Only integrated pipeline mode supported). Metrics requires trace instrumentation.
   stability: beta
-  supportabilityLevel: community
+  supportability_level: community
   dependencies:
     - name: ASP.NET Instrumentation for OpenTelemetry
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet
@@ -15,7 +15,7 @@
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet.TelemetryHttpModule
       version: 1.0.0-rc9.9
       stability: beta
-  toDoComment: supportedVersions with ref link
+  to_do_comment: supportedVersions with ref link
   signals:
     - traces: 
     - metrics:
@@ -24,18 +24,18 @@
           description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
 - keys:
     - ASPNETCORE
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: ASP.NET Core
-      supportedVersions: See :ref:`dotnet-otel-versions`
+      supported_versions: See :ref:`dotnet-otel-versions`
   comment: Metrics automatically activates `Microsoft.AspNetCore.Hosting.HttpRequestIn` spans.
   stability: beta
-  supportabilityLevel: community
+  supportability_level: community
   dependencies:
     - name: ASP.NET Core Instrumentation for OpenTelemetry .NET
       link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.AspNetCore
       version: 1.5.1-beta.1
       stability: beta
-  toDoComment: reflink in supportedVersions
+  to_do_comment: reflink in supportedVersions
   signals:
     - traces: 
     - metrics:
@@ -44,30 +44,30 @@
           description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
 - keys:
     - AZURE
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: Azure SDK
-      supportedVersions: '`Azure.` prefixed packages, released after October 1, 2021'
+      supported_versions: '`Azure.` prefixed packages, released after October 1, 2021'
   stability: beta
-  supportabilityLevel: third-party
+  supportability_level: third-party
   signals:
     - traces: 
 - keys:
     - ELASTICSEARCH
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: Elastic.Clients.Elasticsearch
-      supportedVersions: 8.0.0 and higher
+      supported_versions: 8.0.0 and higher
   stability: beta
-  supportabilityLevel: third-party
+  supportability_level: third-party
   signals:
     - traces: 
 - keys:
     - ENTITYFRAMEWORKCORE
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: Microsoft.EntityFrameworkCore
-      supportedVersions: 6.0.12 and higher
+      supported_versions: 6.0.12 and higher
   comment: Not supported on .NET Framework
   stability: beta
-  supportabilityLevel: community
+  supportability_level: community
   dependencies:
     - name: EntityFrameworkCore Instrumentation for OpenTelemetry .NET
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.EntityFrameworkCore
@@ -77,21 +77,21 @@
     - traces: 
 - keys:
     - GRAPHQL
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: GraphQL
-      supportedVersions: 7.5.0 and higher
+      supported_versions: 7.5.0 and higher
   comment: Not supported on .NET Framework
   stability: beta
-  supportabilityLevel: third-party
+  supportability_level: third-party
   signals:
     - traces: 
 - keys:
     - GRPCNETCLIENT
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: Grpc.Net.Client
-      supportedVersions: 2.52.0 to 3.0.0
+      supported_versions: 2.52.0 to 3.0.0
   stability: beta
-  supportabilityLevel: community
+  supportability_level: community
   dependencies:
     - name: Grpc.Net.Client Instrumentation for OpenTelemetry
       link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.GrpcNetClient
@@ -101,19 +101,19 @@
     - traces: 
 - keys:
     - HTTPCLIENT
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: System.Net.Http.HttpClient
-      supportedVersions: See :ref:`dotnet-otel-versions`
+      supported_versions: See :ref:`dotnet-otel-versions`
     - name: System.Net.HttpWebRequest
-      supportedVersions: See :ref:`dotnet-otel-versions`
+      supported_versions: See :ref:`dotnet-otel-versions`
   stability: beta
-  supportabilityLevel: community
+  supportability_level: community
   dependencies:
     - name: HttpClient and HttpWebRequest instrumentation for OpenTelemetry
       link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.Http
       version: 1.5.1-beta.1
       stability: beta
-  toDoComment: how to handle two libraries? convert to array?, reflink in versions
+  to_do_comment: how to handle two libraries? convert to array?, reflink in versions
   signals:
     - traces: 
     - metrics:
@@ -125,59 +125,59 @@
           description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
 - keys:
     - MASSTRANSIT
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: MassTransit
-      supportedVersions: 8.0.0 and higher
+      supported_versions: 8.0.0 and higher
   comment: Not supported on .NET Framework
   stability: beta
-  supportabilityLevel: third-party
+  supportability_level: third-party
   signals:
     - traces: 
 - keys:
     - MONGODB
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: MongoDB.Driver.Core
-      supportedVersions: 2.13.3 to 3.0.0
+      supported_versions: 2.13.3 to 3.0.0
   comment: Not supported on .NET Framework
   stability: beta
-  supportabilityLevel: third-party
+  supportability_level: third-party
   signals:
     - traces: 
 - keys:
     - MYSQLCONNECTOR
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: MySqlConnector
-      supportedVersions: 2.0.0 and higher
+      supported_versions: 2.0.0 and higher
   stability: beta
-  supportabilityLevel: third-party
+  supportability_level: third-party
   signals:
     - traces: 
 - keys:
     - MYSQLDATA
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: MySql.Data
-      supportedVersions: 8.1.0 and higher
+      supported_versions: 8.1.0 and higher
   comment: Not supported on .NET Framework
   stability: beta
-  supportabilityLevel: third-party
+  supportability_level: third-party
   signals:
     - traces: 
 - keys:
     - NPGSQL
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: Npgsql
-      supportedVersions: 6.0.0 and higher
+      supported_versions: 6.0.0 and higher
   stability: beta
-  supportabilityLevel: third-party
+  supportability_level: third-party
   signals:
     - traces: 
 - keys:
     - NSERVICEBUS
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: NServiceBus
-      supportedVersions: 8.0.0 and higher
+      supported_versions: 8.0.0 and higher
   stability: beta
-  supportabilityLevel: third-party
+  supportability_level: third-party
   signals:
     - traces: 
     - metrics:
@@ -192,12 +192,12 @@
           description: Number of messages unsuccessfully processed by the endpoint.
 - keys:
     - QUARTZ
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: Quartz
-      supportedVersions: 3.4.0 and higher
+      supported_versions: 3.4.0 and higher
   comment: Not supported on .NET Framework 4.7.1 and lower
   stability: beta
-  supportabilityLevel: community
+  supportability_level: community
   dependencies:
     - name: QuartzNET Instrumentation for OpenTelemetry .NET
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Quartz
@@ -207,12 +207,12 @@
     - traces: 
 - keys:
     - STACKEXCHANGEREDIS
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: StackExchange.Redis
-      supportedVersions: 2.0.405 to 3.0.0
+      supported_versions: 2.0.405 to 3.0.0
   comment: Not supported on .NET Framework
   stability: beta
-  supportabilityLevel: community
+  supportability_level: community
   dependencies:
     - name: StackExchange.Redis Instrumentation for OpenTelemetry
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.StackExchangeRedis
@@ -223,12 +223,12 @@
 - keys:
     - WCFCLIENT
     - WCFSERVICE
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: System.ServiceModel
-      supportedVersions: 4.7.0 and higher of `System.ServiceModel.Primitives`
+      supported_versions: 4.7.0 and higher of `System.ServiceModel.Primitives`
   comment: Service side not supported on .NET. `WCFCLIENT for client side instrumentation and `WCFSERVICE` for service side instrumentation
   stability: beta
-  supportabilityLevel: community
+  supportability_level: community
   dependencies:
     - name: WCF Instrumentation for OpenTelemetry .NET
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Wcf
@@ -238,10 +238,10 @@
     - traces: 
 - keys:
     - NETRUNTIME
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: .NET runtime
   stability: beta
-  supportabilityLevel: community
+  supportability_level: community
   dependencies:
     - name: Runtime Instrumentation for OpenTelemetry .NET
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Runtime
@@ -302,10 +302,10 @@
           description: Count of exceptions thrown in managed code since the observation started.
 - keys:
     - PROCESS
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: Process
   stability: beta
-  supportabilityLevel: community
+  supportability_level: community
   dependencies:
     - name: Process Instrumentation for OpenTelemetry .NET
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Process
@@ -330,11 +330,11 @@
           description: Process threads count.
 - keys:
     - ILOGGER
-  instrumentedLibraries:
+  instrumented_libraries:
     - name: Microsoft.Extensions.Logging
-      supportedVersions: 6.0.0 and higher
+      supported_versions: 6.0.0 and higher
   comment: Not supported on .NET Framework
   stability: beta
-  supportabilityLevel: community
+  supportability_level: community
   signals:
     - logs: 
