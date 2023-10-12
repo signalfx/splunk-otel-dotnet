@@ -29,8 +29,8 @@ public static class InstrumentationData
 
         var instrumentations = new Instrumentation[]
         {
-            new(new[] {"ASPNET"}, "ASP.NET Framework (.NET Framework)", "See :ref:`dotnet-otel-versions`", "MVC / WebApi (Only integrated pipeline mode supported). Metrics requires trace instrumentation.", "beta", "community", new [] {new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet", "1.0.0-rc9.9", "beta"), new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet.TelemetryHttpModule", "1.0.0-rc9.9", "beta") }, new SignalsList[]{new TracesList(), new MetricList(new MetricData("http.server.duration_{bucket|count|sum}", "Cumulative counters (histogram)", "Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.")) }) {ToDoComment = "version with ref link"},
-            new("ASPNETCORE", "ASP.NET Core", "See :ref:`dotnet-otel-versions`", "Metrics automatically activates `Microsoft.AspNetCore.Hosting.HttpRequestIn` spans.", "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.AspNetCore", "1.5.1-beta.1", "beta"), new SignalsList[]{new TracesList(), new MetricList(new MetricData("http.server.duration_{bucket|count|sum}", "Cumulative counters (histogram)", "Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.")) }) {ToDoComment = "reflink in version"},
+            new(new[] {"ASPNET"}, "ASP.NET Framework (.NET Framework)", "See :ref:`dotnet-otel-versions`", "MVC / WebApi (Only integrated pipeline mode supported). Metrics requires trace instrumentation.", "beta", "community", new [] {new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet", "1.0.0-rc9.9", "beta"), new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet.TelemetryHttpModule", "1.0.0-rc9.9", "beta") }, new SignalsList[]{new TracesList(), new MetricList(new MetricData("http.server.duration_{bucket|count|sum}", "Cumulative counters (histogram)", "Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.")) }) {ToDoComment = "supportedVersions with ref link"},
+            new("ASPNETCORE", "ASP.NET Core", "See :ref:`dotnet-otel-versions`", "Metrics automatically activates `Microsoft.AspNetCore.Hosting.HttpRequestIn` spans.", "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.AspNetCore", "1.5.1-beta.1", "beta"), new SignalsList[]{new TracesList(), new MetricList(new MetricData("http.server.duration_{bucket|count|sum}", "Cumulative counters (histogram)", "Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.")) }) {ToDoComment = "reflink in supportedVersions"},
             new("AZURE", "Azure SDK", "`Azure.` prefixed packages, released after October 1, 2021", null, "beta", "third-party", new TracesList()),
             new("ELASTICSEARCH", "Elastic.Clients.Elasticsearch", "8.0.0 and higher", null, "beta", "third-party", new TracesList()),
             new("ENTITYFRAMEWORKCORE", "Microsoft.EntityFrameworkCore", "6.0.12 and higher", "Not supported on .NET Framework", "beta", "community", new Dependency("https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.EntityFrameworkCore", "1.0.0-beta.7", "beta"), new SignalsList[]{new TracesList()}),
@@ -59,21 +59,21 @@ public static class InstrumentationData
 
 public class Instrumentation
 {
-    public Instrumentation(string key, string library, string version, string? comment, string stability, string supportabilityLevel, SignalsList signalsList)
-        : this(new[] {key}, library, version, comment, stability, supportabilityLevel, Array.Empty<Dependency>(), new[] {signalsList})
+    public Instrumentation(string key, string library, string supportedVersions, string? comment, string stability, string supportabilityLevel, SignalsList signalsList)
+        : this(new[] {key}, library, supportedVersions, comment, stability, supportabilityLevel, Array.Empty<Dependency>(), new[] {signalsList})
     {
     }
 
-    public Instrumentation(string key, string library, string version, string? comment, string stability, string supportabilityLevel, Dependency dependency, SignalsList[] signalsList)
-        : this(new[] { key }, library, version, comment, stability, supportabilityLevel, new[] { dependency }, signalsList)
+    public Instrumentation(string key, string library, string supportedVersions, string? comment, string stability, string supportabilityLevel, Dependency dependency, SignalsList[] signalsList)
+        : this(new[] { key }, library, supportedVersions, comment, stability, supportabilityLevel, new[] { dependency }, signalsList)
     {
     }
 
-    public Instrumentation(string[] keys, string library, string version, string? comment, string stability, string supportabilityLevel, Dependency[] dependencies, SignalsList[] signalsList)
+    public Instrumentation(string[] keys, string library, string supportedVersions, string? comment, string stability, string supportabilityLevel, Dependency[] dependencies, SignalsList[] signalsList)
     {
         Keys = keys;
         Library = library;
-        Version = version;
+        SupportedVersions = supportedVersions;
         Comment = comment;
         Stability = stability;
         SupportabilityLevel = supportabilityLevel;
@@ -85,7 +85,7 @@ public class Instrumentation
 
     public string Library { get; set; }
 
-    public string Version { get; set; }
+    public string SupportedVersions { get; set; }
 
     [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
     public string? Comment { get; set; }

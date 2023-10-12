@@ -203,7 +203,7 @@ instrumentations:
   - keys:
       - ASPNET
     library: ASP.NET Framework (.NET Framework)
-    version: See :ref:`dotnet-otel-versions`
+    supportedVersions: See :ref:`dotnet-otel-versions`
     comment: MVC / WebApi (Only integrated pipeline mode supported). Metrics requires trace instrumentation.
     stability: beta
     supportabilityLevel: community
@@ -214,7 +214,7 @@ instrumentations:
       - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet.TelemetryHttpModule
         version: 1.0.0-rc9.9
         stability: beta
-    toDoComment: version with ref link
+    toDoComment: supportedVersions with ref link
     signals:
       - traces: 
       - metrics:
@@ -224,7 +224,7 @@ instrumentations:
   - keys:
       - ASPNETCORE
     library: ASP.NET Core
-    version: See :ref:`dotnet-otel-versions`
+    supportedVersions: See :ref:`dotnet-otel-versions`
     comment: Metrics automatically activates `Microsoft.AspNetCore.Hosting.HttpRequestIn` spans.
     stability: beta
     supportabilityLevel: community
@@ -232,7 +232,7 @@ instrumentations:
       - link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.AspNetCore
         version: 1.5.1-beta.1
         stability: beta
-    toDoComment: reflink in version
+    toDoComment: reflink in supportedVersions
     signals:
       - traces: 
       - metrics:
@@ -242,7 +242,7 @@ instrumentations:
   - keys:
       - AZURE
     library: Azure SDK
-    version: '`Azure.` prefixed packages, released after October 1, 2021'
+    supportedVersions: '`Azure.` prefixed packages, released after October 1, 2021'
     stability: beta
     supportabilityLevel: third-party
     signals:
@@ -250,7 +250,7 @@ instrumentations:
   - keys:
       - ELASTICSEARCH
     library: Elastic.Clients.Elasticsearch
-    version: 8.0.0 and higher
+    supportedVersions: 8.0.0 and higher
     stability: beta
     supportabilityLevel: third-party
     signals:
@@ -258,7 +258,7 @@ instrumentations:
   - keys:
       - ENTITYFRAMEWORKCORE
     library: Microsoft.EntityFrameworkCore
-    version: 6.0.12 and higher
+    supportedVersions: 6.0.12 and higher
     comment: Not supported on .NET Framework
     stability: beta
     supportabilityLevel: community
@@ -271,7 +271,7 @@ instrumentations:
   - keys:
       - GRAPHQL
     library: GraphQL
-    version: 7.5.0 and higher
+    supportedVersions: 7.5.0 and higher
     comment: Not supported on .NET Framework
     stability: beta
     supportabilityLevel: third-party
@@ -280,7 +280,7 @@ instrumentations:
   - keys:
       - GRPCNETCLIENT
     library: Grpc.Net.Client
-    version: 2.52.0 to 3.0.0
+    supportedVersions: 2.52.0 to 3.0.0
     stability: beta
     supportabilityLevel: community
     dependencies:
@@ -292,7 +292,7 @@ instrumentations:
   - keys:
       - HTTPCLIENT
     library: System.Net.Http.HttpClient and System.Net.HttpWebRequest
-    version: See :ref:`dotnet-otel-versions`
+    supportedVersions: See :ref:`dotnet-otel-versions`
     stability: beta
     supportabilityLevel: community
     dependencies:
@@ -312,7 +312,7 @@ instrumentations:
   - keys:
       - MASSTRANSIT
     library: MassTransit
-    version: 8.0.0 and higher
+    supportedVersions: 8.0.0 and higher
     comment: Not supported on .NET Framework
     stability: beta
     supportabilityLevel: third-party
@@ -321,7 +321,7 @@ instrumentations:
   - keys:
       - MONGODB
     library: MongoDB.Driver.Core
-    version: 2.13.3 to 3.0.0
+    supportedVersions: 2.13.3 to 3.0.0
     comment: Not supported on .NET Framework
     stability: beta
     supportabilityLevel: third-party
@@ -330,7 +330,7 @@ instrumentations:
   - keys:
       - MYSQLCONNECTOR
     library: MySqlConnector
-    version: 2.0.0 and higher
+    supportedVersions: 2.0.0 and higher
     stability: beta
     supportabilityLevel: third-party
     signals:
@@ -338,7 +338,7 @@ instrumentations:
   - keys:
       - MYSQLDATA
     library: MySql.Data
-    version: 8.1.0 and higher
+    supportedVersions: 8.1.0 and higher
     comment: Not supported on .NET Framework
     stability: beta
     supportabilityLevel: third-party
@@ -347,7 +347,7 @@ instrumentations:
   - keys:
       - NPGSQL
     library: Npgsql
-    version: 6.0.0 and higher
+    supportedVersions: 6.0.0 and higher
     stability: beta
     supportabilityLevel: third-party
     signals:
@@ -355,7 +355,7 @@ instrumentations:
   - keys:
       - NSERVICEBUS
     library: NServiceBus
-    version: 8.0.0 and higher
+    supportedVersions: 8.0.0 and higher
     stability: beta
     supportabilityLevel: third-party
     signals:
@@ -373,7 +373,7 @@ instrumentations:
   - keys:
       - QUARTZ
     library: Quartz
-    version: 3.4.0 and higher
+    supportedVersions: 3.4.0 and higher
     comment: Not supported on .NET Framework 4.7.1 and lower
     stability: beta
     supportabilityLevel: community
@@ -386,7 +386,7 @@ instrumentations:
   - keys:
       - STACKEXCHANGEREDIS
     library: StackExchange.Redis
-    version: 2.0.405 to 3.0.0
+    supportedVersions: 2.0.405 to 3.0.0
     comment: Not supported on .NET Framework
     stability: beta
     supportabilityLevel: community
@@ -400,7 +400,7 @@ instrumentations:
       - WCFCLIENT
       - WCFSERVICE
     library: System.ServiceModel
-    version: 4.7.0 and higher of `System.ServiceModel.Primitives`
+    supportedVersions: 4.7.0 and higher of `System.ServiceModel.Primitives`
     comment: Service side not supported on .NET. `WCFCLIENT for client side instrumentation and `WCFSERVICE` for service side instrumentation
     stability: beta
     supportabilityLevel: community
@@ -413,7 +413,7 @@ instrumentations:
   - keys:
       - NETRUNTIME
     library: .NET runtime
-    version: any
+    supportedVersions: any
     stability: beta
     supportabilityLevel: community
     dependencies:
@@ -476,7 +476,7 @@ instrumentations:
   - keys:
       - PROCESS
     library: Process
-    version: any
+    supportedVersions: any
     stability: beta
     supportabilityLevel: community
     dependencies:
@@ -503,7 +503,7 @@ instrumentations:
   - keys:
       - ILOGGER
     library: Microsoft.Extensions.Logging
-    version: 6.0.0 and higher
+    supportedVersions: 6.0.0 and higher
     comment: Not supported on .NET Framework
     stability: beta
     supportabilityLevel: community
