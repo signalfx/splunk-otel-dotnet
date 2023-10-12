@@ -1,10 +1,12 @@
 component: Splunk Distribution of OpenTelemetry .NET
 version: 1.0.2
 dependencies:
-  - link: https://github.com/open-telemetry/opentelemetry-dotnet
+  - name: OpenTelemetry .NET
+    link: https://github.com/open-telemetry/opentelemetry-dotnet
     version: 1.6.0
     stability: stable
-  - link: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation
+  - name: OpenTelemetry .NET Automatic Instrumentation
+    link: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation
     version: 1.0.2
     stability: stable
 settings:
@@ -209,10 +211,12 @@ instrumentations:
     stability: beta
     supportabilityLevel: community
     dependencies:
-      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet
+      - name: ASP.NET Instrumentation for OpenTelemetry
+        link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet
         version: 1.0.0-rc9.9
         stability: beta
-      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet.TelemetryHttpModule
+      - name: ASP.NET Telemetry HttpModule for OpenTelemetry
+        link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet.TelemetryHttpModule
         version: 1.0.0-rc9.9
         stability: beta
     toDoComment: supportedVersions with ref link
@@ -231,7 +235,8 @@ instrumentations:
     stability: beta
     supportabilityLevel: community
     dependencies:
-      - link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.AspNetCore
+      - name: ASP.NET Core Instrumentation for OpenTelemetry .NET
+        link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.AspNetCore
         version: 1.5.1-beta.1
         stability: beta
     toDoComment: reflink in supportedVersions
@@ -268,7 +273,8 @@ instrumentations:
     stability: beta
     supportabilityLevel: community
     dependencies:
-      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.EntityFrameworkCore
+      - name: EntityFrameworkCore Instrumentation for OpenTelemetry .NET
+        link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.EntityFrameworkCore
         version: 1.0.0-beta.7
         stability: beta
     signals:
@@ -291,7 +297,8 @@ instrumentations:
     stability: beta
     supportabilityLevel: community
     dependencies:
-      - link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.GrpcNetClient
+      - name: Grpc.Net.Client Instrumentation for OpenTelemetry
+        link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.GrpcNetClient
         version: 1.5.1-beta.1
         stability: beta
     signals:
@@ -306,7 +313,8 @@ instrumentations:
     stability: beta
     supportabilityLevel: community
     dependencies:
-      - link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.Http
+      - name: HttpClient and HttpWebRequest instrumentation for OpenTelemetry
+        link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.Http
         version: 1.5.1-beta.1
         stability: beta
     toDoComment: how to handle two libraries? convert to array?, reflink in versions
@@ -395,7 +403,8 @@ instrumentations:
     stability: beta
     supportabilityLevel: community
     dependencies:
-      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Quartz
+      - name: QuartzNET Instrumentation for OpenTelemetry .NET
+        link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Quartz
         version: 1.0.0-alpha.3
         stability: alpha
     signals:
@@ -409,7 +418,8 @@ instrumentations:
     stability: beta
     supportabilityLevel: community
     dependencies:
-      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.StackExchangeRedis
+      - name: StackExchange.Redis Instrumentation for OpenTelemetry
+        link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.StackExchangeRedis
         version: 1.0.0-rc9.10
         stability: beta
     signals:
@@ -424,7 +434,8 @@ instrumentations:
     stability: beta
     supportabilityLevel: community
     dependencies:
-      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Wcf
+      - name: WCF Instrumentation for OpenTelemetry .NET
+        link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Wcf
         version: 1.0.0-rc.12
         stability: beta
     signals:
@@ -436,7 +447,8 @@ instrumentations:
     stability: beta
     supportabilityLevel: community
     dependencies:
-      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Runtime
+      - name: Runtime Instrumentation for OpenTelemetry .NET
+        link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Runtime
         version: 1.5.1
         stability: stable
     signals:
@@ -499,7 +511,8 @@ instrumentations:
     stability: beta
     supportabilityLevel: community
     dependencies:
-      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Process
+      - name: Process Instrumentation for OpenTelemetry .NET
+        link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Process
         version: 0.5.0-beta.3
         stability: beta
     signals:
@@ -545,7 +558,8 @@ resourceDetectors:
     stability: beta
     supportabilityLevel: community
     dependencies:
-      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.Azure
+      - name: Resource Detectors for Azure cloud environments
+        link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.Azure
         version: 1.0.0-beta.3
         stability: beta
   - key: CONTAINER
@@ -555,6 +569,7 @@ resourceDetectors:
     stability: beta
     supportabilityLevel: community
     dependencies:
-      - link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.Container
+      - name: Container Resource Detectors
+        link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.Container
         version: 1.0.0-beta.4
         stability: beta

@@ -1,10 +1,12 @@
 component: Splunk Distribution of OpenTelemetry .NET
 version: 1.0.2
 dependencies:
-  - link: https://github.com/open-telemetry/opentelemetry-dotnet
+  - name: OpenTelemetry .NET
+    link: https://github.com/open-telemetry/opentelemetry-dotnet
     version: 1.6.0
     stability: stable
-  - link: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation
+  - name: OpenTelemetry .NET Automatic Instrumentation
+    link: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation
     version: 1.0.2
     stability: stable
 settingsFiles:
