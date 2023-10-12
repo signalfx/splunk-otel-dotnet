@@ -217,7 +217,10 @@ instrumentations:
     toDoComment: version with ref link
     signals:
       - traces: 
-      - metrics: 
+      - metrics:
+          - metric: http.server.duration_{bucket|count|sum}
+            type: Cumulative counters (histogram)
+            description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
   - keys:
       - ASPNETCORE
     library: ASP.NET Core
@@ -232,7 +235,10 @@ instrumentations:
     toDoComment: reflink in version
     signals:
       - traces: 
-      - metrics: 
+      - metrics:
+          - metric: http.server.duration_{bucket|count|sum}
+            type: Cumulative counters (histogram)
+            description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
   - keys:
       - AZURE
     library: Azure SDK
