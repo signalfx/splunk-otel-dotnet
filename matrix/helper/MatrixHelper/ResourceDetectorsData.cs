@@ -1,4 +1,6 @@
-﻿public static class ResourceDetectorsData
+﻿namespace MatrixHelper;
+
+public static class ResourceDetectorsData
 {
     public static ResourceDetector[] GetResourceDetectors()
     {

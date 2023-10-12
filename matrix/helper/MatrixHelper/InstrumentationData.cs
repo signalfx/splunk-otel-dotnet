@@ -1,5 +1,7 @@
 ﻿using YamlDotNet.Serialization;
 
+namespace MatrixHelper;
+
 public static class InstrumentationData
 {
     public static Instrumentation[] GetInstrumentations()

@@ -1,10 +1,10 @@
-﻿using MatrixHelper;
+﻿namespace MatrixHelper;
 
-public static class MetaDataData
+public static class MetadataData
 {
-    public static MetaData GetMetaData()
+    public static Metadata GetMetaData()
     {
-        return new MetaData
+        return new Metadata
         {
             Component = "Splunk Distribution of OpenTelemetry .NET",
             Version = "1.0.2",
@@ -48,7 +48,7 @@ public class AllInOne
     public ResourceDetector[] ResourceDetectors { get; set; }
 }
 
-public class MetaData
+public class Metadata
 {
     public string Component { get; set; }
     public string Version { get; set; }

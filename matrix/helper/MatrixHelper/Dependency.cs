@@ -1,4 +1,6 @@
-﻿public class Dependency
+﻿namespace MatrixHelper;
+
+public class Dependency
 {
     public Dependency(string link, string version, string stability)
     {
