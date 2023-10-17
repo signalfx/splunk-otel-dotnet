@@ -14,7 +14,7 @@
   support: community
   dependencies:
     - name: Resource Detectors for Azure cloud environments
-      link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.Azure
+      source_href: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.Azure
       version: 1.0.0-beta.3
       stability: beta
 - key: CONTAINER
@@ -25,6 +25,6 @@
   support: community
   dependencies:
     - name: Container Resource Detectors
-      link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.Container
+      source_href: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.Container
       version: 1.0.0-beta.4
       stability: beta

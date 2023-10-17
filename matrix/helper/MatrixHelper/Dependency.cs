@@ -2,16 +2,16 @@
 
 public class Dependency
 {
-    public Dependency(string name, string link, string version, string stability)
+    public Dependency(string name, string sourceHref, string version, string stability)
     {
         Name = name;
-        Link = link;
+        SourceHref = sourceHref;
         Version = version;
         Stability = stability;
     }
 
     public string Name { get; set; }
-    public string Link { get; set; }
+    public string SourceHref { get; set; }
     public string Version { get; set; }
     public string Stability { get; set; }  
 }
