@@ -36,7 +36,7 @@ public static class InstrumentationData
             new("ENTITYFRAMEWORKCORE", new InstrumentedComponent("Microsoft.EntityFrameworkCore", "6.0.12 and higher"), "Not supported on .NET Framework", "beta", "community", new Dependency("EntityFrameworkCore Instrumentation for OpenTelemetry .NET", "https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.EntityFrameworkCore", "https://www.nuget.org/packages/OpenTelemetry.Instrumentation.EntityFrameworkCore", "1.0.0-beta.7", "beta"), new SignalsList[]{new TracesList()}),
             new("GRAPHQL", new InstrumentedComponent("GraphQL", "7.5.0 and higher"), "Not supported on .NET Framework", "beta", "third-party", new TracesList()),
             new("GRPCNETCLIENT", new InstrumentedComponent("Grpc.Net.Client", "2.52.0 to 3.0.0"), null, "beta", "community", new Dependency("Grpc.Net.Client Instrumentation for OpenTelemetry", "https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.GrpcNetClient", "https://www.nuget.org/packages/OpenTelemetry.Instrumentation.GrpcNetClient", "1.5.1-beta.1", "beta"), new SignalsList[] { new TracesList() }),
-            new(new [] {"HTTPCLIENT"}, new[] {new InstrumentedComponent("System.Net.Http.HttpClient", "See :ref:`dotnet-otel-versions`"),  new InstrumentedComponent("System.Net.HttpWebRequest", "See :ref:`dotnet-otel-versions`") }, null, "beta", "community", new[] { new Dependency("HttpClient and HttpWebRequest instrumentation for OpenTelemetry", "https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.Http", "https://www.nuget.org/packages/OpenTelemetry.Instrumentation.Http", "1.5.1-beta.1", "beta") }, new SignalsList[] { new TracesList(), new MetricList(new MetricData("http.client.duration_{bucket|count|sum}", "Cumulative counters (histogram)", "Duration of outbound HTTP requests, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs."), new MetricData("http.server.duration_{bucket|count|sum}", "Cumulative counters (histogram)", "Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.")) } ) {ToDoComment = "how to handle two libraries? convert to array?, reflink in versions"},
+            new(new [] {"HTTPCLIENT"}, new[] {new InstrumentedComponent("System.Net.Http.HttpClient", "See :ref:`dotnet-otel-versions`"),  new InstrumentedComponent("System.Net.HttpWebRequest", "See :ref:`dotnet-otel-versions`") }, null, "beta", "community", new[] { new Dependency("HttpClient and HttpWebRequest instrumentation for OpenTelemetry", "https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.Http", "https://www.nuget.org/packages/OpenTelemetry.Instrumentation.Http", "1.5.1-beta.1", "beta") }, new SignalsList[] { new TracesList(), new MetricList(new MetricData("http.client.duration_{bucket|count|sum}", "Cumulative counters (histogram)", "Duration of outbound HTTP requests, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs."), new MetricData("http.server.duration_{bucket|count|sum}", "Cumulative counters (histogram)", "Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.")) } ) {ToDoComment = "reflink in versions"},
             new("MASSTRANSIT", new InstrumentedComponent("MassTransit", "8.0.0 and higher"), "Not supported on .NET Framework", "beta", "third-party", new TracesList()),
             new("MONGODB", new InstrumentedComponent("MongoDB.Driver.Core", "2.13.3 to 3.0.0"), "Not supported on .NET Framework", "beta", "third-party", new TracesList()),
             new("MYSQLCONNECTOR", new InstrumentedComponent("MySqlConnector", "2.0.0 and higher"), null, "beta", "third-party", new TracesList()),
@@ -107,14 +107,14 @@ public class SignalsList
 
 public class MetricData
 {
-    public MetricData(string metric, string type, string description)
+    public MetricData(string id, string type, string description)
     {
-        Metric = metric;
+        Id = id;
         Type = type;
         Description = description;
     }
 
-    public string Metric { get; set; }
+    public string Id { get; set; }
     public string Type { get; set; }
     public string Description { get; set; }
 }
