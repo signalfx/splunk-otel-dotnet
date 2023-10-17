@@ -3,7 +3,7 @@
   instrumented_components:
     - name: ASP.NET Framework (.NET Framework)
       supported_versions: See :ref:`dotnet-otel-versions`
-  comment: MVC / WebApi (Only integrated pipeline mode supported). Metrics requires trace instrumentation.
+  description: MVC / WebApi (Only integrated pipeline mode supported). Metrics requires trace instrumentation.
   stability: beta
   support: community
   dependencies:
@@ -27,7 +27,7 @@
   instrumented_components:
     - name: ASP.NET Core
       supported_versions: See :ref:`dotnet-otel-versions`
-  comment: Metrics automatically activates `Microsoft.AspNetCore.Hosting.HttpRequestIn` spans.
+  description: Metrics automatically activates `Microsoft.AspNetCore.Hosting.HttpRequestIn` spans.
   stability: beta
   support: community
   dependencies:
@@ -65,7 +65,7 @@
   instrumented_components:
     - name: Microsoft.EntityFrameworkCore
       supported_versions: 6.0.12 and higher
-  comment: Not supported on .NET Framework
+  description: Not supported on .NET Framework
   stability: beta
   support: community
   dependencies:
@@ -80,7 +80,7 @@
   instrumented_components:
     - name: GraphQL
       supported_versions: 7.5.0 and higher
-  comment: Not supported on .NET Framework
+  description: Not supported on .NET Framework
   stability: beta
   support: third-party
   signals:
@@ -128,7 +128,7 @@
   instrumented_components:
     - name: MassTransit
       supported_versions: 8.0.0 and higher
-  comment: Not supported on .NET Framework
+  description: Not supported on .NET Framework
   stability: beta
   support: third-party
   signals:
@@ -138,7 +138,7 @@
   instrumented_components:
     - name: MongoDB.Driver.Core
       supported_versions: 2.13.3 to 3.0.0
-  comment: Not supported on .NET Framework
+  description: Not supported on .NET Framework
   stability: beta
   support: third-party
   signals:
@@ -157,7 +157,7 @@
   instrumented_components:
     - name: MySql.Data
       supported_versions: 8.1.0 and higher
-  comment: Not supported on .NET Framework
+  description: Not supported on .NET Framework
   stability: beta
   support: third-party
   signals:
@@ -195,7 +195,7 @@
   instrumented_components:
     - name: Quartz
       supported_versions: 3.4.0 and higher
-  comment: Not supported on .NET Framework 4.7.1 and lower
+  description: Not supported on .NET Framework 4.7.1 and lower
   stability: beta
   support: community
   dependencies:
@@ -210,7 +210,7 @@
   instrumented_components:
     - name: StackExchange.Redis
       supported_versions: 2.0.405 to 3.0.0
-  comment: Not supported on .NET Framework
+  description: Not supported on .NET Framework
   stability: beta
   support: community
   dependencies:
@@ -226,7 +226,7 @@
   instrumented_components:
     - name: System.ServiceModel
       supported_versions: 4.7.0 and higher of `System.ServiceModel.Primitives`
-  comment: Service side not supported on .NET. `WCFCLIENT for client side instrumentation and `WCFSERVICE` for service side instrumentation
+  description: Service side not supported on .NET. `WCFCLIENT for client side instrumentation and `WCFSERVICE` for service side instrumentation
   stability: beta
   support: community
   dependencies:
@@ -333,7 +333,7 @@
   instrumented_components:
     - name: Microsoft.Extensions.Logging
       supported_versions: 6.0.0 and higher
-  comment: Not supported on .NET Framework
+  description: Not supported on .NET Framework
   stability: beta
   support: community
   signals:

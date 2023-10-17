@@ -59,21 +59,21 @@ public static class InstrumentationData
 
 public class Instrumentation
 {
-    public Instrumentation(string key, InstrumentedComponent instrumentedComponent, string? comment, string stability, string support, SignalsList signalsList)
-        : this(new[] {key}, new [] { instrumentedComponent }, comment, stability, support, Array.Empty<Dependency>(), new[] {signalsList})
+    public Instrumentation(string key, InstrumentedComponent instrumentedComponent, string? description, string stability, string support, SignalsList signalsList)
+        : this(new[] {key}, new [] { instrumentedComponent }, description, stability, support, Array.Empty<Dependency>(), new[] {signalsList})
     {
     }
 
-    public Instrumentation(string key, InstrumentedComponent instrumentedComponent, string? comment, string stability, string support, Dependency dependency, SignalsList[] signalsList)
-        : this(new[] { key }, new[] { instrumentedComponent }, comment, stability, support, new[] { dependency }, signalsList)
+    public Instrumentation(string key, InstrumentedComponent instrumentedComponent, string? description, string stability, string support, Dependency dependency, SignalsList[] signalsList)
+        : this(new[] { key }, new[] { instrumentedComponent }, description, stability, support, new[] { dependency }, signalsList)
     {
     }
 
-    public Instrumentation(string[] keys, InstrumentedComponent[] instrumentedComponents, string? comment, string stability, string support, Dependency[] dependencies, SignalsList[] signalsList)
+    public Instrumentation(string[] keys, InstrumentedComponent[] instrumentedComponents, string? description, string stability, string support, Dependency[] dependencies, SignalsList[] signalsList)
     {
         Keys = keys;
         InstrumentedComponents = instrumentedComponents;
-        Comment = comment;
+        Description = description;
         Stability = stability;
         Support = support;
         Dependencies = dependencies;
@@ -85,7 +85,7 @@ public class Instrumentation
     public InstrumentedComponent[] InstrumentedComponents { get; set; }
 
     [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
-    public string? Comment { get; set; }
+    public string? Description { get; set; }
 
     public string Stability { get; set; }
 
