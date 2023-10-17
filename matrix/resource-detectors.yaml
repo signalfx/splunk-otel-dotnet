@@ -11,7 +11,7 @@
     - id: service.instance.id
     - id: service.name
   stability: beta
-  supportability_level: community
+  support: community
   dependencies:
     - name: Resource Detectors for Azure cloud environments
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.Azure
@@ -22,7 +22,7 @@
   attributes:
     - id: container.id
   stability: beta
-  supportability_level: community
+  support: community
   dependencies:
     - name: Container Resource Detectors
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.Container

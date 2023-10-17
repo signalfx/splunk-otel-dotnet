@@ -59,23 +59,23 @@ public static class InstrumentationData
 
 public class Instrumentation
 {
-    public Instrumentation(string key, InstrumentedComponent instrumentedComponent, string? comment, string stability, string supportabilityLevel, SignalsList signalsList)
-        : this(new[] {key}, new [] { instrumentedComponent }, comment, stability, supportabilityLevel, Array.Empty<Dependency>(), new[] {signalsList})
+    public Instrumentation(string key, InstrumentedComponent instrumentedComponent, string? comment, string stability, string support, SignalsList signalsList)
+        : this(new[] {key}, new [] { instrumentedComponent }, comment, stability, support, Array.Empty<Dependency>(), new[] {signalsList})
     {
     }
 
-    public Instrumentation(string key, InstrumentedComponent instrumentedComponent, string? comment, string stability, string supportabilityLevel, Dependency dependency, SignalsList[] signalsList)
-        : this(new[] { key }, new[] { instrumentedComponent }, comment, stability, supportabilityLevel, new[] { dependency }, signalsList)
+    public Instrumentation(string key, InstrumentedComponent instrumentedComponent, string? comment, string stability, string support, Dependency dependency, SignalsList[] signalsList)
+        : this(new[] { key }, new[] { instrumentedComponent }, comment, stability, support, new[] { dependency }, signalsList)
     {
     }
 
-    public Instrumentation(string[] keys, InstrumentedComponent[] instrumentedComponents, string? comment, string stability, string supportabilityLevel, Dependency[] dependencies, SignalsList[] signalsList)
+    public Instrumentation(string[] keys, InstrumentedComponent[] instrumentedComponents, string? comment, string stability, string support, Dependency[] dependencies, SignalsList[] signalsList)
     {
         Keys = keys;
         InstrumentedComponents = instrumentedComponents;
         Comment = comment;
         Stability = stability;
-        SupportabilityLevel = supportabilityLevel;
+        Support = support;
         Dependencies = dependencies;
         Signals = signalsList;
     }
@@ -89,7 +89,7 @@ public class Instrumentation
 
     public string Stability { get; set; }
 
-    public string SupportabilityLevel { get; set; }
+    public string Support { get; set; }
 
     [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitEmptyCollections)]
     public Dependency[] Dependencies { get; set; }

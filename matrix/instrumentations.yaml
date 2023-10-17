@@ -5,7 +5,7 @@
       supported_versions: See :ref:`dotnet-otel-versions`
   comment: MVC / WebApi (Only integrated pipeline mode supported). Metrics requires trace instrumentation.
   stability: beta
-  supportability_level: community
+  support: community
   dependencies:
     - name: ASP.NET Instrumentation for OpenTelemetry
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet
@@ -29,7 +29,7 @@
       supported_versions: See :ref:`dotnet-otel-versions`
   comment: Metrics automatically activates `Microsoft.AspNetCore.Hosting.HttpRequestIn` spans.
   stability: beta
-  supportability_level: community
+  support: community
   dependencies:
     - name: ASP.NET Core Instrumentation for OpenTelemetry .NET
       link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.AspNetCore
@@ -48,7 +48,7 @@
     - name: Azure SDK
       supported_versions: '`Azure.` prefixed packages, released after October 1, 2021'
   stability: beta
-  supportability_level: third-party
+  support: third-party
   signals:
     - traces: 
 - keys:
@@ -57,7 +57,7 @@
     - name: Elastic.Clients.Elasticsearch
       supported_versions: 8.0.0 and higher
   stability: beta
-  supportability_level: third-party
+  support: third-party
   signals:
     - traces: 
 - keys:
@@ -67,7 +67,7 @@
       supported_versions: 6.0.12 and higher
   comment: Not supported on .NET Framework
   stability: beta
-  supportability_level: community
+  support: community
   dependencies:
     - name: EntityFrameworkCore Instrumentation for OpenTelemetry .NET
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.EntityFrameworkCore
@@ -82,7 +82,7 @@
       supported_versions: 7.5.0 and higher
   comment: Not supported on .NET Framework
   stability: beta
-  supportability_level: third-party
+  support: third-party
   signals:
     - traces: 
 - keys:
@@ -91,7 +91,7 @@
     - name: Grpc.Net.Client
       supported_versions: 2.52.0 to 3.0.0
   stability: beta
-  supportability_level: community
+  support: community
   dependencies:
     - name: Grpc.Net.Client Instrumentation for OpenTelemetry
       link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.GrpcNetClient
@@ -107,7 +107,7 @@
     - name: System.Net.HttpWebRequest
       supported_versions: See :ref:`dotnet-otel-versions`
   stability: beta
-  supportability_level: community
+  support: community
   dependencies:
     - name: HttpClient and HttpWebRequest instrumentation for OpenTelemetry
       link: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.Http
@@ -130,7 +130,7 @@
       supported_versions: 8.0.0 and higher
   comment: Not supported on .NET Framework
   stability: beta
-  supportability_level: third-party
+  support: third-party
   signals:
     - traces: 
 - keys:
@@ -140,7 +140,7 @@
       supported_versions: 2.13.3 to 3.0.0
   comment: Not supported on .NET Framework
   stability: beta
-  supportability_level: third-party
+  support: third-party
   signals:
     - traces: 
 - keys:
@@ -149,7 +149,7 @@
     - name: MySqlConnector
       supported_versions: 2.0.0 and higher
   stability: beta
-  supportability_level: third-party
+  support: third-party
   signals:
     - traces: 
 - keys:
@@ -159,7 +159,7 @@
       supported_versions: 8.1.0 and higher
   comment: Not supported on .NET Framework
   stability: beta
-  supportability_level: third-party
+  support: third-party
   signals:
     - traces: 
 - keys:
@@ -168,7 +168,7 @@
     - name: Npgsql
       supported_versions: 6.0.0 and higher
   stability: beta
-  supportability_level: third-party
+  support: third-party
   signals:
     - traces: 
 - keys:
@@ -177,7 +177,7 @@
     - name: NServiceBus
       supported_versions: 8.0.0 and higher
   stability: beta
-  supportability_level: third-party
+  support: third-party
   signals:
     - traces: 
     - metrics:
@@ -197,7 +197,7 @@
       supported_versions: 3.4.0 and higher
   comment: Not supported on .NET Framework 4.7.1 and lower
   stability: beta
-  supportability_level: community
+  support: community
   dependencies:
     - name: QuartzNET Instrumentation for OpenTelemetry .NET
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Quartz
@@ -212,7 +212,7 @@
       supported_versions: 2.0.405 to 3.0.0
   comment: Not supported on .NET Framework
   stability: beta
-  supportability_level: community
+  support: community
   dependencies:
     - name: StackExchange.Redis Instrumentation for OpenTelemetry
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.StackExchangeRedis
@@ -228,7 +228,7 @@
       supported_versions: 4.7.0 and higher of `System.ServiceModel.Primitives`
   comment: Service side not supported on .NET. `WCFCLIENT for client side instrumentation and `WCFSERVICE` for service side instrumentation
   stability: beta
-  supportability_level: community
+  support: community
   dependencies:
     - name: WCF Instrumentation for OpenTelemetry .NET
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Wcf
@@ -241,7 +241,7 @@
   instrumented_components:
     - name: .NET runtime
   stability: beta
-  supportability_level: community
+  support: community
   dependencies:
     - name: Runtime Instrumentation for OpenTelemetry .NET
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Runtime
@@ -305,7 +305,7 @@
   instrumented_components:
     - name: Process
   stability: beta
-  supportability_level: community
+  support: community
   dependencies:
     - name: Process Instrumentation for OpenTelemetry .NET
       link: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Process
@@ -335,6 +335,6 @@
       supported_versions: 6.0.0 and higher
   comment: Not supported on .NET Framework
   stability: beta
-  supportability_level: community
+  support: community
   signals:
     - logs: 

@@ -11,7 +11,7 @@ public static class ResourceDetectorsData
         };
     }
 }
-public class ResourceDetector(string key, string description, Attribute[] attributes, string stability, string supportabilityLevel, Dependency dependency)
+public class ResourceDetector(string key, string description, Attribute[] attributes, string stability, string support, Dependency dependency)
 {
     public string Key { get; set; } = key;
 
@@ -21,7 +21,7 @@ public class ResourceDetector(string key, string description, Attribute[] attrib
 
     public string Stability { get; set; } = stability;
 
-    public string SupportabilityLevel { get; set; } = supportabilityLevel;
+    public string Support { get; set; } = support;
 
     public Dependency[] Dependencies { get; set; } = new Dependency[] { dependency };
 }
