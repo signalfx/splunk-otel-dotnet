@@ -204,7 +204,7 @@ settings:
 instrumentations:
   - keys:
       - ASPNET
-    instrumented_libraries:
+    instrumented_components:
       - name: ASP.NET Framework (.NET Framework)
         supported_versions: See :ref:`dotnet-otel-versions`
     comment: MVC / WebApi (Only integrated pipeline mode supported). Metrics requires trace instrumentation.
@@ -228,7 +228,7 @@ instrumentations:
             description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
   - keys:
       - ASPNETCORE
-    instrumented_libraries:
+    instrumented_components:
       - name: ASP.NET Core
         supported_versions: See :ref:`dotnet-otel-versions`
     comment: Metrics automatically activates `Microsoft.AspNetCore.Hosting.HttpRequestIn` spans.
@@ -248,7 +248,7 @@ instrumentations:
             description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
   - keys:
       - AZURE
-    instrumented_libraries:
+    instrumented_components:
       - name: Azure SDK
         supported_versions: '`Azure.` prefixed packages, released after October 1, 2021'
     stability: beta
@@ -257,7 +257,7 @@ instrumentations:
       - traces: 
   - keys:
       - ELASTICSEARCH
-    instrumented_libraries:
+    instrumented_components:
       - name: Elastic.Clients.Elasticsearch
         supported_versions: 8.0.0 and higher
     stability: beta
@@ -266,7 +266,7 @@ instrumentations:
       - traces: 
   - keys:
       - ENTITYFRAMEWORKCORE
-    instrumented_libraries:
+    instrumented_components:
       - name: Microsoft.EntityFrameworkCore
         supported_versions: 6.0.12 and higher
     comment: Not supported on .NET Framework
@@ -281,7 +281,7 @@ instrumentations:
       - traces: 
   - keys:
       - GRAPHQL
-    instrumented_libraries:
+    instrumented_components:
       - name: GraphQL
         supported_versions: 7.5.0 and higher
     comment: Not supported on .NET Framework
@@ -291,7 +291,7 @@ instrumentations:
       - traces: 
   - keys:
       - GRPCNETCLIENT
-    instrumented_libraries:
+    instrumented_components:
       - name: Grpc.Net.Client
         supported_versions: 2.52.0 to 3.0.0
     stability: beta
@@ -305,7 +305,7 @@ instrumentations:
       - traces: 
   - keys:
       - HTTPCLIENT
-    instrumented_libraries:
+    instrumented_components:
       - name: System.Net.Http.HttpClient
         supported_versions: See :ref:`dotnet-otel-versions`
       - name: System.Net.HttpWebRequest
@@ -329,7 +329,7 @@ instrumentations:
             description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
   - keys:
       - MASSTRANSIT
-    instrumented_libraries:
+    instrumented_components:
       - name: MassTransit
         supported_versions: 8.0.0 and higher
     comment: Not supported on .NET Framework
@@ -339,7 +339,7 @@ instrumentations:
       - traces: 
   - keys:
       - MONGODB
-    instrumented_libraries:
+    instrumented_components:
       - name: MongoDB.Driver.Core
         supported_versions: 2.13.3 to 3.0.0
     comment: Not supported on .NET Framework
@@ -349,7 +349,7 @@ instrumentations:
       - traces: 
   - keys:
       - MYSQLCONNECTOR
-    instrumented_libraries:
+    instrumented_components:
       - name: MySqlConnector
         supported_versions: 2.0.0 and higher
     stability: beta
@@ -358,7 +358,7 @@ instrumentations:
       - traces: 
   - keys:
       - MYSQLDATA
-    instrumented_libraries:
+    instrumented_components:
       - name: MySql.Data
         supported_versions: 8.1.0 and higher
     comment: Not supported on .NET Framework
@@ -368,7 +368,7 @@ instrumentations:
       - traces: 
   - keys:
       - NPGSQL
-    instrumented_libraries:
+    instrumented_components:
       - name: Npgsql
         supported_versions: 6.0.0 and higher
     stability: beta
@@ -377,7 +377,7 @@ instrumentations:
       - traces: 
   - keys:
       - NSERVICEBUS
-    instrumented_libraries:
+    instrumented_components:
       - name: NServiceBus
         supported_versions: 8.0.0 and higher
     stability: beta
@@ -396,7 +396,7 @@ instrumentations:
             description: Number of messages unsuccessfully processed by the endpoint.
   - keys:
       - QUARTZ
-    instrumented_libraries:
+    instrumented_components:
       - name: Quartz
         supported_versions: 3.4.0 and higher
     comment: Not supported on .NET Framework 4.7.1 and lower
@@ -411,7 +411,7 @@ instrumentations:
       - traces: 
   - keys:
       - STACKEXCHANGEREDIS
-    instrumented_libraries:
+    instrumented_components:
       - name: StackExchange.Redis
         supported_versions: 2.0.405 to 3.0.0
     comment: Not supported on .NET Framework
@@ -427,7 +427,7 @@ instrumentations:
   - keys:
       - WCFCLIENT
       - WCFSERVICE
-    instrumented_libraries:
+    instrumented_components:
       - name: System.ServiceModel
         supported_versions: 4.7.0 and higher of `System.ServiceModel.Primitives`
     comment: Service side not supported on .NET. `WCFCLIENT for client side instrumentation and `WCFSERVICE` for service side instrumentation
@@ -442,7 +442,7 @@ instrumentations:
       - traces: 
   - keys:
       - NETRUNTIME
-    instrumented_libraries:
+    instrumented_components:
       - name: .NET runtime
     stability: beta
     supportability_level: community
@@ -506,7 +506,7 @@ instrumentations:
             description: Count of exceptions thrown in managed code since the observation started.
   - keys:
       - PROCESS
-    instrumented_libraries:
+    instrumented_components:
       - name: Process
     stability: beta
     supportability_level: community
@@ -534,7 +534,7 @@ instrumentations:
             description: Process threads count.
   - keys:
       - ILOGGER
-    instrumented_libraries:
+    instrumented_components:
       - name: Microsoft.Extensions.Logging
         supported_versions: 6.0.0 and higher
     comment: Not supported on .NET Framework
