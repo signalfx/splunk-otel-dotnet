@@ -10,8 +10,8 @@ public static class MetadataData
             Version = "1.0.2",
             Dependencies = new Dependency[]
             {
-                new("OpenTelemetry .NET", "https://github.com/open-telemetry/opentelemetry-dotnet", "1.6.0", "stable"),
-                new("OpenTelemetry .NET Automatic Instrumentation", "https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation", "1.0.2", "stable"),
+                new("OpenTelemetry .NET", "https://github.com/open-telemetry/opentelemetry-dotnet", null, "1.6.0", "stable"),
+                new("OpenTelemetry .NET Automatic Instrumentation", "https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation", null, "1.0.2", "stable"),
             },
             SettingsFiles = new[] { "settings.yaml" },
             InstrumentationFiles = new[] { "instrumentations.yaml" },
@@ -27,8 +27,8 @@ public static class MetadataData
             Version = "1.0.2",
             Dependencies = new Dependency[]
             {
-                new("OpenTelemetry .NET", "https://github.com/open-telemetry/opentelemetry-dotnet", "1.6.0", "stable"),
-                new("OpenTelemetry .NET Automatic Instrumentation", "https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation", "1.0.2", "stable"),
+                new("OpenTelemetry .NET", "https://github.com/open-telemetry/opentelemetry-dotnet", null, "1.6.0", "stable"),
+                new("OpenTelemetry .NET Automatic Instrumentation", "https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation", null, "1.0.2", "stable"),
             },
             Settings = SettingsData.GetSettings(),
             Instrumentations = InstrumentationData.GetInstrumentations(),

@@ -213,10 +213,12 @@ instrumentations:
     dependencies:
       - name: ASP.NET Instrumentation for OpenTelemetry
         source_href: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet
+        package_href: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.AspNet
         version: 1.0.0-rc9.9
         stability: beta
       - name: ASP.NET Telemetry HttpModule for OpenTelemetry
         source_href: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.AspNet.TelemetryHttpModule
+        package_href: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.AspNet.TelemetryHttpModule
         version: 1.0.0-rc9.9
         stability: beta
     to_do_comment: supportedVersions with ref link
@@ -237,6 +239,7 @@ instrumentations:
     dependencies:
       - name: ASP.NET Core Instrumentation for OpenTelemetry .NET
         source_href: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.AspNetCore
+        package_href: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.AspNetCore
         version: 1.5.1-beta.1
         stability: beta
     to_do_comment: reflink in supportedVersions
@@ -275,6 +278,7 @@ instrumentations:
     dependencies:
       - name: EntityFrameworkCore Instrumentation for OpenTelemetry .NET
         source_href: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.EntityFrameworkCore
+        package_href: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.EntityFrameworkCore
         version: 1.0.0-beta.7
         stability: beta
     signals:
@@ -299,6 +303,7 @@ instrumentations:
     dependencies:
       - name: Grpc.Net.Client Instrumentation for OpenTelemetry
         source_href: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.GrpcNetClient
+        package_href: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.GrpcNetClient
         version: 1.5.1-beta.1
         stability: beta
     signals:
@@ -315,6 +320,7 @@ instrumentations:
     dependencies:
       - name: HttpClient and HttpWebRequest instrumentation for OpenTelemetry
         source_href: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry.Instrumentation.Http
+        package_href: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.Http
         version: 1.5.1-beta.1
         stability: beta
     to_do_comment: how to handle two libraries? convert to array?, reflink in versions
@@ -405,6 +411,7 @@ instrumentations:
     dependencies:
       - name: QuartzNET Instrumentation for OpenTelemetry .NET
         source_href: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Quartz
+        package_href: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.Quartz
         version: 1.0.0-alpha.3
         stability: alpha
     signals:
@@ -420,6 +427,7 @@ instrumentations:
     dependencies:
       - name: StackExchange.Redis Instrumentation for OpenTelemetry
         source_href: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.StackExchangeRedis
+        package_href: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.StackExchangeRedis
         version: 1.0.0-rc9.10
         stability: beta
     signals:
@@ -436,6 +444,7 @@ instrumentations:
     dependencies:
       - name: WCF Instrumentation for OpenTelemetry .NET
         source_href: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Wcf
+        package_href: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.Wcf
         version: 1.0.0-rc.12
         stability: beta
     signals:
@@ -449,6 +458,7 @@ instrumentations:
     dependencies:
       - name: Runtime Instrumentation for OpenTelemetry .NET
         source_href: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Runtime
+        package_href: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.Runtime
         version: 1.5.1
         stability: stable
     signals:
@@ -513,6 +523,7 @@ instrumentations:
     dependencies:
       - name: Process Instrumentation for OpenTelemetry .NET
         source_href: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Process
+        package_href: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.Process
         version: 0.5.0-beta.3
         stability: beta
     signals:
@@ -560,6 +571,7 @@ resource_detectors:
     dependencies:
       - name: Resource Detectors for Azure cloud environments
         source_href: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.Azure
+        package_href: https://www.nuget.org/packages/OpenTelemetry.ResourceDetectors.Azure
         version: 1.0.0-beta.3
         stability: beta
   - key: CONTAINER
@@ -571,5 +583,6 @@ resource_detectors:
     dependencies:
       - name: Container Resource Detectors
         source_href: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.ResourceDetectors.Container
+        package_href: https://www.nuget.org/packages/OpenTelemetry.ResourceDetectors.Container
         version: 1.0.0-beta.4
         stability: beta
