@@ -107,15 +107,15 @@ public class SignalsList
 
 public class MetricData
 {
-    public MetricData(string id, string type, string description)
+    public MetricData(string id, string instrument, string description)
     {
         Id = id;
-        Type = type;
+        Instrument = instrument;
         Description = description;
     }
 
     public string Id { get; set; }
-    public string Type { get; set; }
+    public string Instrument { get; set; }
     public string Description { get; set; }
 }
 
