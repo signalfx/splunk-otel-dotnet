@@ -10,7 +10,7 @@ public static class InstrumentationData
         {
             new("process.runtime.dotnet.gc.collections.count", "Cumulative counter", "Number of garbage collections since the process started."),
             new("process.runtime.dotnet.gc.heap.size", "Gauge", "Heap size, as observed during the last garbage collection. Only available for .NET 6 or higher."),
-            new("rocess.runtime.dotnet.gc.heap.fragmentation.size", "Gauge", "Heap fragmentation, as observed during the last garbage collection. Only available for .NET 7 or higher."),
+            new("process.runtime.dotnet.gc.heap.fragmentation.size", "Gauge", "Heap fragmentation, as observed during the last garbage collection. Only available for .NET 7 or higher."),
             new("process.runtime.dotnet.gc.objects.size", "Gauge", "Count of bytes currently in use by live objects in the GC heap."),
             new("process.runtime.dotnet.gc.allocations.size", "Cumulative counter", "Count of bytes allocated on the managed GC heap since the process started. Only available for .NET 6 or higher."),
             new("process.runtime.dotnet.gc.committed_memory.size", "Gauge", "Amount of committed virtual memory for the managed GC heap, as observed during the last garbage collection. Only available for .NET 6 and higher."),
