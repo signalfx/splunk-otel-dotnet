@@ -10,172 +10,172 @@ dependencies:
     version: 1.0.2
     stability: stable
 settings:
-  - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
+  - env: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
     description: Activated by default. Adds server trace information to HTTP response headers. The default value is `true`.
     default: 'true'
     type: boolean
     category: general
-  - name: OTEL_DOTNET_AUTO_EXCLUDE_PROCESSES
+  - env: OTEL_DOTNET_AUTO_EXCLUDE_PROCESSES
     description: "Names of the executable files that you don't want the profiler to instrument. Supports multiple semicolon-separated values, for example: `ReservedProcess.exe;powershell.exe`. Notice that applications launched using dotnet MyApp.dll have process name `dotnet` or `dotnet.exe`. Can't be set using the web.config or app.config files."
     default: ''
     type: general
     category: string
-  - name: OTEL_DOTNET_AUTO_TRACES_ENABLED
+  - env: OTEL_DOTNET_AUTO_TRACES_ENABLED
     description: Long Traces are collected by default. To deactivate trace collection, set the environment variable to `false`. Data from custom or manual instrumentation is not affected.
     default: 'true'
     type: boolean
     category: general
-  - name: OTEL_DOTNET_AUTO_METRICS_ENABLED
+  - env: OTEL_DOTNET_AUTO_METRICS_ENABLED
     description: etrics are collected by default. To deactivate metric collection, set the environment variable to `false`. Data from custom or manual instrumentation is not affected.
     default: 'true'
     type: boolean
     category: general
-  - name: OTEL_DOTNET_AUTO_LOGS_ENABLED
+  - env: OTEL_DOTNET_AUTO_LOGS_ENABLED
     description: Logs are collected by default. To deactivate log collection, set the environment variable to `false`. Data from custom or manual instrumentation is not affected.
     default: 'true'
     type: boolean
     category: general
-  - name: OTEL_DOTNET_AUTO_OPENTRACING_ENABLED
+  - env: OTEL_DOTNET_AUTO_OPENTRACING_ENABLED
     description: Activates the OpenTracing tracer. The default value is `false`.
     default: 'false'
     type: boolean
     category: general
-  - name: OTEL_DOTNET_AUTO_NETFX_REDIRECT_ENABLED
+  - env: OTEL_DOTNET_AUTO_NETFX_REDIRECT_ENABLED
     description: Activates immediate redirection of the assemblies used by the automatic instrumentation on the .NET Framework. The default values is `true`. Can't be set using the web.config or app.config files.
     default: 'true'
     type: boolean
     category: general
-  - name: OTEL_DOTNET_AUTO_FLUSH_ON_UNHANDLEDEXCEPTION
+  - env: OTEL_DOTNET_AUTO_FLUSH_ON_UNHANDLEDEXCEPTION
     description: Controls whether the telemetry data is flushed when an `AppDomain.UnhandledException` event is raised. Set to `true` when experiencing missing telemetry at the same time of unhandled exceptions.
     default: 'false'
     type: boolean
     category: general
-  - name: OTEL_DOTNET_AUTO_RULE_ENGINE_ENABLED
+  - env: OTEL_DOTNET_AUTO_RULE_ENGINE_ENABLED
     description: Activates RuleEngine. The default values is `true`. RuleEngine increases the stability of the instrumentation by validating assemblies for unsupported scenarios.
     default: 'true'
     type: boolean
     category: general
-  - name: OTEL_DOTNET_AUTO_FAIL_FAST_ENABLED
+  - env: OTEL_DOTNET_AUTO_FAIL_FAST_ENABLED
     description: Activate to let the process fail when automatic instrumentation can't be executed. This setting is for debugging purposes, don't use it in production environments. The default value is `false`. Can't be set using the web.config or app.config files.
     default: 'false'
     type: boolean
     category: general
-  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+  - env: OTEL_EXPORTER_OTLP_ENDPOINT
     description: The URL to where traces and metrics are sent. The default value is `http://localhost:4318`. Setting a value overrides the `SPLUNK_REALM` environment variable.
     default: ''
     type: string
     category: exporter
-  - name: SPLUNK_REALM
+  - env: SPLUNK_REALM
     description: The name of your organization's realm, for example, `us0`. When you set the realm, telemetry is sent directly to the ingest endpoint of Splunk Observability Cloud, bypassing the Splunk Distribution of OpenTelemetry Collector.
     default: ''
     type: string
     category: exporter
-  - name: SPLUNK_ACCESS_TOKEN
+  - env: SPLUNK_ACCESS_TOKEN
     description: A Splunk authentication token that lets exporters send data directly to Splunk Observability Cloud. Unset by default. Required if you need to send data to the Splunk Observability Cloud ingest endpoint.
     default: ''
     type: string
     category: exporter
-  - name: OTEL_PROPAGATORS
+  - env: OTEL_PROPAGATORS
     description: Comma-separated list of propagators for the tracer. The default value is `tracecontext,baggage`. Supported values are `b3multi`, `b3`, `tracecontext`, and `baggage`.
     default: 'tracecontext,baggage'
     type: string
     category: trace propagation
-  - name: OTEL_TRACES_SAMPLER
+  - env: OTEL_TRACES_SAMPLER
     description: Sampler to use. The default value is `parentbased_always_on`. Supported values are `always_on`, `always_off`, `traceidratio`, `parentbased_always_on`, `parentbased_always_off`, and `parentbased_traceidratio`.
     default: 'parentbased_always_on'
     type: string
     category: sampler
-  - name: OTEL_TRACES_SAMPLER_ARG
+  - env: OTEL_TRACES_SAMPLER_ARG
     description: Semicolon-separated list of rules for the `rules` sampler. The default value is `1.0` for `parentbased_always_on`.
     default: '1.0'
     type: string
     category: sampler
-  - name: OTEL_DOTNET_AUTO_RESOURCE_DETECTOR_ENABLED
+  - env: OTEL_DOTNET_AUTO_RESOURCE_DETECTOR_ENABLED
     description: Activates or deactivates all resource detectors. The default values is `true`.
     default: 'true'
     type: boolean
     category: resource detector
-  - name: OTEL_DOTNET_AUTO_{DECTECTOR}_RESOURCE_DETECTOR_ENABLED
+  - env: OTEL_DOTNET_AUTO_{DECTECTOR}_RESOURCE_DETECTOR_ENABLED
     description: Activates or deactivates a specific resource detector, where `{DETECTOR}` is the uppercase identifier of the resource detector you want to activate. Overrides `OTEL_DOTNET_AUTO_RESOURCE_DETECTOR_ENABLED`.
     default: 'depends on `OTEL_DOTNET_AUTO_RESOURCE_DETECTOR_ENABLED`'
     type: boolean
     category: resource detector
-  - name: OTEL_SERVICE_NAME
+  - env: OTEL_SERVICE_NAME
     description: Name of the service or application you're instrumenting. Takes precedence over the service name defined in the `OTEL_RESOURCE_ATTRIBUTES` variable.
     default: ''
     type: string
     category: instrumentation
-  - name: OTEL_RESOURCE_ATTRIBUTES
+  - env: OTEL_RESOURCE_ATTRIBUTES
     description: Comma-separated list of resource attributes added to every reported span. For example, `key1=val1,key2=val2`.
     default: ''
     type: string
     category: instrumentation
-  - name: OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES
+  - env: OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES
     description: Comma-separated list of additional `System.Diagnostics.ActivitySource` names to be added to the tracer at startup. Use it to capture spans from manual instrumentation.
     default: ''
     type: string
     category: instrumentation
-  - name: OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES
+  - env: OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES
     description: Comma-separated list of additional `System.Diagnostics.Metrics.Meter` names to be added to the meter at the startup. Use it to capture custom metrics.
     default: ''
     type: string
     category: instrumentation
-  - name: OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT
+  - env: OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT
     description: Maximum number of attributes per span. Default value is unlimited.
     default: ''
     type: int
     category: instrumentation
-  - name: OTEL_SPAN_EVENT_COUNT_LIMIT
+  - env: OTEL_SPAN_EVENT_COUNT_LIMIT
     description: Maximum number of events per span. Default value is unlimited.
     default: ''
     type: int
     category: instrumentation
-  - name: OTEL_SPAN_LINK_COUNT_LIMIT
+  - env: OTEL_SPAN_LINK_COUNT_LIMIT
     description: Maximum number of links per span. Default value is `1000`.
     default: '1000'
     type: int
     category: instrumentation
-  - name: OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT
+  - env: OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT
     description: Maximum length of strings for attribute values. Values larger than the limit are truncated. Default value is `1200`. Empty values are treated as infinity.
     default: '1200'
     type: int
     category: instrumentation
-  - name: OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT
+  - env: OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT
     description: Whether the GraphQL instrumentation can pass raw queries as a `graphql.document` attribute. As queries might contain sensitive information, the default value is `false`.
     default: 'false'
     type: boolean
     category: instrumentation
-  - name: OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_LEGACY_SOURCES
+  - env: OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_LEGACY_SOURCES
     description: Comma-separated list of additional legacy source names to be added to the tracer at the startup. Use it to capture `System.Diagnostics.Activity` objects created without using the `System.Diagnostics.ActivitySource` API.
     default: ''
     type: string
     category: instrumentation
-  - name: OTEL_LOG_LEVEL
+  - env: OTEL_LOG_LEVEL
     description: Sets the logging level for instrumentation log messages. Possible values are `none`, `error`, `warn`, `info`, and `debug`. The default value is `info`. Can't be set using the web.config or app.config files.
     default: 'info'
     type: string
     category: diagnostic logging
-  - name: OTEL_DOTNET_AUTO_LOG_DIRECTORY
+  - env: OTEL_DOTNET_AUTO_LOG_DIRECTORY
     description: Directory of the .NET tracer logs. The default value is `/var/log/opentelemetry/dotnet` for Linux, and `%ProgramData%\OpenTelemetry .NET AutoInstrumentation\logs` for Windows. Can't be set using the web.config or app.config files.
     default: ''
     type: string
     category: diagnostic logging
-  - name: OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED
+  - env: OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED
     description: Whether the traces console exporter is activated. The default value is `false`.
     default: 'false'
     type: boolean
     category: diagnostic logging
-  - name: OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED
+  - env: OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED
     description: Whether the metrics console exporter is activated. The default value is `false`.
     default: 'false'
     type: boolean
     category: diagnostic logging
-  - name: OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED
+  - env: OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED
     description: Whether the logs console exporter is activated. The default value is `false`.The default value is `false`.
     default: 'false'
     type: boolean
     category: diagnostic logging
-  - name: OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE
+  - env: OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE
     description: Whether the log state have to be formatted. The default value is `false`.
     default: 'false'
     type: boolean

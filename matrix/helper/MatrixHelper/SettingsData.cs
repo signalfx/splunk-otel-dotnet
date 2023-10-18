@@ -70,9 +70,9 @@ public static class SettingsData
     }
 }
 
-public class Setting(string name, string description, string defaultValue, string type, string category)
+public class Setting(string env, string description, string defaultValue, string type, string category)
 {
-    public string Name { get; set; } = name;
+    public string Env { get; set; } = env;
     public string Description { get; set; } = description;
 
     [YamlMember(ScalarStyle = ScalarStyle.SingleQuoted)]
