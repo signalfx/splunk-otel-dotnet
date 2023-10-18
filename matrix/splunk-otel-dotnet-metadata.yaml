@@ -232,7 +232,7 @@ instrumentations:
       - ASPNETCORE
     instrumented_components:
       - name: ASP.NET Core
-        supported_versions: See :ref:`dotnet-otel-versions`
+        supported_versions: See general requierements
     description: Metrics automatically activates `Microsoft.AspNetCore.Hosting.HttpRequestIn` spans.
     stability: beta
     support: community
