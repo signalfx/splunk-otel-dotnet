@@ -195,12 +195,6 @@ settings:
     default: 'false'
     type: boolean
     category: diagnostic logging
-  - name: MANUAL SETTINGS
-    description: How to handle https://docs.splunk.com/observability/en/gdi/get-data-in/application/otel-dotnet/configuration/advanced-dotnet-configuration.html#environment-variables-for-manual-installation?
-    default: 'N/A'
-    type: N/A
-    category: manual
-    to_do_comment: See description
 instrumentations:
   - keys:
       - ASPNET

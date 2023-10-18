@@ -64,9 +64,6 @@ public static class SettingsData
             new("OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED", "Whether the metrics console exporter is activated. The default value is `false`.", "false", "boolean", diagnosticCategory),
             new("OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED", "Whether the logs console exporter is activated. The default value is `false`.The default value is `false`.", "false", "boolean", diagnosticCategory),
             new("OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE", "Whether the log state have to be formatted. The default value is `false`.", "false", "boolean", diagnosticCategory),
-
-            // manual installation
-            new("MANUAL SETTINGS", "How to handle https://docs.splunk.com/observability/en/gdi/get-data-in/application/otel-dotnet/configuration/advanced-dotnet-configuration.html#environment-variables-for-manual-installation?", "N/A", "N/A", "manual", "See description")
         };
 
         return settings;
