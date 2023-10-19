@@ -203,7 +203,7 @@ instrumentations:
     signals:
       - traces: 
       - metrics:
-          - id: http.server.duration_{bucket|count|sum}
+          - metric_name: http.server.duration_{bucket|count|sum}
             instrument: Cumulative counters (histogram)
             description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
   - keys:
@@ -223,7 +223,7 @@ instrumentations:
     signals:
       - traces: 
       - metrics:
-          - id: http.server.duration_{bucket|count|sum}
+          - metric_name: http.server.duration_{bucket|count|sum}
             instrument: Cumulative counters (histogram)
             description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
   - keys:
@@ -303,10 +303,10 @@ instrumentations:
     signals:
       - traces: 
       - metrics:
-          - id: http.client.duration_{bucket|count|sum}
+          - metric_name: http.client.duration_{bucket|count|sum}
             instrument: Cumulative counters (histogram)
             description: Duration of outbound HTTP requests, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
-          - id: http.server.duration_{bucket|count|sum}
+          - metric_name: http.server.duration_{bucket|count|sum}
             instrument: Cumulative counters (histogram)
             description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
   - keys:
@@ -367,13 +367,13 @@ instrumentations:
     signals:
       - traces: 
       - metrics:
-          - id: nservicebus.messaging.successes
+          - metric_name: nservicebus.messaging.successes
             instrument: Cumulative counter
             description: Number of messages successfully processed by the endpoint.
-          - id: nservicebus.messaging.fetches
+          - metric_name: nservicebus.messaging.fetches
             instrument: Cumulative counter
             description: Number of messages retrieved from the queue by the endpoint.
-          - id: nservicebus.messaging.failures
+          - metric_name: nservicebus.messaging.failures
             instrument: Cumulative counter
             description: Number of messages unsuccessfully processed by the endpoint.
   - keys:
@@ -439,55 +439,55 @@ instrumentations:
         stability: stable
     signals:
       - metrics:
-          - id: process.runtime.dotnet.gc.collections.count
+          - metric_name: process.runtime.dotnet.gc.collections.count
             instrument: Cumulative counter
             description: Number of garbage collections since the process started.
-          - id: process.runtime.dotnet.gc.heap.size
+          - metric_name: process.runtime.dotnet.gc.heap.size
             instrument: Gauge
             description: Heap size, as observed during the last garbage collection. Only available for .NET 6 or higher.
-          - id: process.runtime.dotnet.gc.heap.fragmentation.size
+          - metric_name: process.runtime.dotnet.gc.heap.fragmentation.size
             instrument: Gauge
             description: Heap fragmentation, as observed during the last garbage collection. Only available for .NET 7 or higher.
-          - id: process.runtime.dotnet.gc.objects.size
+          - metric_name: process.runtime.dotnet.gc.objects.size
             instrument: Gauge
             description: Count of bytes currently in use by live objects in the GC heap.
-          - id: process.runtime.dotnet.gc.allocations.size
+          - metric_name: process.runtime.dotnet.gc.allocations.size
             instrument: Cumulative counter
             description: Count of bytes allocated on the managed GC heap since the process started. Only available for .NET 6 or higher.
-          - id: process.runtime.dotnet.gc.committed_memory.size
+          - metric_name: process.runtime.dotnet.gc.committed_memory.size
             instrument: Gauge
             description: Amount of committed virtual memory for the managed GC heap, as observed during the last garbage collection. Only available for .NET 6 and higher.
-          - id: process.runtime.dotnet.gc.duration
+          - metric_name: process.runtime.dotnet.gc.duration
             instrument: Cumulative counter
             description: The total amount of time paused in GC since the process start. Only available for .NET 7 and higher.
-          - id: process.runtime.dotnet.monitor.lock_contention.count
+          - metric_name: process.runtime.dotnet.monitor.lock_contention.count
             instrument: Cumulative counter
             description: Contentions count when trying to acquire a monitor lock since the process started.
-          - id: process.runtime.dotnet.thread_pool.threads.count
+          - metric_name: process.runtime.dotnet.thread_pool.threads.count
             instrument: Cumulative counter
             description: Number of thread pool threads, as observed during the last measurement. Only available for .NET 6 or higher.
-          - id: process.runtime.dotnet.thread_pool.completed_items.count
+          - metric_name: process.runtime.dotnet.thread_pool.completed_items.count
             instrument: Cumulative counter
             description: Number of work items processed by the thread pool since the process started. Only available for .NET 6 or higher.
-          - id: process.runtime.dotnet.thread_pool.queue.length
+          - metric_name: process.runtime.dotnet.thread_pool.queue.length
             instrument: Gauge
             description: Number of work items currently queued for processing by the thread pool. Only available for .NET 6 or higher.
-          - id: process.runtime.dotnet.jit.il_compiled.size
+          - metric_name: process.runtime.dotnet.jit.il_compiled.size
             instrument: Cumulative counter
             description: Bytes of intermediate language that have been compiled since the process started. Only available for .NET 6 or higher.
-          - id: process.runtime.dotnet.jit.methods_compiled.count
+          - metric_name: process.runtime.dotnet.jit.methods_compiled.count
             instrument: Cumulative counter
             description: Number of times the JIT compiler compiled a method since the process started. Only available for .NET 6 or higher.
-          - id: process.runtime.dotnet.jit.compilation_time
+          - metric_name: process.runtime.dotnet.jit.compilation_time
             instrument: Cumulative counter
             description: Amount of time the compiler spent compiling methods since the process started. Only available for .NET 6 or higher.
-          - id: process.runtime.dotnet.timer.count
+          - metric_name: process.runtime.dotnet.timer.count
             instrument: Gauge
             description: Number of timer instances currently active. Only available for .NET 6 or higher.
-          - id: process.runtime.dotnet.assemblies.count
+          - metric_name: process.runtime.dotnet.assemblies.count
             instrument: Gauge
             description: Number of .NET assemblies that are currently loaded.
-          - id: process.runtime.dotnet.exceptions.count
+          - metric_name: process.runtime.dotnet.exceptions.count
             instrument: Cumulative counter
             description: Count of exceptions thrown in managed code since the observation started.
   - keys:
@@ -504,19 +504,19 @@ instrumentations:
         stability: beta
     signals:
       - metrics:
-          - id: process.memory.usage
+          - metric_name: process.memory.usage
             instrument: Gauge
             description: The amount of physical memory allocated for this process.
-          - id: process.memory.virtual
+          - metric_name: process.memory.virtual
             instrument: Gauge
             description: The amount of committed virtual memory for this process.
-          - id: process.cpu.time
+          - metric_name: process.cpu.time
             instrument: Cumulative counter
             description: Total CPU seconds broken down by different states, such as user and system.
-          - id: process.cpu.count
+          - metric_name: process.cpu.count
             instrument: Gauge
             description: Total CPU seconds broken down by different states, such as user and system.
-          - id: process.threads
+          - metric_name: process.threads
             instrument: Gauge
             description: Process threads count.
   - keys:

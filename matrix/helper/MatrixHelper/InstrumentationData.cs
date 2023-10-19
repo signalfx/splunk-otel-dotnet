@@ -103,14 +103,14 @@ public class SignalsList
 
 public class MetricData
 {
-    public MetricData(string id, string instrument, string description)
+    public MetricData(string metricName, string instrument, string description)
     {
-        Id = id;
+        MetricName = metricName;
         Instrument = instrument;
         Description = description;
     }
 
-    public string Id { get; set; }
+    public string MetricName { get; set; }
     public string Instrument { get; set; }
     public string Description { get; set; }
 }
