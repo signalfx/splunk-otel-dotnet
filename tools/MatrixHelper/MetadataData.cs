@@ -14,6 +14,8 @@
 // limitations under the License.
 // </copyright>
 
+using System.Reflection;
+
 namespace MatrixHelper;
 
 internal static class MetadataData
@@ -22,7 +24,7 @@ internal static class MetadataData
     {
         return new AllInOne(
             component: "Splunk Distribution of OpenTelemetry .NET",
-            version: "1.0.2",
+            version: typeof(MetadataData).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0],
             dependencies: new Dependency[]
             {
                 new("OpenTelemetry .NET", "https://github.com/open-telemetry/opentelemetry-dotnet", null, "1.6.0", "stable"),
