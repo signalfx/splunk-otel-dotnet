@@ -198,7 +198,7 @@ instrumentations:
     signals:
       - traces: 
       - metrics:
-          - metric_name: http.server.duration_{bucket|count|sum}
+          - metric_name: http.server.duration
             instrument: histogram
             description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
   - keys:
@@ -218,7 +218,7 @@ instrumentations:
     signals:
       - traces: 
       - metrics:
-          - metric_name: http.server.duration_{bucket|count|sum}
+          - metric_name: http.server.duration
             instrument: histogram
             description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
   - keys:
@@ -304,10 +304,10 @@ instrumentations:
     signals:
       - traces: 
       - metrics:
-          - metric_name: http.client.duration_{bucket|count|sum}
+          - metric_name: http.client.duration
             instrument: histogram
             description: Duration of outbound HTTP requests, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
-          - metric_name: http.server.duration_{bucket|count|sum}
+          - metric_name: http.server.duration
             instrument: histogram
             description: Duration of the inbound HTTP request, in the form of count, sum, and histogram buckets. This metric originates multiple metric time series, which might result in increased data ingestion costs.
   - keys:
