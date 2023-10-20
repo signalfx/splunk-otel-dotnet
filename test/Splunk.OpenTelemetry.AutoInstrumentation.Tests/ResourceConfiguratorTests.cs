@@ -46,7 +46,7 @@ public class ResourceConfiguratorTests
 
             var attribute = resource.Attributes.First();
             attribute.Key.Should().Be("splunk.distro.version");
-            (attribute.Value as string).Should().Be(typeof(Plugin).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version);
+            (attribute.Value as string).Should().Be(typeof(Plugin).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0]);
         }
     }
 }
