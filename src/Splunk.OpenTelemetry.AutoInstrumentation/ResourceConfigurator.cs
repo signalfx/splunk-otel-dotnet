@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-using System.Diagnostics;
+using System.Reflection;
 using OpenTelemetry.Resources;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
@@ -27,9 +27,18 @@ internal static class ResourceConfigurator
 
     static ResourceConfigurator()
     {
-        var assembly = typeof(ResourceConfigurator).Assembly;
-        var version = FileVersionInfo.GetVersionInfo(assembly.Location);
-        Version = version.FileVersion ?? "unknown";
+        var assemblyInformationalVersion = typeof(ResourceConfigurator).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        if (string.IsNullOrWhiteSpace(assemblyInformationalVersion))
+        {
+            Version = "unknown";
+        }
+        else
+        {
+            var indexOfPlusSign = assemblyInformationalVersion!.IndexOf('+');
+            Version = indexOfPlusSign > 0
+                ? assemblyInformationalVersion.Substring(0, indexOfPlusSign)
+                : assemblyInformationalVersion;
+        }
     }
 
     public static void Configure(ResourceBuilder resourceBuilder, PluginSettings settings)
