@@ -233,7 +233,6 @@ public class EnvironmentHelper
         return Path.Combine(
             binDir,
             packageVersion,
-            EnvironmentTools.GetPlatform().ToLowerInvariant(),
             EnvironmentTools.GetBuildConfiguration(),
             targetFramework);
     }

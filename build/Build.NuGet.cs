@@ -31,8 +31,7 @@ partial class Build : NukeBuild
                 .SetProperty("NuGetPackageVersion", VersionHelper.GetVersion())
                 .SetRuntime(RuntimeInformation.RuntimeIdentifier)
                 .SetSelfContained(true)
-                .SetConfiguration(Configuration)
-                .SetPlatform(Platform));
+                .SetConfiguration(Configuration));
         });
 
     Target RunNuGetPackageIntegrationTests => _ => _
