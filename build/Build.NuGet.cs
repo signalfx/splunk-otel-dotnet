@@ -1,9 +1,7 @@
 using System.Runtime.InteropServices;
 using Nuke.Common;
 using Nuke.Common.IO;
-using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
-using Nuke.Common.Tools.MSBuild;
 
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
@@ -33,8 +31,7 @@ partial class Build : NukeBuild
                 .SetProperty("NuGetPackageVersion", VersionHelper.GetVersion())
                 .SetRuntime(RuntimeInformation.RuntimeIdentifier)
                 .SetSelfContained(true)
-                .SetConfiguration(Configuration)
-                .SetPlatform(Platform));
+                .SetConfiguration(Configuration));
         });
 
     Target RunNuGetPackageIntegrationTests => _ => _

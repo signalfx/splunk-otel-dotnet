@@ -17,10 +17,8 @@ partial class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Release'")]
     readonly Configuration Configuration = Configuration.Release;
 
-    [Parameter("Platform to build - x86 or x64. Default is 'x64'")]
-    readonly MSBuildTargetPlatform Platform = MSBuildTargetPlatform.x64;
-
     const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.0.2";
+
     [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
     readonly string OpenTelemetryAutoInstrumentationVersion = OpenTelemetryAutoInstrumentationDefaultVersion;
 
@@ -33,6 +31,7 @@ partial class Build : NukeBuild
         {
             DotNetClean();
             NuGetPackageFolder.DeleteDirectory();
+            InstallationScriptsFolder.DeleteDirectory();
             OpenTelemetryDistributionFolder.DeleteDirectory();
             (RootDirectory / GetOTelAutoInstrumentationFileName()).DeleteDirectory();
         });
@@ -44,8 +43,7 @@ partial class Build : NukeBuild
             foreach (var project in AllProjectsExceptNuGetTestApps())
             {
                 DotNetRestore(s => s
-                    .SetProjectFile(project)
-                    .SetPlatform(Platform));
+                    .SetProjectFile(project));
             }
         });
 
@@ -105,14 +103,14 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             FileSystemTasks.CopyFileToDirectory(
-                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / ((string)Platform).ToLower() / Configuration /
+                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
                 "net6.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
                 OpenTelemetryDistributionFolder / "net");
 
             if (EnvironmentInfo.IsWin)
             {
                 FileSystemTasks.CopyFileToDirectory(
-                    RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / ((string)Platform).ToLower() / Configuration /
+                    RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
                     "net462" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
                     OpenTelemetryDistributionFolder / "netfx");
             }
@@ -173,8 +171,7 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
                 DotNetBuild(s => s
                     .SetProjectFile(project)
                     .SetNoRestore(true)
-                    .SetConfiguration(Configuration)
-                    .SetPlatform(Platform));
+                    .SetConfiguration(Configuration));
             }
         });
 
@@ -187,8 +184,7 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
             DotNetTest(s => s
                 .SetNoBuild(true)
                 .SetProjectFile(project)
-                .SetConfiguration(Configuration)
-                .SetProperty("Platform", Platform));
+                .SetConfiguration(Configuration));
         });
 
     Target RunIntegrationTests => _ => _
@@ -202,13 +198,13 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
                 .SetNoBuild(true)
                 .SetProjectFile(project)
                 .SetFilter("Category!=NuGetPackage")
-                .SetConfiguration(Configuration)
-                .SetProperty("Platform", Platform));
+                .SetConfiguration(Configuration));
         });
 
     Target Workflow => _ => _
         .DependsOn(Clean)
         .DependsOn(Restore)
+        .DependsOn(BuildInstallationScripts)
         .DependsOn(DownloadAutoInstrumentationDistribution)
         .DependsOn(UnpackAutoInstrumentationDistribution)
         .DependsOn(Compile)
