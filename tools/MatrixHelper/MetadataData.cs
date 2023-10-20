@@ -1,32 +1,35 @@
-﻿namespace MatrixHelper;
+﻿// <copyright file="MetadataData.cs" company="Splunk Inc.">
+// Copyright Splunk Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// </copyright>
 
-public static class MetadataData
+namespace MatrixHelper;
+
+internal static class MetadataData
 {
     public static AllInOne GetAllInOne()
     {
-        return new AllInOne
-        {
-            Component = "Splunk Distribution of OpenTelemetry .NET",
-            Version = "1.0.2",
-            Dependencies = new Dependency[]
+        return new AllInOne(
+            component: "Splunk Distribution of OpenTelemetry .NET",
+            version: "1.0.2",
+            dependencies: new Dependency[]
             {
                 new("OpenTelemetry .NET", "https://github.com/open-telemetry/opentelemetry-dotnet", null, "1.6.0", "stable"),
                 new("OpenTelemetry .NET Automatic Instrumentation", "https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation", null, "1.0.2", "stable"),
             },
-            Settings = SettingsData.GetSettings(),
-            Instrumentations = InstrumentationData.GetInstrumentations(),
-            ResourceDetectors = ResourceDetectorsData.GetResourceDetectors()
-        };
+            settings: SettingsData.GetSettings(),
+            instrumentations: InstrumentationData.GetInstrumentations(),
+            resourceDetectors: ResourceDetectorsData.GetResourceDetectors());
     }
-}
-public class AllInOne
-{
-    public string Component { get; set; }
-    public string Version { get; set; }
-
-    public Dependency[] Dependencies { get; set; }
-
-    public Setting[] Settings { get; set; }
-    public Instrumentation[] Instrumentations { get; set; }
-    public ResourceDetector[] ResourceDetectors { get; set; }
 }

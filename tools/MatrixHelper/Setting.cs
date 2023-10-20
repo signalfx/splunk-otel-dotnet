@@ -1,4 +1,4 @@
-﻿// <copyright file="Program.cs" company="Splunk Inc.">
+﻿// <copyright file="Setting.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,13 +14,22 @@
 // limitations under the License.
 // </copyright>
 
-using MatrixHelper;
+using YamlDotNet.Core;
 using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
-var serializer = new SerializerBuilder()
-    .WithNamingConvention(UnderscoredNamingConvention.Instance)
-    .WithIndentedSequences()
-    .Build();
+namespace MatrixHelper
+{
+    public class Setting(string env, string description, string defaultValue, string type, string category)
+    {
+        public string Env { get; set; } = env;
 
-File.WriteAllText(".\\splunk-otel-dotnet-metadata.yaml", serializer.Serialize(MetadataData.GetAllInOne()));
+        public string Description { get; set; } = description;
+
+        [YamlMember(ScalarStyle = ScalarStyle.SingleQuoted)]
+        public string Default { get; set; } = defaultValue;
+
+        public string Type { get; set; } = type;
+
+        public string Category { get; set; } = category;
+    }
+}

@@ -1,4 +1,4 @@
-﻿// <copyright file="Program.cs" company="Splunk Inc.">
+﻿// <copyright file="LogLists.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,13 +14,10 @@
 // limitations under the License.
 // </copyright>
 
-using MatrixHelper;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
-
-var serializer = new SerializerBuilder()
-    .WithNamingConvention(UnderscoredNamingConvention.Instance)
-    .WithIndentedSequences()
-    .Build();
-
-File.WriteAllText(".\\splunk-otel-dotnet-metadata.yaml", serializer.Serialize(MetadataData.GetAllInOne()));
+namespace MatrixHelper
+{
+    internal class LogLists : SignalsList
+    {
+        public Log[] Logs { get; set; } = Array.Empty<Log>();
+    }
+}

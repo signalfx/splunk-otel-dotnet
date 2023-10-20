@@ -1,4 +1,4 @@
-﻿// <copyright file="Program.cs" company="Splunk Inc.">
+﻿// <copyright file="MetricList.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,13 +14,20 @@
 // limitations under the License.
 // </copyright>
 
-using MatrixHelper;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
+namespace MatrixHelper
+{
+    internal class MetricList : SignalsList
+    {
+        public MetricList()
+            : this(Array.Empty<MetricData>())
+        {
+        }
 
-var serializer = new SerializerBuilder()
-    .WithNamingConvention(UnderscoredNamingConvention.Instance)
-    .WithIndentedSequences()
-    .Build();
+        public MetricList(params MetricData[] metrics)
+        {
+            Metrics = metrics;
+        }
 
-File.WriteAllText(".\\splunk-otel-dotnet-metadata.yaml", serializer.Serialize(MetadataData.GetAllInOne()));
+        public MetricData[] Metrics { get; set; }
+    }
+}
