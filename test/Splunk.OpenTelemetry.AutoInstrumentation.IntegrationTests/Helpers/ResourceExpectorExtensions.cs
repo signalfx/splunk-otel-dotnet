@@ -21,7 +21,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 internal static class ResourceExpectorExtensions
 {
     private static readonly string ExpectedSdkVersion = typeof(global::OpenTelemetry.Resources.Resource).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0];
-    private static readonly string ExpectedDistributionVersion = typeof(Plugin).Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()!.Version;
+    private static readonly string ExpectedDistributionVersion = typeof(Plugin).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0];
 
     public static void ExpectDistributionResources(this OtlpResourceExpector resourceExpector, string serviceName)
     {
