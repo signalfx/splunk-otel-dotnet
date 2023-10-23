@@ -14,20 +14,29 @@
 // limitations under the License.
 // </copyright>
 
-namespace MatrixHelper
+namespace MatrixHelper;
+
+internal class ResourceDetector
 {
-    internal class ResourceDetector(string key, string description, Attribute[] attributes, string stability, string support, Dependency dependency)
+    public ResourceDetector(string key, string description, Attribute[] attributes, string stability, string support, Dependency dependency)
     {
-        public string Key { get; set; } = key;
-
-        public string Description { get; set; } = description;
-
-        public Attribute[] Attributes { get; set; } = attributes;
-
-        public string Stability { get; set; } = stability;
-
-        public string Support { get; set; } = support;
-
-        public Dependency[] Dependencies { get; set; } = new Dependency[] { dependency };
+        Key = key;
+        Description = description;
+        Attributes = attributes;
+        Stability = stability;
+        Support = support;
+        Dependencies = new Dependency[] { dependency };
     }
+
+    public string Key { get; set; }
+
+    public string Description { get; set; }
+
+    public Attribute[] Attributes { get; set; }
+
+    public string Stability { get; set; }
+
+    public string Support { get; set; }
+
+    public Dependency[] Dependencies { get; set; }
 }

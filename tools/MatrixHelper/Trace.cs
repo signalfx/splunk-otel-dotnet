@@ -14,9 +14,8 @@
 // limitations under the License.
 // </copyright>
 
-namespace MatrixHelper
+namespace MatrixHelper;
+
+internal class Trace
 {
-    internal class Trace
-    {
-    }
 }

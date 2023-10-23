@@ -16,7 +16,7 @@
 
 namespace MatrixHelper;
 
-public static class SettingsData
+internal static class SettingsData
 {
     public const string InstrumentationCategory = "instrumentation";
     private const string GeneralCategory = "general";

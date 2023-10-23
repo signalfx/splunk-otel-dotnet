@@ -14,30 +14,29 @@
 // limitations under the License.
 // </copyright>
 
-namespace MatrixHelper
+namespace MatrixHelper;
+
+internal class AllInOne
 {
-    internal class AllInOne
+    public AllInOne(string component, string version, Dependency[] dependencies, Setting[] settings, Instrumentation[] instrumentations, ResourceDetector[] resourceDetectors)
     {
-        public AllInOne(string component, string version, Dependency[] dependencies, Setting[] settings, Instrumentation[] instrumentations, ResourceDetector[] resourceDetectors)
-        {
-            Component = component;
-            Version = version;
-            Dependencies = dependencies;
-            Settings = settings;
-            Instrumentations = instrumentations;
-            ResourceDetectors = resourceDetectors;
-        }
-
-        public string Component { get; set; }
-
-        public string Version { get; set; }
-
-        public Dependency[] Dependencies { get; set; }
-
-        public Setting[] Settings { get; set; }
-
-        public Instrumentation[] Instrumentations { get; set; }
-
-        public ResourceDetector[] ResourceDetectors { get; set; }
+        Component = component;
+        Version = version;
+        Dependencies = dependencies;
+        Settings = settings;
+        Instrumentations = instrumentations;
+        ResourceDetectors = resourceDetectors;
     }
+
+    public string Component { get; set; }
+
+    public string Version { get; set; }
+
+    public Dependency[] Dependencies { get; set; }
+
+    public Setting[] Settings { get; set; }
+
+    public Instrumentation[] Instrumentations { get; set; }
+
+    public ResourceDetector[] ResourceDetectors { get; set; }
 }

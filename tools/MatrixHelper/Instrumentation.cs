@@ -16,49 +16,48 @@
 
 using YamlDotNet.Serialization;
 
-namespace MatrixHelper
+namespace MatrixHelper;
+
+internal class Instrumentation
 {
-    internal class Instrumentation
+    public Instrumentation(string key, InstrumentedComponent instrumentedComponent, string? description, string stability, string support, SignalsList signalsList)
+        : this(new[] { key }, new[] { instrumentedComponent }, description, stability, support, Array.Empty<Dependency>(), new[] { signalsList }, Array.Empty<Setting>())
     {
-        public Instrumentation(string key, InstrumentedComponent instrumentedComponent, string? description, string stability, string support, SignalsList signalsList)
-            : this(new[] { key }, new[] { instrumentedComponent }, description, stability, support, Array.Empty<Dependency>(), new[] { signalsList }, Array.Empty<Setting>())
-        {
-        }
-
-        public Instrumentation(string key, InstrumentedComponent instrumentedComponent, string? description, string stability, string support, Dependency dependency, SignalsList[] signalsList)
-            : this(new[] { key }, new[] { instrumentedComponent }, description, stability, support, new[] { dependency }, signalsList, Array.Empty<Setting>())
-        {
-        }
-
-        public Instrumentation(string[] keys, InstrumentedComponent[] instrumentedComponents, string? description, string stability, string support, Dependency[] dependencies, SignalsList[] signalsList, Setting[] settings)
-        {
-            Keys = keys;
-            InstrumentedComponents = instrumentedComponents;
-            Description = description;
-            Stability = stability;
-            Support = support;
-            Dependencies = dependencies;
-            Signals = signalsList;
-            Settings = settings;
-        }
-
-        public string[] Keys { get; set; }
-
-        public InstrumentedComponent[] InstrumentedComponents { get; set; }
-
-        [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
-        public string? Description { get; set; }
-
-        public string Stability { get; set; }
-
-        public string Support { get; set; }
-
-        [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitEmptyCollections)]
-        public Dependency[] Dependencies { get; set; }
-
-        public SignalsList[] Signals { get; set; }
-
-        [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitEmptyCollections)]
-        public Setting[] Settings { get; set; }
     }
+
+    public Instrumentation(string key, InstrumentedComponent instrumentedComponent, string? description, string stability, string support, Dependency dependency, SignalsList[] signalsList)
+        : this(new[] { key }, new[] { instrumentedComponent }, description, stability, support, new[] { dependency }, signalsList, Array.Empty<Setting>())
+    {
+    }
+
+    public Instrumentation(string[] keys, InstrumentedComponent[] instrumentedComponents, string? description, string stability, string support, Dependency[] dependencies, SignalsList[] signalsList, Setting[] settings)
+    {
+        Keys = keys;
+        InstrumentedComponents = instrumentedComponents;
+        Description = description;
+        Stability = stability;
+        Support = support;
+        Dependencies = dependencies;
+        Signals = signalsList;
+        Settings = settings;
+    }
+
+    public string[] Keys { get; set; }
+
+    public InstrumentedComponent[] InstrumentedComponents { get; set; }
+
+    [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
+    public string? Description { get; set; }
+
+    public string Stability { get; set; }
+
+    public string Support { get; set; }
+
+    [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitEmptyCollections)]
+    public Dependency[] Dependencies { get; set; }
+
+    public SignalsList[] Signals { get; set; }
+
+    [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitEmptyCollections)]
+    public Setting[] Settings { get; set; }
 }

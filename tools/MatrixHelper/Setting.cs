@@ -17,19 +17,27 @@
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 
-namespace MatrixHelper
+namespace MatrixHelper;
+
+internal class Setting
 {
-    public class Setting(string env, string description, string defaultValue, string type, string category)
+    public Setting(string env, string description, string defaultValue, string type, string category)
     {
-        public string Env { get; set; } = env;
-
-        public string Description { get; set; } = description;
-
-        [YamlMember(ScalarStyle = ScalarStyle.SingleQuoted)]
-        public string Default { get; set; } = defaultValue;
-
-        public string Type { get; set; } = type;
-
-        public string Category { get; set; } = category;
+        Env = env;
+        Description = description;
+        Default = defaultValue;
+        Type = type;
+        Category = category;
     }
+
+    public string Env { get; set; }
+
+    public string Description { get; set; }
+
+    [YamlMember(ScalarStyle = ScalarStyle.SingleQuoted)]
+    public string Default { get; set; }
+
+    public string Type { get; set; }
+
+    public string Category { get; set; }
 }

@@ -16,19 +16,18 @@
 
 using YamlDotNet.Serialization;
 
-namespace MatrixHelper
+namespace MatrixHelper;
+
+internal class InstrumentedComponent
 {
-    internal class InstrumentedComponent
+    public InstrumentedComponent(string name, string? supportedVersions)
     {
-        public InstrumentedComponent(string name, string? supportedVersions)
-        {
-            Name = name;
-            SupportedVersions = supportedVersions;
-        }
-
-        public string Name { get; set; }
-
-        [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
-        public string? SupportedVersions { get; set; }
+        Name = name;
+        SupportedVersions = supportedVersions;
     }
+
+    public string Name { get; set; }
+
+    [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitNull)]
+    public string? SupportedVersions { get; set; }
 }

@@ -14,10 +14,9 @@
 // limitations under the License.
 // </copyright>
 
-namespace MatrixHelper
+namespace MatrixHelper;
+
+internal class TracesList : SignalsList
 {
-    internal class TracesList : SignalsList
-    {
-        public Trace[] Traces { get; set; } = Array.Empty<Trace>();
-    }
+    public Trace[] Traces { get; set; } = Array.Empty<Trace>();
 }

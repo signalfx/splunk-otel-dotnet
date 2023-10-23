@@ -14,20 +14,19 @@
 // limitations under the License.
 // </copyright>
 
-namespace MatrixHelper
+namespace MatrixHelper;
+
+internal class MetricList : SignalsList
 {
-    internal class MetricList : SignalsList
+    public MetricList()
+        : this(Array.Empty<MetricData>())
     {
-        public MetricList()
-            : this(Array.Empty<MetricData>())
-        {
-        }
-
-        public MetricList(params MetricData[] metrics)
-        {
-            Metrics = metrics;
-        }
-
-        public MetricData[] Metrics { get; set; }
     }
+
+    public MetricList(params MetricData[] metrics)
+    {
+        Metrics = metrics;
+    }
+
+    public MetricData[] Metrics { get; set; }
 }

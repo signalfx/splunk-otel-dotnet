@@ -14,21 +14,20 @@
 // limitations under the License.
 // </copyright>
 
-namespace MatrixHelper
+namespace MatrixHelper;
+
+internal class MetricData
 {
-    internal class MetricData
+    public MetricData(string metricName, string instrument, string description)
     {
-        public MetricData(string metricName, string instrument, string description)
-        {
-            MetricName = metricName;
-            Instrument = instrument;
-            Description = description;
-        }
-
-        public string MetricName { get; set; }
-
-        public string Instrument { get; set; }
-
-        public string Description { get; set; }
+        MetricName = metricName;
+        Instrument = instrument;
+        Description = description;
     }
+
+    public string MetricName { get; set; }
+
+    public string Instrument { get; set; }
+
+    public string Description { get; set; }
 }

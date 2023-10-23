@@ -14,10 +14,14 @@
 // limitations under the License.
 // </copyright>
 
-namespace MatrixHelper
+namespace MatrixHelper;
+
+internal class Attribute
 {
-    internal class Attribute(string id)
+    public Attribute(string id)
     {
-        public string Id { get; set; } = id;
+        Id = id;
     }
+
+    public string Id { get; set; }
 }
