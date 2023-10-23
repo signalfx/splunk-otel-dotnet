@@ -16,4 +16,6 @@
    - [`splunk-otel-dotnet-install.sh.template`](../script-templates/splunk-otel-dotnet-install.sh.template)
    - [`Splunk.OTel.DotNet.psm1.template`](../script-templates/Splunk.OTel.DotNet.psm1.template)
 
+1. Update [compatibility Matrix data](../tools/MatrixHelper).
+
 1. Update the [GitHub workflows](../.github/workflows) on changes in upstream.
