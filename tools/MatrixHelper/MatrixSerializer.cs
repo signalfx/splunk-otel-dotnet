@@ -1,4 +1,4 @@
-﻿// <copyright file="Program.cs" company="Splunk Inc.">
+﻿// <copyright file="MatrixSerializer.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,13 +14,27 @@
 // limitations under the License.
 // </copyright>
 
-using MatrixHelper;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-var serializer = new SerializerBuilder()
-    .WithNamingConvention(UnderscoredNamingConvention.Instance)
-    .WithIndentedSequences()
-    .Build();
+namespace MatrixHelper;
 
-File.WriteAllText(".\\splunk-otel-dotnet-metadata.yaml", serializer.Serialize(MetadataData.GetAllInOne()));
+/// <summary>
+/// Serialize matrix
+/// </summary>
+public static class MatrixSerializer
+{
+    /// <summary>
+    /// Serialize matrix to the file
+    /// </summary>
+    /// <param name="path">Path to the Yaml file</param>
+    public static void Serialize(string path)
+    {
+        var serializer = new SerializerBuilder()
+            .WithNamingConvention(UnderscoredNamingConvention.Instance)
+            .WithIndentedSequences()
+            .Build();
+
+        File.WriteAllText(path, serializer.Serialize(MetadataData.GetAllInOne()));
+    }
+}

@@ -2,7 +2,6 @@ using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
-using Nuke.Common.Tools.MSBuild;
 using System.IO.Compression;
 
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
@@ -32,6 +31,7 @@ partial class Build : NukeBuild
             DotNetClean();
             NuGetPackageFolder.DeleteDirectory();
             InstallationScriptsFolder.DeleteDirectory();
+            MatrixScriptsFolder.DeleteDirectory();
             OpenTelemetryDistributionFolder.DeleteDirectory();
             (RootDirectory / GetOTelAutoInstrumentationFileName()).DeleteDirectory();
         });
@@ -204,6 +204,7 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
     Target Workflow => _ => _
         .DependsOn(Clean)
         .DependsOn(Restore)
+        .DependsOn(SerializeMatrix)
         .DependsOn(BuildInstallationScripts)
         .DependsOn(DownloadAutoInstrumentationDistribution)
         .DependsOn(UnpackAutoInstrumentationDistribution)
