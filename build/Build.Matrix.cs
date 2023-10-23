@@ -10,6 +10,7 @@ partial class Build : NukeBuild
         .After(Clean)
         .Executes(() =>
         {
+            MatrixScriptsFolder.CreateOrCleanDirectory();
             MatrixSerializer.Serialize(MatrixScriptsFolder / "splunk-otel-dotnet-metadata.yaml");
         });
 }
