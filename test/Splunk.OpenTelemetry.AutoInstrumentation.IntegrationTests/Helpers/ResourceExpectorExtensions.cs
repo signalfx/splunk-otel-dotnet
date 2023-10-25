@@ -29,8 +29,8 @@ internal static class ResourceExpectorExtensions
         resourceExpector.Expect("telemetry.sdk.name", "opentelemetry");
         resourceExpector.Expect("telemetry.sdk.language", "dotnet");
         resourceExpector.Expect("telemetry.sdk.version", ExpectedSdkVersion);
-        resourceExpector.Expect("telemetry.distro.name", "opentelemetry-dotnet-instrumentation");
-        resourceExpector.Expect("telemetry.distro.version", "1.1.0");
+        resourceExpector.Expect("telemetry.distro.name", "splunk-otel-dotnet");
+        resourceExpector.Expect("telemetry.distro.version", ExpectedDistributionVersion);
         resourceExpector.Expect("splunk.distro.version", ExpectedDistributionVersion);
     }
 }

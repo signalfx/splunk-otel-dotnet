@@ -11,7 +11,13 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Changed
 
+- Updated value for following attributes:
+  - `telemetry.distro.name` to `splunk-otel-dotnet`
+  - `telemetry.distro.version` to current release version.
+
 ### Deprecated
+
+- Deprecate `splunk.otel.version` attribute.
 
 ### Removed
 
