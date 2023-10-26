@@ -3,6 +3,7 @@ Bson
 buildtasks
 Configurator
 coreutils
+distro
 dylib
 Expector
 mktemp

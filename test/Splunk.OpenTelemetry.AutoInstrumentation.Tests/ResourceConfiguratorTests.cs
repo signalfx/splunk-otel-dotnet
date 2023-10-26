@@ -39,14 +39,15 @@ public class ResourceConfiguratorTests
         ResourceConfigurator.Configure(resourceBuilder, settings);
 
         var resource = resourceBuilder.Build();
-
+        var version = typeof(Plugin).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0];
         using (new AssertionScope())
         {
-            resource.Attributes.Count().Should().Be(1);
-
-            var attribute = resource.Attributes.First();
-            attribute.Key.Should().Be("splunk.distro.version");
-            (attribute.Value as string).Should().Be(typeof(Plugin).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0]);
+            resource.Attributes.Should().BeEquivalentTo(new Dictionary<string, object>
+            {
+                { "splunk.distro.version", version },
+                { "telemetry.distro.name", "splunk-otel-dotnet" },
+                { "telemetry.distro.version", version }
+            });
         }
     }
 }

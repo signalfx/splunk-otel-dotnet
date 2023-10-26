@@ -21,7 +21,13 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal static class ResourceConfigurator
 {
+    /// <summary>
+    /// splunk.otel.version is deprecated
+    /// </summary>
     private const string SplunkDistroVersionName = "splunk.distro.version";
+    private const string TelemetryDistroNameName = "telemetry.distro.name";
+    private const string TelemetryDistroNameValue = "splunk-otel-dotnet";
+    private const string TelemetryDistroVersionName = "telemetry.distro.version";
 
     private static readonly string Version;
 
@@ -45,7 +51,9 @@ internal static class ResourceConfigurator
     {
         var attributes = new List<KeyValuePair<string, object>>
         {
-            new(SplunkDistroVersionName, Version)
+            new(SplunkDistroVersionName, Version),
+            new(TelemetryDistroNameName, TelemetryDistroNameValue),
+            new(TelemetryDistroVersionName, Version)
         };
 
         resourceBuilder.AddAttributes(attributes);

@@ -5,7 +5,6 @@
    - [`build/Build.cs`](../build/Build.cs)
    - [`docs/advanced-config.md`](./advanced-config.md)
    - [`src/Splunk.OpenTelemetry.AutoInstrumentation/Splunk.OpenTelemetry.AutoInstrumentation.csproj`](../src/Splunk.OpenTelemetry.AutoInstrumentation/Splunk.OpenTelemetry.AutoInstrumentation.csproj)
-   - [`test/Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests/Helpers/ResourceExpectorExtensions.cs`](../test/Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests/Helpers/ResourceExpectorExtensions.cs)
 
 1. Update the `test/Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests/BuildTests.DistributionStructure_*.verified.txt`
    files.
