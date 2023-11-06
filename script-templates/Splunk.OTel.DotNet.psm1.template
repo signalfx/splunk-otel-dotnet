@@ -411,24 +411,29 @@ function Update-OpenTelemetryCore() {
 
     Write-Information -MessageData "Updating Splunk Distribution of OpenTelemetry .NET from $($currentInstallVersion) to $($newestInstallVersion)." -InformationAction Continue
 
-    $currentInstallPath = Get-Current-InstallDir
+    $installDir = Get-Current-InstallDir
 
     Uninstall-OpenTelemetryCore
     if ($RegisterIIS) {
         Unregister-OpenTelemetryForIIS -NoReset $true
     }
 
-    Prepare-Install-Directory $currentInstallPath
-
-    $modulePath = Download-OpenTelemetry-Install-Module $newestInstallVersion $currentInstallPath
+    $tempDir = Get-Temp-Directory
+    $modulePath = Download-OpenTelemetry-Install-Module $newestInstallVersion $tempDir
 
     Remove-Module Splunk.OTel.DotNet
     Import-Module $modulePath
 
-    Install-OpenTelemetryCore
+    Install-OpenTelemetryCore -InstallDir $installDir
     if ($RegisterIIS) {
         Register-OpenTelemetryForIIS
     }
+
+    # Release module
+    Remove-Module Splunk.OTel.DotNet
+
+    # Cache install module
+    Move-Item -Path $modulePath -Destination $installDir
 }
 
 <#
