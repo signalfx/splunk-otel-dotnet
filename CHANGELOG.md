@@ -9,6 +9,8 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Added
 
+- Ability to update installation via PS module (`Splunk.OTel.DotNet.psm1`).
+
 ### Changed
 
 - Updated value for following attributes:

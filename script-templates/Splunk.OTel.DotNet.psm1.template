@@ -38,6 +38,16 @@ function Get-Current-InstallDir() {
     return [System.Environment]::GetEnvironmentVariable($ServiceLocatorVariable, [System.EnvironmentVariableTarget]::Machine)
 }
 
+function Get-Newest-InstallVersion() { 
+    $query = "https://api.github.com/repos/signalfx/splunk-otel-dotnet/releases/latest"
+
+    $response = Invoke-WebRequest -Uri $query -UseBasicParsing
+    $responseJson = $response.Content | ConvertFrom-Json
+    $release = $responseJson.tag_name
+
+    return $release
+}
+
 function Get-CLIInstallDir-From-InstallDir([string]$InstallDir) {
     $dir = "Splunk OpenTelemetry .NET"
     
@@ -78,6 +88,16 @@ function Download-OpenTelemetry([string]$Version, [string]$Path) {
     $archive = "splunk-opentelemetry-dotnet-windows.zip"
     $dlUrl = "https://github.com/signalfx/splunk-otel-dotnet/releases/download/$Version/$archive"
     $dlPath = Join-Path $Path $archive
+
+    Invoke-WebRequest -Uri $dlUrl -OutFile $dlPath -UseBasicParsing
+
+    return $dlPath
+}
+
+function Download-OpenTelemetry-Install-Module([string]$Version, [string]$Path) {
+    $module = "Splunk.OTel.DotNet.psm1"
+    $dlUrl = "https://github.com/signalfx/splunk-otel-dotnet/releases/download/$Version/$module"
+    $dlPath = Join-Path $Path $module
 
     Invoke-WebRequest -Uri $dlUrl -OutFile $dlPath -UseBasicParsing
 
@@ -225,13 +245,51 @@ function Test-AssemblyNotForGAC([string] $Name) {
     return $false 
 }
 
+function Is-Greater-Version($v1, $v2) {
+    # Helper convert version main part to version object
+    function ToVersion($version) {
+        return ($version -replace '^v' -replace '-.+$') -as [version]
+    }
+
+    # Helper convert version pre part to version object
+    function RankPre($version) {
+        # $null is full release
+        $rank = "alpha", "beta", "rc", $null
+        $ranked = $null
+
+        if ($version -match "^v\d+\.\d+\.\d+?(\-(?<pre>[\w\.]+))") {
+            $token = $matches['pre'].split('.')[0]
+            $ranked = $matches['pre'] -replace $token, $rank.IndexOf($token)
+        }
+        else {
+            $ranked = $rank.IndexOf($null)
+            $ranked = "$($ranked).0"
+        }
+
+        return $ranked -as [version]
+    }
+
+    $v1Version = ToVersion $v1
+    $v2Version = ToVersion $v2
+
+    if ($v1Version -gt $v2Version) { return $true }
+    if ($v1Version -lt $v2Version) { return $false }
+
+    $v1PreRank = RankPre $v1
+    $v2PreRank = RankPre $v2
+
+    if ($v1PreRank -gt $v2PreRank) { return $true }
+
+    return $false;
+}
+
 <#
     .SYNOPSIS
     Installs Splunk Distribution of OpenTelemetry .NET.
     .PARAMETER InstallDir
     Default: <auto> - the default path is Program Files dir.
     Install path of the Splunk Distribution of OpenTelemetry .NET
-    Possible values: <auto>, ProgramFiles, AppData, (Custom path)
+    Possible values: <auto>, (Custom path)
 #>
 function Install-OpenTelemetryCore() {
     param(
@@ -294,7 +352,7 @@ function Install-OpenTelemetryCore() {
 
 <#
     .SYNOPSIS
-    Uninstalls OpenTelemetry .NET Automatic Instrumentation.
+    Uninstalls Splunk Distribution of OpenTelemetry .NET.
 #>
 function Uninstall-OpenTelemetryCore() {
     $installDir = Get-Current-InstallDir
@@ -325,6 +383,57 @@ function Uninstall-OpenTelemetryCore() {
 
     # Remove OTel service locator variable
     [System.Environment]::SetEnvironmentVariable($ServiceLocatorVariable, $null, [System.EnvironmentVariableTarget]::Machine)
+}
+
+<#
+    .SYNOPSIS
+    Updates Splunk Distribution of OpenTelemetry .NET.
+    .PARAMETER RegisterIIS
+    Registers IIS 
+#>
+function Update-OpenTelemetryCore() {
+    param(
+        [Parameter(Mandatory = $false)]
+        [bool]$RegisterIIS = $false
+    )
+
+    $currentInstallVersion = Get-OpenTelemetryInstallVersion
+    if (-not $currentInstallVersion) {
+        return
+    }
+
+    $newestInstallVersion = Get-Newest-InstallVersion
+    if (-not(Is-Greater-Version $newestInstallVersion $currentInstallVersion)) {
+        Write-Warning "Newest version of Splunk Distribution of OpenTelemetry .NET is already installed."
+
+        return
+    }
+
+    Write-Information -MessageData "Updating Splunk Distribution of OpenTelemetry .NET from $($currentInstallVersion) to $($newestInstallVersion)." -InformationAction Continue
+
+    $installDir = Get-Current-InstallDir
+
+    Uninstall-OpenTelemetryCore
+    if ($RegisterIIS) {
+        Unregister-OpenTelemetryForIIS -NoReset $true
+    }
+
+    $tempDir = Get-Temp-Directory
+    $modulePath = Download-OpenTelemetry-Install-Module $newestInstallVersion $tempDir
+
+    Remove-Module Splunk.OTel.DotNet
+    Import-Module $modulePath
+
+    Install-OpenTelemetryCore -InstallDir $installDir
+    if ($RegisterIIS) {
+        Register-OpenTelemetryForIIS
+    }
+
+    # Release module
+    Remove-Module Splunk.OTel.DotNet
+
+    # Cache install module
+    Move-Item -Path $modulePath -Destination $installDir
 }
 
 <#
@@ -436,12 +545,22 @@ function Unregister-OpenTelemetryForCurrentSession() {
 <#
     .SYNOPSIS
     Removes IIS environment variables to disable automatic instrumentation.
-    Performs IIS reset after removal.
+    Performs IIS reset after removal by default.
+    .PARAMETER NoReset
+    Does not perform IIS reset.
 #>
 function Unregister-OpenTelemetryForIIS() {
+    param(
+        [Parameter(Mandatory = $false)]
+        [bool]$NoReset = $false
+    )
+
     Remove-Windows-Service -WindowsServiceName "W3SVC"
     Remove-Windows-Service -WindowsServiceName "WAS"
-    Reset-IIS
+
+    if (-not $NoReset) {
+        Reset-IIS
+    }
 }
 
 <#
@@ -475,12 +594,28 @@ function Get-OpenTelemetryInstallDirectory() {
     Write-Warning "Splunk Distribution of OpenTelemetry .NET is not installed."
 }
 
+<#
+    .SYNOPSIS
+    Gets Splunk Distribution of OpenTelemetry .NET install version. 
+#>
+function Get-OpenTelemetryInstallVersion() {
+    $installDir = Get-OpenTelemetryInstallDirectory
+
+    if ($installDir) {
+        $mainDllPath = [IO.Path]::Combine($installDir, 'net', 'OpenTelemetry.AutoInstrumentation.dll')
+
+        return "v" + ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($mainDllPath).ProductVersion).split('+', 2)[0]
+    }
+}
+
 Export-ModuleMember -Function Install-OpenTelemetryCore
 Export-ModuleMember -Function Register-OpenTelemetryForIIS
 Export-ModuleMember -Function Register-OpenTelemetryForWindowsService
 Export-ModuleMember -Function Register-OpenTelemetryForCurrentSession
 Export-ModuleMember -Function Uninstall-OpenTelemetryCore
+Export-ModuleMember -Function Update-OpenTelemetryCore
 Export-ModuleMember -Function Unregister-OpenTelemetryForIIS
 Export-ModuleMember -Function Unregister-OpenTelemetryForWindowsService
 Export-ModuleMember -Function Unregister-OpenTelemetryForCurrentSession
 Export-ModuleMember -Function Get-OpenTelemetryInstallDirectory
+Export-ModuleMember -Function Get-OpenTelemetryInstallVersion
