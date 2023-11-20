@@ -7,7 +7,7 @@
     <OutputType>Exe</OutputType>
     <Platforms>x64;x86</Platforms>
     <PlatformTarget>$(Platform)</PlatformTarget>
-    <LangVersion>11.0</LangVersion>
+    <LangVersion>12.0</LangVersion>
 
     <BaseIntermediateOutputPath Condition="'$(ApiVersion)'!=''">obj\$(ApiVersion)\</BaseIntermediateOutputPath>
     <BaseOutputPath Condition="'$(ApiVersion)'!=''">bin\$(ApiVersion)\</BaseOutputPath>
