@@ -22,7 +22,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 internal static class ResourceConfigurator
 {
     /// <summary>
-    /// splunk.otel.version is deprecated
+    /// splunk.distro.version is deprecated
     /// </summary>
     private const string SplunkDistroVersionName = "splunk.distro.version";
     private const string TelemetryDistroNameName = "telemetry.distro.name";
