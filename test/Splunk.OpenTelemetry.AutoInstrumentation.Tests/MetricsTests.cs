@@ -48,7 +48,7 @@ public class MetricsTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    public void WhenRealmIsSetRequireAccessToken(string accessToken)
+    public void WhenRealmIsSetRequireAccessToken(string? accessToken)
     {
         var configuration = new NameValueCollection
         {
