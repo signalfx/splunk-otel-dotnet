@@ -7,12 +7,16 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.1.0...HEAD)
 
+This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0).
+
 ### Added
 
 - Ability to update installation via PS module (`Splunk.OTel.DotNet.psm1`).
 
 ### Changed
 
+- Updated [OpenTelemetry .NET Auto Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation):
+[`1.2.0`](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0).
 - Updated value for following attributes:
   - `telemetry.distro.name` to `splunk-otel-dotnet`
   - `telemetry.distro.version` to current release version.

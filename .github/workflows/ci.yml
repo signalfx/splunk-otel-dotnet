@@ -27,8 +27,9 @@ jobs:
       - uses: actions/setup-dotnet@v3.2.0
         with:
           dotnet-version: | 
-            6.0.415
-            7.0.402
+            6.0.417
+            7.0.404
+            8.0.100
       - run: ./build.cmd Workflow
       - run: brew install coreutils
         if: ${{ runner.os == 'macOS' }}
@@ -39,10 +40,10 @@ jobs:
         shell: bash
         run: |
           set -e
-          dotnet publish -f net7.0 -c Release ./test/test-applications/integrations/TestApplication.Smoke
+          dotnet publish -f net8.0 -c Release ./test/test-applications/integrations/TestApplication.Smoke
           export OTEL_DOTNET_AUTO_HOME="${PWD}/OpenTelemetryDistribution"
           . ./instrument.sh
-          ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net7.0/publish/TestApplication.Smoke
+          ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net8.0/publish/TestApplication.Smoke
             test "$(ls -A '${{ matrix.log-dir }}' )"
       - name: Test the PowerShell module instructions from README.md
         if: ${{ runner.os == 'Windows' }}
@@ -52,12 +53,12 @@ jobs:
           Import-Module "${PWD}/bin/InstallationScripts/Splunk.OTel.DotNet.psm1"
           [System.Environment]::SetEnvironmentVariable("SPLUNK_OTEL_DOTNET_AUTO_INSTALL_DIR", "${PWD}\OpenTelemetryDistribution", [System.EnvironmentVariableTarget]::Machine)
           Register-OpenTelemetryForCurrentSession -OTelServiceName "MyServiceDisplayName"
-          ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net7.0/TestApplication.Smoke.exe
+          ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net8.0/TestApplication.Smoke.exe
           if (-not $?) { throw "dotnet help returned exit code: $LASTEXITCODE" }
           if (-not (Test-Path $log_path)) { throw "Log file does not exist. Instrumentation test failed." }
           Remove-Item $log_path
           Unregister-OpenTelemetryForCurrentSession
-          ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net7.0/TestApplication.Smoke.exe
+          ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net8.0/TestApplication.Smoke.exe
           if (-not $?) { throw "dotnet help returned exit code: $LASTEXITCODE" }
           if (Test-Path $log_path) { throw "Log file exists. Instrumentation unregister failed." }
       - uses: actions/upload-artifact@v3.1.3
@@ -98,10 +99,10 @@ jobs:
         docker build -t mybuildimage -f "./docker/${{ matrix.base-image }}.dockerfile" .
         docker run --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project --rm mybuildimage /bin/sh -c '
           set -e
-          dotnet publish -f net7.0 -c Release ./test/test-applications/integrations/TestApplication.Smoke
+          dotnet publish -f net8.0 -c Release ./test/test-applications/integrations/TestApplication.Smoke
           export OTEL_DOTNET_AUTO_HOME="${PWD}/OpenTelemetryDistribution"
           . ./instrument.sh
-          ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net7.0/publish/TestApplication.Smoke
+          ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net8.0/publish/TestApplication.Smoke
             test "$(ls -A /var/log/opentelemetry/dotnet )"
         '
     - uses: actions/upload-artifact@v3.1.3
@@ -118,8 +119,9 @@ jobs:
       - uses: actions/setup-dotnet@v3.2.0
         with:
           dotnet-version: | 
-            6.0.415
-            7.0.402
+            6.0.417
+            7.0.404
+            8.0.100
       - run: ./build.cmd NuGetWorkflow
       - uses: actions/upload-artifact@v3.1.3
         with:
@@ -142,8 +144,9 @@ jobs:
       - uses: actions/setup-dotnet@v3.2.0
         with:
           dotnet-version: | 
-            6.0.415
-            7.0.402
+            6.0.417
+            7.0.404
+            8.0.100
       - name: Download NuGet Artifacts from build-nuget-package job
         uses: actions/download-artifact@v3.0.2
         with:
