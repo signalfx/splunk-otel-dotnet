@@ -34,6 +34,8 @@ No changes in the code are needed to correctly version this package.
     directory.
     1. Upload and publish the package to nuget.org.
 
+1. Check that the `operator-docker` image has been published.
+
 1. Ask [o11y-docs team](https://github.com/orgs/splunk/teams/o11y-docs)
 to publish necessary updates to the [documentation](https://github.com/splunk/public-o11y-docs).
 
