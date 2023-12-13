@@ -16,6 +16,8 @@
 
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
+using Splunk.OpenTelemetry.AutoInstrumentation.AlwaysOnProfiler;
+
 
 #if NETFRAMEWORK
 using OpenTelemetry.Instrumentation.AspNet;
@@ -95,5 +97,23 @@ public class Plugin
         _traces.ConfigureTracesOptions(options);
     }
 
+#endif
+
+#if NET6_0_OR_GREATER
+    /// <summary>
+    /// Configure Continuous Profiler.
+    /// </summary>
+    /// <returns>(threadSamplingEnabled, threadSamplingInterval, allocationSamplingEnabled, maxMemorySamplesPerMinute, exportInterval, continuousProfilerExporter)</returns>
+    public Tuple<bool, uint, bool, uint, TimeSpan, object> GetContinuousProfilerConfiguration()
+    {
+        var threadSamplingEnabled = Settings.CpuProfilerEnabled;
+        var threadSamplingInterval = Settings.CpuProfilerCallStackInterval;
+        var allocationSamplingEnabled = Settings.MemoryProfilerEnabled;
+        var maxMemorySamplesPerMinute = 200u;
+        var exportInterval = TimeSpan.FromMilliseconds(threadSamplingInterval);
+        object continuousProfilerExporter = new PprofInOtlpLogsExporter(Settings.ProfilerLogsEndpoint);
+
+        return Tuple.Create(threadSamplingEnabled, threadSamplingInterval, allocationSamplingEnabled, maxMemorySamplesPerMinute, exportInterval, continuousProfilerExporter);
+    }
 #endif
 }

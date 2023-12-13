@@ -31,7 +31,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
         }
 
         [Fact]
-        internal void TracerSettings_DefaultValues()
+        internal void PluginSettings_DefaultValues()
         {
             var settings = PluginSettings.FromDefaultSources();
 
@@ -40,6 +40,12 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
                 settings.Realm.Should().Be("none");
                 settings.AccessToken.Should().BeNull();
                 settings.TraceResponseHeaderEnabled.Should().BeTrue();
+#if NET6_0_OR_GREATER
+                settings.ProfilerLogsEndpoint.Should().Be("http://localhost:4318/v1/logs");
+                settings.CpuProfilerEnabled.Should().BeFalse();
+                settings.MemoryProfilerEnabled.Should().BeFalse();
+                settings.CpuProfilerCallStackInterval.Should().Be(10000u);
+#endif
             }
         }
 
@@ -48,6 +54,12 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Realm, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AccessToken, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled, null);
+#if NET6_0_OR_GREATER
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint, null);
+#endif
         }
     }
 }

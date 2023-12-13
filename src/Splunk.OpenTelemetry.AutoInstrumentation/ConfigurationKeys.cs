@@ -34,6 +34,31 @@ internal static class ConfigurationKeys
         /// Configuration key for enabling splunk context server timing header.
         /// </summary>
         public const string TraceResponseHeaderEnabled = "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED";
+
+#if NET6_0_OR_GREATER
+        public static class AlwaysOnProfiler
+        {
+            /// <summary>
+            /// Configuration key for interval at which call stacks are sampled (in ms).
+            /// </summary>
+            public const string CallStackInterval = "SPLUNK_PROFILER_CALL_STACK_INTERVAL";
+
+            /// <summary>
+            /// Configuration key for enabling CPU profiler.
+            /// </summary>
+            public const string CpuProfilerEnabled = "SPLUNK_PROFILER_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling memory profiler.
+            /// </summary>
+            public const string MemoryProfilerEnabled = "SPLUNK_PROFILER_LOGS_ENDPOINT";
+
+            /// <summary>
+            /// Configuration key for endpoint where profiling data is sent. Defaults to the value in `OTLP_EXPORTER_OTLP_ENDPOINT`.
+            /// </summary>
+            public const string ProfilerLogsEndpoint = "SPLUNK_PROFILER_MEMORY_ENABLED";
+        }
+#endif
     }
 
     public static class OpenTelemetry
