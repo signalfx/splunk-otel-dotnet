@@ -22,6 +22,12 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 public interface ILogger
 {
     /// <summary>
+    /// Logs debug message.
+    /// </summary>
+    /// <param name="message">Message to be logged.</param>
+    void Debug(string message);
+
+    /// <summary>
     /// Logs warning message.
     /// </summary>
     /// <param name="message">Message to be logged.</param>

@@ -21,6 +21,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 internal class Logger : ILogger
 {
     private static readonly object? Log;
+    private static readonly MethodInfo? DebugMethod;
     private static readonly MethodInfo? WarningMethod;
     private static readonly MethodInfo? ErrorMethod;
     private static readonly MethodInfo? ErrorWithExceptionMethod;
@@ -37,6 +38,7 @@ internal class Logger : ILogger
 
             Log = method.Invoke(null, new object[] { "Splunk" })!;
 
+            DebugMethod = GetMethod("Debug");
             WarningMethod = GetMethod("Warning");
             ErrorMethod = GetMethod("Error");
             ErrorWithExceptionMethod = GetMethodWithException("Error");
@@ -45,6 +47,11 @@ internal class Logger : ILogger
         {
             Console.Error.WriteLine($"Could not initialize Logger. {ex}");
         }
+    }
+
+    public void Debug(string message)
+    {
+        DebugMethod?.Invoke(Log, new object[] { message, true });
     }
 
     public void Warning(string message)
