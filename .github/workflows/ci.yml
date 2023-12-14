@@ -148,7 +148,7 @@ jobs:
             7.0.404
             8.0.100
       - name: Download NuGet Artifacts from build-nuget-package job
-        uses: actions/download-artifact@v3.0.2
+        uses: actions/download-artifact@v4.0.0
         with:
           name: nuget-package
           path: NuGetPackage/
@@ -165,7 +165,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4.1.1
-      - uses: actions/download-artifact@v3.0.2
+      - uses: actions/download-artifact@v4.0.0
         with:
           path: .
       - run: cp bin-alpine/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-musl.zip
