@@ -33,6 +33,7 @@ public static class MatrixSerializer
         var serializer = new SerializerBuilder()
             .WithNamingConvention(UnderscoredNamingConvention.Instance)
             .WithIndentedSequences()
+            .DisableAliases()
             .Build();
 
         File.WriteAllText(path, serializer.Serialize(MetadataData.GetAllInOne()));
