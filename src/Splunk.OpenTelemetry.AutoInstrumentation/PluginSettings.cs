@@ -46,7 +46,7 @@ internal class PluginSettings
         var callStackInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval) ?? 10000;
         CpuProfilerCallStackInterval = callStackInterval < 0 ? 10000u : (uint)callStackInterval;
 
-        ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint);
+        ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
 #endif
     }
 
@@ -69,7 +69,7 @@ internal class PluginSettings
 
     public bool MemoryProfilerEnabled { get; }
 
-    public string ProfilerLogsEndpoint { get; }
+    public Uri ProfilerLogsEndpoint { get; }
 #endif
 
     public static PluginSettings FromDefaultSources()
@@ -89,21 +89,21 @@ internal class PluginSettings
     }
 
 #if NET6_0_OR_GREATER
-    private static string GetProfilerLogsEndpoints(IConfigurationSource source, string? otlpFallback)
+    private static Uri GetProfilerLogsEndpoints(IConfigurationSource source, Uri? otlpFallback)
     {
         var profilerLogsEndpoint = source.GetString(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint);
 
         if (string.IsNullOrEmpty(profilerLogsEndpoint))
         {
-            if (string.IsNullOrEmpty(otlpFallback))
+            if (otlpFallback == null)
             {
-                return "http://localhost:4318/v1/logs";
+                return new Uri("http://localhost:4318/v1/logs");
             }
 
-            return otlpFallback.EndsWith("v1/logs") ? otlpFallback : new Uri(new Uri(otlpFallback), "v1/logs").ToString();
+            return otlpFallback.ToString().EndsWith("v1/logs") ? otlpFallback : new Uri(otlpFallback, "v1/logs");
         }
 
-        return profilerLogsEndpoint;
+        return new Uri(profilerLogsEndpoint);
     }
 #endif
 }

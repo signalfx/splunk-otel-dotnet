@@ -1,4 +1,4 @@
-﻿// <copyright file="PprofInOtlpLogsExporter.cs" company="Splunk Inc.">
+// <copyright file="AllocationSample.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,19 +14,20 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.AlwaysOnProfiler;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 
-internal class PprofInOtlpLogsExporter
+internal class AllocationSample
 {
-    public PprofInOtlpLogsExporter(string profilerLogsEndpoint)
+    public AllocationSample(long allocationSizeBytes, string allocationTypeName, ThreadSample threadSample)
     {
+        AllocationSizeBytes = allocationSizeBytes;
+        TypeName = allocationTypeName;
+        ThreadSample = threadSample;
     }
 
-    public void ExportThreadSamples(byte[] buffer, int read)
-    {
-    }
+    public long AllocationSizeBytes { get; }
 
-    public void ExportAllocationSamples(byte[] buffer, int read)
-    {
-    }
+    public string TypeName { get; }
+
+    public ThreadSample ThreadSample { get; }
 }
