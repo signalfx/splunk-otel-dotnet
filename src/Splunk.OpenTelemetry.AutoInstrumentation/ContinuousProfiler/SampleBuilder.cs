@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 
+#if NET6_0_OR_GREATER
 using Splunk.OpenTelemetry.AutoInstrumentation.Pprof.Proto.Profile;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler
@@ -51,3 +52,4 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler
         }
     }
 }
+#endif

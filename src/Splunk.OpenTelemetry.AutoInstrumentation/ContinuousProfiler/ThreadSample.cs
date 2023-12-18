@@ -14,6 +14,8 @@
 // limitations under the License.
 // </copyright>
 
+#if NET6_0_OR_GREATER
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler
 {
     internal class ThreadSample
@@ -59,3 +61,4 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler
         }
     }
 }
+#endif

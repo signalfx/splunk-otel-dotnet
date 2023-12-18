@@ -14,6 +14,8 @@
 // limitations under the License.
 // </copyright>
 
+#if NET6_0_OR_GREATER
+
 using System.IO.Compression;
 using Splunk.OpenTelemetry.AutoInstrumentation.Pprof.Proto.Profile;
 using Splunk.OpenTelemetry.AutoInstrumentation.Proto.Common.V1;
@@ -174,3 +176,4 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler
         }
     }
 }
+#endif

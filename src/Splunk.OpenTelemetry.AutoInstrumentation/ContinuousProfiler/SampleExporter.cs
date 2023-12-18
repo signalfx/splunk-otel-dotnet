@@ -14,6 +14,8 @@
 // limitations under the License.
 // </copyright>
 
+#if NET6_0_OR_GREATER
+
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 using Splunk.OpenTelemetry.AutoInstrumentation.Proto.Common.V1;
 using Splunk.OpenTelemetry.AutoInstrumentation.Proto.Logs.V1;
@@ -99,3 +101,4 @@ internal class SampleExporter
         };
     }
 }
+#endif
