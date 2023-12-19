@@ -106,6 +106,13 @@ public abstract class TestHelper
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://localhost:{collector.Port}");
     }
 
+#if NET6_0_OR_GREATER
+    public void SetExporter(MockLContinuousProfilerCollector collector)
+    {
+        SetEnvironmentVariable("SPLUNK_PROFILER_MEMORY_ENABLED", $"http://localhost:{collector.Port}/v1/logs");
+    }
+#endif
+
     public void EnableBytecodeInstrumentation()
     {
         SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");

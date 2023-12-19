@@ -64,4 +64,9 @@
     <None Include="nuget-readme.md" Pack="true" PackagePath="\docs\readme.md" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 </Project>
