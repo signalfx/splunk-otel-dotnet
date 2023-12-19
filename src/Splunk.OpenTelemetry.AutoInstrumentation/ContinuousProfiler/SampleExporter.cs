@@ -30,20 +30,22 @@ internal class SampleExporter
 {
     private static readonly ILogger Logger = new Logger();
 
-    private readonly OtlpHttpLogSender _logSender;
+    private static LogsData? _logsData = null;
 
-    private readonly LogsData _logsData;
+    private readonly OtlpHttpLogSender _logSender;
 
     public SampleExporter(OtlpHttpLogSender logSender)
     {
         _logSender = logSender ?? throw new ArgumentNullException(nameof(logSender));
-        // The same LogsData instance is used on all export messages. With the exception of the list of
-        // LogRecords, the Logs property, all other fields are prepopulated.
-        _logsData = CreateLogsData();
     }
 
     public void Export(LogRecord logRecord)
     {
+        if (_logsData == null)
+        {
+            return;
+        }
+
         var logRecords = _logsData.ResourceLogs[0].ScopeLogs[0].LogRecords;
         try
         {
@@ -66,23 +68,28 @@ internal class SampleExporter
         }
     }
 
-    private static LogsData CreateLogsData()
+    internal static void SetResources(global::OpenTelemetry.Resources.Resource otelResource)
     {
+        if (_logsData != null)
+        {
+            return;
+        }
+
         var resource = new Resource();
-        var profilingAttributes = OtelResource
-                                 .GetCommonAttributes()
+        var profilingAttributes = otelResource
+                                 .Attributes
                                  .Select(kv =>
                                              new KeyValue
                                              {
                                                  Key = kv.Key,
                                                  Value = new AnyValue
                                                  {
-                                                     StringValue = kv.Value
+                                                     StringValue = kv.Value.ToString()
                                                  }
                                              });
         resource.Attributes.AddRange(profilingAttributes);
 
-        return new LogsData
+        _logsData = new LogsData
         {
             ResourceLogs =
             {

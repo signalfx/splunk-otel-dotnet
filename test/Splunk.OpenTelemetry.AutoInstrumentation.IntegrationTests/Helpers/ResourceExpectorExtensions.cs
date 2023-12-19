@@ -15,6 +15,9 @@
 // </copyright>
 
 using System.Reflection;
+using FluentAssertions;
+using OpenTelemetry.Proto.Common.V1;
+using OpenTelemetry.Proto.Resource.V1;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
@@ -32,5 +35,27 @@ internal static class ResourceExpectorExtensions
         resourceExpector.Expect("telemetry.distro.name", "splunk-otel-dotnet");
         resourceExpector.Expect("telemetry.distro.version", ExpectedDistributionVersion);
         resourceExpector.Expect("splunk.distro.version", ExpectedDistributionVersion);
+    }
+
+    internal static void AssertProfileResources(Resource resource)
+    {
+        var constantAttributes = new List<KeyValue>
+        {
+            new() { Key = "service.name", Value = new AnyValue { StringValue = "TestApplication.ContinuousProfiler" } },
+            // TODO check if it is really required new() { Key = "deployment.environment", Value = new AnyValue { StringValue = "integration_tests" } },
+            new() { Key = "telemetry.sdk.name", Value = new AnyValue { StringValue = "opentelemetry" } },
+            new() { Key = "telemetry.sdk.language", Value = new AnyValue { StringValue = "dotnet" } },
+            new() { Key = "telemetry.distro.name", Value = new AnyValue { StringValue = "splunk-otel-dotnet" } },
+            new() { Key = "telemetry.distro.version", Value = new AnyValue { StringValue = ExpectedDistributionVersion } },
+            new() { Key = "splunk.distro.version", Value = new AnyValue { StringValue = ExpectedDistributionVersion } }
+        };
+
+        foreach (var constantAttribute in constantAttributes)
+        {
+            resource.Attributes.Should().ContainEquivalentOf(constantAttribute);
+        }
+
+        // TODO implement detectors in contrib resource.Attributes.Should().Contain(value => value.Key == "host.name");
+        // TODO implement detectors in contrib resource.Attributes.Should().Contain(value => value.Key == "process.pid");
     }
 }

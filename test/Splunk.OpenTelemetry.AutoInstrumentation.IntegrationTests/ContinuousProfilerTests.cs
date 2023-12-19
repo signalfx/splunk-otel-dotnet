@@ -79,7 +79,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
                 {
                     AllShouldHaveBasicAttributes(logRecords, ConstantValuedAttributes());
                     RecordsContainFrameCountAttribute(logRecords);
-                    // TODO ResourceContainsExpectedAttributes(dataResourceLog.Resource);
+                    ResourceContainsExpectedAttributes(dataResourceLog.Resource);
                     HasNameAndVersionSet(instrumentationLibraryLogs.Scope);
                 }
 
@@ -106,12 +106,12 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
                     Key = "com.splunk.sourcetype",
                     Value = new AnyValue { StringValue = "otel.profiling" }
                 },
-                new KeyValue
+                new()
                 {
                     Key = "profiling.data.format",
                     Value = new AnyValue { StringValue = "pprof-gzip-base64" }
                 },
-                new KeyValue
+                new()
                 {
                     Key = "profiling.data.type",
                     Value = new AnyValue { StringValue = "cpu" }
@@ -165,23 +165,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
 
         private static void ResourceContainsExpectedAttributes(global::OpenTelemetry.Proto.Resource.V1.Resource resource)
         {
-            var constantAttributes = new List<KeyValue>
-            {
-                new() { Key = "deployment.environment", Value = new AnyValue { StringValue = "integration_tests" } },
-                new() { Key = "service.name", Value = new AnyValue { StringValue = "TestApplication.ContinuousProfiler" } },
-                new() { Key = "telemetry.sdk.name", Value = new AnyValue { StringValue = "signalfx-dotnet-tracing" } },
-                new() { Key = "telemetry.sdk.language", Value = new AnyValue { StringValue = "dotnet" } },
-                new() { Key = "telemetry.sdk.version", Value = new AnyValue { StringValue = "TracerConstants.AssemblyVersion" } }, // TODO { StringValue = TracerConstants.AssemblyVersion } },
-                new() { Key = "splunk.distro.version", Value = new AnyValue { StringValue = "TracerConstants.AssemblyVersion" } } // TODO { StringValue = TracerConstants.AssemblyVersion } },
-            };
-
-            foreach (var constantAttribute in constantAttributes)
-            {
-                resource.Attributes.Should().ContainEquivalentOf(constantAttribute);
-            }
-
-            resource.Attributes.Should().Contain(value => value.Key == "host.name");
-            resource.Attributes.Should().Contain(value => value.Key == "process.pid");
+            ResourceExpectorExtensions.AssertProfileResources(resource);
         }
 
         private static void HasNameAndVersionSet(InstrumentationScope instrumentationScope)
