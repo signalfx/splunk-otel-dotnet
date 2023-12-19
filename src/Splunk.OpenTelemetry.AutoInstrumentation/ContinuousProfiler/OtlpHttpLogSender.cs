@@ -16,6 +16,7 @@
 
 #if NET6_0_OR_GREATER
 using System.Net;
+using OpenTelemetry;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 using Splunk.OpenTelemetry.AutoInstrumentation.Proto.Logs.V1;
 
@@ -39,6 +40,8 @@ internal class OtlpHttpLogSender
     {
         HttpWebRequest httpWebRequest;
 
+        // Prevents the exporter's operations from being instrumented.
+        using var scope = SuppressInstrumentationScope.Begin();
         try
         {
 #pragma warning disable SYSLIB0014
@@ -47,7 +50,6 @@ internal class OtlpHttpLogSender
 #pragma warning restore SYSLIB0014
             httpWebRequest.ContentType = "application/x-protobuf";
             httpWebRequest.Method = "POST";
-            // TODO how to disable tracing? httpWebRequest.Headers.Add(CommonHttpHeaderNames.TracingEnabled, "false");
 
             using var stream = httpWebRequest.GetRequestStream();
             Vendors.ProtoBuf.Serializer.Serialize(stream, logsData);
