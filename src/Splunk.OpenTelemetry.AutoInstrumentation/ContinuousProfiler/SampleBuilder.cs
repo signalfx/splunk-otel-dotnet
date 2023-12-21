@@ -15,41 +15,42 @@
 // </copyright>
 
 #if NET6_0_OR_GREATER
+
 using Splunk.OpenTelemetry.AutoInstrumentation.Pprof.Proto.Profile;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler
+namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
+
+internal class SampleBuilder
 {
-    internal class SampleBuilder
+    private readonly Sample _sample = new();
+    private readonly IList<ulong> _locationIds = new List<ulong>();
+    private long? _value;
+
+    public SampleBuilder AddLabel(Label label)
     {
-        private readonly Sample _sample = new();
-        private readonly IList<ulong> _locationIds = new List<ulong>();
-        private long? _value;
+        _sample.Labels.Add(label);
+        return this;
+    }
 
-        public SampleBuilder AddLabel(Label label)
-        {
-            _sample.Labels.Add(label);
-            return this;
-        }
+    public SampleBuilder SetValue(long val)
+    {
+        _value = val;
+        return this;
+    }
 
-        public SampleBuilder SetValue(long val)
-        {
-            _value = val;
-            return this;
-        }
+    public SampleBuilder AddLocationId(ulong locationId)
+    {
+        _locationIds.Add(locationId);
+        return this;
+    }
 
-        public SampleBuilder AddLocationId(ulong locationId)
-        {
-            _locationIds.Add(locationId);
-            return this;
-        }
+    public Sample Build()
+    {
+        _sample.LocationIds = _locationIds.ToArray();
+        _sample.Values = _value.HasValue ? new[] { _value.Value } : Array.Empty<long>();
 
-        public Sample Build()
-        {
-            _sample.LocationIds = _locationIds.ToArray();
-            _sample.Values = _value.HasValue ? new[] { _value.Value } : Array.Empty<long>();
-
-            return _sample;
-        }
+        return _sample;
     }
 }
+
 #endif

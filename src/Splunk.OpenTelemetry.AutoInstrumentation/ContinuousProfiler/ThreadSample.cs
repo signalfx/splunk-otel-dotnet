@@ -16,49 +16,49 @@
 
 #if NET6_0_OR_GREATER
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler
+namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
+
+internal class ThreadSample
 {
-    internal class ThreadSample
+    public ThreadSample(Time timestamp, long spanId, long traceIdHigh, long traceIdLow, int managedId, string threadName, uint threadIndex)
     {
-        public ThreadSample(Time timestamp, long spanId, long traceIdHigh, long traceIdLow, int managedId, string threadName, uint threadIndex)
+        Timestamp = timestamp;
+        SpanId = spanId;
+        TraceIdHigh = traceIdHigh;
+        TraceIdLow = traceIdLow;
+        ManagedId = managedId;
+        ThreadName = threadName;
+        ThreadIndex = threadIndex;
+    }
+
+    public Time Timestamp { get; set; }
+
+    public long SpanId { get; set; }
+
+    public long TraceIdHigh { get; set; }
+
+    public long TraceIdLow { get; set; }
+
+    public int ManagedId { get; set; }
+
+    public string ThreadName { get; set; }
+
+    public uint ThreadIndex { get; set; }
+
+    public IList<string> Frames { get; } = new List<string>();
+
+    internal class Time
+    {
+        public Time(long milliseconds)
         {
-            Timestamp = timestamp;
-            SpanId = spanId;
-            TraceIdHigh = traceIdHigh;
-            TraceIdLow = traceIdLow;
-            ManagedId = managedId;
-            ThreadName = threadName;
-            ThreadIndex = threadIndex;
+            Milliseconds = milliseconds;
+            Nanoseconds = (ulong)milliseconds * 1_000_000u;
         }
 
-        public Time Timestamp { get; set; }
+        public ulong Nanoseconds { get; }
 
-        public long SpanId { get; set; }
-
-        public long TraceIdHigh { get; set; }
-
-        public long TraceIdLow { get; set; }
-
-        public int ManagedId { get; set; }
-
-        public string ThreadName { get; set; }
-
-        public uint ThreadIndex { get; set; }
-
-        public IList<string> Frames { get; } = new List<string>();
-
-        internal class Time
-        {
-            public Time(long milliseconds)
-            {
-                Milliseconds = milliseconds;
-                Nanoseconds = (ulong)milliseconds * 1_000_000u;
-            }
-
-            public ulong Nanoseconds { get; }
-
-            public long Milliseconds { get; }
-        }
+        public long Milliseconds { get; }
     }
 }
+
 #endif
