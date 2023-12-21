@@ -42,7 +42,6 @@ internal static class ResourceExpectorExtensions
         var constantAttributes = new List<KeyValue>
         {
             new() { Key = "service.name", Value = new AnyValue { StringValue = "TestApplication.ContinuousProfiler" } },
-            // TODO check if it is really required new() { Key = "deployment.environment", Value = new AnyValue { StringValue = "integration_tests" } },
             new() { Key = "telemetry.sdk.name", Value = new AnyValue { StringValue = "opentelemetry" } },
             new() { Key = "telemetry.sdk.language", Value = new AnyValue { StringValue = "dotnet" } },
             new() { Key = "telemetry.distro.name", Value = new AnyValue { StringValue = "splunk-otel-dotnet" } },
@@ -55,7 +54,7 @@ internal static class ResourceExpectorExtensions
             resource.Attributes.Should().ContainEquivalentOf(constantAttribute);
         }
 
-        // TODO implement detectors in contrib resource.Attributes.Should().Contain(value => value.Key == "host.name");
-        // TODO implement detectors in contrib resource.Attributes.Should().Contain(value => value.Key == "process.pid");
+        resource.Attributes.Should().Contain(value => value.Key == "host.name");
+        resource.Attributes.Should().Contain(value => value.Key == "process.pid");
     }
 }

@@ -17,6 +17,7 @@
 #if NET6_0_OR_GREATER
 
 using System.IO.Compression;
+using System.Runtime.CompilerServices;
 using Splunk.OpenTelemetry.AutoInstrumentation.Pprof.Proto.Profile;
 using Splunk.OpenTelemetry.AutoInstrumentation.Proto.Common.V1;
 using Splunk.OpenTelemetry.AutoInstrumentation.Proto.Logs.V1;
@@ -111,7 +112,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler
             if (threadSample.SpanId != 0 || threadSample.TraceIdHigh != 0 || threadSample.TraceIdLow != 0)
             {
                 pprof.AddLabel(sampleBuilder, "span_id", threadSample.SpanId.ToString("x16"));
-                // TODO serialize traceId pprof.AddLabel(sampleBuilder, "trace_id", TraceIdHelper.ToString(threadSample.TraceIdHigh, threadSample.TraceIdLow));
+                pprof.AddLabel(sampleBuilder, "trace_id", TraceIdHelper.ToString(threadSample.TraceIdHigh, threadSample.TraceIdLow));
             }
 
             for (var index = 0; index < threadSample.Frames.Count; index++)
@@ -133,7 +134,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler
                 var allocationSample = allocationSamples[index];
                 var sampleBuilder = CreateSampleBuilder(pprof, allocationSample.ThreadSample);
 
-                // TODO Splunk: export typename
                 sampleBuilder.SetValue(allocationSample.AllocationSizeBytes);
                 pprof.Profile.Samples.Add(sampleBuilder.Build());
             }
@@ -173,6 +173,15 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler
                     StringValue = cpuProfile
                 }
             };
+        }
+
+        private static class TraceIdHelper
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static string ToString(long higher, long lower) => ToString((ulong)higher, (ulong)lower);
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static string ToString(ulong higher, ulong lower) => $"{higher:x16}{lower:x16}";
         }
     }
 }
