@@ -109,7 +109,7 @@ public abstract class TestHelper
 #if NET6_0_OR_GREATER
     public void SetExporter(MockLContinuousProfilerCollector collector)
     {
-        SetEnvironmentVariable("SPLUNK_PROFILER_MEMORY_ENABLED", $"http://localhost:{collector.Port}/v1/logs");
+        SetEnvironmentVariable("SPLUNK_PROFILER_LOGS_ENDPOINT", $"http://localhost:{collector.Port}/v1/logs");
     }
 #endif
 
