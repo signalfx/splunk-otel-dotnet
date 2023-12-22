@@ -39,6 +39,7 @@ internal static class ResourceExpectorExtensions
 
     internal static void AssertProfileResources(Resource resource)
     {
+        // asserting resource attribute with values
         var constantAttributes = new List<KeyValue>
         {
             new() { Key = "service.name", Value = new AnyValue { StringValue = "TestApplication.ContinuousProfiler" } },
@@ -54,6 +55,7 @@ internal static class ResourceExpectorExtensions
             resource.Attributes.Should().ContainEquivalentOf(constantAttribute);
         }
 
+        // asserting resource attribute without values
         resource.Attributes.Should().Contain(value => value.Key == "host.name");
         resource.Attributes.Should().Contain(value => value.Key == "process.pid");
     }
