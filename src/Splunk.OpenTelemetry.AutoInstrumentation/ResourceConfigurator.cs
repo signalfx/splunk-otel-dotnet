@@ -71,9 +71,11 @@ internal static class ResourceConfigurator
 
         if (resource.Attributes.All(kvp => kvp.Key != ServiceNameAttribute))
         {
+            var localResourceBuilder = ResourceBuilder.CreateEmpty();
+            localResourceBuilder.AddAttributes(resource.Attributes);
             // service.name was not configured yet use the fallback.
-            resourceBuilder.AddAttributes(new KeyValuePair<string, object>[] { new(ServiceNameAttribute, ServiceNameConfigurator.GetFallbackServiceName()) });
-            SampleExporter.SetResources(resourceBuilder.Build());
+            localResourceBuilder.AddAttributes(new KeyValuePair<string, object>[] { new(ServiceNameAttribute, ServiceNameConfigurator.GetFallbackServiceName()) });
+            SampleExporter.SetResources(localResourceBuilder.Build());
         }
         else
         {
