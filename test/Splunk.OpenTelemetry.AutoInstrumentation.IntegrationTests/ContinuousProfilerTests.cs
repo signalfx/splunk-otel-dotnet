@@ -73,7 +73,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
                     profiles.Add(profile);
                 }
 
-                containStackTraceForClassHierarchy |= profiles.Any(profile => ContainStackTraceForClassHierarchy(profile, expectedStackTrace));
+                containStackTraceForClassHierarchy |= profiles.Any(profile => ContainsStackTrace(profile, expectedStackTrace));
 
                 using (new AssertionScope())
                 {
@@ -152,7 +152,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
             instrumentationScope.Version.Should().Be("0.1.0");
         }
 
-        private static bool ContainStackTraceForClassHierarchy(Profile profile, string expectedStackTrace)
+        private static bool ContainsStackTrace(Profile profile, string expectedStackTrace)
         {
             var frames = profile.Locations
                                 .SelectMany(location => location.Lines)
