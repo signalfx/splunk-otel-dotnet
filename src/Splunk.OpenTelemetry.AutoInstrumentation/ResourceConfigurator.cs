@@ -53,8 +53,6 @@ internal static class ResourceConfigurator
         }
     }
 
-    internal static Resource? FinalResources { get; private set; }
-
     public static void Configure(ResourceBuilder resourceBuilder, PluginSettings settings)
     {
         var attributes = new List<KeyValuePair<string, object>>
