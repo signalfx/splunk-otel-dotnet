@@ -65,7 +65,7 @@ public class ContinuousProfilerTests : TestHelper
                 await using var memoryStream = new MemoryStream(gzip);
                 await using var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
                 var profile = Vendors.ProtoBuf.Serializer.Deserialize<Profile>(gzipStream);
-                profiles.Add(profile); // samples->values -> item item long array
+                profiles.Add(profile);
             }
 
             using (new AssertionScope())
@@ -113,7 +113,7 @@ public class ContinuousProfilerTests : TestHelper
                 await using var memoryStream = new MemoryStream(gzip);
                 await using var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
                 var profile = Vendors.ProtoBuf.Serializer.Deserialize<Profile>(gzipStream);
-                profiles.Add(profile); // samples->values -> item item empty array
+                profiles.Add(profile);
             }
 
             containStackTraceForClassHierarchy |= profiles.Any(profile => ContainsStackTrace(profile, expectedStackTrace));
