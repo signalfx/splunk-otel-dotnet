@@ -51,12 +51,12 @@ internal static class ConfigurationKeys
             /// <summary>
             /// Configuration key for enabling memory profiler.
             /// </summary>
-            public const string MemoryProfilerEnabled = "SPLUNK_PROFILER_LOGS_ENDPOINT";
+            public const string MemoryProfilerEnabled = "SPLUNK_PROFILER_MEMORY_ENABLED";
 
             /// <summary>
             /// Configuration key for endpoint where profiling data is sent. Defaults to the value in `OTLP_EXPORTER_OTLP_ENDPOINT`.
             /// </summary>
-            public const string ProfilerLogsEndpoint = "SPLUNK_PROFILER_MEMORY_ENABLED";
+            public const string ProfilerLogsEndpoint = "SPLUNK_PROFILER_LOGS_ENDPOINT";
         }
 #endif
     }
