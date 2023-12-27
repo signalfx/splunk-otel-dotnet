@@ -22,6 +22,11 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 public interface ILogger
 {
     /// <summary>
+    /// Gets a value indicating whether Debug log is enabled.
+    /// </summary>
+    public bool IsDebugEnabled { get; }
+
+    /// <summary>
     /// Logs debug message.
     /// </summary>
     /// <param name="message">Message to be logged.</param>

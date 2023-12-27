@@ -20,6 +20,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 internal class Logger : ILogger
 {
+    private static readonly bool IsDebugEnabledField;
     private static readonly object? Log;
     private static readonly MethodInfo? DebugMethod;
     private static readonly MethodInfo? WarningMethod;
@@ -30,11 +31,11 @@ internal class Logger : ILogger
     {
         try
         {
-            var otelLoggingType = Type.GetType("OpenTelemetry.AutoInstrumentation.Logging.OtelLogging, OpenTelemetry.AutoInstrumentation")!;
+            var oTelLoggingType = Type.GetType("OpenTelemetry.AutoInstrumentation.Logging.OtelLogging, OpenTelemetry.AutoInstrumentation")!;
             // Call the constructor to initialize (this method guarantees that the static constructor is only called once, regardless how many times the method is called)
-            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(otelLoggingType.TypeHandle);
+            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(oTelLoggingType.TypeHandle);
 
-            var method = otelLoggingType.GetMethod("GetLogger", new[] { typeof(string) })!;
+            var method = oTelLoggingType.GetMethod("GetLogger", new[] { typeof(string) })!;
 
             Log = method.Invoke(null, new object[] { "Splunk" })!;
 
@@ -42,12 +43,20 @@ internal class Logger : ILogger
             WarningMethod = GetMethod("Warning");
             ErrorMethod = GetMethod("Error");
             ErrorWithExceptionMethod = GetMethodWithException("Error");
+
+            var oTelLoggingLevelType = Type.GetType("OpenTelemetry.AutoInstrumentation.Logging.LogLevel, OpenTelemetry.AutoInstrumentation")!;
+            var debugLevel = Enum.GetValues(oTelLoggingLevelType).GetValue(3);
+            var isLogLevelEnabled = Log?.GetType().GetMethod("IsEnabled");
+            var isDebugEnabledResult = isLogLevelEnabled?.Invoke(Log, new object?[] { debugLevel });
+            IsDebugEnabledField = isDebugEnabledResult is true;
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Could not initialize Logger. {ex}");
         }
     }
+
+    public bool IsDebugEnabled => IsDebugEnabledField;
 
     public void Debug(string message)
     {

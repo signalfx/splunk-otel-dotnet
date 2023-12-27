@@ -64,11 +64,12 @@ internal static class SampleNativeFormatParser
 
                     sampleStartMillis = ReadInt64(buffer, ref position);
 
-#if DEBUG
-                    const long unixEpochInTicks = 621355968000000000; // = DateTimeOffset.FromUnixTimeMilliseconds(0).Ticks
-                    var sampleStart = new DateTime((sampleStartMillis * TimeSpan.TicksPerMillisecond) + unixEpochInTicks).ToLocalTime();
-                    Log.Debug($"Parsing thread samples captured at {sampleStart.ToLongDateString()} {sampleStart.ToLongTimeString()}");
-#endif
+                    if (Log.IsDebugEnabled)
+                    {
+                        const long unixEpochInTicks = 621355968000000000; // = DateTimeOffset.FromUnixTimeMilliseconds(0).Ticks
+                        var sampleStart = new DateTime((sampleStartMillis * TimeSpan.TicksPerMillisecond) + unixEpochInTicks).ToLocalTime();
+                        Log.Debug($"Parsing thread samples captured at {sampleStart.ToLongDateString()} {sampleStart.ToLongTimeString()}");
+                    }
                 }
                 else if (operationCode == OpCodes.StartSample)
                 {
@@ -117,17 +118,19 @@ internal static class SampleNativeFormatParser
                     var totalFrames = ReadInt(buffer, ref position);
                     var numCacheMisses = ReadInt(buffer, ref position);
 
-#if DEBUG
-                    Log.Debug($"CLR was suspended for {microsSuspended} microseconds to collect a thread sample batch: threads={numThreads} frames={totalFrames} misses={numCacheMisses}");
-#endif
+                    if (Log.IsDebugEnabled)
+                    {
+                        Log.Debug($"CLR was suspended for {microsSuspended} microseconds to collect a thread sample batch: threads={numThreads} frames={totalFrames} misses={numCacheMisses}");
+                    }
                 }
                 else
                 {
                     position = read + 1;
 
-#if DEBUG
-                    Log.Debug($"Not expected operation code while parsing thread stack trace: '{operationCode}'. Operation will be ignored.");
-#endif
+                    if (Log.IsDebugEnabled)
+                    {
+                        Log.Debug($"Not expected operation code while parsing thread stack trace: '{operationCode}'. Operation will be ignored.");
+                    }
                 }
             }
         }
@@ -193,9 +196,10 @@ internal static class SampleNativeFormatParser
                 {
                     position = read + 1;
 
-#if DEBUG
-                    Log.Debug($"Not expected operation code while parsing allocation sample: '{operationCode}'. Operation will be ignored.");
-#endif
+                    if (Log.IsDebugEnabled)
+                    {
+                        Log.Debug($"Not expected operation code while parsing allocation sample: '{operationCode}'. Operation will be ignored.");
+                    }
                 }
             }
         }
