@@ -39,6 +39,49 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
         }
 
         [Fact(Skip = "It will always failed in CI. OTel .NET AutoInstrumentation update and release is required.")]
+        public async void SubmitAllocationSamples()
+        {
+            SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
+            SetEnvironmentVariable("SPLUNK_PROFILER_MEMORY_ENABLED", "true");
+            SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "TestApplication.ContinuousProfiler");
+            using var logsCollector = new MockLContinuousProfilerCollector(Output);
+            SetExporter(logsCollector);
+            RunTestApplication();
+            var logsData = logsCollector.GetAllLogs();
+
+            logsData.Length.Should().BeGreaterOrEqualTo(expected: 1);
+
+            await DumpLogRecords(logsData);
+
+            foreach (var data in logsData)
+            {
+                var profiles = new List<Profile>();
+                var dataResourceLog = data.ResourceLogs[0];
+                var instrumentationLibraryLogs = dataResourceLog.ScopeLogs[0];
+                var logRecords = instrumentationLibraryLogs.LogRecords;
+
+                foreach (var gzip in logRecords.Select(record => record.Body.StringValue).Select(Convert.FromBase64String))
+                {
+                    await using var memoryStream = new MemoryStream(gzip);
+                    await using var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
+                    var profile = Vendors.ProtoBuf.Serializer.Deserialize<Profile>(gzipStream);
+                    profiles.Add(profile); // samples->values -> item item long array
+                }
+
+                using (new AssertionScope())
+                {
+                    AllShouldHaveBasicAttributes(logRecords, ConstantValuedAttributes("allocation"));
+                    ProfilesContainAllocationValue(profiles);
+                    RecordsContainFrameCountAttribute(logRecords);
+                    ResourceContainsExpectedAttributes(dataResourceLog.Resource);
+                    HasNameAndVersionSet(instrumentationLibraryLogs.Scope);
+                }
+
+                logRecords.Clear();
+            }
+        }
+
+        [Fact(Skip = "It will always failed in CI. OTel .NET AutoInstrumentation update and release is required.")]
         public async void SubmitThreadSamples()
         {
             SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
@@ -60,7 +103,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
 
             foreach (var data in logsData)
             {
-                IList<Profile> profiles = new List<Profile>();
+                var profiles = new List<Profile>();
                 var dataResourceLog = data.ResourceLogs[0];
                 var instrumentationLibraryLogs = dataResourceLog.ScopeLogs[0];
                 var logRecords = instrumentationLibraryLogs.LogRecords;
@@ -70,14 +113,15 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
                     await using var memoryStream = new MemoryStream(gzip);
                     await using var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
                     var profile = Vendors.ProtoBuf.Serializer.Deserialize<Profile>(gzipStream);
-                    profiles.Add(profile);
+                    profiles.Add(profile); // samples->values -> item item empty array
                 }
 
                 containStackTraceForClassHierarchy |= profiles.Any(profile => ContainsStackTrace(profile, expectedStackTrace));
 
                 using (new AssertionScope())
                 {
-                    AllShouldHaveBasicAttributes(logRecords, ConstantValuedAttributes());
+                    AllShouldHaveBasicAttributes(logRecords, ConstantValuedAttributes("cpu"));
+                    ProfilesDoNotContainAnyValue(profiles);
                     RecordsContainFrameCountAttribute(logRecords);
                     ResourceContainsExpectedAttributes(dataResourceLog.Resource);
                     HasNameAndVersionSet(instrumentationLibraryLogs.Scope);
@@ -89,6 +133,22 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
             Assert.True(containStackTraceForClassHierarchy, "At least one stack trace containing class hierarchy should be reported.");
         }
 
+        private static void ProfilesContainAllocationValue(List<Profile> profiles)
+        {
+            foreach (var profile in profiles)
+            {
+                profile.Samples.All(x => x.Values.Length == 1).Should().BeTrue();
+            }
+        }
+
+        private static void ProfilesDoNotContainAnyValue(List<Profile> profiles)
+        {
+            foreach (var profile in profiles)
+            {
+                profile.Samples.All(x => x.Values.Length == 0).Should().BeTrue();
+            }
+        }
+
         private static void RecordsContainFrameCountAttribute(RepeatedField<LogRecord> logRecords)
         {
             foreach (var logRecord in logRecords)
@@ -97,7 +157,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
             }
         }
 
-        private static List<KeyValue> ConstantValuedAttributes()
+        private static List<KeyValue> ConstantValuedAttributes(string dataType)
         {
             return new List<KeyValue>
             {
@@ -114,7 +174,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
                 new()
                 {
                     Key = "profiling.data.type",
-                    Value = new AnyValue { StringValue = "cpu" }
+                    Value = new AnyValue { StringValue = dataType }
                 }
             };
         }

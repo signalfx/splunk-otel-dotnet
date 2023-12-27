@@ -20,6 +20,18 @@ internal static class ClassA
 {
     public static void MethodA()
     {
+        const int numberOfItems = 1024;
+        var items = new List<string>();
+        for (var i = 0; i < numberOfItems; i++)
+        {
+            items.Add(i.ToString("D10000"));
+        }
+
         Thread.Sleep(TimeSpan.FromSeconds(5));
+
+        for (var i = 0; i < numberOfItems; i++)
+        {
+            TextWriter.Null.Write(items[i][^2]);
+        }
     }
 }
