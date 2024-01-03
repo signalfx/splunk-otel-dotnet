@@ -19,6 +19,15 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Security
 
+## [1.2.1](https://github.com/signalfx/splunk-otel-dotnet/releases/tag/v1.2.1)
+
+This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0).
+This release is being created to publish the corresponding Docker image.
+
+### Added
+
+- Workflow to publish Docker image.
+
 ## [1.2.0](https://github.com/signalfx/splunk-otel-dotnet/releases/tag/v1.2.0)
 
 This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0).
