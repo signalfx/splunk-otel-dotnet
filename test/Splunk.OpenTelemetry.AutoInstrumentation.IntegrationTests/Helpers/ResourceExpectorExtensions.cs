@@ -15,6 +15,9 @@
 // </copyright>
 
 using System.Reflection;
+using FluentAssertions;
+using OpenTelemetry.Proto.Common.V1;
+using OpenTelemetry.Proto.Resource.V1;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
@@ -32,5 +35,28 @@ internal static class ResourceExpectorExtensions
         resourceExpector.Expect("telemetry.distro.name", "splunk-otel-dotnet");
         resourceExpector.Expect("telemetry.distro.version", ExpectedDistributionVersion);
         resourceExpector.Expect("splunk.distro.version", ExpectedDistributionVersion);
+    }
+
+    internal static void AssertProfileResources(Resource resource)
+    {
+        // asserting resource attribute with values
+        var constantAttributes = new List<KeyValue>
+        {
+            new() { Key = "service.name", Value = new AnyValue { StringValue = "TestApplication.ContinuousProfiler" } },
+            new() { Key = "telemetry.sdk.name", Value = new AnyValue { StringValue = "opentelemetry" } },
+            new() { Key = "telemetry.sdk.language", Value = new AnyValue { StringValue = "dotnet" } },
+            new() { Key = "telemetry.distro.name", Value = new AnyValue { StringValue = "splunk-otel-dotnet" } },
+            new() { Key = "telemetry.distro.version", Value = new AnyValue { StringValue = ExpectedDistributionVersion } },
+            new() { Key = "splunk.distro.version", Value = new AnyValue { StringValue = ExpectedDistributionVersion } }
+        };
+
+        foreach (var constantAttribute in constantAttributes)
+        {
+            resource.Attributes.Should().ContainEquivalentOf(constantAttribute);
+        }
+
+        // asserting resource attribute without values
+        resource.Attributes.Should().Contain(value => value.Key == "host.name");
+        resource.Attributes.Should().Contain(value => value.Key == "process.pid");
     }
 }

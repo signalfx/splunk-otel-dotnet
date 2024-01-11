@@ -36,8 +36,18 @@ internal class PluginSettings
         AccessToken = source.GetString(ConfigurationKeys.Splunk.AccessToken);
         ServiceName = source.GetString(ConfigurationKeys.OpenTelemetry.ServiceName);
         TraceResponseHeaderEnabled = source.GetBool(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled) ?? true;
-        IsOtlpEndpointSet = !string.IsNullOrEmpty(source.GetString(ConfigurationKeys.OpenTelemetry.OtlpEndpoint));
+        var otlpEndpoint = source.GetString(ConfigurationKeys.OpenTelemetry.OtlpEndpoint);
+        IsOtlpEndpointSet = !string.IsNullOrEmpty(otlpEndpoint);
         ResourceAttributes = source.GetString(ConfigurationKeys.OpenTelemetry.ResourceAttributes).ToNameValueCollection();
+
+#if NET6_0_OR_GREATER
+        CpuProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled) ?? false;
+        MemoryProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled) ?? false;
+        var callStackInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval) ?? 10000;
+        CpuProfilerCallStackInterval = callStackInterval < 0 ? 10000u : (uint)callStackInterval;
+
+        ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
+#endif
     }
 
     public string Realm { get; }
@@ -51,6 +61,16 @@ internal class PluginSettings
     public bool IsOtlpEndpointSet { get; }
 
     public IReadOnlyCollection<KeyValuePair<string, string>> ResourceAttributes { get; }
+
+#if NET6_0_OR_GREATER
+    public bool CpuProfilerEnabled { get; }
+
+    public uint CpuProfilerCallStackInterval { get; }
+
+    public bool MemoryProfilerEnabled { get; }
+
+    public Uri ProfilerLogsEndpoint { get; }
+#endif
 
     public static PluginSettings FromDefaultSources()
     {
@@ -67,4 +87,23 @@ internal class PluginSettings
 
         return new PluginSettings(configurationSource);
     }
+
+#if NET6_0_OR_GREATER
+    private static Uri GetProfilerLogsEndpoints(IConfigurationSource source, Uri? otlpFallback)
+    {
+        var profilerLogsEndpoint = source.GetString(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint);
+
+        if (string.IsNullOrEmpty(profilerLogsEndpoint))
+        {
+            if (otlpFallback == null)
+            {
+                return new Uri("http://localhost:4318/v1/logs");
+            }
+
+            return otlpFallback.ToString().EndsWith("v1/logs") ? otlpFallback : new Uri(otlpFallback, "v1/logs");
+        }
+
+        return new Uri(profilerLogsEndpoint);
+    }
+#endif
 }

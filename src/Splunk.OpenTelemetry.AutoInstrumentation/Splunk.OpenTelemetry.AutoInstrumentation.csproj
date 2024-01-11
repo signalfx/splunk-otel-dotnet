@@ -1,7 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!-- https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5104 -->
     <NoWarn>$(NoWarn);NU5104</NoWarn>
+    <!-- AllowUnsafeBlocks needed for vendored protobuf-net -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -62,4 +64,9 @@
     <None Include="nuget-readme.md" Pack="true" PackagePath="\docs\readme.md" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 </Project>
