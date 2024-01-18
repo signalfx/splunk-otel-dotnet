@@ -38,7 +38,7 @@ public class ContinuousProfilerTests : TestHelper
     {
     }
 
-    [Fact(Skip = "It will always failed in CI. OTel .NET AutoInstrumentation update and release is required.")]
+    [Fact]
     public async void SubmitAllocationSamples()
     {
         SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
@@ -81,7 +81,7 @@ public class ContinuousProfilerTests : TestHelper
         }
     }
 
-    [Fact(Skip = "It will always failed in CI. OTel .NET AutoInstrumentation update and release is required.")]
+    [Fact]
     public async void SubmitThreadSamples()
     {
         SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
