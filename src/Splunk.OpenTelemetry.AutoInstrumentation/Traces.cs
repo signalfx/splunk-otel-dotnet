@@ -80,7 +80,7 @@ internal class Traces
 
 #else
 
-    public void ConfigureTracesOptions(AspNetCoreInstrumentationOptions options)
+    public void ConfigureTracesOptions(AspNetCoreTraceInstrumentationOptions options)
     {
         if (_settings.TraceResponseHeaderEnabled)
         {

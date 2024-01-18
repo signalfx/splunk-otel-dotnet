@@ -91,6 +91,7 @@
   \netfx\OpenTelemetry.Shims.OpenTracing.dll,
   \netfx\OpenTelemetry.dll,
   \netfx\OpenTracing.dll,
+  \netfx\Splunk.OpenTelemetry.AutoInstrumentation.dll,
   \netfx\System.AppContext.dll,
   \netfx\System.Buffers.dll,
   \netfx\System.Collections.Concurrent.dll,
