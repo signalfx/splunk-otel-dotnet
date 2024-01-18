@@ -25,7 +25,7 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.3.0]
 
 ### Added
 
-Added support for AlwaysOn Profiling for CPU and memory allocation.
+- Added support for AlwaysOn Profiling for CPU and memory allocation.
 
 ### Changed
 
