@@ -90,7 +90,7 @@ public class Plugin
     /// Configures ASP.NET Core instrumentation options.
     /// </summary>
     /// <param name="options">Otlp options.</param>
-    public void ConfigureTracesOptions(AspNetCoreInstrumentationOptions options)
+    public void ConfigureTracesOptions(AspNetCoreTraceInstrumentationOptions options)
     {
         _traces.ConfigureTracesOptions(options);
     }
