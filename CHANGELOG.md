@@ -5,18 +5,11 @@ All notable changes to this component are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.2.1...HEAD)
-
-This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.3.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.3.0).
+## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.3.0...HEAD)
 
 ### Added
 
-Added support for AlwaysOn Profiling for CPU and memory allocation.
-
 ### Changed
-
-- Updated [OpenTelemetry .NET Auto Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation):
-  [`1.3.0`](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.3.0).
 
 ### Deprecated
 
@@ -25,6 +18,19 @@ Added support for AlwaysOn Profiling for CPU and memory allocation.
 ### Fixed
 
 ### Security
+
+## [1.3.0](https://github.com/signalfx/splunk-otel-dotnet/releases/tag/v1.3.0)
+
+This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.3.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.3.0).
+
+### Added
+
+- Added support for AlwaysOn Profiling for CPU and memory allocation.
+
+### Changed
+
+- Updated [OpenTelemetry .NET Auto Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation):
+  [`1.3.0`](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.3.0).
 
 ## [1.2.1](https://github.com/signalfx/splunk-otel-dotnet/releases/tag/v1.2.1)
 
