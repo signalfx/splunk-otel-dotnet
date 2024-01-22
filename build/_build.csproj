@@ -9,15 +9,10 @@
     <NukeScriptDirectory>..</NukeScriptDirectory>
     <NukeTelemetryVersion>1</NukeTelemetryVersion>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!--
-      https://learn.microsoft.com/en-us/dotnet/core/compatibility/serialization/7.0/binaryformatter-apis-produce-errors#recommended-action
-      It can be removed when nuke fix https://github.com/nuke-build/nuke/issues/818.
-    -->
-    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Nuke.Common" Version="7.0.6" />
+    <PackageReference Include="Nuke.Common" Version="8.0.0" />
   </ItemGroup>
 
   <!-- Reference MinVer so the locally built NuGet version is available when building test applications -->
