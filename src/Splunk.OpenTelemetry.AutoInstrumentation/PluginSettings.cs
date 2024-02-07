@@ -34,11 +34,9 @@ internal class PluginSettings
 
         Realm = source.GetString(ConfigurationKeys.Splunk.Realm) ?? Constants.None;
         AccessToken = source.GetString(ConfigurationKeys.Splunk.AccessToken);
-        ServiceName = source.GetString(ConfigurationKeys.OpenTelemetry.ServiceName);
         TraceResponseHeaderEnabled = source.GetBool(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled) ?? true;
         var otlpEndpoint = source.GetString(ConfigurationKeys.OpenTelemetry.OtlpEndpoint);
         IsOtlpEndpointSet = !string.IsNullOrEmpty(otlpEndpoint);
-        ResourceAttributes = source.GetString(ConfigurationKeys.OpenTelemetry.ResourceAttributes).ToNameValueCollection();
 
 #if NET6_0_OR_GREATER
         CpuProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled) ?? false;
@@ -54,13 +52,9 @@ internal class PluginSettings
 
     public string? AccessToken { get; }
 
-    public string? ServiceName { get; }
-
     public bool TraceResponseHeaderEnabled { get; }
 
     public bool IsOtlpEndpointSet { get; }
-
-    public IReadOnlyCollection<KeyValuePair<string, string>> ResourceAttributes { get; }
 
 #if NET6_0_OR_GREATER
     public bool CpuProfilerEnabled { get; }
