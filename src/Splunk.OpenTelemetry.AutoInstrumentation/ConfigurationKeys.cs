@@ -67,15 +67,5 @@ internal static class ConfigurationKeys
         /// Configuration key for OTLP endpoint.
         /// </summary>
         public const string OtlpEndpoint = "OTEL_EXPORTER_OTLP_ENDPOINT";
-
-        /// <summary>
-        /// Configuration key for service name.
-        /// </summary>
-        public const string ServiceName = "OTEL_SERVICE_NAME";
-
-        /// <summary>
-        /// Configuration key for resource attributes.
-        /// </summary>
-        public const string ResourceAttributes = "OTEL_RESOURCE_ATTRIBUTES";
     }
 }
