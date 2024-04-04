@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/setup-dotnet@v4.0.0
         with:
-          dotnet-version: 8.0.201
+          dotnet-version: 8.0.203
       - name: Test the PowerShell module instructions from README.md
         shell: powershell
         run: |
@@ -52,7 +52,7 @@ jobs:
     steps:
       - uses: actions/setup-dotnet@v4.0.0
         with:
-          dotnet-version: 7.0.406
+          dotnet-version: 7.0.407
       - run: brew install coreutils
         if: ${{ runner.os == 'macOS' }}
       - name: Create test directory
