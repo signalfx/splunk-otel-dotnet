@@ -11,8 +11,3 @@ updates:
     schedule:
       interval: "daily"
     open-pull-requests-limit: 20
-
-  - package-ecosystem: npm
-    directory: /
-    schedule:
-      interval: "daily"
