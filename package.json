@@ -4,12 +4,10 @@
   "description": "Application to configure and execute markdownlint and spellcheck documentation.",
   "scripts": {
     "markdownlint": "npx markdownlint .",
-    "markdownlint-fix": "npx markdownlint . --fix",
-    "cspell": "npx cspell '**/*.md' --gitignore"
+    "markdownlint-fix": "npx markdownlint . --fix"
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "markdownlint-cli": "^0.39.0",
-    "cspell-cli": "^8.6.1"
+    "markdownlint-cli": "^0.39.0"
   }
 }
