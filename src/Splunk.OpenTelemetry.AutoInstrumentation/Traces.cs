@@ -59,7 +59,7 @@ internal class Traces
     }
 
 #if NETFRAMEWORK
-    public void ConfigureTracesOptions(AspNetInstrumentationOptions options)
+    public void ConfigureTracesOptions(AspNetTraceInstrumentationOptions options)
     {
         if (_settings.TraceResponseHeaderEnabled)
         {
