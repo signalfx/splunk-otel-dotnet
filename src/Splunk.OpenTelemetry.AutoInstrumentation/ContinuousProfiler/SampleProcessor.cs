@@ -121,7 +121,6 @@ internal class SampleProcessor
             sampleBuilder.AddLocationId(pprof.GetLocationId(methodName));
         }
 
-        pprof.AddLabel(sampleBuilder, "thread.id", threadSample.ManagedId);
         pprof.AddLabel(sampleBuilder, "thread.name", threadSample.ThreadName);
         return sampleBuilder;
     }

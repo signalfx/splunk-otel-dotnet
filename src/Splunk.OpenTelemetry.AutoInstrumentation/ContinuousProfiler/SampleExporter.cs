@@ -39,7 +39,7 @@ internal class SampleExporter
         _logSender = logSender ?? throw new ArgumentNullException(nameof(logSender));
     }
 
-    public void Export(LogRecord logRecord)
+    public void Export(LogRecord logRecord, CancellationToken cancellationToken)
     {
         if (_logsData == null)
         {
@@ -53,7 +53,7 @@ internal class SampleExporter
 
             if (logRecords.Count > 0)
             {
-                _logSender.Send(_logsData);
+                _logSender.Send(_logsData, cancellationToken);
             }
         }
         catch (Exception ex)

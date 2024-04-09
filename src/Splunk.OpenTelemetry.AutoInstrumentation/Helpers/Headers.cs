@@ -20,12 +20,12 @@ internal static class Headers
 {
     public const string AccessTokenHeader = "X-Sf-Token";
 
-    public static string AppendAccessToken(this string headers, string accessToken)
+    public static string AppendAccessToken(this string? headers, string accessToken)
     {
         return Append(headers, AccessTokenHeader, accessToken);
     }
 
-    private static string Append(string headers, string appendHeader, string appendValue)
+    private static string Append(string? headers, string appendHeader, string appendValue)
     {
         string newHeader = $"{appendHeader}={appendValue}";
 

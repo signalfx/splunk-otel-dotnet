@@ -27,8 +27,8 @@ internal static class MetadataData
             version: typeof(MetadataData).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0],
             dependencies: new Dependency[]
             {
-                new("OpenTelemetry .NET", "https://github.com/open-telemetry/opentelemetry-dotnet", null, "1.7.0", "stable"),
-                new("OpenTelemetry .NET Automatic Instrumentation", "https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation", null, "1.4.0", "stable"),
+                new("OpenTelemetry .NET", "https://github.com/open-telemetry/opentelemetry-dotnet", null, "1.8.0", "stable"),
+                new("OpenTelemetry .NET Automatic Instrumentation", "https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation", null, "1.5.0", "stable"),
             },
             settings: SettingsData.GetSettings(),
             instrumentations: InstrumentationData.GetInstrumentations(),

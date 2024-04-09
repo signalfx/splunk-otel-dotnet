@@ -79,7 +79,7 @@ public class Plugin
     /// Configures ASP.NET instrumentation options.
     /// </summary>
     /// <param name="options">Otlp options.</param>
-    public void ConfigureTracesOptions(AspNetInstrumentationOptions options)
+    public void ConfigureTracesOptions(AspNetTraceInstrumentationOptions options)
     {
         _traces.ConfigureTracesOptions(options);
     }
@@ -102,13 +102,14 @@ public class Plugin
     /// Configure Continuous Profiler.
     /// </summary>
     /// <returns>(threadSamplingEnabled, threadSamplingInterval, allocationSamplingEnabled, maxMemorySamplesPerMinute, exportInterval, continuousProfilerExporter)</returns>
-    public Tuple<bool, uint, bool, uint, TimeSpan, object> GetContinuousProfilerConfiguration()
+    public Tuple<bool, uint, bool, uint, TimeSpan, TimeSpan, object> GetContinuousProfilerConfiguration()
     {
         var threadSamplingEnabled = Settings.CpuProfilerEnabled;
         var threadSamplingInterval = Settings.CpuProfilerCallStackInterval;
         var allocationSamplingEnabled = Settings.MemoryProfilerEnabled;
         const uint maxMemorySamplesPerMinute = 200u;
         var exportInterval = TimeSpan.FromMilliseconds(500); // it is half of the shortest possible thread sampling interval
+        var exportTimeout = TimeSpan.FromSeconds(3);
 
         var sampleProcessor = new SampleProcessor(TimeSpan.FromMilliseconds(threadSamplingInterval));
 
@@ -118,7 +119,7 @@ public class Plugin
 
         object continuousProfilerExporter = new PprofInOtlpLogsExporter(sampleProcessor, sampleExporter);
 
-        return Tuple.Create(threadSamplingEnabled, threadSamplingInterval, allocationSamplingEnabled, maxMemorySamplesPerMinute, exportInterval, continuousProfilerExporter);
+        return Tuple.Create(threadSamplingEnabled, threadSamplingInterval, allocationSamplingEnabled, maxMemorySamplesPerMinute, exportInterval, exportTimeout, continuousProfilerExporter);
     }
 #endif
 }

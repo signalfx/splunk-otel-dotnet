@@ -16,7 +16,7 @@ partial class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Release'")]
     readonly Configuration Configuration = Configuration.Release;
 
-    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.4.0";
+    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.5.0";
 
     [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
     readonly string OpenTelemetryAutoInstrumentationVersion = OpenTelemetryAutoInstrumentationDefaultVersion;
@@ -83,8 +83,8 @@ partial class Build : NukeBuild
                 break;
             case PlatformFamily.Linux:
                 fileName = Environment.GetEnvironmentVariable("IsAlpine") == "true"
-                    ? "opentelemetry-dotnet-instrumentation-linux-musl.zip"
-                    : "opentelemetry-dotnet-instrumentation-linux-glibc.zip";
+                    ? "opentelemetry-dotnet-instrumentation-linux-musl-x64.zip"
+                    : "opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip";
                 break;
             case PlatformFamily.OSX:
                 fileName = "opentelemetry-dotnet-instrumentation-macos.zip";

@@ -36,7 +36,7 @@ internal class OtlpHttpLogSender
         _logsEndpointUrl = logsEndpointUrl ?? throw new ArgumentNullException(nameof(logsEndpointUrl));
     }
 
-    public void Send(LogsData logsData)
+    public void Send(LogsData logsData, CancellationToken cancellationToken)
     {
         HttpWebRequest httpWebRequest;
 
@@ -44,15 +44,18 @@ internal class OtlpHttpLogSender
         using var scope = SuppressInstrumentationScope.Begin();
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
 #pragma warning disable SYSLIB0014
             // TODO muted SYSLIB0014
             httpWebRequest = WebRequest.CreateHttp(_logsEndpointUrl);
 #pragma warning restore SYSLIB0014
             httpWebRequest.ContentType = "application/x-protobuf";
             httpWebRequest.Method = "POST";
-
+            cancellationToken.ThrowIfCancellationRequested();
             using var stream = httpWebRequest.GetRequestStream();
             Vendors.ProtoBuf.Serializer.Serialize(stream, logsData);
+            cancellationToken.ThrowIfCancellationRequested();
+
             stream.Flush();
         }
         catch (Exception ex)

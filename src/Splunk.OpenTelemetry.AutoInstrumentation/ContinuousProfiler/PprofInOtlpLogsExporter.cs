@@ -28,23 +28,23 @@ internal class PprofInOtlpLogsExporter
         _sampleExporter = sampleExporter;
     }
 
-    public void ExportThreadSamples(byte[] buffer, int read)
+    public void ExportThreadSamples(byte[] buffer, int read, CancellationToken cancellationToken)
     {
         var threadSamples = SampleNativeFormatParser.ParseThreadSamples(buffer, read);
         var logRecord = _sampleProcessor.ProcessThreadSamples(threadSamples);
         if (logRecord != null)
         {
-            _sampleExporter.Export(logRecord);
+            _sampleExporter.Export(logRecord, cancellationToken);
         }
     }
 
-    public void ExportAllocationSamples(byte[] buffer, int read)
+    public void ExportAllocationSamples(byte[] buffer, int read, CancellationToken cancellationToken)
     {
         var allocationSamples = SampleNativeFormatParser.ParseAllocationSamples(buffer, read);
         var logRecord = _sampleProcessor.ProcessAllocationSamples(allocationSamples);
         if (logRecord != null)
         {
-            _sampleExporter.Export(logRecord);
+            _sampleExporter.Export(logRecord, cancellationToken);
         }
     }
 }

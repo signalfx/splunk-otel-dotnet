@@ -73,7 +73,6 @@ internal static class SampleNativeFormatParser
                 }
                 else if (operationCode == OpCodes.StartSample)
                 {
-                    var managedId = ReadInt(buffer, ref position);
                     var threadName = ReadString(buffer, ref position);
                     var traceIdHigh = ReadInt64(buffer, ref position);
                     var traceIdLow = ReadInt64(buffer, ref position);
@@ -93,7 +92,6 @@ internal static class SampleNativeFormatParser
                         spanId: spanId,
                         traceIdHigh: traceIdHigh,
                         traceIdLow: traceIdLow,
-                        managedId: managedId,
                         threadName: threadName,
                         threadIndex: threadIndex);
 
@@ -163,7 +161,6 @@ internal static class SampleNativeFormatParser
                     var timestampMillis = ReadInt64(buffer, ref position);
                     var allocatedSize = ReadInt64(buffer, ref position); // Technically uint64 but whatever
                     var typeName = ReadString(buffer, ref position);
-                    var managedId = ReadInt(buffer, ref position);
                     var threadName = ReadString(buffer, ref position);
                     var traceIdHigh = ReadInt64(buffer, ref position);
                     var traceIdLow = ReadInt64(buffer, ref position);
@@ -174,7 +171,6 @@ internal static class SampleNativeFormatParser
                         spanId: spanId,
                         traceIdHigh: traceIdHigh,
                         traceIdLow: traceIdLow,
-                        managedId: managedId,
                         threadName: threadName,
                         threadIndex: 0u);
 
