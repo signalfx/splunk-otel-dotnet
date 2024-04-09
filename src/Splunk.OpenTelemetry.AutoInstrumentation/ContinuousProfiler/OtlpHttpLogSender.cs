@@ -16,6 +16,9 @@
 
 #if NET6_0_OR_GREATER
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using OpenTelemetry;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 using Splunk.OpenTelemetry.AutoInstrumentation.Proto.Logs.V1;
@@ -30,6 +33,7 @@ internal class OtlpHttpLogSender
     private static readonly ILogger Logger = new Logger();
 
     private readonly Uri _logsEndpointUrl;
+    private readonly HttpClient _httpClient = new();
 
     public OtlpHttpLogSender(Uri logsEndpointUrl)
     {
@@ -38,46 +42,56 @@ internal class OtlpHttpLogSender
 
     public void Send(LogsData logsData, CancellationToken cancellationToken)
     {
-        HttpWebRequest httpWebRequest;
-
-        // Prevents the exporter's operations from being instrumented.
-        using var scope = SuppressInstrumentationScope.Begin();
         try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-#pragma warning disable SYSLIB0014
-            // TODO muted SYSLIB0014
-            httpWebRequest = WebRequest.CreateHttp(_logsEndpointUrl);
-#pragma warning restore SYSLIB0014
-            httpWebRequest.ContentType = "application/x-protobuf";
-            httpWebRequest.Method = "POST";
-            cancellationToken.ThrowIfCancellationRequested();
-            using var stream = httpWebRequest.GetRequestStream();
-            Vendors.ProtoBuf.Serializer.Serialize(stream, logsData);
-            cancellationToken.ThrowIfCancellationRequested();
+            // Prevents the exporter's operations from being instrumented.
+            using var scope = SuppressInstrumentationScope.Begin();
 
-            stream.Flush();
+            using var request = new HttpRequestMessage(HttpMethod.Post, _logsEndpointUrl);
+            request.Content = new ExportLogsDataContent(logsData);
+            using var httpResponse = _httpClient.Send(request, cancellationToken);
+            httpResponse.EnsureSuccessStatusCode();
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, $"Exception preparing request to send thread samples to {_logsEndpointUrl}");
-            return;
+            Logger.Error(ex, $"HTTP error sending thread samples to {_logsEndpointUrl}");
+        }
+    }
+
+    private sealed class ExportLogsDataContent : HttpContent
+    {
+        private static readonly MediaTypeHeaderValue ProtobufMediaTypeHeader = new("application/x-protobuf");
+
+        private readonly LogsData _logsData;
+
+        public ExportLogsDataContent(LogsData logsData)
+        {
+            _logsData = logsData;
+            Headers.ContentType = ProtobufMediaTypeHeader;
         }
 
-        try
+        protected override void SerializeToStream(Stream stream, TransportContext? context, CancellationToken cancellationToken)
         {
-            using var httpWebResponse = (HttpWebResponse)httpWebRequest.GetResponse();
-
-            if (httpWebResponse.StatusCode >= HttpStatusCode.OK && httpWebResponse.StatusCode < HttpStatusCode.MultipleChoices)
-            {
-                return;
-            }
-
-            Logger.Warning($"HTTP error sending thread samples to {_logsEndpointUrl}: {httpWebResponse.StatusCode}");
+            SerializeToStreamInternal(stream);
         }
-        catch (Exception ex)
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
         {
-            Logger.Error(ex, $"Exception sending thread samples to {_logsEndpointUrl}");
+            SerializeToStreamInternal(stream);
+            return Task.CompletedTask;
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            // We can't know the length of the content being pushed to the output stream.
+            length = -1;
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SerializeToStreamInternal(Stream stream)
+        {
+            Vendors.ProtoBuf.Serializer.Serialize(stream, _logsData);
         }
     }
 }
