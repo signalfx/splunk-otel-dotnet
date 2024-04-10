@@ -74,8 +74,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        base-image: [ alpine ]
-    runs-on: ubuntu-20.04
+        include:
+          - machine: ubuntu-20.04
+            base-image: alpine
+            # architecture: "x64"
+          - machine: [self-hosted, Linux, ARM64]
+            base-image: alpine
+            # architecture: "arm64"
+    runs-on: ${{ matrix.machine }}
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v4.1.3
