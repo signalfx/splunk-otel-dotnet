@@ -76,10 +76,10 @@ jobs:
       matrix:
         include:
           - machine: ubuntu-20.04
-            base-image: alpine
+            base-image: alpine-x64
             # architecture: "x64"
           - machine: [self-hosted, Linux, ARM64]
-            base-image: alpine
+            base-image: alpine-arm64
             # architecture: "arm64"
     runs-on: ${{ matrix.machine }}
     timeout-minutes: 60
@@ -112,6 +112,7 @@ jobs:
             test "$(ls -A /var/log/opentelemetry/dotnet )"
         '
     - uses: actions/upload-artifact@v4.3.3
+      if: (${{ job.status }} != 'cancelled')
       with:
         name: bin-${{ matrix.base-image }}
         path: bin/splunk-*.zip
