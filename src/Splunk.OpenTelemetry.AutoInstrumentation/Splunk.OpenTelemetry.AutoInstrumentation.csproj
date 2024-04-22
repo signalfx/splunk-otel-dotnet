@@ -2,6 +2,7 @@
   <PropertyGroup>
     <!-- https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5104 -->
     <NoWarn>$(NoWarn);NU5104</NoWarn>
+    <NoWarn>$(NoWarn);NU1902</NoWarn> <!-- remove this line when upgraded Instrumentation.Http and AspNetCore to 1.8.1+ -->
     <!-- AllowUnsafeBlocks needed for vendored protobuf-net -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
