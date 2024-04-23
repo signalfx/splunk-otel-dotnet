@@ -175,7 +175,8 @@ jobs:
       - uses: actions/download-artifact@v4.1.6
         with:
           path: .
-      - run: cp bin-alpine/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-musl-x64.zip
+      - run: cp bin-alpine-x64/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-musl-x64.zip
+      - run: cp bin-alpine-arm64/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-musl-arm64.zip
       - run: cp bin-ubuntu-20.04/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-glibc-x64.zip
       - run: cp bin-windows-2022/splunk-*.zip ./splunk-opentelemetry-dotnet-windows.zip
       - run: cp bin-macos-11/splunk-*.zip ./splunk-opentelemetry-dotnet-macos.zip
