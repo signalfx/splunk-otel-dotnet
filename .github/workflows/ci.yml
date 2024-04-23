@@ -61,7 +61,7 @@ jobs:
           ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net8.0/TestApplication.Smoke.exe
           if (-not $?) { throw "dotnet help returned exit code: $LASTEXITCODE" }
           if (Test-Path $log_path) { throw "Log file exists. Instrumentation unregister failed." }
-      - uses: actions/upload-artifact@v4.3.2
+      - uses: actions/upload-artifact@v4.3.3
         with:
           name: bin-${{ matrix.machine }}
           path: |
@@ -105,7 +105,7 @@ jobs:
           ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net8.0/publish/TestApplication.Smoke
             test "$(ls -A /var/log/opentelemetry/dotnet )"
         '
-    - uses: actions/upload-artifact@v4.3.2
+    - uses: actions/upload-artifact@v4.3.3
       with:
         name: bin-${{ matrix.base-image }}
         path: bin/splunk-*.zip
@@ -123,7 +123,7 @@ jobs:
             7.0.407
             8.0.203
       - run: ./build.cmd NuGetWorkflow
-      - uses: actions/upload-artifact@v4.3.2
+      - uses: actions/upload-artifact@v4.3.3
         with:
           name: nuget-package
           path: NuGetPackage/
