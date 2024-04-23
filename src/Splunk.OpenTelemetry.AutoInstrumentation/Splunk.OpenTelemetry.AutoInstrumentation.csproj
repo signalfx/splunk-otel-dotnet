@@ -12,6 +12,11 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <!-- Referencing Microsoft.SourceLink.GitHub directly is the workaround for lack of release DotNet.ReproducibleBuilds with 8.0.0 deoendencies. Ref: https://github.com/dotnet/reproducible-builds/pull/35 -->
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" >
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="MinVer" Version="5.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
