@@ -77,9 +77,15 @@ jobs:
         include:
           - machine: ubuntu-20.04
             base-image: alpine-x64
+            os-tyoe: linux-musl
             # architecture: "x64"
           - machine: [self-hosted, Linux, ARM64]
             base-image: alpine-arm64
+            os-tyoe: linux-musl
+            # architecture: "arm64"
+          - machine: [self-hosted, Linux, ARM64]
+            base-image: debian-arm64
+            os-tyoe: linux-glibc
             # architecture: "arm64"
     runs-on: ${{ matrix.machine }}
     timeout-minutes: 60
@@ -96,7 +102,7 @@ jobs:
     - name: Build in Docker container
       run: |
         docker run --rm \
-          -e OS_TYPE=linux-musl --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project \
+          -e OS_TYPE=${{ matrix.os-tyoe }} --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project \
           splunk-otel-dotnet/${{ matrix.base-image }} \
           /bin/sh -c 'git config --global --add safe.directory /project && ./build.sh Workflow'
     - name: Test the Shell scripts from README.md in Docker container
@@ -178,6 +184,7 @@ jobs:
       - run: cp bin-alpine-x64/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-musl-x64.zip
       - run: cp bin-alpine-arm64/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-musl-arm64.zip
       - run: cp bin-ubuntu-20.04/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-glibc-x64.zip
+      - run: cp bin-debian-arm64/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-glibc-arm64.zip
       - run: cp bin-windows-2022/splunk-*.zip ./splunk-opentelemetry-dotnet-windows.zip
       - run: cp bin-macos-11/splunk-*.zip ./splunk-opentelemetry-dotnet-macos.zip
       - run: cp bin-windows-2022/InstallationScripts/splunk-otel-dotnet-install.sh ./splunk-otel-dotnet-install.sh
