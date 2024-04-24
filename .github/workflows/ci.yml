@@ -109,13 +109,13 @@ jobs:
       run: |
         set -e
         docker build -t mybuildimage -f "./docker/${{ matrix.base-image }}.dockerfile" .
-        docker run --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project --rm mybuildimage /bin/sh -c '
+        docker run -e OTEL_DOTNET_AUTO_LOG_DIRECTORY=/home/user/opentelemetry/log/dotnet --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project --rm mybuildimage /bin/sh -c '
           set -e
           dotnet publish -f net8.0 -c Release ./test/test-applications/integrations/TestApplication.Smoke
           export OTEL_DOTNET_AUTO_HOME="${PWD}/OpenTelemetryDistribution"
           . ./instrument.sh
           ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net8.0/publish/TestApplication.Smoke
-            test "$(ls -A /var/log/opentelemetry/dotnet )"
+            test "$(ls -A /home/user/opentelemetry/log )"
         '
     - uses: actions/upload-artifact@v4.3.3
       if: (${{ job.status }} != 'cancelled')
