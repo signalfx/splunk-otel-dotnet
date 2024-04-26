@@ -77,15 +77,15 @@ jobs:
         include:
           - machine: ubuntu-20.04
             base-image: alpine-x64
-            os-tyoe: linux-musl
+            os-type: linux-musl
             # architecture: "x64"
           - machine: [self-hosted, Linux, ARM64]
             base-image: alpine-arm64
-            os-tyoe: linux-musl
+            os-type: linux-musl
             # architecture: "arm64"
           - machine: [self-hosted, Linux, ARM64]
             base-image: debian-arm64
-            os-tyoe: linux-glibc
+            os-type: linux-glibc
             # architecture: "arm64"
     runs-on: ${{ matrix.machine }}
     timeout-minutes: 60
@@ -102,7 +102,7 @@ jobs:
     - name: Build in Docker container
       run: |
         docker run --rm \
-          -e OS_TYPE=${{ matrix.os-tyoe }} --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project \
+          -e OS_TYPE=${{ matrix.os-type }} --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project \
           splunk-otel-dotnet/${{ matrix.base-image }} \
           /bin/sh -c 'git config --global --add safe.directory /project && ./build.sh Workflow'
     - name: Test the Shell scripts from README.md in Docker container
