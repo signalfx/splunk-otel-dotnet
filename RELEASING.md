@@ -45,6 +45,6 @@ to publish necessary updates to the [documentation](https://github.com/splunk/pu
     1. [automatic](https://github.com/signalfx/tracing-examples/blob/main/opentelemetry-tracing/opentelemetry-dotnet/automatic/aspnetcore-and-mongodb/InstrumentContainer/Dockerfile)
     1. [log example](https://github.com/signalfx/tracing-examples/edit/main/opentelemetry-tracing/opentelemetry-dotnet/log-trace-correlation/Dockerfile)
 
-1. Update matrix in [o11y-gdi-metadata reoository](https://github.com/splunk/o11y-gdi-metadata/tree/main/apm).
+1. Update matrix in [o11y-gdi-metadata repository](https://github.com/splunk/o11y-gdi-metadata/tree/main/apm).
 
 1. Update internal repository. Follow internal documentation.
