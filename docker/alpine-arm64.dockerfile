@@ -26,6 +26,9 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
     && ./dotnet-install.sh -v 7.0.408 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
+# uid 1000 is the uid of the user in our environement
+# we should execute build process in the same context
+# to have priviliges to modify data
 RUN adduser -D user -G wheel -u 1000; \
     echo 'user:123' | chpasswd;
 USER user
