@@ -64,8 +64,7 @@ public class BuildTests
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            var processArchitecture = RuntimeInformation.ProcessArchitecture;
-            var architectureSuffix = processArchitecture.ToString().ToLowerInvariant();
+            var architectureSuffix = EnvironmentTools.GetPlatform();
 
             if (Environment.GetEnvironmentVariable("IsAlpine") == "true")
             {
