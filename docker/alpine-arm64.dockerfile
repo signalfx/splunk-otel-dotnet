@@ -5,7 +5,6 @@ RUN apk update \
     && apk add --no-cache --update \
         clang=16.0.6-r1 \
         cmake=3.26.5-r0 \
-        doas=6.8.2-r4 \
         make=4.4.1-r1 \
         bash=5.2.15-r5 \
         alpine-sdk=1.0-r1 \
@@ -28,8 +27,7 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
     && rm dotnet-install.sh
 
 RUN adduser -D user -G wheel -u 1000; \
-    echo 'user:123' | chpasswd; \
-    echo 'permit :wheel as root' > /etc/doas.d/doas.conf
+    echo 'user:123' | chpasswd;
 USER user
 
 WORKDIR /project
