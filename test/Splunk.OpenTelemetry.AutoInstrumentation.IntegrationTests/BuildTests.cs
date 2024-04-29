@@ -64,12 +64,14 @@ public class BuildTests
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
+            var architectureSuffix = EnvironmentTools.GetPlatform();
+
             if (Environment.GetEnvironmentVariable("IsAlpine") == "true")
             {
-                return "alpine-linux";
+                return $"alpine-linux-{architectureSuffix}";
             }
 
-            return "linux";
+            return $"linux-{architectureSuffix}";
         }
 
         return RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
