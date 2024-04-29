@@ -3,7 +3,7 @@ using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
 using System.IO.Compression;
-
+using System.Runtime.InteropServices;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 partial class Build : NukeBuild
@@ -16,7 +16,7 @@ partial class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Release'")]
     readonly Configuration Configuration = Configuration.Release;
 
-    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.5.0";
+    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.6.0";
 
     [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
     readonly string OpenTelemetryAutoInstrumentationVersion = OpenTelemetryAutoInstrumentationDefaultVersion;
@@ -82,9 +82,23 @@ partial class Build : NukeBuild
                 fileName = "opentelemetry-dotnet-instrumentation-windows.zip";
                 break;
             case PlatformFamily.Linux:
+                var architecture = RuntimeInformation.ProcessArchitecture;
+                string architectureSuffix;
+                switch (architecture)
+                {
+                    case Architecture.Arm64:
+                        architectureSuffix = "arm64";
+                        break;
+                    case Architecture.X64:
+                        architectureSuffix = "x64";
+                        break;
+                    default:
+                        throw new NotSupportedException("Not supported Linux architecture " + architecture);
+                }
+
                 fileName = Environment.GetEnvironmentVariable("IsAlpine") == "true"
-                    ? "opentelemetry-dotnet-instrumentation-linux-musl-x64.zip"
-                    : "opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip";
+                    ? $"opentelemetry-dotnet-instrumentation-linux-musl-{architectureSuffix}.zip"
+                    : $"opentelemetry-dotnet-instrumentation-linux-glibc-{architectureSuffix}.zip";
                 break;
             case PlatformFamily.OSX:
                 fileName = "opentelemetry-dotnet-instrumentation-macos.zip";

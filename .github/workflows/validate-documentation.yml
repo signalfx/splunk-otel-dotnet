@@ -24,8 +24,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4.1.3
-    - uses: lycheeverse/lychee-action@v1.9.3
+    - uses: actions/checkout@v4.1.4
+    - uses: lycheeverse/lychee-action@v1.10.0
       with:
         fail: true
         args: "--threads 1 --max-concurrency 1 --verbose --no-progress './**/*.md' './**/*.html'"

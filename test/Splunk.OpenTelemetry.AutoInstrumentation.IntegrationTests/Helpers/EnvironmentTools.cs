@@ -14,21 +14,8 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="EnvironmentTools.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
+// SPDX-License-Identifier: Apache-2.0
 
 using System.Runtime.InteropServices;
 using System.Security.Principal;
@@ -43,6 +30,7 @@ public static class EnvironmentTools
     public const string ProfilerClsId = "{918728DD-259F-4A6A-AC2B-B85E1B658318}";
     public const string DotNetFramework = ".NETFramework";
     public const string CoreFramework = ".NETCoreApp";
+
     private static readonly Lazy<string> SolutionDirectory = new(() =>
     {
         var startDirectory = Environment.CurrentDirectory;
@@ -118,7 +106,23 @@ public static class EnvironmentTools
 
     public static string GetPlatform()
     {
-        return RuntimeInformation.ProcessArchitecture.ToString();
+        return RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
+    }
+
+    public static bool IsX64()
+    {
+        return RuntimeInformation.ProcessArchitecture == Architecture.X64;
+    }
+
+    public static string GetPlatformDir()
+    {
+        return RuntimeInformation.ProcessArchitecture switch
+        {
+            Architecture.X86 => "x86",
+            Architecture.X64 => "x64",
+            Architecture.Arm64 => "ARM64",
+            _ => throw new PlatformNotSupportedException()
+        };
     }
 
     public static string GetBuildConfiguration()
@@ -130,7 +134,12 @@ public static class EnvironmentTools
 #endif
     }
 
-    public static string? GetClrProfilerDirectoryName()
+    public static string GetClrProfilerDirectoryName()
+    {
+        return $"{GetClrProfilerOSDirectoryName()}-{GetPlatformDir().ToLowerInvariant()}";
+    }
+
+    private static string? GetClrProfilerOSDirectoryName()
     {
         string? clrProfilerDirectoryName = Environment.GetEnvironmentVariable("OS_TYPE") switch
         {
@@ -144,7 +153,7 @@ public static class EnvironmentTools
         // If OS_TYPE is null, then fallback to default value.
         if (clrProfilerDirectoryName == null)
         {
-            clrProfilerDirectoryName = EnvironmentTools.GetOS() switch
+            clrProfilerDirectoryName = GetOS() switch
             {
                 "win" => "win",
                 "linux" => "linux",
