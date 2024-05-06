@@ -5,16 +5,11 @@ All notable changes to this component are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.4.0...HEAD)
-
-This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.6.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.6.0).
+## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.5.0...HEAD)
 
 ### Added
 
 ### Changed
-
-- Updated [OpenTelemetry .NET Auto Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation):
-  [`1.6.0`](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.6.0).
 
 ### Deprecated
 
@@ -23,6 +18,15 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.6.0]
 ### Fixed
 
 ### Security
+
+## [1.5.0](https://github.com/signalfx/splunk-otel-dotnet/releases/tag/v1.5.0)
+
+This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.6.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.6.0).
+
+### Changed
+
+- Updated [OpenTelemetry .NET Auto Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation):
+  [`1.6.0`](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.6.0).
 
 ## [1.4.0](https://github.com/signalfx/splunk-otel-dotnet/releases/tag/v1.4.0)
 
