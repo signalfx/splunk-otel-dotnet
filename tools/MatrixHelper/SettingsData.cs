@@ -27,7 +27,6 @@ internal static class SettingsData
     private const string DiagnosticCategory = "diagnostic logging";
     private const string ProfilingCategory = "profiling";
 
-
     public static Setting[] GetSettings()
     {
         var settings = new Setting[]
