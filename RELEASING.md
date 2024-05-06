@@ -37,14 +37,14 @@ No changes in the code are needed to correctly version this package.
 1. Check that the `operator-docker` image has been published.
 
 1. Ask [o11y-docs team](https://github.com/orgs/splunk/teams/o11y-docs)
-to publish necessary updates to the [documentation](https://github.com/splunk/public-o11y-docs).
+    1. to execute [xxx](https://github.com/splunk/o11y-gdi-metadata/actions/workflows/update-metadata.yaml)
+       to update matrix in [o11y-gdi-metadata repository](https://github.com/splunk/o11y-gdi-metadata/tree/main/apm/splunk-otel-dotnet),
+    1. to publish necessary updates to the [documentation](https://github.com/splunk/public-o11y-docs).
 
 1. Update version in [microservices-demo](https://github.com/signalfx/microservices-demo/blob/main/src/cartservice/Dockerfile).
 
 1. Update version in [tracing-examples](https://github.com/signalfx/tracing-examples):
     1. [automatic](https://github.com/signalfx/tracing-examples/blob/main/opentelemetry-tracing/opentelemetry-dotnet/automatic/aspnetcore-and-mongodb/InstrumentContainer/Dockerfile)
     1. [log example](https://github.com/signalfx/tracing-examples/edit/main/opentelemetry-tracing/opentelemetry-dotnet/log-trace-correlation/Dockerfile)
-
-1. Update matrix in [o11y-gdi-metadata repository](https://github.com/splunk/o11y-gdi-metadata/tree/main/apm).
 
 1. Update internal repository. Follow internal documentation.
