@@ -11,22 +11,27 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <!-- Referencing Microsoft.SourceLink.GitHub directly is the workaround for lack of release DotNet.ReproducibleBuilds with 8.0.0 deoendencies. Ref: https://github.com/dotnet/reproducible-builds/pull/35 -->
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" >
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="MinVer" Version="5.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="OpenTelemetry.Api" Version="1.8.0" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.8.0" />
+    <PackageReference Include="OpenTelemetry.Api" Version="1.8.1" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.8.1" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net462' ">
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNet" Version="1.8.0-beta.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNet" Version="1.8.0-beta.2" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.8.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.8.1" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -57,7 +62,7 @@
     <Content Include="splunk-launch.*">
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>
-    <PackageReference Include="OpenTelemetry.AutoInstrumentation" Version="1.5.0">
+    <PackageReference Include="OpenTelemetry.AutoInstrumentation" Version="1.6.0">
       <PrivateAssets>none</PrivateAssets> <!-- Ensures that content and build transitive dependencies are properly delivered -->
     </PackageReference>
     <None Include="splunk-logo-256x256.png" Pack="true" PackagePath="images" />

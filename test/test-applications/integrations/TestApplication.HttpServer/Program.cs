@@ -14,28 +14,18 @@
 // limitations under the License.
 // </copyright>
 
+using TestApplication.HttpServer;
 using TestApplication.Shared;
 
-namespace TestApplication.HttpServer;
+ConsoleHelper.WriteSplashScreen(args);
 
-public class Program
-{
-    public static void Main(string[] args)
-    {
-        ConsoleHelper.WriteSplashScreen(args);
+var builder = WebApplication.CreateBuilder(args);
 
-        var builder = WebApplication.CreateBuilder(args);
+const string requestPath = "/request";
+var app = builder.Build();
+using var observer = new LifetimeObserver(app, requestPath);
 
-        var requestPath = "/request";
-        var app = builder.Build();
-        using var observer = new LifetimeObserver(app, requestPath);
+app.UseWelcomePage("/alive-check");
+app.MapGet(requestPath, () => "TestApplication.HttpServer");
 
-        app.UseWelcomePage("/alive-check");
-        app.MapGet(requestPath, () =>
-        {
-            return "TestApplication.HttpServer";
-        });
-
-        app.Run();
-    }
-}
+app.Run();
