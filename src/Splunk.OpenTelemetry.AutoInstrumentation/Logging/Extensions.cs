@@ -17,12 +17,21 @@
 using System.Collections;
 using System.Collections.Specialized;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 internal static class Extensions
 {
-    private static readonly List<string> RelevantPrefixes = ["DOTNET_", "COR_", "CORECLR_", "OTEL_", "SPLUNK_"];
+    private const string SecretPattern = "(?:^|_)(API|TOKEN|SECRET|KEY|PASSWORD|PASS|PWD|HEADER|CREDENTIALS)(?:_|$)";
+    private static readonly ICollection<string> RelevantPrefixes = ["DOTNET_", "COR_", "CORECLR_", "OTEL_", "SPLUNK_"];
+
+    private static readonly Regex SecretRegex;
+
+    static Extensions()
+    {
+        SecretRegex = new Regex(SecretPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    }
 
     public static void LogConfigurationSetup(this ILogger logger)
     {
@@ -56,7 +65,12 @@ internal static class Extensions
                 continue;
             }
 
-            yield return new KeyValuePair<string, string?>(key!, kvp.Value?.ToString());
+            var isSecret = SecretRegex.IsMatch(key);
+            var value = isSecret
+                ? "<hidden>"
+                : kvp.Value?.ToString();
+
+            yield return new KeyValuePair<string, string?>(key!, value);
         }
     }
 
@@ -69,10 +83,12 @@ internal static class Extensions
                 continue;
             }
 
-            var values = collection.GetValues(key)
-                ?? Array.Empty<string>();
+            var isSecret = SecretRegex.IsMatch(key);
+            var value = isSecret
+                ? "<hidden>"
+                : (collection.GetValues(key) ?? []).FirstOrDefault();
 
-            yield return new KeyValuePair<string, string?>(key, values.FirstOrDefault());
+            yield return new KeyValuePair<string, string?>(key, value);
         }
     }
 
