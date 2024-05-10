@@ -16,6 +16,8 @@
 
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
+using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
+
 #if NETFRAMEWORK
 using OpenTelemetry.Instrumentation.AspNet;
 #else
@@ -31,6 +33,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 public class Plugin
 {
     private static readonly PluginSettings Settings = PluginSettings.FromDefaultSources();
+    private static readonly ILogger Log = new Logger();
 
     private readonly Metrics _metrics = new(Settings);
     private readonly Traces _traces = new(Settings);
@@ -42,6 +45,11 @@ public class Plugin
     public void Initializing()
     {
         _sdk.Initializing();
+
+        if (Log.IsDebugEnabled)
+        {
+            Log.LogConfigurationSetup();
+        }
     }
 
     /// <summary>

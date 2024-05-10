@@ -30,6 +30,7 @@
 // limitations under the License.
 // </copyright>
 
+using FluentAssertions;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 using Xunit.Abstractions;
 
@@ -160,4 +161,66 @@ public class SmokeTests : TestHelper
         collector.ResourceExpector.AssertExpectations();
     }
 #endif
+
+    [Fact]
+    public void ManagedLogsHaveNoSensitiveData()
+    {
+        var tempLogsDirectory = DirectoryHelpers.CreateTempDirectory();
+        var secretIdentificators = new[] { "api", "Token", "SeCrEt", "KEY", "PASSWORD", "PASS", "PWD", "HEADER", "CREDENTIALS" };
+
+        EnableBytecodeInstrumentation();
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOG_DIRECTORY", tempLogsDirectory.FullName);
+        SetEnvironmentVariable("OTEL_LOG_LEVEL", "debug");
+
+        foreach (var item in secretIdentificators)
+        {
+            SetEnvironmentVariable($"OTEL_{item}_VALUE", "this is secret!");
+        }
+
+        try
+        {
+            RunTestApplication();
+
+            var managedLog = tempLogsDirectory.GetFiles("otel-dotnet-auto-*-Splunk-*.log").Single();
+            var managedLogContent = File.ReadAllText(managedLog.FullName);
+            managedLogContent.Should().NotBeNullOrWhiteSpace();
+
+            var environmentVariables = ParseSettingsLog(managedLogContent, "Environment Variables:");
+            VerifyVariables(environmentVariables);
+
+#if NETFRAMEWORK
+            var appSettings = ParseSettingsLog(managedLogContent, "AppSettings:");
+            VerifyVariables(appSettings);
+#endif
+        }
+        finally
+        {
+            tempLogsDirectory.Delete(true);
+        }
+
+        void VerifyVariables(ICollection<KeyValuePair<string, string>> options)
+        {
+            options.Should().NotBeEmpty();
+
+            var secretVariables = options
+                .Where(item => secretIdentificators.Any(i => item.Key.Contains(i)))
+                .ToList();
+
+            secretVariables.Should().NotBeEmpty();
+            secretVariables.Should().AllSatisfy(secret => secret.Value.Should().Be("<hidden>"));
+        }
+    }
+
+    private static ICollection<KeyValuePair<string, string>> ParseSettingsLog(string log, string marker)
+    {
+        var lines = log.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+        var variables = lines
+            .SkipWhile(x => !x.EndsWith(marker))
+            .Skip(1)
+            .TakeWhile(x => x.StartsWith("\t"))
+            .Select(x => x.Trim())
+            .ToEnvironmentVariablesList();
+
+        return variables;
+    }
 }
