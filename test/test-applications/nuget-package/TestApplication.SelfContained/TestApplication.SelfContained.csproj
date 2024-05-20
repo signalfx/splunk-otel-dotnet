@@ -6,6 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Splunk.OpenTelemetry.AutoInstrumentation" Version="$(NuGetPackageVersion)" />
+    <PackageReference Include="Splunk.OpenTelemetry.AutoInstrumentation" VersionOverride="$(NuGetPackageVersion)" />
   </ItemGroup>
 </Project>

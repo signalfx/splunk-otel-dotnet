@@ -55,6 +55,12 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestApplication.HttpServer", "test\test-applications\integrations\TestApplication.HttpServer\TestApplication.HttpServer.csproj", "{4E4BA0EE-4732-4FEF-BD8D-F11174063B65}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuget-package", "nuget-package", "{E07BEE03-BD3C-4D31-A295-4FFEB5174FCE}"
+	ProjectSection(SolutionItems) = preProject
+		test\test-applications\nuget-package\Directory.Build.props = test\test-applications\nuget-package\Directory.Build.props
+		test\test-applications\nuget-package\Directory.Build.targets = test\test-applications\nuget-package\Directory.Build.targets
+		test\test-applications\nuget-package\Directory.Packages.props = test\test-applications\nuget-package\Directory.Packages.props
+		test\test-applications\nuget-package\nuget.config = test\test-applications\nuget-package\nuget.config
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestApplication.SelfContained", "test\test-applications\nuget-package\TestApplication.SelfContained\TestApplication.SelfContained.csproj", "{31F05A53-FEEC-4080-97E0-AFAC80767B86}"
 EndProject
