@@ -63,17 +63,19 @@ internal class Traces
     {
         if (_settings.TraceResponseHeaderEnabled)
         {
-            options.Enrich = (activity, eventName, obj) =>
+            options.EnrichWithHttpRequest = (activity, request) =>
             {
-                if (eventName == "OnStartActivity" && obj is HttpRequest request)
+                if (request == null)
                 {
-                    var response = request.RequestContext.HttpContext.Response;
-
-                    ServerTimingHeader.SetHeaders(activity, response.Headers, (headers, key, value) =>
-                    {
-                        headers[key] = value;
-                    });
+                    return;
                 }
+
+                var response = request.RequestContext.HttpContext.Response;
+
+                ServerTimingHeader.SetHeaders(activity, response.Headers, (headers, key, value) =>
+                {
+                    headers[key] = value;
+                });
             };
         }
     }
