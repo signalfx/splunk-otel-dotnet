@@ -63,7 +63,7 @@ internal class Traces
     {
         if (_settings.TraceResponseHeaderEnabled)
         {
-            options.EnrichWithHttpRequest = (activity, request) =>
+            options.EnrichWithHttpRequest += (activity, request) =>
             {
                 if (request == null)
                 {
@@ -86,7 +86,7 @@ internal class Traces
     {
         if (_settings.TraceResponseHeaderEnabled)
         {
-            options.EnrichWithHttpRequest = (activity, request) =>
+            options.EnrichWithHttpRequest += (activity, request) =>
             {
                 var response = request.HttpContext.Response;
 
