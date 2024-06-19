@@ -69,9 +69,11 @@ public class ServerTimingHeaderTests : TestHelper
 
         await HealthzHelper.TestAsync($"{url}/alive-check", Output);
 
-        using var client = new HttpClient();
+        var client = new HttpClient();
         client.DefaultRequestHeaders.Add("Custom-Request-Test-Header", "Test-Value");
         var response = await client.GetAsync($"{url}/request");
+
+        await client.GetAsync($"{url}/shutdown");
 
         bool processTimeout = !process.WaitForExit((int)Helpers.Timeout.ProcessExit.TotalMilliseconds);
         if (processTimeout)
