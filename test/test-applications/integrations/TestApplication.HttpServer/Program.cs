@@ -22,10 +22,12 @@ ConsoleHelper.WriteSplashScreen(args);
 var builder = WebApplication.CreateBuilder(args);
 
 const string requestPath = "/request";
+const string shutdownPath = "/shutdown";
 var app = builder.Build();
-using var observer = new LifetimeObserver(app, requestPath);
+using var observer = new LifetimeObserver(app, shutdownPath);
 
 app.UseWelcomePage("/alive-check");
 app.MapGet(requestPath, () => "TestApplication.HttpServer");
+app.UseWelcomePage(shutdownPath);
 
-app.Run();
+await app.RunAsync();
