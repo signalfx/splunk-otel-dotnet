@@ -37,7 +37,7 @@ No changes in the code are needed to correctly version this package.
 1. Check that the `operator-docker` image has been published.
 
 1. Ask [o11y-docs team](https://github.com/orgs/splunk/teams/o11y-docs)
-    1. to execute [xxx](https://github.com/splunk/o11y-gdi-metadata/actions/workflows/update-metadata.yaml)
+    1. to execute [update metadata workflow](https://github.com/splunk/o11y-gdi-metadata/actions/workflows/update-metadata.yaml)
        to update matrix in [o11y-gdi-metadata repository](https://github.com/splunk/o11y-gdi-metadata/tree/main/apm/splunk-otel-dotnet),
     1. to publish necessary updates to the [documentation](https://github.com/splunk/public-o11y-docs).
 
