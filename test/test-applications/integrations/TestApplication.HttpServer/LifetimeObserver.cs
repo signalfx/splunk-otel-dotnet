@@ -73,7 +73,7 @@ public class LifetimeObserver : IDisposable, IObserver<DiagnosticListener>, IObs
     {
         if (Interlocked.Exchange(ref _shutDown, 1) != 0)
         {
-            // Allready called
+            // Already called
             return;
         }
 
