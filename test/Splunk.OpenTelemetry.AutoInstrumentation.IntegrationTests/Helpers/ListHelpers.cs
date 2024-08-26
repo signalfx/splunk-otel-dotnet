@@ -1,4 +1,4 @@
-// <copyright file="Program.cs" company="Splunk Inc.">
+﻿// <copyright file="ListHelpers.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,20 +14,18 @@
 // limitations under the License.
 // </copyright>
 
-using TestApplication.HttpServer;
-using TestApplication.Shared;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-ConsoleHelper.WriteSplashScreen(args);
+internal static class ListHelpers
+{
+    public static ICollection<KeyValuePair<string, string>> ToEnvironmentVariablesList(this IEnumerable<string> list)
+    {
+        return list.Select(x =>
+        {
+            var keyValuePair = x.Split(['='], 2);
 
-var builder = WebApplication.CreateBuilder(args);
-
-const string requestPath = "/request";
-const string shutdownPath = "/shutdown";
-var app = builder.Build();
-using var observer = new LifetimeObserver(app, shutdownPath);
-
-app.UseWelcomePage("/alive-check");
-app.MapGet(requestPath, () => "TestApplication.HttpServer");
-app.UseWelcomePage(shutdownPath);
-
-await app.RunAsync();
+            return new KeyValuePair<string, string>(keyValuePair[0], keyValuePair[1]);
+        })
+        .ToList();
+    }
+}

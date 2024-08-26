@@ -8,9 +8,9 @@ jobs:
   powershell-script:
     runs-on: windows-2022
     steps:
-      - uses: actions/setup-dotnet@v4.0.0
+      - uses: actions/setup-dotnet@v4.0.1
         with:
-          dotnet-version: 8.0.204
+          dotnet-version: 8.0.302
       - name: Test the PowerShell module instructions from README.md
         shell: powershell
         run: |
@@ -46,13 +46,13 @@ jobs:
             log-dir: "/c/ProgramData/OpenTelemetry .NET AutoInstrumentation/logs"
           - machine: ubuntu-20.04
             log-dir: "/var/log/opentelemetry/dotnet"
-          - machine: macos-11
+          - machine: macos-12
             log-dir: "/var/log/opentelemetry/dotnet"
     runs-on: ${{ matrix.machine }}
     steps:
-      - uses: actions/setup-dotnet@v4.0.0
+      - uses: actions/setup-dotnet@v4.0.1
         with:
-          dotnet-version: 7.0.408
+          dotnet-version: 7.0.410
       - run: brew install coreutils
         if: ${{ runner.os == 'macOS' }}
       - name: Create test directory
@@ -81,7 +81,7 @@ jobs:
         base-image: [ alpine ]
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v4.1.4
+      - uses: actions/checkout@v4.1.7
       - name: Test the Shell scripts from README.md in Docker container
         run: |
           set -e

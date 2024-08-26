@@ -2,13 +2,17 @@
   <PropertyGroup>
     <!-- https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5104 -->
     <NoWarn>$(NoWarn);NU5104</NoWarn>
-    <NoWarn>$(NoWarn);NU1902</NoWarn> <!-- remove this line when upgraded Instrumentation.Http and AspNetCore to 1.8.1+ -->
     <!-- AllowUnsafeBlocks needed for vendored protobuf-net -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.1.1">
+    <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.2.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <!-- Referencing Microsoft.SourceLink.GitHub directly is the workaround for lack of release DotNet.ReproducibleBuilds with 8.0.0 deoendencies. Ref: https://github.com/dotnet/reproducible-builds/pull/35 -->
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" >
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -16,18 +20,18 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="OpenTelemetry.Api" Version="1.8.0" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.8.0" />
+    <PackageReference Include="OpenTelemetry.Api" Version="1.9.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net462' ">
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNet" Version="1.8.0-beta.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNet" Version="1.9.0-beta.1" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.8.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.9.0" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -58,7 +62,7 @@
     <Content Include="splunk-launch.*">
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>
-    <PackageReference Include="OpenTelemetry.AutoInstrumentation" Version="1.5.0">
+    <PackageReference Include="OpenTelemetry.AutoInstrumentation" Version="1.7.0">
       <PrivateAssets>none</PrivateAssets> <!-- Ensures that content and build transitive dependencies are properly delivered -->
     </PackageReference>
     <None Include="splunk-logo-256x256.png" Pack="true" PackagePath="images" />

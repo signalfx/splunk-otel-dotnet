@@ -1,4 +1,4 @@
-// <copyright file="Program.cs" company="Splunk Inc.">
+﻿// <copyright file="DirectoryHelpers.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,20 +14,17 @@
 // limitations under the License.
 // </copyright>
 
-using TestApplication.HttpServer;
-using TestApplication.Shared;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-ConsoleHelper.WriteSplashScreen(args);
-
-var builder = WebApplication.CreateBuilder(args);
-
-const string requestPath = "/request";
-const string shutdownPath = "/shutdown";
-var app = builder.Build();
-using var observer = new LifetimeObserver(app, shutdownPath);
-
-app.UseWelcomePage("/alive-check");
-app.MapGet(requestPath, () => "TestApplication.HttpServer");
-app.UseWelcomePage(shutdownPath);
-
-await app.RunAsync();
+internal static class DirectoryHelpers
+{
+    public static DirectoryInfo CreateTempDirectory()
+    {
+#if NET7_0_OR_GREATER
+        return Directory.CreateTempSubdirectory("managed_logs");
+#else
+    var tempDir = Path.Combine(Path.GetTempPath(), "managed_logs_" + Path.GetRandomFileName());
+    return Directory.CreateDirectory(tempDir);
+#endif
+    }
+}

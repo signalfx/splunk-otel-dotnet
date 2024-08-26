@@ -31,23 +31,49 @@ public class ServerTimingHeaderTests : TestHelper
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task SubmitRequest(bool isEnabled)
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(false, false)]
+    public async Task SubmitRequest(bool isEnabled, bool captureHeaders)
     {
         SetEnvironmentVariable("SPLUNK_TRACE_RESPONSE_HEADER_ENABLED", isEnabled.ToString());
+        if (captureHeaders)
+        {
+            SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS", "Custom-Request-Test-Header");
+        }
+
+        using var collector = new MockSpansCollector(Output);
+        SetExporter(collector);
+
+#if NET7_0_OR_GREATER
+        collector.Expect("Microsoft.AspNetCore", span =>
+#else
+        collector.Expect("OpenTelemetry.Instrumentation.AspNetCore", span =>
+#endif
+        {
+            if (captureHeaders)
+            {
+                return span.Attributes.FirstOrDefault(x => x.Key == "http.request.header.custom-request-test-header")?.Value.StringValue == "Test-Value";
+            }
+
+            return true;
+        });
 
         var port = TcpPortProvider.GetOpenPort();
         var url = $"http://localhost:{port}";
 
         using var process = StartTestApplication(new() { Arguments = $"--urls {url}" });
-        Output.WriteLine($"ProcessName: " + process.ProcessName);
+        Output.WriteLine($"ProcessName: {process.ProcessName}");
         using var helper = new ProcessHelper(process);
 
         await HealthzHelper.TestAsync($"{url}/alive-check", Output);
 
         var client = new HttpClient();
+        client.DefaultRequestHeaders.Add("Custom-Request-Test-Header", "Test-Value");
         var response = await client.GetAsync($"{url}/request");
+
+        await client.GetAsync($"{url}/shutdown");
 
         bool processTimeout = !process.WaitForExit((int)Helpers.Timeout.ProcessExit.TotalMilliseconds);
         if (processTimeout)
@@ -70,6 +96,8 @@ public class ServerTimingHeaderTests : TestHelper
                 response.Headers.Should().NotContain(x => x.Key == "Access-Control-Expose-Headers");
             }
         }
+
+        collector.AssertExpectations();
     }
 }
 

@@ -25,6 +25,7 @@ internal static class SettingsData
     private const string SamplersCategory = "sampler";
     private const string ResourceDetectorCategory = "resource detector";
     private const string DiagnosticCategory = "diagnostic logging";
+    private const string ProfilingCategory = "profiling";
 
     public static Setting[] GetSettings()
     {
@@ -47,6 +48,12 @@ internal static class SettingsData
             new("SPLUNK_REALM", "The name of your organization's realm, for example, `us0`. When you set the realm, telemetry is sent directly to the ingest endpoint of Splunk Observability Cloud, bypassing the Splunk Distribution of OpenTelemetry Collector.", string.Empty, "string", ExporterCategory),
             new("SPLUNK_ACCESS_TOKEN", "A Splunk authentication token that lets exporters send data directly to Splunk Observability Cloud. Unset by default. Required if you need to send data to the Splunk Observability Cloud ingest endpoint.", string.Empty, "string", ExporterCategory),
 
+            // profiling
+            new("SPLUNK_PROFILER_ENABLED", "Activates AlwaysOn Profiling.", "false", "boolean", ProfilingCategory),
+            new("SPLUNK_PROFILER_MEMORY_ENABLED", "Activates memory profiling.", "false", "boolean", ProfilingCategory),
+            new("SPLUNK_PROFILER_LOGS_ENDPOINT", "The collector endpoint for profiler logs.", "http://localhost:4318/v1/logs", "string", ProfilingCategory),
+            new("SPLUNK_PROFILER_CALL_STACK_INTERVAL", "Frequency with which call stacks are sampled, in milliseconds.", "10000", "int", ProfilingCategory),
+
             // trace propagation
             new("OTEL_PROPAGATORS", "Comma-separated list of propagators for the tracer. The default value is `tracecontext,baggage`. Supported values are `b3multi`, `b3`, `tracecontext`, and `baggage`.", "tracecontext,baggage", "string", TracePropagationCategory),
 
@@ -68,6 +75,13 @@ internal static class SettingsData
             new("OTEL_SPAN_LINK_COUNT_LIMIT", "Maximum number of links per span. Default value is `1000`.", "1000", "int", InstrumentationCategory),
             new("OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT", "Maximum length of strings for attribute values. Values larger than the limit are truncated. Default value is `1200`. Empty values are treated as infinity.", "1200", "int", InstrumentationCategory),
             new("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_LEGACY_SOURCES", "Comma-separated list of additional legacy source names to be added to the tracer at the startup. Use it to capture `System.Diagnostics.Activity` objects created without using the `System.Diagnostics.ActivitySource` API.", string.Empty, "string", InstrumentationCategory),
+            new("OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED", "Activates or deactivates all instrumentations. Can’t be set using the web.config or app.config files.", "true", "boolean", InstrumentationCategory),
+            new("OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED", "Activates or deactivates all trace instrumentations. Overrides `OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED`. Inherits the value of the `OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED` environment variable. Can’t be set using the web.config or app.config files.", string.Empty, "boolean", InstrumentationCategory),
+            new("OTEL_DOTNET_AUTO_TRACES_{INSTRUMENTATION}_INSTRUMENTATION_ENABLED", "Activates or deactivates a specific trace instrumentation, where `{INSTRUMENTATION}` is the case-sensitive name of the instrumentation. Overrides `OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED`. Inherits the value of the `OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED` environment variable. Can’t be set using the web.config or app.config files. See Supported libraries for a complete list of supported instrumentations and their names.", string.Empty, "boolean", InstrumentationCategory),
+            new("OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED", "Activates or deactivates all metric instrumentations. Overrides `OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED`. Inherits the value of the `OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED` environment variable. Can’t be set using the web.config or app.config files.", string.Empty, "boolean", InstrumentationCategory),
+            new("OTEL_DOTNET_AUTO_METRICS_{INSTRUMENTATION}_INSTRUMENTATION_ENABLED", "Activates or deactivates a specific metric instrumentation, where `{INSTRUMENTATION}` is the case-sensitive name of the instrumentation. Overrides `OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED`. Inherits the value of the `OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED` environment variable. Can’t be set using the web.config or app.config files. See Supported libraries for a complete list of supported instrumentations and their names.", string.Empty, "boolean", InstrumentationCategory),
+            new("OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED", "Activates or deactivates all log instrumentations. Overrides `OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED`. Inherits the value of the `OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED` environment variable. Can’t be set using the web.config or app.config files.", string.Empty, "boolean", InstrumentationCategory),
+            new("OTEL_DOTNET_AUTO_LOGS_{INSTRUMENTATION}_INSTRUMENTATION_ENABLED", "Activates or deactivates a specific log instrumentation, where `{INSTRUMENTATION}` is the case-sensitive name of the instrumentation. Overrides `OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED`. Inherits the value of the `OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED` environment variable. Can’t be set using the web.config or app.config files. See Supported libraries for a complete list of supported instrumentations and their names.\n\n", string.Empty, "boolean", InstrumentationCategory),
 
             // diagnostic logging
             new("OTEL_LOG_LEVEL", "Sets the logging level for instrumentation log messages. Possible values are `none`, `error`, `warn`, `info`, and `debug`. The default value is `info`. Can't be set using the web.config or app.config files.", "info", "string", DiagnosticCategory),
@@ -75,7 +89,7 @@ internal static class SettingsData
             new("OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED", "Whether the traces console exporter is activated. The default value is `false`.", "false", "boolean", DiagnosticCategory),
             new("OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED", "Whether the metrics console exporter is activated. The default value is `false`.", "false", "boolean", DiagnosticCategory),
             new("OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED", "Whether the logs console exporter is activated. The default value is `false`.The default value is `false`.", "false", "boolean", DiagnosticCategory),
-            new("OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE", "Whether the log state have to be formatted. The default value is `false`.", "false", "boolean", DiagnosticCategory),
+            new("OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE", "Whether the log state have to be formatted. The default value is `false`.", "false", "boolean", DiagnosticCategory)
         };
 
         return settings;

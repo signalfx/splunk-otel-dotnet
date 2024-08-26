@@ -1,4 +1,4 @@
-﻿// <copyright file="Traces.cs" company="Splunk Inc.">
+// <copyright file="Traces.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,6 @@ using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 #if NETFRAMEWORK
-using System.Web;
 using OpenTelemetry.Instrumentation.AspNet;
 #else
 using OpenTelemetry.Instrumentation.AspNetCore;
@@ -63,17 +62,19 @@ internal class Traces
     {
         if (_settings.TraceResponseHeaderEnabled)
         {
-            options.Enrich = (activity, eventName, obj) =>
+            options.EnrichWithHttpRequest += (activity, request) =>
             {
-                if (eventName == "OnStartActivity" && obj is HttpRequest request)
+                if (request == null)
                 {
-                    var response = request.RequestContext.HttpContext.Response;
-
-                    ServerTimingHeader.SetHeaders(activity, response.Headers, (headers, key, value) =>
-                    {
-                        headers[key] = value;
-                    });
+                    return;
                 }
+
+                var response = request.RequestContext.HttpContext.Response;
+
+                ServerTimingHeader.SetHeaders(activity, response.Headers, (headers, key, value) =>
+                {
+                    headers[key] = value;
+                });
             };
         }
     }
@@ -84,7 +85,7 @@ internal class Traces
     {
         if (_settings.TraceResponseHeaderEnabled)
         {
-            options.EnrichWithHttpRequest = (activity, request) =>
+            options.EnrichWithHttpRequest += (activity, request) =>
             {
                 var response = request.HttpContext.Response;
 

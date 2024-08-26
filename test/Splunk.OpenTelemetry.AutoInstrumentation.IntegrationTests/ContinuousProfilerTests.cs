@@ -39,7 +39,7 @@ public class ContinuousProfilerTests : TestHelper
     }
 
     [Fact]
-    public async void SubmitAllocationSamples()
+    public async Task SubmitAllocationSamples()
     {
         SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
         SetEnvironmentVariable("SPLUNK_PROFILER_MEMORY_ENABLED", "true");
@@ -82,7 +82,7 @@ public class ContinuousProfilerTests : TestHelper
     }
 
     [Fact]
-    public async void SubmitThreadSamples()
+    public async Task SubmitThreadSamples()
     {
         SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
         SetEnvironmentVariable("SPLUNK_PROFILER_ENABLED", "true");

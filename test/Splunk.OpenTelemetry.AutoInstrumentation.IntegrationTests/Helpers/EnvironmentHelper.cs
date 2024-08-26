@@ -14,21 +14,8 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="EnvironmentHelper.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
+// SPDX-License-Identifier: Apache-2.0
 
 using System.Collections.Specialized;
 using System.Reflection;
@@ -153,7 +140,7 @@ public class EnvironmentHelper
 
         string fileName = $"OpenTelemetry.AutoInstrumentation.Native.{extension}";
         string nukeOutput = GetNukeBuildOutput();
-        string profilerPath = Path.Combine(nukeOutput, $"{EnvironmentTools.GetClrProfilerDirectoryName()}-{EnvironmentTools.GetPlatform().ToLower()}", fileName);
+        string profilerPath = Path.Combine(nukeOutput, EnvironmentTools.GetClrProfilerDirectoryName(), fileName);
 
         if (File.Exists(profilerPath))
         {
@@ -165,18 +152,24 @@ public class EnvironmentHelper
         throw new Exception($"Unable to find profiler at: {profilerPath}");
     }
 
-    public string GetTestApplicationPath(string packageVersion = "", string framework = "")
+    public string GetTestApplicationPath(string packageVersion = "", string framework = "", TestAppStartupMode startupMode = TestAppStartupMode.Auto)
     {
-        string extension = "exe";
-
-        if (IsCoreClr() || _testApplicationDirectory.Contains("aspnet"))
+        var extension = startupMode switch
         {
-            extension = "dll";
-        }
+            TestAppStartupMode.Auto => IsCoreClr() || _testApplicationDirectory.Contains("aspnet") ? ".dll" : GetExecutableExtension(),
+            TestAppStartupMode.DotnetCLI => ".dll",
+            TestAppStartupMode.Exe => GetExecutableExtension(),
+            _ => throw new InvalidOperationException($"Unknown startup mode '{startupMode}'")
+        };
 
-        var appFileName = $"{FullTestApplicationName}.{extension}";
+        var appFileName = $"{FullTestApplicationName}{extension}";
         var testApplicationPath = Path.Combine(GetTestApplicationApplicationOutputDirectory(packageVersion: packageVersion, framework: framework), appFileName);
         return testApplicationPath;
+
+        static string GetExecutableExtension()
+        {
+            return EnvironmentTools.IsWindows() ? ".exe" : string.Empty;
+        }
     }
 
     public string GetTestApplicationExecutionSource()
@@ -205,33 +198,32 @@ public class EnvironmentHelper
         return executor;
     }
 
-    public string GetTestApplicationProjectDirectory()
+    public string GetTestApplicationBaseBinDirectory()
     {
         var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
         var projectDir = Path.Combine(
             solutionDirectory,
             _testApplicationDirectory,
-            $"{FullTestApplicationName}");
+            $"{FullTestApplicationName}",
+            "bin");
         return projectDir;
     }
 
     public string GetTestApplicationApplicationOutputDirectory(string packageVersion = "", string framework = "")
     {
         var targetFramework = string.IsNullOrEmpty(framework) ? GetTargetFramework() : framework;
-        var binDir = Path.Combine(
-            GetTestApplicationProjectDirectory(),
-            "bin");
+        var baseBinDirectory = GetTestApplicationBaseBinDirectory();
 
         if (_testApplicationDirectory.Contains("aspnet"))
         {
             return Path.Combine(
-                binDir,
+                baseBinDirectory,
                 EnvironmentTools.GetBuildConfiguration(),
                 "app.publish");
         }
 
         return Path.Combine(
-            binDir,
+            baseBinDirectory,
             packageVersion,
             EnvironmentTools.GetBuildConfiguration(),
             targetFramework);
@@ -293,7 +285,7 @@ public class EnvironmentHelper
         CustomEnvironmentVariables["COR_PROFILER_PATH"] = profilerPath;
 
         CustomEnvironmentVariables["OTEL_LOG_LEVEL"] = "debug";
-        CustomEnvironmentVariables["OTEL_DOTNET_AUTO_LOG_DIRECTORY"] = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "build_data", "profiler-logs");
+        CustomEnvironmentVariables["OTEL_DOTNET_AUTO_LOG_DIRECTORY"] = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "test-artifacts", "profiler-logs");
         CustomEnvironmentVariables["OTEL_DOTNET_AUTO_HOME"] = GetNukeBuildOutput();
         CustomEnvironmentVariables["OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES"] = "TestApplication.*";
 
