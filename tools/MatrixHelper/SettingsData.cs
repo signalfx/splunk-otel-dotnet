@@ -44,7 +44,13 @@ internal static class SettingsData
             new("OTEL_DOTNET_AUTO_FAIL_FAST_ENABLED", "Activate to let the process fail when automatic instrumentation can't be executed. This setting is for debugging purposes, don't use it in production environments. The default value is `false`. Can't be set using the web.config or app.config files.", "false", "boolean", GeneralCategory),
 
             // exporter
-            new("OTEL_EXPORTER_OTLP_ENDPOINT", "The URL to where traces and metrics are sent. The default value is `http://localhost:4318`. Setting a value overrides the `SPLUNK_REALM` environment variable.", string.Empty, "string", ExporterCategory),
+            new("OTEL_LOGS_EXPORTER", "Comma-separated list of exporters. Supported options: `otlp`, `console`, `none`.", "otlp", "string", ExporterCategory),
+            new("OTEL_METRICS_EXPORTER", "Comma-separated list of exporters. Supported options: `otlp`, `console`, `none`.", "otlp", "string", ExporterCategory),
+            new("OTEL_TRACES_EXPORTER", "Comma-separated list of exporters. Supported options: `otlp`, `console`, `none`.", "otlp", "string", ExporterCategory),
+            new("OTEL_EXPORTER_OTLP_ENDPOINT", "The URL to where traces, metrics, and logs are sent. The default value is `http://localhost:4318`. Setting a value overrides the `SPLUNK_REALM` environment variable.", string.Empty, "string", ExporterCategory),
+            new("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "Equivalent to `OTEL_EXPORTER_OTLP_ENDPOINT`, but applies only to logs.", string.Empty, "string", ExporterCategory),
+            new("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "Equivalent to `OTEL_EXPORTER_OTLP_ENDPOINT`, but applies only to metrics.", string.Empty, "string", ExporterCategory),
+            new("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "Equivalent to `OTEL_EXPORTER_OTLP_ENDPOINT`, but applies only to traces.", string.Empty, "string", ExporterCategory),
             new("SPLUNK_REALM", "The name of your organization's realm, for example, `us0`. When you set the realm, telemetry is sent directly to the ingest endpoint of Splunk Observability Cloud, bypassing the Splunk Distribution of OpenTelemetry Collector.", string.Empty, "string", ExporterCategory),
             new("SPLUNK_ACCESS_TOKEN", "A Splunk authentication token that lets exporters send data directly to Splunk Observability Cloud. Unset by default. Required if you need to send data to the Splunk Observability Cloud ingest endpoint.", string.Empty, "string", ExporterCategory),
             new("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "The aggregation temporality to use on the basis of instrument kind. The supported options are `Cumulative` for all instrument kinds and `Delta` for Counter, Asynchronous Counter, and Histogram instrument kinds. If you use `Delta` for UpDownCounter and Asynchronous UpDownCounter instrument kinds, the `Cumulative` aggregation temporality will be used. `LowMemory`, from the OpenTelemetry specification, is not supported.", "Cumulative", "string", ExporterCategory),
@@ -85,12 +91,13 @@ internal static class SettingsData
             new("OTEL_DOTNET_AUTO_LOGS_{INSTRUMENTATION}_INSTRUMENTATION_ENABLED", "Activates or deactivates a specific log instrumentation, where `{INSTRUMENTATION}` is the case-sensitive name of the instrumentation. Overrides `OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED`. Inherits the value of the `OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED` environment variable. Can’t be set using the web.config or app.config files. See Supported libraries for a complete list of supported instrumentations and their names.\n\n", string.Empty, "boolean", InstrumentationCategory),
 
             // diagnostic logging
-            new("OTEL_LOG_LEVEL", "Sets the logging level for instrumentation log messages. Possible values are `none`, `error`, `warn`, `info`, and `debug`. The default value is `info`. Can't be set using the web.config or app.config files.", "info", "string", DiagnosticCategory),
+            new("OTEL_DOTNET_AUTO_LOGGER", "AutoInstrumentation diagnostic logs sink. (supported values: `none`,`file`,`console`.", "file", "string", DiagnosticCategory),
+            new("OTEL_LOG_LEVEL", "Sets the logging level for instrumentation log messages. Possible values are `none`, `error`, `warn`, `info`, and `debug`. Can't be set using the web.config or app.config files.", "info", "string", DiagnosticCategory),
             new("OTEL_DOTNET_AUTO_LOG_DIRECTORY", "Directory of the .NET tracer logs. The default value is `/var/log/opentelemetry/dotnet` for Linux, and `%ProgramData%\\OpenTelemetry .NET AutoInstrumentation\\logs` for Windows. Can't be set using the web.config or app.config files.", string.Empty, "string", DiagnosticCategory),
-            new("OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED", "Whether the traces console exporter is activated. The default value is `false`.", "false", "boolean", DiagnosticCategory),
-            new("OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED", "Whether the metrics console exporter is activated. The default value is `false`.", "false", "boolean", DiagnosticCategory),
-            new("OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED", "Whether the logs console exporter is activated. The default value is `false`.The default value is `false`.", "false", "boolean", DiagnosticCategory),
-            new("OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE", "Whether the log state have to be formatted. The default value is `false`.", "false", "boolean", DiagnosticCategory)
+            new("OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED", "Deprecated. Whether the traces console exporter is activated. It can be configured by `OTEL_TRACES_EXPORTER`.", "false", "boolean", DiagnosticCategory),
+            new("OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED", "Deprecated. Whether the metrics console exporter is activated. It can be configured by `OTEL_METRICS_EXPORTER`.", "false", "boolean", DiagnosticCategory),
+            new("OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED", "Deprecated. Whether the logs console exporter is activated. It can be configured by `OTEL_LOGS_EXPORTER`.", "false", "boolean", DiagnosticCategory),
+            new("OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE", "Whether the log state have to be formatted.", "false", "boolean", DiagnosticCategory)
         };
 
         return settings;
