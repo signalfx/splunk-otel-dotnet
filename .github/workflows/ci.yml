@@ -61,7 +61,7 @@ jobs:
           ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net8.0/TestApplication.Smoke.exe
           if (-not $?) { throw "dotnet help returned exit code: $LASTEXITCODE" }
           if (Test-Path $log_path) { throw "Log file exists. Instrumentation unregister failed." }
-      - uses: actions/upload-artifact@v4.4.0
+      - uses: actions/upload-artifact@v4.4.1
         with:
           name: bin-${{ matrix.machine }}
           path: |
@@ -117,7 +117,7 @@ jobs:
           ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net8.0/publish/TestApplication.Smoke
             test "$(ls -A /home/user/opentelemetry/log )"
         '
-    - uses: actions/upload-artifact@v4.4.0
+    - uses: actions/upload-artifact@v4.4.1
       if: (${{ job.status }} != 'cancelled')
       with:
         name: bin-${{ matrix.base-image }}
@@ -136,7 +136,7 @@ jobs:
             7.0.410
             8.0.402
       - run: ./build.cmd NuGetWorkflow
-      - uses: actions/upload-artifact@v4.4.0
+      - uses: actions/upload-artifact@v4.4.1
         with:
           name: nuget-package
           path: NuGetPackage/
