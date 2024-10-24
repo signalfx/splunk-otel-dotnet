@@ -27,9 +27,9 @@ jobs:
       - uses: actions/setup-dotnet@v4.0.1
         with:
           dotnet-version: | 
-            6.0.425
+            6.0.427
             7.0.410
-            8.0.402
+            8.0.403
       - run: ./build.cmd Workflow
       - run: brew install coreutils
         if: ${{ runner.os == 'macOS' }}
@@ -132,9 +132,9 @@ jobs:
       - uses: actions/setup-dotnet@v4.0.1
         with:
           dotnet-version: | 
-            6.0.425
+            6.0.427
             7.0.410
-            8.0.402
+            8.0.403
       - run: ./build.cmd NuGetWorkflow
       - uses: actions/upload-artifact@v4.4.3
         with:
@@ -157,9 +157,9 @@ jobs:
       - uses: actions/setup-dotnet@v4.0.1
         with:
           dotnet-version: | 
-            6.0.425
+            6.0.427
             7.0.410
-            8.0.402
+            8.0.403
       - name: Download NuGet Artifacts from build-nuget-package job
         uses: actions/download-artifact@v4.1.8
         with:
