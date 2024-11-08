@@ -7,9 +7,14 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.7.0...HEAD)
 
+This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.9.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.9.0).
+
 ### Added
 
 ### Changed
+
+- Updated [OpenTelemetry .NET Auto Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation):
+  [`1.9.0`](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.9.0).
 
 ### Deprecated
 

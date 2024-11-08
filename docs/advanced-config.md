@@ -7,7 +7,7 @@
 
 ## OpenTelemetry configuration
 
-See [Open Telemetry Auto Instrumentation documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.8.0/docs/config.md)
+See [Open Telemetry Auto Instrumentation documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.9.0/docs/config.md)
 for configuration details.
 
 ## Splunk distribution configuration
@@ -23,7 +23,7 @@ Download and install the latest binaries from
 
 When running your application, make sure to:
 
-1. Set the [resources](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.8.0/docs/config.md#resources).
+1. Set the [resources](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.9.0/docs/config.md#resources).
 1. Set the environment variables from the table below.
 
 | Environment variable                 | .NET version        | Value                                                                                       |
@@ -45,7 +45,7 @@ When running your application, make sure to:
 | `OTEL_DOTNET_AUTO_HOME`              | All versions        | `$INSTALL_DIR`                                                                              |
 | `OTEL_DOTNET_AUTO_PLUGINS`           | All versions        | `Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation` |
 
-> Some settings can be omitted on .NET. For more information, see the [documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.8.0/docs/config.md#net-clr-profiler).
+> Some settings can be omitted on .NET. For more information, see the [documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.9.0/docs/config.md#net-clr-profiler).
 
 ## Splunk plugin settings
 
