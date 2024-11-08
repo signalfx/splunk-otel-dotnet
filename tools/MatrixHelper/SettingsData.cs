@@ -94,10 +94,7 @@ internal static class SettingsData
             new("OTEL_DOTNET_AUTO_LOGGER", "AutoInstrumentation diagnostic logs sink. (supported values: `none`,`file`,`console`.", "file", "string", DiagnosticCategory),
             new("OTEL_LOG_LEVEL", "Sets the logging level for instrumentation log messages. Possible values are `none`, `error`, `warn`, `info`, and `debug`. Can't be set using the web.config or app.config files.", "info", "string", DiagnosticCategory),
             new("OTEL_DOTNET_AUTO_LOG_DIRECTORY", "Directory of the .NET tracer logs. The default value is `/var/log/opentelemetry/dotnet` for Linux, and `%ProgramData%\\OpenTelemetry .NET AutoInstrumentation\\logs` for Windows. Can't be set using the web.config or app.config files.", string.Empty, "string", DiagnosticCategory),
-            new("OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED", "Deprecated. Whether the traces console exporter is activated. It can be configured by `OTEL_TRACES_EXPORTER`.", "false", "boolean", DiagnosticCategory),
-            new("OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED", "Deprecated. Whether the metrics console exporter is activated. It can be configured by `OTEL_METRICS_EXPORTER`.", "false", "boolean", DiagnosticCategory),
-            new("OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED", "Deprecated. Whether the logs console exporter is activated. It can be configured by `OTEL_LOGS_EXPORTER`.", "false", "boolean", DiagnosticCategory),
-            new("OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE", "Whether the log state have to be formatted.", "false", "boolean", DiagnosticCategory)
+            new("OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED", "Deprecated. Whether the traces console exporter is activated. It can be configured by `OTEL_TRACES_EXPORTER`.", "false", "boolean", DiagnosticCategory)
         };
 
         return settings;
