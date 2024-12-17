@@ -40,7 +40,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
                 settings.Realm.Should().Be("none");
                 settings.AccessToken.Should().BeNull();
                 settings.TraceResponseHeaderEnabled.Should().BeTrue();
-#if NET6_0_OR_GREATER
+#if NET
                 settings.ProfilerLogsEndpoint.Should().Be("http://localhost:4318/v1/logs");
                 settings.CpuProfilerEnabled.Should().BeFalse();
                 settings.MemoryProfilerEnabled.Should().BeFalse();
@@ -54,7 +54,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Realm, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AccessToken, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled, null);
-#if NET6_0_OR_GREATER
+#if NET
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled, null);

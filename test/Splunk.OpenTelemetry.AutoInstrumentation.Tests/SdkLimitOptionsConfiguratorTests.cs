@@ -39,12 +39,12 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             {
                 Environment.GetEnvironmentVariable("OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT").Should().Be("12000");
                 Environment.GetEnvironmentVariable("OTEL_ATTRIBUTE_COUNT_LIMIT").Should().Be("2147483647");
-                Environment.GetEnvironmentVariable("OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT").Should().Be(null);
-                Environment.GetEnvironmentVariable("OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT").Should().Be(null);
+                Environment.GetEnvironmentVariable("OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT").Should().BeNullOrEmpty();
+                Environment.GetEnvironmentVariable("OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT").Should().BeNullOrEmpty();
                 Environment.GetEnvironmentVariable("OTEL_SPAN_EVENT_COUNT_LIMIT").Should().Be("2147483647");
                 Environment.GetEnvironmentVariable("OTEL_SPAN_LINK_COUNT_LIMIT").Should().Be("1000");
-                Environment.GetEnvironmentVariable("OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT").Should().Be(null);
-                Environment.GetEnvironmentVariable("OTEL_LINK_ATTRIBUTE_COUNT_LIMIT").Should().Be(null);
+                Environment.GetEnvironmentVariable("OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT").Should().BeNullOrEmpty();
+                Environment.GetEnvironmentVariable("OTEL_LINK_ATTRIBUTE_COUNT_LIMIT").Should().BeNullOrEmpty();
             }
         }
 

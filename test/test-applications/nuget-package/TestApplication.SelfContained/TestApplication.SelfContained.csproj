@@ -7,6 +7,6 @@
 
   <ItemGroup>
     <PackageReference Include="Splunk.OpenTelemetry.AutoInstrumentation" Version="$(NuGetPackageVersion)" Condition=" '$(NuGetPackageVersion)' != '' " />
-    <PackageReference Include="Splunk.OpenTelemetry.AutoInstrumentation" Version="1.6.0" Condition=" '$(NuGetPackageVersion)' == '' " />
+    <PackageReference Include="Splunk.OpenTelemetry.AutoInstrumentation" Version="1.8.0" Condition=" '$(NuGetPackageVersion)' == '' " />
   </ItemGroup>
 </Project>

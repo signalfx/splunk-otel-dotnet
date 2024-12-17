@@ -14,7 +14,7 @@ partial class Build : NukeBuild
             foreach (var templateFile in templateFiles)
             {
                 var scriptFile = InstallationScriptsFolder / templateFile.Name.Replace(".template", "");
-                FileSystemTasks.CopyFile(templateFile, scriptFile);
+                templateFile.Copy(scriptFile);
                 scriptFile.UpdateText(x =>
                     x.Replace("{{VERSION}}", VersionHelper.GetVersion()));
             }
