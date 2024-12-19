@@ -32,9 +32,7 @@
 
 #nullable disable
 
-#if NET6_0_OR_GREATER
-using System.IO;
-using System.Threading.Tasks;
+#if NET
 using Microsoft.AspNetCore.Http;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;

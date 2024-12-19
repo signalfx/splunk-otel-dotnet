@@ -31,7 +31,7 @@
 // </copyright>
 
 #nullable disable
-#if NET6_0_OR_GREATER
+#if NET
 
 using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Http;

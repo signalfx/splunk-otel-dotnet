@@ -16,7 +16,7 @@ partial class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Release'")]
     readonly Configuration Configuration = Configuration.Release;
 
-    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.9.0";
+    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.10.0-beta.1";
 
     [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
     readonly string OpenTelemetryAutoInstrumentationVersion = OpenTelemetryAutoInstrumentationDefaultVersion;
@@ -116,17 +116,13 @@ partial class Build : NukeBuild
         .After(Compile)
         .Executes(() =>
         {
-            FileSystemTasks.CopyFileToDirectory(
-                RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
-                "net6.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
-                OpenTelemetryDistributionFolder / "net");
+            (RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
+             "net8.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll").CopyToDirectory(OpenTelemetryDistributionFolder / "net");
 
             if (EnvironmentInfo.IsWin)
             {
-                FileSystemTasks.CopyFileToDirectory(
-                    RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
-                    "net462" / "Splunk.OpenTelemetry.AutoInstrumentation.dll",
-                    OpenTelemetryDistributionFolder / "netfx");
+                (RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
+                 "net462" / "Splunk.OpenTelemetry.AutoInstrumentation.dll").CopyToDirectory(OpenTelemetryDistributionFolder / "netfx");
             }
         });
 
@@ -136,7 +132,7 @@ partial class Build : NukeBuild
         {
             var source = RootDirectory / "instrument.sh";
             var dest = OpenTelemetryDistributionFolder;
-            FileSystemTasks.CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            source.CopyToDirectory(dest, ExistsPolicy.FileOverwrite);
         });
 
     Target ExtendLicenseFile => _ => _

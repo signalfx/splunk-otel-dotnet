@@ -16,7 +16,7 @@
 
 // Continuous Profiler is not supported by .NET Framework.
 
-#if NET6_0_OR_GREATER
+#if NET
 
 using System.IO.Compression;
 using FluentAssertions;
@@ -194,11 +194,7 @@ public class ContinuousProfilerTests : TestHelper
     {
         var stackTrace = new List<string>
         {
-#if RELEASE && NET6_0
-            "System.Threading.Thread.Sleep(System.Int32)",
-#else
             "System.Threading.Thread.Sleep(System.TimeSpan)",
-#endif
             "My.Custom.Test.Namespace.ClassA.MethodA()"
         };
 

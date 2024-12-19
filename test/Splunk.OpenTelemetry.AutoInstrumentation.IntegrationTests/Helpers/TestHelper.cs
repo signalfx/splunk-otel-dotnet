@@ -106,7 +106,7 @@ public abstract class TestHelper
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://localhost:{collector.Port}");
     }
 
-#if NET6_0_OR_GREATER
+#if NET
     public void SetExporter(MockLContinuousProfilerCollector collector)
     {
         SetEnvironmentVariable("SPLUNK_PROFILER_LOGS_ENDPOINT", $"http://localhost:{collector.Port}/v1/logs");
