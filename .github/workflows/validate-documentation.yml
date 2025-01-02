@@ -30,4 +30,4 @@ jobs:
       with:
         files: '**/*.md'
 
-    - uses: DavidAnson/markdownlint-cli2-action@v18.0.0
+    - uses: DavidAnson/markdownlint-cli2-action@v19.0.0
