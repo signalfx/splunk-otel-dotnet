@@ -30,7 +30,6 @@
 // limitations under the License.
 // </copyright>
 
-using FluentAssertions;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 using Xunit.Abstractions;
 
@@ -181,7 +180,7 @@ public class SmokeTests : TestHelper
 
             var managedLog = tempLogsDirectory.GetFiles("otel-dotnet-auto-*-Splunk-*.log").Single();
             var managedLogContent = File.ReadAllText(managedLog.FullName);
-            managedLogContent.Should().NotBeNullOrWhiteSpace();
+            Assert.False(string.IsNullOrWhiteSpace(managedLogContent));
 
             var environmentVariables = ParseSettingsLog(managedLogContent, "Environment Variables:");
             VerifyVariables(environmentVariables);
@@ -198,14 +197,14 @@ public class SmokeTests : TestHelper
 
         void VerifyVariables(ICollection<KeyValuePair<string, string>> options)
         {
-            options.Should().NotBeEmpty();
+            Assert.NotEmpty(options);
 
             var secretVariables = options
                 .Where(item => secretIdentificators.Any(i => item.Key.Contains(i)))
                 .ToList();
 
-            secretVariables.Should().NotBeEmpty();
-            secretVariables.Should().AllSatisfy(secret => secret.Value.Should().Be("<hidden>"));
+            Assert.NotEmpty(secretVariables);
+            Assert.All(secretVariables, secret => Assert.Equal("<hidden>", secret.Value));
         }
     }
 

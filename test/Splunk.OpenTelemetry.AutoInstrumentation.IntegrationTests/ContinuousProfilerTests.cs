@@ -19,8 +19,6 @@
 #if NET
 
 using System.IO.Compression;
-using FluentAssertions;
-using FluentAssertions.Execution;
 using Google.Protobuf.Collections;
 using OpenTelemetry.Proto.Collector.Logs.V1;
 using OpenTelemetry.Proto.Common.V1;
@@ -49,7 +47,7 @@ public class ContinuousProfilerTests : TestHelper
         RunTestApplication();
         var logsData = logsCollector.GetAllLogs();
 
-        logsData.Length.Should().BeGreaterOrEqualTo(expected: 1);
+        Assert.True(logsData.Length > 0);
 
         await DumpLogRecords(logsData);
 
@@ -68,14 +66,11 @@ public class ContinuousProfilerTests : TestHelper
                 profiles.Add(profile);
             }
 
-            using (new AssertionScope())
-            {
-                AllShouldHaveBasicAttributes(logRecords, ConstantValuedAttributes("allocation"));
-                ProfilesContainAllocationValue(profiles);
-                RecordsContainFrameCountAttribute(logRecords);
-                ResourceContainsExpectedAttributes(dataResourceLog.Resource);
-                HasNameAndVersionSet(instrumentationLibraryLogs.Scope);
-            }
+            AllShouldHaveBasicAttributes(logRecords, ConstantValuedAttributes("allocation"));
+            ProfilesContainAllocationValue(profiles);
+            RecordsContainFrameCountAttribute(logRecords);
+            ResourceContainsExpectedAttributes(dataResourceLog.Resource);
+            HasNameAndVersionSet(instrumentationLibraryLogs.Scope);
 
             logRecords.Clear();
         }
@@ -94,7 +89,7 @@ public class ContinuousProfilerTests : TestHelper
         var logsData = logsCollector.GetAllLogs();
         // The application works for 6 seconds with debug logging enabled we expect at least 2 attempts of thread sampling in CI.
         // On a dev box it is typical to get at least 4 but the CI machines seem slower, using 2
-        logsData.Length.Should().BeGreaterOrEqualTo(expected: 2);
+        Assert.True(logsData.Length > 2);
 
         await DumpLogRecords(logsData);
 
@@ -118,14 +113,11 @@ public class ContinuousProfilerTests : TestHelper
 
             containStackTraceForClassHierarchy |= profiles.Any(profile => ContainsStackTrace(profile, expectedStackTrace));
 
-            using (new AssertionScope())
-            {
-                AllShouldHaveBasicAttributes(logRecords, ConstantValuedAttributes("cpu"));
-                ProfilesDoNotContainAnyValue(profiles);
-                RecordsContainFrameCountAttribute(logRecords);
-                ResourceContainsExpectedAttributes(dataResourceLog.Resource);
-                HasNameAndVersionSet(instrumentationLibraryLogs.Scope);
-            }
+            AllShouldHaveBasicAttributes(logRecords, ConstantValuedAttributes("cpu"));
+            ProfilesDoNotContainAnyValue(profiles);
+            RecordsContainFrameCountAttribute(logRecords);
+            ResourceContainsExpectedAttributes(dataResourceLog.Resource);
+            HasNameAndVersionSet(instrumentationLibraryLogs.Scope);
 
             logRecords.Clear();
         }
@@ -137,7 +129,7 @@ public class ContinuousProfilerTests : TestHelper
     {
         foreach (var profile in profiles)
         {
-            profile.Samples.All(x => x.Values.Length == 1).Should().BeTrue();
+            Assert.All(profile.Samples, x => Assert.Single(x.Values));
         }
     }
 
@@ -145,7 +137,7 @@ public class ContinuousProfilerTests : TestHelper
     {
         foreach (var profile in profiles)
         {
-            profile.Samples.All(x => x.Values.Length == 0).Should().BeTrue();
+            Assert.All(profile.Samples, x => Assert.Empty(x.Values));
         }
     }
 
@@ -153,7 +145,7 @@ public class ContinuousProfilerTests : TestHelper
     {
         foreach (var logRecord in logRecords)
         {
-            logRecord.Attributes.Should().Contain(attr => attr.Key == "profiling.data.total.frame.count");
+            Assert.Single(logRecord.Attributes, attr => attr.Key == "profiling.data.total.frame.count");
         }
     }
 
@@ -185,7 +177,7 @@ public class ContinuousProfilerTests : TestHelper
         {
             foreach (var attribute in attributes)
             {
-                logRecord.Attributes.Should().ContainEquivalentOf(attribute);
+                Assert.Contains(attribute, logRecord.Attributes);
             }
         }
     }
@@ -208,8 +200,8 @@ public class ContinuousProfilerTests : TestHelper
 
     private static void HasNameAndVersionSet(InstrumentationScope instrumentationScope)
     {
-        instrumentationScope.Name.Should().Be("otel.profiling");
-        instrumentationScope.Version.Should().Be("0.1.0");
+        Assert.Equal("otel.profiling", instrumentationScope.Name);
+        Assert.Equal("0.1.0", instrumentationScope.Version);
     }
 
     private static bool ContainsStackTrace(Profile profile, string expectedStackTrace)

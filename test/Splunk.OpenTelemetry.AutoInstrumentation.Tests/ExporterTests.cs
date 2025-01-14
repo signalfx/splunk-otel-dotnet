@@ -33,7 +33,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             var options = new OtlpExporterOptions();
             new Metrics(settings).ConfigureMetricsOptions(options);
 
-            options.Endpoint.Should().Be(endpoint);
+            Assert.StartsWith(endpoint, options.Endpoint.ToString());
 
             Environment.SetEnvironmentVariable("SPLUNK_REALM", null);
             Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", null);

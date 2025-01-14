@@ -16,8 +16,6 @@
 
 #if NET
 
-using FluentAssertions;
-using FluentAssertions.Execution;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 using Xunit.Abstractions;
 
@@ -50,7 +48,8 @@ public class ServerTimingHeaderTests : TestHelper
         {
             if (captureHeaders)
             {
-                return span.Attributes.FirstOrDefault(x => x.Key == "http.request.header.custom-request-test-header")?.Value.StringValue == "Test-Value";
+                return span.Attributes.FirstOrDefault(x => x.Key == "http.request.header.custom-request-test-header")
+                    ?.Value.StringValue == "Test-Value";
             }
 
             return true;
@@ -79,18 +78,15 @@ public class ServerTimingHeaderTests : TestHelper
 
         Output.WriteResult(helper);
 
-        using (new AssertionScope())
+        if (isEnabled)
         {
-            if (isEnabled)
-            {
-                response.Headers.Should().Contain(x => x.Key == "Server-Timing");
-                response.Headers.Should().Contain(x => x.Key == "Access-Control-Expose-Headers");
-            }
-            else
-            {
-                response.Headers.Should().NotContain(x => x.Key == "Server-Timing");
-                response.Headers.Should().NotContain(x => x.Key == "Access-Control-Expose-Headers");
-            }
+            Assert.Single(response.Headers, x => x.Key == "Server-Timing");
+            Assert.Single(response.Headers, x => x.Key == "Access-Control-Expose-Headers");
+        }
+        else
+        {
+            Assert.DoesNotContain(response.Headers, x => x.Key == "Server-Timing");
+            Assert.DoesNotContain(response.Headers, x => x.Key == "Access-Control-Expose-Headers");
         }
 
         collector.AssertExpectations();
