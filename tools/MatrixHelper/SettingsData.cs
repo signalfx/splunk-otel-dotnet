@@ -66,7 +66,7 @@ internal static class SettingsData
 
             // samplers
             new("OTEL_TRACES_SAMPLER", "Sampler to use. The default value is `parentbased_always_on`. Supported values are `always_on`, `always_off`, `traceidratio`, `parentbased_always_on`, `parentbased_always_off`, and `parentbased_traceidratio`.", "parentbased_always_on", "string", SamplersCategory),
-            new("OTEL_TRACES_SAMPLER_ARG", "Semicolon-separated list of rules for the `rules` sampler. The default value is `1.0` for `parentbased_always_on`.", "1.0", "string", SamplersCategory),
+            new("OTEL_TRACES_SAMPLER_ARG", "Semicolon-separated list of rules for the `rules` sampler. The default value is `1.0` for `traceidratio`.", "1.0", "string", SamplersCategory),
 
             // resource detectors
             new("OTEL_DOTNET_AUTO_RESOURCE_DETECTOR_ENABLED", "Activates or deactivates all resource detectors. The default values is `true`.", "true", "boolean", ResourceDetectorCategory),
