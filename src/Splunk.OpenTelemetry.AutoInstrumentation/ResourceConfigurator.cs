@@ -16,7 +16,7 @@
 
 using System.Reflection;
 using OpenTelemetry.Resources;
-#if NET6_0_OR_GREATER
+#if NET
 using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 #endif
 
@@ -61,7 +61,7 @@ internal static class ResourceConfigurator
 
         resourceBuilder.AddAttributes(attributes);
 
-#if NET6_0_OR_GREATER
+#if NET
         var resource = resourceBuilder.Build();
         SampleExporter.SetResources(resource);
 #endif

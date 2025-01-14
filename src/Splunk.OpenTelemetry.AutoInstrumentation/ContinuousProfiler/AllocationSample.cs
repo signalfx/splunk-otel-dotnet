@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-#if NET6_0_OR_GREATER
+#if NET
 namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 
 internal class AllocationSample

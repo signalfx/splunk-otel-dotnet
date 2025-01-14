@@ -105,7 +105,7 @@ public class Plugin
 
 #endif
 
-#if NET6_0_OR_GREATER
+#if NET
     /// <summary>
     /// Configure Continuous Profiler.
     /// </summary>

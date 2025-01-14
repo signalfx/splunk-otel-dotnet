@@ -38,7 +38,7 @@ internal class PluginSettings
         var otlpEndpoint = source.GetString(ConfigurationKeys.OpenTelemetry.OtlpEndpoint);
         IsOtlpEndpointSet = !string.IsNullOrEmpty(otlpEndpoint);
 
-#if NET6_0_OR_GREATER
+#if NET
         CpuProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled) ?? false;
         MemoryProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled) ?? false;
         var callStackInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval) ?? 10000;
@@ -56,7 +56,7 @@ internal class PluginSettings
 
     public bool IsOtlpEndpointSet { get; }
 
-#if NET6_0_OR_GREATER
+#if NET
     public bool CpuProfilerEnabled { get; }
 
     public uint CpuProfilerCallStackInterval { get; }
@@ -82,7 +82,7 @@ internal class PluginSettings
         return new PluginSettings(configurationSource);
     }
 
-#if NET6_0_OR_GREATER
+#if NET
     private static Uri GetProfilerLogsEndpoints(IConfigurationSource source, Uri? otlpFallback)
     {
         var profilerLogsEndpoint = source.GetString(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint);
