@@ -35,7 +35,7 @@ internal static class ConfigurationKeys
         /// </summary>
         public const string TraceResponseHeaderEnabled = "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED";
 
-#if NET6_0_OR_GREATER
+#if NET
         public static class AlwaysOnProfiler
         {
             /// <summary>

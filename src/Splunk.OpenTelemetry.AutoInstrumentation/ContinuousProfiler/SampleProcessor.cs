@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-#if NET6_0_OR_GREATER
+#if NET
 
 using System.IO.Compression;
 using System.Runtime.CompilerServices;

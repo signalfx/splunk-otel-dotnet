@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-#if !NETFRAMEWORK
+#if NET
 
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -46,11 +46,7 @@ public class ServerTimingHeaderTests : TestHelper
         using var collector = new MockSpansCollector(Output);
         SetExporter(collector);
 
-#if NET7_0_OR_GREATER
         collector.Expect("Microsoft.AspNetCore", span =>
-#else
-        collector.Expect("OpenTelemetry.Instrumentation.AspNetCore", span =>
-#endif
         {
             if (captureHeaders)
             {

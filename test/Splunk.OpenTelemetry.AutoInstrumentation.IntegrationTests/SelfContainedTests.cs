@@ -66,7 +66,7 @@ public sealed class SelfContainedTests : TestHelper
         });
     }
 
-#if !NETFRAMEWORK
+#if NET
     [Fact]
     public void InstrumentDll()
     {
@@ -115,10 +115,8 @@ public sealed class SelfContainedTests : TestHelper
 
 #if NETFRAMEWORK
         collector.Expect("OpenTelemetry.Instrumentation.Http.HttpWebRequest");
-#elif NET7_0_OR_GREATER
-        collector.Expect("System.Net.Http");
 #else
-        collector.Expect("OpenTelemetry.Instrumentation.Http.HttpClient");
+        collector.Expect("System.Net.Http");
 #endif
 
         collector.ResourceExpector.ExpectDistributionResources(serviceName: EnvironmentHelper.FullTestApplicationName);
