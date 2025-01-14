@@ -34,7 +34,6 @@
 
 using System.Diagnostics;
 using System.Reflection;
-using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
@@ -147,8 +146,8 @@ public abstract class TestHelper
         Output.WriteLine("Exit Code: " + process.ExitCode);
         Output.WriteResult(helper);
 
-        processTimeout.Should().BeFalse("Test application timed out");
-        process.ExitCode.Should().Be(0, "Test application exited with non-zero exit code");
+        Assert.False(processTimeout, "Test application timed out");
+        Assert.Equal(0, process.ExitCode);
     }
 
     /// <summary>

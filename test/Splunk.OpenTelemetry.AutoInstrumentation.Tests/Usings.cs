@@ -14,6 +14,5 @@
 // limitations under the License.
 // </copyright>
 
-global using FluentAssertions;
 global using NSubstitute;
 global using Xunit;

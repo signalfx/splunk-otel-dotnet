@@ -15,7 +15,6 @@
 // </copyright>
 
 using System.Reflection;
-using FluentAssertions;
 using OpenTelemetry.Proto.Common.V1;
 using OpenTelemetry.Proto.Resource.V1;
 
@@ -52,11 +51,11 @@ internal static class ResourceExpectorExtensions
 
         foreach (var constantAttribute in constantAttributes)
         {
-            resource.Attributes.Should().ContainEquivalentOf(constantAttribute);
+            Assert.Contains(constantAttribute, resource.Attributes);
         }
 
         // asserting resource attribute without values
-        resource.Attributes.Should().Contain(value => value.Key == "host.name");
-        resource.Attributes.Should().Contain(value => value.Key == "process.pid");
+        Assert.Single(resource.Attributes, value => value.Key == "host.name");
+        Assert.Single(resource.Attributes, value => value.Key == "process.pid");
     }
 }

@@ -14,8 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-using FluentAssertions.Execution;
-
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 {
     public class SettingsTests : IDisposable
@@ -35,18 +33,15 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
         {
             var settings = PluginSettings.FromDefaultSources();
 
-            using (new AssertionScope())
-            {
-                settings.Realm.Should().Be("none");
-                settings.AccessToken.Should().BeNull();
-                settings.TraceResponseHeaderEnabled.Should().BeTrue();
+            Assert.Equal("none", settings.Realm);
+            Assert.Null(settings.AccessToken);
+            Assert.True(settings.TraceResponseHeaderEnabled);
 #if NET
-                settings.ProfilerLogsEndpoint.Should().Be("http://localhost:4318/v1/logs");
-                settings.CpuProfilerEnabled.Should().BeFalse();
-                settings.MemoryProfilerEnabled.Should().BeFalse();
-                settings.CpuProfilerCallStackInterval.Should().Be(10000u);
+            Assert.Equal("http://localhost:4318/v1/logs", settings.ProfilerLogsEndpoint.ToString());
+            Assert.False(settings.CpuProfilerEnabled);
+            Assert.False(settings.MemoryProfilerEnabled);
+            Assert.Equal(10000u, settings.CpuProfilerCallStackInterval);
 #endif
-            }
         }
 
         private static void ClearEnvVars()

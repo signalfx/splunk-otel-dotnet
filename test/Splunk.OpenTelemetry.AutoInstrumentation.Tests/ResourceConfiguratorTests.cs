@@ -16,7 +16,6 @@
 
 using System.Collections.Specialized;
 using System.Reflection;
-using FluentAssertions.Execution;
 using OpenTelemetry.Resources;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 
@@ -40,14 +39,14 @@ public class ResourceConfiguratorTests
 
         var resource = resourceBuilder.Build();
         var version = typeof(Plugin).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0];
-        using (new AssertionScope())
+
+        var expected = new Dictionary<string, object>
         {
-            resource.Attributes.Should().BeEquivalentTo(new Dictionary<string, object>
-            {
-                { "splunk.distro.version", version },
-                { "telemetry.distro.name", "splunk-otel-dotnet" },
-                { "telemetry.distro.version", version }
-            });
-        }
+            { "splunk.distro.version", version },
+            { "telemetry.distro.name", "splunk-otel-dotnet" },
+            { "telemetry.distro.version", version }
+        };
+
+        Assert.Equivalent(expected, resource.Attributes);
     }
 }

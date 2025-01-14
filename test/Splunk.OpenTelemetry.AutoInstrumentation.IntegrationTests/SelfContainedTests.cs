@@ -30,7 +30,6 @@
 // limitations under the License.
 // </copyright>
 
-using FluentAssertions;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 using Xunit.Abstractions;
 
@@ -50,7 +49,7 @@ public sealed class SelfContainedTests : TestHelper
         // The self-contained app is going to have an extra folder before it: the one
         // with a RID like "win-x64", "linux-x64", etc.
         var childrenDirs = Directory.GetDirectories(nonSelfContainedOutputDir);
-        childrenDirs.Should().ContainSingle();
+        Assert.Single(childrenDirs);
 
         _selfContainedAppDir = childrenDirs[0];
     }
@@ -92,7 +91,7 @@ public sealed class SelfContainedTests : TestHelper
         using var process = InstrumentedProcessHelper.Start(instrumentationScriptPath, instrumentationTarget, EnvironmentHelper);
         using var helper = new ProcessHelper(process);
 
-        process.Should().NotBeNull();
+        Assert.NotNull(process);
 
         bool processTimeout = !process!.WaitForExit((int)Helpers.Timeout.ProcessExit.TotalMilliseconds);
         if (processTimeout)
@@ -104,8 +103,8 @@ public sealed class SelfContainedTests : TestHelper
         Output.WriteLine("Exit Code: " + process.ExitCode);
         Output.WriteResult(helper);
 
-        processTimeout.Should().BeFalse("test application should NOT have timed out");
-        process.ExitCode.Should().Be(0, "test application should NOT have non-zero exit code");
+        Assert.False(processTimeout, "test application should NOT have timed out");
+        Assert.Equal(0, process.ExitCode);
     }
 
     private void RunAndAssertHttpSpans(Action appLauncherAction)

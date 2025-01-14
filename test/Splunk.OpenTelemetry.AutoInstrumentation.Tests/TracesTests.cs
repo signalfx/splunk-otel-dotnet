@@ -15,7 +15,6 @@
 // </copyright>
 
 using System.Collections.Specialized;
-using FluentAssertions.Execution;
 using OpenTelemetry.Exporter;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
@@ -38,8 +37,8 @@ public class TracesTests
         var options = new OtlpExporterOptions();
         new Traces(settings).ConfigureTracesOptions(options);
 
-        options.Endpoint.Should().Be("https://ingest.my-realm.signalfx.com/v2/trace/otlp");
-        options.Headers.Should().Be("X-Sf-Token=MyToken");
+        Assert.Equal("https://ingest.my-realm.signalfx.com/v2/trace/otlp", options.Endpoint.ToString());
+        Assert.Equal("X-Sf-Token=MyToken", options.Headers);
     }
 
     [Theory]
@@ -59,12 +58,9 @@ public class TracesTests
 
         new Traces(settings, loggerMock).ConfigureTracesOptions(options);
 
-        using (new AssertionScope())
-        {
-            loggerMock.Received().Error(Arg.Any<string>());
+        loggerMock.Received().Error(Arg.Any<string>());
 
-            options.Endpoint.ToString().Should().NotContain("my-realm");
-            options.Headers.Should().BeNull();
-        }
+        Assert.DoesNotContain("my-realm", options.Endpoint.ToString());
+        Assert.Null(options.Headers);
     }
 }

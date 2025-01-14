@@ -15,7 +15,6 @@
 // </copyright>
 
 using System.Diagnostics;
-using FluentAssertions.Execution;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 {
@@ -28,11 +27,8 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 
             var info = FileVersionInfo.GetVersionInfo(assembly.Location);
 
-            using (new AssertionScope())
-            {
-                info.FileVersion.Should().NotBe("0.0.0.0");
-                info.ProductVersion.Should().NotContain("0.0.0-alpha.0");
-            }
+            Assert.NotEqual("0.0.0.0", info.FileVersion);
+            Assert.DoesNotContain("0.0.0-alpha.0", info.ProductVersion);
         }
     }
 }
