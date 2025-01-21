@@ -70,4 +70,5 @@ Note: .NET Framework apps can read settings also from `Web.config` and `App.conf
 This distribution follows [GDI Specification](https://github.com/signalfx/gdi-specification/blob/v1.7.0).
 There is one known difference in the default configuration.
 This package by default sets `OTEL_TRACES_SAMPLER`
-to `parentbased_always_on` instead of `always_on`.
+to `parentbased_always_on` instead of `always_on`
+for backwards compatibility.
