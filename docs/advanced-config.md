@@ -12,14 +12,14 @@ for configuration details.
 
 ## Splunk distribution configuration
 
-## Manual installation
+### Manual installation
 
 Download and install the latest binaries from
 [the latest release](https://github.com/signalfx/splunk-otel-dotnet/releases/latest).
 
 > The path where you place the binaries is referenced as `$INSTALL_DIR` in this documentation.
 
-## Manual instrumentation
+### Manual instrumentation
 
 When running your application, make sure to:
 
@@ -47,7 +47,7 @@ When running your application, make sure to:
 
 > Some settings can be omitted on .NET. For more information, see the [documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.10.0-beta.1/docs/config.md#net-clr-profiler).
 
-## Splunk plugin settings
+### Splunk plugin settings
 
 Note: .NET Framework apps can read settings also from `Web.config` and `App.config`.
 
@@ -64,3 +64,11 @@ Note: .NET Framework apps can read settings also from `Web.config` and `App.conf
   based on the defined realm. If both `SPLUNK_REALM` and
   `OTEL_EXPORTER_*_ENDPOINT` are set then `OTEL_EXPORTER_*_ENDPOINT` takes
   precedence.
+
+### Known differences to GDI Specification
+
+This distribution follows [GDI Specification](https://github.com/signalfx/gdi-specification/blob/v1.7.0).
+There is one known difference in the default configuration.
+This package by default sets `OTEL_TRACES_SAMPLER`
+to `parentbased_always_on` instead of `always_on`
+for backwards compatibility.

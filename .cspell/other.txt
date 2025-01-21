@@ -11,6 +11,7 @@ myapp
 opentelemetry
 opentracing
 OTLP
+parentbased
 proto
 protos
 signalfx
