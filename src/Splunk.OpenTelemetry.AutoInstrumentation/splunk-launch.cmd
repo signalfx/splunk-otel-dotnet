@@ -6,4 +6,4 @@ set BASE_PATH=%~dp0
 
 set OTEL_DOTNET_AUTO_PLUGINS=Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation
 
-call %BASE_PATH%instrument.cmd %*
+call "%BASE_PATH%instrument.cmd" %*
