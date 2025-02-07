@@ -5,16 +5,11 @@ All notable changes to this component are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.8.0...HEAD)
-
-This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.10.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.10.0).
+## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.9.0...HEAD)
 
 ### Added
 
 ### Changed
-
-- Updated [OpenTelemetry .NET Auto Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation):
-  [`1.10.0`](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.10.0).
 
 ### Deprecated
 
@@ -23,6 +18,25 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.10.0
 ### Fixed
 
 ### Security
+
+## [1.9.0](https://github.com/signalfx/splunk-otel-dotnet/releases/tag/v1.9.0)
+
+This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.10.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.10.0)
+bringing changes also from [v1.10.0-beta.1](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.10.0-beta.1).
+
+> [!WARNING]
+> Version 1.9.0 of Splunk Distribution of OpenTelemetry .NET will no longer work
+> with .NET 6 or .NET 7. .NET 6 reached End of Life on November 12, 2024
+> and .NET 7 reached End of Life on May 14, 2024.
+> Customers who want to continue instrumenting .NET 6 or .NET 7 services must use
+> Splunk Distribution of OpenTelemetry .NET version 1.8.0 or less.
+> Best effort support for Splunk Distribution of OpenTelemetry .NET is provided
+> for the last versions of .NET 6 (version 6.0.36) or .NET 7 (version 7.0.20) only.
+
+### Changed
+
+- Updated [OpenTelemetry .NET Auto Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation):
+  [`1.10.0`](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.10.0).
 
 ## [1.8.0](https://github.com/signalfx/splunk-otel-dotnet/releases/tag/v1.8.0)
 
