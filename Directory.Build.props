@@ -3,6 +3,6 @@
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
-    <LangVersion>12.0</LangVersion>
+    <LangVersion>13.0</LangVersion>
   </PropertyGroup>
 </Project>

@@ -30,7 +30,7 @@ internal class SampleExporter
 {
     private static readonly ILogger Logger = new Logger();
 
-    private static volatile LogsData? _logsData = null;
+    private static volatile LogsData? _logsData;
 
     private readonly OtlpHttpLogSender _logSender;
 

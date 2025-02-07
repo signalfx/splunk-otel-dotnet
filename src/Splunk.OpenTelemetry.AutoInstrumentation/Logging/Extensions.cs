@@ -74,6 +74,7 @@ internal static class Extensions
         }
     }
 
+#if NETFRAMEWORK
     private static IEnumerable<KeyValuePair<string, string?>> ToKeyValuePair(this NameValueCollection collection)
     {
         foreach (var key in collection.AllKeys)
@@ -91,6 +92,7 @@ internal static class Extensions
             yield return new KeyValuePair<string, string?>(key, value);
         }
     }
+#endif
 
     private static IEnumerable<KeyValuePair<string, string?>> FilterRelevant(this IEnumerable<KeyValuePair<string, string?>> kvp)
     {

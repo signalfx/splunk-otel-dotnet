@@ -64,13 +64,13 @@ internal class ServiceNameWarning
             serviceNameAttribute[keyValuePair[0].Trim()] = keyValuePair[1].Trim();
         }
 
-        if (!serviceNameAttribute.ContainsKey(AttributeName))
+        if (!serviceNameAttribute.TryGetValue(AttributeName, out var serviceNameValue))
         {
             SendWarning(logger);
             return;
         }
 
-        if (string.IsNullOrEmpty(serviceNameAttribute[AttributeName]))
+        if (string.IsNullOrEmpty(serviceNameValue))
         {
             SendWarning(logger);
         }
