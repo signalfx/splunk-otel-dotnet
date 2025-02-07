@@ -39,7 +39,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 /// </summary>
 internal class CompositeConfigurationSource : IConfigurationSource, IEnumerable<IConfigurationSource>
 {
-    private readonly List<IConfigurationSource> _sources = new List<IConfigurationSource>();
+    private readonly List<IConfigurationSource> _sources = [];
 
     /// <summary>
     /// Adds a new configuration source to this instance.

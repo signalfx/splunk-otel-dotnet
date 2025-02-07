@@ -50,7 +50,7 @@ public class MockLogsCollector : IDisposable
     private readonly ITestOutputHelper _output;
     private readonly TestHttpServer _listener;
     private readonly BlockingCollection<LogRecord> _logs = new(100); // bounded to avoid memory leak
-    private readonly List<Expectation> _expectations = new();
+    private readonly List<Expectation> _expectations = [];
 
     public MockLogsCollector(ITestOutputHelper output, string host = "localhost")
     {

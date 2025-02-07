@@ -54,7 +54,7 @@ public class MockZipkinCollector : IDisposable
     private readonly TestHttpServer _listener;
 
     private readonly BlockingCollection<ZSpanMock> _spans = new(100); // bounded to avoid memory leak
-    private readonly List<Expectation> _expectations = new();
+    private readonly List<Expectation> _expectations = [];
 
     public MockZipkinCollector(ITestOutputHelper output, string host = "localhost")
     {

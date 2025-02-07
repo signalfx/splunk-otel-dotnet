@@ -210,7 +210,7 @@ public class SmokeTests : TestHelper
 
     private static ICollection<KeyValuePair<string, string>> ParseSettingsLog(string log, string marker)
     {
-        var lines = log.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+        var lines = log.Split([Environment.NewLine], StringSplitOptions.None);
         var variables = lines
             .SkipWhile(x => !x.EndsWith(marker))
             .Skip(1)

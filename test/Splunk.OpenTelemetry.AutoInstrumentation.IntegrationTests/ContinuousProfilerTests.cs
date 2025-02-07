@@ -151,24 +151,26 @@ public class ContinuousProfilerTests : TestHelper
 
     private static List<KeyValue> ConstantValuedAttributes(string dataType)
     {
-        return new List<KeyValue>
-        {
+        return
+        [
             new()
             {
                 Key = "com.splunk.sourcetype",
                 Value = new AnyValue { StringValue = "otel.profiling" }
             },
+
             new()
             {
                 Key = "profiling.data.format",
                 Value = new AnyValue { StringValue = "pprof-gzip-base64" }
             },
+
             new()
             {
                 Key = "profiling.data.type",
                 Value = new AnyValue { StringValue = dataType }
             }
-        };
+        ];
     }
 
     private static void AllShouldHaveBasicAttributes(RepeatedField<LogRecord> logRecords, List<KeyValue> attributes)
