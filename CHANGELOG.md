@@ -31,7 +31,8 @@ bringing changes also from [v1.10.0-beta.1](https://github.com/open-telemetry/op
 > Customers who want to continue instrumenting .NET 6 or .NET 7 services must use
 > Splunk Distribution of OpenTelemetry .NET version 1.8.0 or less.
 > Best effort support for Splunk Distribution of OpenTelemetry .NET is provided
-> for the last versions of .NET 6 (version 6.0.36) or .NET 7 (version 7.0.20) only.
+> up to February 20, 2026 for the last versions of .NET 6 (version 6.0.36)
+> or .NET 7 (version 7.0.20) only.
 
 ### Changed
 
