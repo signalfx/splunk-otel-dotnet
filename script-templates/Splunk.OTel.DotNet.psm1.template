@@ -276,6 +276,16 @@ function Test-AssemblyNotForGAC([string] $Name) {
     return $false 
 }
 
+function Get-AssemblyDllFileVersion($AssemblyDll) {
+    $installDir = Get-OpenTelemetryInstallDirectory
+
+    if ($installDir) {
+        $mainDllPath = [IO.Path]::Combine($installDir, 'net', $AssemblyDll)
+
+        return "v" + ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($mainDllPath).ProductVersion).split('+', 2)[0]
+    }
+}
+
 function Is-Greater-Version($v1, $v2) {
     # Helper convert version main part to version object
     function ToVersion($version) {
@@ -627,16 +637,18 @@ function Get-OpenTelemetryInstallDirectory() {
 
 <#
     .SYNOPSIS
-    Gets Splunk Distribution of OpenTelemetry .NET install version. 
+    Gets the version of the `OpenTelemetry .NET AutoInstrumentation` installed with the `Splunk Distribution of OpenTelemetry .NET`. 
 #>
-function Get-OpenTelemetryInstallVersion() {
-    $installDir = Get-OpenTelemetryInstallDirectory
+function Get-OpenTelemetryAutoInstrumentationVersion() {
+    return Get-AssemblyDllFileVersion 'OpenTelemetry.AutoInstrumentation.dll'
+}
 
-    if ($installDir) {
-        $mainDllPath = [IO.Path]::Combine($installDir, 'net', 'OpenTelemetry.AutoInstrumentation.dll')
-
-        return "v" + ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($mainDllPath).ProductVersion).split('+', 2)[0]
-    }
+<#
+    .SYNOPSIS
+    Gets the version of the `Splunk Distribution of OpenTelemetry .NET` currently installed. 
+#>
+function Get-SplunkOpenTelemetryForDotNetVersion() {
+    return Get-AssemblyDllFileVersion 'Splunk.OpenTelemetry.AutoInstrumentation.dll'
 }
 
 <#
@@ -679,6 +691,8 @@ Export-ModuleMember -Function Unregister-OpenTelemetryForIIS
 Export-ModuleMember -Function Unregister-OpenTelemetryForWindowsService
 Export-ModuleMember -Function Unregister-OpenTelemetryForCurrentSession
 Export-ModuleMember -Function Get-OpenTelemetryInstallDirectory
-Export-ModuleMember -Function Get-OpenTelemetryInstallVersion
+Export-ModuleMember -Function Get-OpenTelemetryAutoInstrumentationVersion
+Export-ModuleMember -Function Get-OpenTelemetrySdkVersion
+Export-ModuleMember -Function Get-SplunkOpenTelemetryForDotNetVersion
 Export-ModuleMember -Function Enable-OpenTelemetryForIISAppPool
 Export-ModuleMember -Function Disable-OpenTelemetryForIISAppPool

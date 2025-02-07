@@ -11,6 +11,10 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.10.0
 
 ### Added
 
+- Added more specific cmdlets get component versions to the PowerShell module to:
+  - `Get-OpenTelemetryAutoInstrumentationVersion`
+  - `Get-SplunkOpenTelemetryForDotNetVersion`
+
 ### Changed
 
 - Updated [OpenTelemetry .NET Auto Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation):
@@ -19,6 +23,9 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.10.0
 ### Deprecated
 
 ### Removed
+
+- Removed the cmdlet `Get-OpenTelemetryInstallVersion` from the Powershell module
+  and replaced it with 2 new cmdlets, see `Added` section above.
 
 ### Fixed
 
