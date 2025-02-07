@@ -50,7 +50,7 @@ public class MockMetricsCollector : IDisposable
     private readonly ITestOutputHelper _output;
     private readonly TestHttpServer _listener;
 
-    private readonly List<Expectation> _expectations = new();
+    private readonly List<Expectation> _expectations = [];
     private readonly BlockingCollection<List<Collected>> _metricsSnapshots = new(10); // bounded to avoid memory leak; contains protobuf type
 
     public MockMetricsCollector(ITestOutputHelper output, string host = "localhost")
@@ -106,8 +106,8 @@ public class MockMetricsCollector : IDisposable
             foreach (var collectedMetricsSnapshot in _metricsSnapshots.GetConsumingEnumerable(cts.Token))
             {
                 missingExpectations = new List<Expectation>(_expectations);
-                expectationsMet = new List<Collected>();
-                additionalEntries = new List<Collected>();
+                expectationsMet = [];
+                additionalEntries = [];
 
                 foreach (var collected in collectedMetricsSnapshot)
                 {

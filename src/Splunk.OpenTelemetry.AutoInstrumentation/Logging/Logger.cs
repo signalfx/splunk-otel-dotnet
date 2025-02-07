@@ -35,9 +35,9 @@ internal class Logger : ILogger
             // Call the constructor to initialize (this method guarantees that the static constructor is only called once, regardless how many times the method is called)
             System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(oTelLoggingType.TypeHandle);
 
-            var method = oTelLoggingType.GetMethod("GetLogger", new[] { typeof(string) })!;
+            var method = oTelLoggingType.GetMethod("GetLogger", [typeof(string)])!;
 
-            Log = method.Invoke(null, new object[] { "Splunk" })!;
+            Log = method.Invoke(null, ["Splunk"])!;
 
             DebugMethod = GetMethod("Debug");
             WarningMethod = GetMethod("Warning");
@@ -47,7 +47,7 @@ internal class Logger : ILogger
             var oTelLoggingLevelType = Type.GetType("OpenTelemetry.AutoInstrumentation.Logging.LogLevel, OpenTelemetry.AutoInstrumentation")!;
             var debugLevel = Enum.GetValues(oTelLoggingLevelType).GetValue(3);
             var isLogLevelEnabled = Log?.GetType().GetMethod("IsEnabled");
-            var isDebugEnabledResult = isLogLevelEnabled?.Invoke(Log, new object?[] { debugLevel });
+            var isDebugEnabledResult = isLogLevelEnabled?.Invoke(Log, [debugLevel]);
             IsDebugEnabledField = isDebugEnabledResult is true;
         }
         catch (Exception ex)
@@ -60,22 +60,22 @@ internal class Logger : ILogger
 
     public void Debug(string message)
     {
-        DebugMethod?.Invoke(Log, new object[] { message, true });
+        DebugMethod?.Invoke(Log, [message, true]);
     }
 
     public void Warning(string message)
     {
-        WarningMethod?.Invoke(Log, new object[] { message, true });
+        WarningMethod?.Invoke(Log, [message, true]);
     }
 
     public void Error(string message)
     {
-        ErrorMethod?.Invoke(Log, new object[] { message, true });
+        ErrorMethod?.Invoke(Log, [message, true]);
     }
 
     public void Error(Exception ex, string message)
     {
-        ErrorWithExceptionMethod?.Invoke(Log, new object[] { ex, message, true });
+        ErrorWithExceptionMethod?.Invoke(Log, [ex, message, true]);
     }
 
     private static MethodInfo? GetMethod(string method)
@@ -85,7 +85,7 @@ internal class Logger : ILogger
 
         return Log?
             .GetType()
-            .GetMethod(method, types: new[] { typeof(string), typeof(bool) });
+            .GetMethod(method, types: [typeof(string), typeof(bool)]);
     }
 
     private static MethodInfo? GetMethodWithException(string method)
@@ -96,6 +96,6 @@ internal class Logger : ILogger
 
         return Log?
             .GetType()
-            .GetMethod(method, types: new[] { typeof(Exception), typeof(string), typeof(bool) });
+            .GetMethod(method, types: [typeof(Exception), typeof(string), typeof(bool)]);
     }
 }

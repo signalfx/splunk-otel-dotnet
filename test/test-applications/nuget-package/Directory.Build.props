@@ -13,7 +13,7 @@
 
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <LangVersion>12.0</LangVersion>
+    <LangVersion>13.0</LangVersion>
   </PropertyGroup>
 
 </Project>

@@ -41,7 +41,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 public class OtlpResourceExpector : IDisposable
 {
-    private readonly List<ResourceExpectation> _resourceExpectations = new();
+    private readonly List<ResourceExpectation> _resourceExpectations = [];
 
     private readonly ManualResetEvent _resourceAttributesEvent = new(false); // synchronizes access to _resourceAttributes
     private RepeatedField<KeyValue> _resourceAttributes; // protobuf type

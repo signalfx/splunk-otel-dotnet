@@ -51,7 +51,7 @@ public class MockSpansCollector : IDisposable
     private readonly TestHttpServer _listener;
 
     private readonly BlockingCollection<Collected> _spans = new(100); // bounded to avoid memory leak
-    private readonly List<Expectation> _expectations = new();
+    private readonly List<Expectation> _expectations = [];
 
     public MockSpansCollector(ITestOutputHelper output, string host = "localhost")
     {
