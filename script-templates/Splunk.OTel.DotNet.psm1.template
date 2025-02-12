@@ -691,8 +691,7 @@ Export-ModuleMember -Function Unregister-OpenTelemetryForIIS
 Export-ModuleMember -Function Unregister-OpenTelemetryForWindowsService
 Export-ModuleMember -Function Unregister-OpenTelemetryForCurrentSession
 Export-ModuleMember -Function Get-OpenTelemetryInstallDirectory
-Export-ModuleMember -Function Get-OpenTelemetryAutoInstrumentationVersion
-Export-ModuleMember -Function Get-OpenTelemetrySdkVersion
+Export-ModuleMember -Function Get-OpenTelemetryInstallVersion
 Export-ModuleMember -Function Get-SplunkOpenTelemetryForDotNetVersion
 Export-ModuleMember -Function Enable-OpenTelemetryForIISAppPool
 Export-ModuleMember -Function Disable-OpenTelemetryForIISAppPool
