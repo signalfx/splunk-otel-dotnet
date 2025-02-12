@@ -9,6 +9,9 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Added
 
+- Added a cmdlet to get the Splunk distribution version:
+  - `Get-SplunkOpenTelemetryForDotNetVersion`
+
 ### Changed
 
 ### Deprecated
