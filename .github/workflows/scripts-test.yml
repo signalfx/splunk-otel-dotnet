@@ -44,7 +44,7 @@ jobs:
         include:
           - machine: windows-2022
             log-dir: "/c/ProgramData/OpenTelemetry .NET AutoInstrumentation/logs"
-          - machine: ubuntu-20.04
+          - machine: ubuntu-22.04
             log-dir: "/var/log/opentelemetry/dotnet"
           - machine: macos-13
             log-dir: "/var/log/opentelemetry/dotnet"
@@ -79,7 +79,7 @@ jobs:
       fail-fast: false
       matrix:
         base-image: [ alpine ]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4.2.2
       - name: Test the Shell scripts from README.md in Docker container
