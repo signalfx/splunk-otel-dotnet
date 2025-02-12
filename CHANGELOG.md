@@ -9,18 +9,12 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Added
 
-- Added more specific cmdlets get component versions to the PowerShell module to:
-  - `Get-OpenTelemetryAutoInstrumentationVersion`
+- Added a cmdlet to get the Splunk distribution version:
   - `Get-SplunkOpenTelemetryForDotNetVersion`
 
 ### Changed
 
 ### Deprecated
-
-### Removed
-
-- Removed the cmdlet `Get-OpenTelemetryInstallVersion` from the Powershell module
-  and replaced it with 2 new cmdlets, see `Added` section above.
 
 ### Fixed
 
