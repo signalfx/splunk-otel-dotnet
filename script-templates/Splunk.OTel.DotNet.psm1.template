@@ -637,9 +637,9 @@ function Get-OpenTelemetryInstallDirectory() {
 
 <#
     .SYNOPSIS
-    Gets the version of the `OpenTelemetry .NET AutoInstrumentation` installed with the `Splunk Distribution of OpenTelemetry .NET`. 
+    Gets OpenTelemetry .NET Automatic Instrumentation install version. 
 #>
-function Get-OpenTelemetryAutoInstrumentationVersion() {
+function Get-OpenTelemetryInstallVersion() {
     return Get-AssemblyDllFileVersion 'OpenTelemetry.AutoInstrumentation.dll'
 }
 
