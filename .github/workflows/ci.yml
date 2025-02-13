@@ -15,7 +15,7 @@ jobs:
         include:
           - machine: windows-2022
             log-dir: "/c/ProgramData/OpenTelemetry .NET AutoInstrumentation/logs"
-          - machine: ubuntu-20.04
+          - machine: ubuntu-22.04
             log-dir: "/var/log/opentelemetry/dotnet"
           - machine: macos-13
             log-dir: "/var/log/opentelemetry/dotnet"
@@ -74,7 +74,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - machine: ubuntu-20.04
+          - machine: ubuntu-22.04
             base-image: alpine-x64
             os-type: linux-musl
             # architecture: "x64"
@@ -145,7 +145,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - machine: ubuntu-20.04
+          - machine: ubuntu-22.04
           - machine: macos-13
     runs-on: ${{ matrix.machine }}
     steps:
@@ -168,7 +168,7 @@ jobs:
   create-release:
     if: github.ref_type == 'tag'
     name: Create GitHub release
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [ build, container-build, build-nuget-package, test-nuget-package ]
     permissions:
       contents: write
@@ -180,7 +180,7 @@ jobs:
           path: .
       - run: cp bin-alpine-x64/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-musl-x64.zip
       - run: cp bin-alpine-arm64/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-musl-arm64.zip
-      - run: cp bin-ubuntu-20.04/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-glibc-x64.zip
+      - run: cp bin-ubuntu-22.04/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-glibc-x64.zip
       - run: cp bin-debian-arm64/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-glibc-arm64.zip
       - run: cp bin-windows-2022/splunk-*.zip ./splunk-opentelemetry-dotnet-windows.zip
       - run: cp bin-macos-13/splunk-*.zip ./splunk-opentelemetry-dotnet-macos.zip
