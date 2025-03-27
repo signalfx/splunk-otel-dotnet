@@ -1,7 +1,7 @@
 # Splunk Distribution of OpenTelemetry .NET
 
-[![OpenTelemetry .NET](https://img.shields.io/badge/OTel-1.10.0-blueviolet)](https://github.com/open-telemetry/opentelemetry-dotnet/releases/tag/core-1.10.0)
-[![OpenTelemetry .NET Auto Instrumentation](https://img.shields.io/badge/OTelAuto-v1.10.0-blueviolet)](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.10.0)
+[![OpenTelemetry .NET](https://img.shields.io/badge/OTel-1.11.2-blueviolet)](https://github.com/open-telemetry/opentelemetry-dotnet/releases/tag/core-1.11.2)
+[![OpenTelemetry .NET Auto Instrumentation](https://img.shields.io/badge/OTelAuto-v1.11.0-blueviolet)](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.11.0)
 [![Splunk GDI Specification](https://img.shields.io/badge/GDI-1.7.0-blueviolet)](https://github.com/signalfx/gdi-specification/releases/tag/v1.7.0)
 [![Keep a Changelog](https://img.shields.io/badge/changelog-Keep%20a%20Changelog-%23E05735)](CHANGELOG.md)
 [![LICENSE](https://img.shields.io/github/license/signalfx/splunk-otel-dotnet)](LICENSE)
