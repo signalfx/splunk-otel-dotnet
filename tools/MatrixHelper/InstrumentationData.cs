@@ -37,7 +37,7 @@ internal static class InstrumentationData
             new("dotnet.gc.last_collection.heap.fragmentation.size", upDownCounter, "The heap fragmentation, as observed during the latest garbage collection. Only available for .NET 9.", conditionallyBundled),
             new("dotnet.gc.pause.time", counter, "The total amount of time paused in GC since the process started. Only available for .NET 9.", conditionallyBundled),
             new("dotnet.jit.compiled_il.size", counter, "Count of bytes of intermediate language that have been compiled since the process started. Only available for .NET 9.", conditionallyBundled),
-            new("dotnet.jit.compiled_methods", counter, "The number of times the JIT compiler (re, conditionallyBundled, true)compiled methods since the process started. Only available for .NET 9.", conditionallyBundled),
+            new("dotnet.jit.compiled_methods", counter, "The number of times the JIT compiler compiled methods since the process started. Only available for .NET 9.", conditionallyBundled),
             new("dotnet.jit.compilation.time", counter, "The amount of time the JIT compiler has spent compiling methods since the process started. Only available for .NET 9.", conditionallyBundled),
             new("dotnet.thread_pool.thread.count", upDownCounter, "The number of thread pool threads that currently exist. Only available for .NET 9.", conditionallyBundled),
             new("dotnet.thread_pool.work_item.count", counter, "The number of work items that the thread pool has completed since the process started. Only available for .NET 9.", conditionallyBundled),
