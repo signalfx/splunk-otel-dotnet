@@ -18,11 +18,14 @@ namespace MatrixHelper;
 
 internal class MetricData
 {
-    public MetricData(string metricName, string instrument, string description)
+    private const string Custom = "Custom metric.";
+
+    public MetricData(string metricName, string instrument, string description, string categoryNotes = Custom)
     {
         MetricName = metricName;
         Instrument = instrument;
         Description = description;
+        CategoryNotes = categoryNotes;
     }
 
     public string MetricName { get; set; }
@@ -30,4 +33,6 @@ internal class MetricData
     public string Instrument { get; set; }
 
     public string Description { get; set; }
+
+    public string CategoryNotes { get; set; }
 }
