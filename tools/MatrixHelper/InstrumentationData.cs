@@ -23,6 +23,7 @@ internal static class InstrumentationData
         const string counter = "counter";
         const string upDownCounter = "updowncounter";
         const string histogram = "histogram";
+        const string gauge = "gauge";
 
         const string conditionallyBundled = "APM bundled, if data points for the metric contain `telemetry.sdk.language` attribute.";
 
@@ -115,7 +116,22 @@ internal static class InstrumentationData
             new(new[] { "MONGODB" }, new[] { new InstrumentedComponent("MongoDB.Driver.Core", "2.7.0 to 3.0.0"), new InstrumentedComponent("MongoDB.Driver.Core", "3.0.0 to 4.0.0") }, "Not supported on .NET Framework", "beta", "third-party", Array.Empty<Dependency>(), new SignalsList[] { new TracesList() }, Array.Empty<Setting>()),
             new("MYSQLCONNECTOR", new InstrumentedComponent("MySqlConnector", "2.0.0 and higher"), null, "beta", "third-party", new TracesList()),
             new("MYSQLDATA", new InstrumentedComponent("MySql.Data", "8.1.0 and higher"), "Not supported on .NET Framework", "beta", "third-party", new TracesList()),
-            new("NPGSQL", new InstrumentedComponent("Npgsql", "6.0.0 and higher"), null, "beta", "third-party", new TracesList()),
+            new("NPGSQL", new InstrumentedComponent("Npgsql", "6.0.0 and higher"), null, "beta", "third-party", new SignalsList[]
+            {
+                new TracesList(),
+                new MetricList(
+                    new("db.client.commands.executing", upDownCounter, "The number of currently executing database commands."),
+                    new("db.client.commands.failed", counter, "The number of database commands which have failed."),
+                    new("db.client.commands.duration", histogram, "The duration of database commands, in seconds."),
+                    new("db.client.commands.bytes_written", counter, "The number of bytes written."),
+                    new("db.client.commands.bytes_read", counter, "The number of bytes read."),
+                    new("db.client.connections.pending_requests", upDownCounter, "The number of pending requests for an open connection, cumulative for the entire pool."),
+                    new("db.client.connections.timeouts", counter, "The number of connection timeouts that have occurred trying to obtain a connection from the pool."),
+                    new("db.client.connections.create_time", histogram, "The time it took to create a new connection."),
+                    new("db.client.connections.usage", upDownCounter, "The number of connections that are currently in state described by the state attribute."),
+                    new("db.client.connections.max", upDownCounter, "The maximum number of open connections allowed."),
+                    new("db.client.commands.prepared_ratio", gauge, "The ratio of prepared command executions."))
+            }),
             new(new[] { "ORACLEMDA" }, new[] { new InstrumentedComponent("Oracle.ManagedDataAccess.Core", "23.4.0 and higher"), new InstrumentedComponent("Oracle.ManagedDataAccess", "23.4.0 and higher") }, "Not supported on ARM64", "beta", "third-party",  Array.Empty<Dependency>(), new SignalsList[] { new TracesList() }, new Setting[] { new("OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT", "Whether the Oracle Client instrumentation can pass SQL statements through the `db.statement` attribute. Queries might contain sensitive information. If set to `false`, `db.statement` is recorded only for executing stored procedures.", "false", "boolean", SettingsData.InstrumentationCategory) }),
             new(new[] { "NSERVICEBUS" }, new[] { new InstrumentedComponent("NServiceBus", "8.0.0 to 10.0.0") }, null, "beta", "third-party", Array.Empty<Dependency>(), new SignalsList[] { new TracesList(), new MetricList(new MetricData("nservicebus.messaging.successes", counter, "Number of messages successfully processed by the endpoint."), new MetricData("nservicebus.messaging.fetches", counter, "Number of messages retrieved from the queue by the endpoint."), new MetricData("nservicebus.messaging.failures", counter, "Number of messages unsuccessfully processed by the endpoint.")) }, Array.Empty<Setting>()),
             new("QUARTZ", new InstrumentedComponent("Quartz", "3.4.0 and higher"), "Not supported on .NET Framework 4.7.1 and lower", "beta", "community", new Dependency("QuartzNET Instrumentation for OpenTelemetry .NET", "https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.Quartz", "https://www.nuget.org/packages/OpenTelemetry.Instrumentation.Quartz", "1.11.0-beta.2", "beta"), new SignalsList[] { new TracesList() }),
