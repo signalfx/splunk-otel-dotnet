@@ -21,7 +21,7 @@ namespace MatrixHelper;
 internal class Instrumentation
 {
     public Instrumentation(string key, InstrumentedComponent instrumentedComponent, string? description, string stability, string support, SignalsList[] signalsList)
-    : this(new[] { key }, new[] { instrumentedComponent }, description, stability, support, Array.Empty<Dependency>(),  signalsList, Array.Empty<Setting>())
+    : this(new[] { key }, new[] { instrumentedComponent }, description, stability, support, Array.Empty<Dependency>(), signalsList, Array.Empty<Setting>())
     {
     }
 
