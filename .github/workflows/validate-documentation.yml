@@ -26,7 +26,7 @@ jobs:
         fail: true
         args: "--threads 1 --max-concurrency 1 --verbose --no-progress './**/*.md' './**/*.html'"
 
-    - uses: streetsidesoftware/cspell-action@eb29b6a67d122d2e6af385ff16bdb200d93b2e54 # v7.0.0
+    - uses: streetsidesoftware/cspell-action@69543c3f9f14d4fcc6004c7bee03c4d366f11d64 # v7.0.1
       with:
         files: '**/*.md'
 
