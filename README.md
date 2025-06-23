@@ -12,12 +12,12 @@ The Splunk Distribution of
 [OpenTelemetry .NET Automatic Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation).
 provides a .NET Profiler and startup hooks
 that automatically instrument your .NET application to capture and report
-telemetry to [Splunk APM](https://docs.splunk.com/Observability/apm/intro-to-apm.html).
+telemetry to [Splunk APM](https://help.splunk.com/en/splunk-observability-cloud/monitor-application-performance/introduction-to-splunk-apm).
 
 ## Get started
 
 Read the official documentation for this distribution in the
-[Splunk Docs site](https://quickdraw.splunk.com/redirect/?product=Observability&version=current&location=otel.net.application).
+[Splunk Docs site](https://help.splunk.com/en/splunk-observability-cloud/manage-data/available-data-sources/supported-integrations-in-splunk-observability-cloud/apm-instrumentation/instrument-a-.net-application).
 
 ## Examples
 
@@ -27,13 +27,13 @@ You can find official examples in the [tracing examples repository](https://gith
 
 For instructions on how to migrate from the SignalFx Instrumentation for .NET to
 the Splunk Distribution of OpenTelemetry .NET, see
-[Migrate from the SignalFx .NET Instrumentation](https://quickdraw.splunk.com/redirect/?product=Observability&version=current&location=otel.net.migrate)
+[Migrate from the SignalFx .NET Instrumentation](https://help.splunk.com/en/splunk-observability-cloud/manage-data/available-data-sources/supported-integrations-in-splunk-observability-cloud/apm-instrumentation/instrument-a-.net-application/migrate-from-signalfx-instrumentation-for-.net)
 in the official documentation.
 
 ## Troubleshooting
 
 For troubleshooting information, see the
-[Troubleshooting](https://quickdraw.splunk.com/redirect/?product=Observability&version=current&location=otel.net.tshoot)
+[Troubleshooting](https://help.splunk.com/en/splunk-observability-cloud/manage-data/available-data-sources/supported-integrations-in-splunk-observability-cloud/apm-instrumentation/instrument-a-.net-application/troubleshoot-the-.net-instrumentation)
 documentation.
 
 ## Contributing
