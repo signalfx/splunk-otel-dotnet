@@ -34,6 +34,28 @@
 
 $ServiceLocatorVariable = "SPLUNK_OTEL_DOTNET_AUTO_INSTALL_DIR"
 
+# Update the default TLS support to 1.2
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+function Invoke-Request-Helper([string]$Url, [string]$FileName) {
+    try {
+        $params = @{
+            Uri = $Url
+            UseBasicParsing = $true
+        }
+        if($FileName) { $params.OutFile = $FileName }
+        return Invoke-WebRequest @params
+    }
+    catch {
+        $err = $_.Exception.Message
+        $message = "
+        An error occured when calling $url. This may be due to a network connectivity issue.
+        $err
+        "
+        throw "$message"
+    }
+}
+
 function Get-Current-InstallDir() {
     return [System.Environment]::GetEnvironmentVariable($ServiceLocatorVariable, [System.EnvironmentVariableTarget]::Machine)
 }
@@ -41,7 +63,7 @@ function Get-Current-InstallDir() {
 function Get-Newest-InstallVersion() { 
     $query = "https://api.github.com/repos/signalfx/splunk-otel-dotnet/releases/latest"
 
-    $response = Invoke-WebRequest -Uri $query -UseBasicParsing
+    $response = Invoke-Request-Helper -Url $query
     $responseJson = $response.Content | ConvertFrom-Json
     $release = $responseJson.tag_name
 
@@ -89,8 +111,7 @@ function Download-OpenTelemetry([string]$Version, [string]$Path) {
     $dlUrl = "https://github.com/signalfx/splunk-otel-dotnet/releases/download/$Version/$archive"
     $dlPath = Join-Path $Path $archive
 
-    Invoke-WebRequest -Uri $dlUrl -OutFile $dlPath -UseBasicParsing
-
+    Invoke-Request-Helper -Url $dlUrl -FileName $dlPath
     return $dlPath
 }
 
@@ -99,8 +120,7 @@ function Download-OpenTelemetry-Install-Module([string]$Version, [string]$Path) 
     $dlUrl = "https://github.com/signalfx/splunk-otel-dotnet/releases/download/$Version/$module"
     $dlPath = Join-Path $Path $module
 
-    Invoke-WebRequest -Uri $dlUrl -OutFile $dlPath -UseBasicParsing
-
+    Invoke-Request-Helper -Url $dlUrl -FileName $dlPath
     return $dlPath
 }
 
