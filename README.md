@@ -12,7 +12,7 @@ The Splunk Distribution of
 [OpenTelemetry .NET Automatic Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation).
 provides a .NET Profiler and startup hooks
 that automatically instrument your .NET application to capture and report
-telemetry to [Splunk APM](https://docs.splunk.com/Observability/apm/intro-to-apm.html).
+telemetry to [Splunk APM](https://quickdraw.splunk.com/redirect/?product=Observability&version=current&location=otel.net.readme).
 
 ## Get started
 
