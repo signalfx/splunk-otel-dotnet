@@ -20,6 +20,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 internal class Logger : ILogger
 {
+    private const string SplunkLoggerSuffix = "Splunk";
     private static readonly bool IsDebugEnabledField;
     private static readonly object? Log;
     private static readonly MethodInfo? DebugMethod;
@@ -36,8 +37,9 @@ internal class Logger : ILogger
             System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(oTelLoggingType.TypeHandle);
 
             var method = oTelLoggingType.GetMethod("GetLogger", [typeof(string)])!;
+            var closeLoggerMethod = oTelLoggingType.GetMethod("CloseLogger", [typeof(string), Type.GetType("OpenTelemetry.AutoInstrumentation.Logging.IOtelLogger, OpenTelemetry.AutoInstrumentation")!])!;
 
-            Log = method.Invoke(null, ["Splunk"])!;
+            Log = method.Invoke(null, [SplunkLoggerSuffix])!;
 
             DebugMethod = GetMethod("Debug");
             WarningMethod = GetMethod("Warning");
@@ -49,6 +51,8 @@ internal class Logger : ILogger
             var isLogLevelEnabled = Log?.GetType().GetMethod("IsEnabled");
             var isDebugEnabledResult = isLogLevelEnabled?.Invoke(Log, [debugLevel]);
             IsDebugEnabledField = isDebugEnabledResult is true;
+
+            AppDomain.CurrentDomain.ProcessExit += (_, _) => closeLoggerMethod.Invoke(null, [SplunkLoggerSuffix, Log]);
         }
         catch (Exception ex)
         {
