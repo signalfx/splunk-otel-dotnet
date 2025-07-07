@@ -1,7 +1,7 @@
 # Advanced configuration
 
 > **The official Splunk documentation for this page is
-> [Configure the Splunk Distribution of OTel .NET](https://help.splunk.com/en/splunk-observability-cloud/manage-data/available-data-sources/supported-integrations-in-splunk-observability-cloud/apm-instrumentation/instrument-a-.net-application/configure-the-.net-instrumentation).**
+> [Configure the Splunk Distribution of OTel .NET](https://quickdraw.splunk.com/redirect/?product=Observability&version=current&location=otel.net.configuration).**
 >
 > **For instructions on how to contribute to the docs, see [CONTRIBUTING.md](../CONTRIBUTING.md#documentation).**
 
