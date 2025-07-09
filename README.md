@@ -63,5 +63,5 @@ For more details, see [the license file](./LICENSE).
 > and limitations under the License.
 >
 >ℹ️&nbsp;&nbsp;SignalFx was acquired by Splunk in October 2019.
-> See [Splunk SignalFx](https://www.splunk.com/en_us/investor-relations/acquisitions/signalfx.html)
+> See [Splunk SignalFx](https://www.splunk.com/en_us/about-splunk/acquisitions/signalfx.html)
 > for more information.
