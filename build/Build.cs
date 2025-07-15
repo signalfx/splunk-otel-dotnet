@@ -16,7 +16,7 @@ partial class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Release'")]
     readonly Configuration Configuration = Configuration.Release;
 
-    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.11.0";
+    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.12.0";
 
     [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
     readonly string OpenTelemetryAutoInstrumentationVersion = OpenTelemetryAutoInstrumentationDefaultVersion;
