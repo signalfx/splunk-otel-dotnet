@@ -11,6 +11,9 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Changed
 
+- Updated [OpenTelemetry .NET Auto Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation):
+  [`1.12.0`](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.12.0).
+
 ### Deprecated
 
 ### Removed
