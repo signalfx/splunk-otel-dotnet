@@ -68,6 +68,19 @@ public class TestHttpServer : IDisposable
     /// </summary>
     public int Port { get; }
 
+    public static TestHttpServer CreateDefault(ITestOutputHelper output)
+    {
+        return new TestHttpServer(
+            output,
+            context =>
+            {
+                context.Response.StatusCode = 200;
+                context.Response.Close();
+            },
+            "localhost",
+            "/test/");
+    }
+
     public void Dispose()
     {
         WriteOutput($"Shutting down");

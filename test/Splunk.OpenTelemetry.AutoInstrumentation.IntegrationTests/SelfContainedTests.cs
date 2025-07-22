@@ -59,9 +59,10 @@ public sealed class SelfContainedTests : TestHelper
     {
         RunAndAssertHttpSpans(() =>
         {
+            using var testServer = TestHttpServer.CreateDefault(Output);
             var instrumentationTarget = Path.Combine(_selfContainedAppDir, EnvironmentHelper.FullTestApplicationName);
             instrumentationTarget = EnvironmentTools.IsWindows() ? instrumentationTarget + ".exe" : instrumentationTarget;
-            RunInstrumentationTarget(instrumentationTarget);
+            RunInstrumentationTarget($"{instrumentationTarget} --test-server-port {testServer.Port}");
         });
     }
 
@@ -71,11 +72,12 @@ public sealed class SelfContainedTests : TestHelper
     {
         RunAndAssertHttpSpans(() =>
         {
+            using var testServer = TestHttpServer.CreateDefault(Output);
             var dllName = EnvironmentHelper.FullTestApplicationName.EndsWith(".exe")
                 ? EnvironmentHelper.FullTestApplicationName.Replace(".exe", ".dll")
                 : EnvironmentHelper.FullTestApplicationName + ".dll";
             var dllPath = Path.Combine(_selfContainedAppDir, dllName);
-            RunInstrumentationTarget($"dotnet {dllPath}");
+            RunInstrumentationTarget($"dotnet {dllPath} --test-server-port {testServer.Port}");
         });
     }
 #endif
@@ -109,7 +111,7 @@ public sealed class SelfContainedTests : TestHelper
 
     private void RunAndAssertHttpSpans(Action appLauncherAction)
     {
-        var collector = new MockSpansCollector(Output);
+        using var collector = new MockSpansCollector(Output);
         SetExporter(collector);
 
 #if NETFRAMEWORK
