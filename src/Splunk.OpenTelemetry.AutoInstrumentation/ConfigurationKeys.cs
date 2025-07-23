@@ -58,6 +58,24 @@ internal static class ConfigurationKeys
             /// </summary>
             public const string ProfilerLogsEndpoint = "SPLUNK_PROFILER_LOGS_ENDPOINT";
         }
+
+        public static class Snapshots
+        {
+            /// <summary>
+            /// Configuration key for enabling snapshots.
+            /// </summary>
+            public const string Enabled = "SPLUNK_SNAPSHOT_PROFILER_ENABLED";
+
+            /// <summary>
+            /// Configuration key for snapshots sampling interval.
+            /// </summary>
+            public const string SamplingInterval = "SPLUNK_SNAPSHOT_SAMPLING_INTERVAL";
+
+            /// <summary>
+            /// Configuration key for snapshots sampling ratio.
+            /// </summary>
+            public const string SelectionRate = "SPLUNK_SNAPSHOT_SELECTION_RATE";
+        }
 #endif
     }
 
