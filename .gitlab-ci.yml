@@ -8,6 +8,9 @@ stages:
 
 oss-scan:
   stage: fossa-scan
+  before_script:
+    - apk add dotnet8-sdk dotnet9-sdk
+    - /build.sh Compile
   rules:
     - if: '$CI_COMMIT_REF_NAME == "main"'
   extends: .oss-scan
