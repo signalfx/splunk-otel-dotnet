@@ -13,6 +13,8 @@
 
   <ItemGroup>
     <PackageReference Include="Nuke.Common" Version="9.0.4" />
+    <!-- Microsoft.Build.Tasks.Core is an indirect reference from Nuke.Common. Fixes https://github.com/advisories/GHSA-h4j7-5rxr-p4wc -->
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.14.8" />
   </ItemGroup>
 
   <!-- Reference MinVer so the locally built NuGet version is available when building test applications -->
