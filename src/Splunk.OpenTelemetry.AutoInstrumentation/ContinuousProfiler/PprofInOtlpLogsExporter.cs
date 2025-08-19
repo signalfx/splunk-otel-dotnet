@@ -19,19 +19,20 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 
 internal class PprofInOtlpLogsExporter
 {
-    private readonly SampleProcessor _sampleProcessor;
     private readonly SampleExporter _sampleExporter;
 
     public PprofInOtlpLogsExporter(SampleProcessor sampleProcessor, SampleExporter sampleExporter)
     {
-        _sampleProcessor = sampleProcessor;
+        SampleProcessor = sampleProcessor;
         _sampleExporter = sampleExporter;
     }
+
+    public SampleProcessor SampleProcessor { get; }
 
     public void ExportThreadSamples(byte[] buffer, int read, CancellationToken cancellationToken)
     {
         var threadSamples = SampleNativeFormatParser.ParseThreadSamples(buffer, read);
-        var logRecord = _sampleProcessor.ProcessThreadSamples(threadSamples);
+        var logRecord = SampleProcessor.ProcessThreadSamples(threadSamples);
         if (logRecord != null)
         {
             _sampleExporter.Export(logRecord, cancellationToken);
@@ -41,7 +42,19 @@ internal class PprofInOtlpLogsExporter
     public void ExportAllocationSamples(byte[] buffer, int read, CancellationToken cancellationToken)
     {
         var allocationSamples = SampleNativeFormatParser.ParseAllocationSamples(buffer, read);
-        var logRecord = _sampleProcessor.ProcessAllocationSamples(allocationSamples);
+        var logRecord = SampleProcessor.ProcessAllocationSamples(allocationSamples);
+        if (logRecord != null)
+        {
+            _sampleExporter.Export(logRecord, cancellationToken);
+        }
+    }
+
+    public void ExportSelectedThreadSamples(byte[] buffer, int read, CancellationToken cancellationToken)
+    {
+        var allocationSamples = SampleNativeFormatParser.ParseSelectiveSamplerSamples(buffer, read);
+
+        var logRecord = SampleProcessor.ProcessSelectedSamples(allocationSamples);
+
         if (logRecord != null)
         {
             _sampleExporter.Export(logRecord, cancellationToken);

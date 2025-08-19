@@ -73,6 +73,18 @@ internal static class GdiProfilingConventions
                     }
                 };
             }
+
+            public static KeyValue InstrumentationSource(string source)
+            {
+                return new KeyValue
+                {
+                    Key = "profiling.instrumentation.source",
+                    Value = new AnyValue
+                    {
+                        StringValue = source
+                    }
+                };
+            }
         }
     }
 }
