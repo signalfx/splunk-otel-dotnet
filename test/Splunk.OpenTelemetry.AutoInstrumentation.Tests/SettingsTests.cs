@@ -41,7 +41,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             Assert.False(settings.CpuProfilerEnabled);
             Assert.False(settings.MemoryProfilerEnabled);
             Assert.Equal(10000u, settings.CpuProfilerCallStackInterval);
-            Assert.Equal(3u, settings.ProfilerHttpClientTimeout);
+            Assert.Equal(3000u, settings.ProfilerHttpClientTimeout);
 #endif
         }
 
@@ -55,6 +55,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportHTTPClientTimeout, null);
 #endif
         }
     }

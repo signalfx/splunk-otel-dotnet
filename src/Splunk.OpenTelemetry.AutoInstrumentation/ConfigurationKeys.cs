@@ -59,7 +59,7 @@ internal static class ConfigurationKeys
             public const string ProfilerLogsEndpoint = "SPLUNK_PROFILER_LOGS_ENDPOINT";
 
             /// <summary>
-            /// Configuration key for Profiler exporter HTTP Client Timeout. Defaults to 3s.
+            /// Configuration key for Profiler exporter HTTP Client Timeout (in ms). Defaults to 3000 ms.
             /// </summary>
             public const string ProfilerExportHTTPClientTimeout = "SPLUNK_PROFILER_EXPORTER_HTTP_CLIENT_TIMEOUT";
         }
