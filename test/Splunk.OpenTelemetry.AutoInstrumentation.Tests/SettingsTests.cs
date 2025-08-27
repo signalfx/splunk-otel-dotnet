@@ -41,6 +41,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             Assert.False(settings.CpuProfilerEnabled);
             Assert.False(settings.MemoryProfilerEnabled);
             Assert.Equal(10000u, settings.CpuProfilerCallStackInterval);
+            Assert.Equal(3u, settings.ProfilerHttpClientTimeout);
 #endif
         }
 
