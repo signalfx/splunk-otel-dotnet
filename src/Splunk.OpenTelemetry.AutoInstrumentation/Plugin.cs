@@ -115,8 +115,8 @@ public class Plugin
         var threadSamplingEnabled = Settings.CpuProfilerEnabled;
         var threadSamplingInterval = Settings.CpuProfilerCallStackInterval;
         var allocationSamplingEnabled = Settings.MemoryProfilerEnabled;
-        const uint maxMemorySamplesPerMinute = 200u;
-        var exportInterval = TimeSpan.FromMilliseconds(500); // it is half of the shortest possible thread sampling interval
+        var maxMemorySamplesPerMinute = Settings.MemoryProfilerMaxMemorySamplesPerMinute;
+        var exportInterval = TimeSpan.FromMilliseconds(Settings.ProfilerExportInterval);
         var exportTimeout = TimeSpan.FromMilliseconds(Settings.ProfilerHttpClientTimeout);
 
         var sampleProcessor = new SampleProcessor(TimeSpan.FromMilliseconds(threadSamplingInterval));

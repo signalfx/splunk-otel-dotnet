@@ -62,6 +62,16 @@ internal static class ConfigurationKeys
             /// Configuration key for Profiler exporter HTTP Client Timeout (in ms). Defaults to 3000 ms.
             /// </summary>
             public const string ProfilerExportTimeout = "SPLUNK_PROFILER_EXPORT_TIMEOUT";
+
+            /// <summary>
+            /// Configuration key for Profiler maximum memory sample collected in a miniute. Defaults to 200, which is also the maximum.
+            /// </summary>
+            public const string ProfilerMaxMemorySamples = "SPLUNK_PROFILER_MAX_MEMORY_SAMPLES";
+
+            /// <summary>
+            /// Configuration key for Profiler exporter export interval (in ms). Defaults to 500 ms, which is also the minimum.
+            /// </summary>
+            public const string ProfilerExportInterval = "SPLUNK_PROFILER_EXPORT_INTERVAL";
         }
 #endif
     }

@@ -43,8 +43,12 @@ internal class PluginSettings
         MemoryProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled) ?? false;
         var callStackInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval) ?? 10000;
         CpuProfilerCallStackInterval = callStackInterval < 0 ? 10000u : (uint)callStackInterval;
+        var maxMemorySamplesPerMinute = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples) ?? 200;
+        MemoryProfilerMaxMemorySamplesPerMinute = maxMemorySamplesPerMinute > 200 ? 200u : (uint)maxMemorySamplesPerMinute;
         var httpClientTimeout = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportTimeout) ?? 3000;
         ProfilerHttpClientTimeout = (uint)httpClientTimeout;
+        var exportInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportInterval) ?? 500;
+        ProfilerExportInterval = exportInterval < 500 ? 500u : (uint)exportInterval;
 
         ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
 #endif
@@ -63,11 +67,15 @@ internal class PluginSettings
 
     public uint CpuProfilerCallStackInterval { get; }
 
+    public uint MemoryProfilerMaxMemorySamplesPerMinute { get; }
+
     public bool MemoryProfilerEnabled { get; }
 
     public Uri ProfilerLogsEndpoint { get; }
 
     public uint ProfilerHttpClientTimeout { get; }
+
+    public uint ProfilerExportInterval { get; }
 #endif
 
     public static PluginSettings FromDefaultSources()
