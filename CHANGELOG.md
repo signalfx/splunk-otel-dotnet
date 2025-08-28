@@ -9,6 +9,9 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Added
 
+- Added support for environmental variable `SPLUNK_PROFILER_EXPORT_TIMEOUT`.
+  It allows to set timeout in milliseconds. Default is `3000` ms.
+
 ### Changed
 
 ### Deprecated

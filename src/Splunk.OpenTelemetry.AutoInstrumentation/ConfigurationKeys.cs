@@ -57,6 +57,11 @@ internal static class ConfigurationKeys
             /// Configuration key for endpoint where profiling data is sent. Defaults to the value in `OTLP_EXPORTER_OTLP_ENDPOINT`.
             /// </summary>
             public const string ProfilerLogsEndpoint = "SPLUNK_PROFILER_LOGS_ENDPOINT";
+
+            /// <summary>
+            /// Configuration key for Profiler exporter HTTP Client Timeout (in ms). Defaults to 3000 ms.
+            /// </summary>
+            public const string ProfilerExportTimeout = "SPLUNK_PROFILER_EXPORT_TIMEOUT";
         }
 #endif
     }
