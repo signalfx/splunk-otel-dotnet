@@ -11,6 +11,12 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 - Added support for environmental variable `SPLUNK_PROFILER_EXPORT_TIMEOUT`.
   It allows to set timeout in milliseconds. Default is `3000` ms.
+- Added support for environmental variable `SPLUNK_PROFILER_MAX_MEMORY_SAMPLES`.
+  It allows to set maximum memory samples collected per minute. The maximum value is 200.
+  Default is `200`.
+- Added support for environmental variable `SPLUNK_PROFILER_EXPORT_INTERVAL`.
+  It allows to set export interval in milliseconds. The minimum value is `500` ms.
+  Default is `500` ms.
 
 ### Changed
 
