@@ -61,8 +61,8 @@ internal static class SettingsData
             new("SPLUNK_PROFILER_LOGS_ENDPOINT", "The collector endpoint for profiler logs.", "http://localhost:4318/v1/logs", "string", ProfilingCategory),
             new("SPLUNK_PROFILER_CALL_STACK_INTERVAL", "Frequency with which call stacks are sampled, in milliseconds.", "10000", "int", ProfilingCategory),
             new("SPLUNK_PROFILER_EXPORT_TIMEOUT", "Export timeout, in milliseconds.", "3000", "int", ProfilingCategory),
-            new("SPLUNK_PROFILER_MAX_MEMORY_SAMPLES", "Maximum memory samples collected per minute", "200", "int", ProfilingCategory),
-            new("SPLUNK_PROFILER_EXPORT_INTERVAL", "Export interval timeout, in milliseconds.", "500", "int", ProfilingCategory),
+            new("SPLUNK_PROFILER_MAX_MEMORY_SAMPLES", "Maximum memory samples collected per minute. Maximum value is 200.", "200", "int", ProfilingCategory),
+            new("SPLUNK_PROFILER_EXPORT_INTERVAL", "Export interval timeout, in milliseconds. Minimum value is 500.", "500", "int", ProfilingCategory),
 
             // trace propagation
             new("OTEL_PROPAGATORS", "Comma-separated list of propagators for the tracer. The default value is `tracecontext,baggage`. Supported values are `b3multi`, `b3`, `tracecontext`, and `baggage`.", "tracecontext,baggage", "string", TracePropagationCategory),
