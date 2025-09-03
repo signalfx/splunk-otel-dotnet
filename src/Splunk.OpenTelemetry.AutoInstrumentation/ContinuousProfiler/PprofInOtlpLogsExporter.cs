@@ -19,33 +19,81 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 
 internal class PprofInOtlpLogsExporter
 {
-    private readonly SampleProcessor _sampleProcessor;
-    private readonly SampleExporter _sampleExporter;
+    private readonly ISampleExporter _sampleExporter;
+    private readonly NativeFormatParser _nativeFormatParser;
 
-    public PprofInOtlpLogsExporter(SampleProcessor sampleProcessor, SampleExporter sampleExporter)
+    public PprofInOtlpLogsExporter(SampleProcessor sampleProcessor, ISampleExporter sampleExporter, NativeFormatParser nativeFormatParser)
     {
-        _sampleProcessor = sampleProcessor;
+        SampleProcessor = sampleProcessor;
         _sampleExporter = sampleExporter;
+        _nativeFormatParser = nativeFormatParser;
     }
+
+    public SampleProcessor SampleProcessor { get; }
 
     public void ExportThreadSamples(byte[] buffer, int read, CancellationToken cancellationToken)
     {
-        var threadSamples = SampleNativeFormatParser.ParseThreadSamples(buffer, read);
-        var logRecord = _sampleProcessor.ProcessThreadSamples(threadSamples);
-        if (logRecord != null)
-        {
-            _sampleExporter.Export(logRecord, cancellationToken);
-        }
+        var threadSamples = _nativeFormatParser.ParseThreadSamples(buffer, read);
+        ExportThreadSamplesCore(threadSamples, cancellationToken);
     }
 
     public void ExportAllocationSamples(byte[] buffer, int read, CancellationToken cancellationToken)
     {
-        var allocationSamples = SampleNativeFormatParser.ParseAllocationSamples(buffer, read);
-        var logRecord = _sampleProcessor.ProcessAllocationSamples(allocationSamples);
+        var allocationSamples = _nativeFormatParser.ParseAllocationSamples(buffer, read);
+        var logRecord = SampleProcessor.ProcessAllocationSamples(allocationSamples);
         if (logRecord != null)
         {
             _sampleExporter.Export(logRecord, cancellationToken);
         }
+    }
+
+    public void ExportSelectedThreadSamples(byte[] buffer, int read, CancellationToken cancellationToken)
+    {
+        var allocationSamples = _nativeFormatParser.ParseSelectiveSamplerSamples(buffer, read);
+
+        var logRecord = SampleProcessor.ProcessSnapshots(allocationSamples);
+
+        if (logRecord != null)
+        {
+            _sampleExporter.Export(logRecord, cancellationToken);
+        }
+    }
+
+    // Internal for testing.
+    // Preferably, NativeFormatParser would live in upstream repository, and this method would be called
+    // by the upstream infrastructure, instead of `ExportThreadSamples` method.
+    internal void ExportThreadSamplesCore(List<ThreadSample>? threadSamples, CancellationToken cancellationToken)
+    {
+        if (threadSamples != null)
+        {
+            var logRecord = SampleProcessor.ProcessThreadSamples(threadSamples);
+            if (logRecord != null)
+            {
+                _sampleExporter.Export(logRecord, cancellationToken);
+            }
+
+            var snapshots = ExtractSnapshots(threadSamples);
+
+            var snapshotLogRecord = SampleProcessor.ProcessSnapshots(snapshots);
+            if (snapshotLogRecord != null)
+            {
+                _sampleExporter.Export(snapshotLogRecord, cancellationToken);
+            }
+        }
+    }
+
+    private static List<ThreadSample> ExtractSnapshots(List<ThreadSample> threadSamples)
+    {
+        var snapshots = new List<ThreadSample>();
+        foreach (var ts in threadSamples)
+        {
+            if (ts.SelectedForFrequentSampling)
+            {
+                snapshots.Add(ts);
+            }
+        }
+
+        return snapshots;
     }
 }
 #endif

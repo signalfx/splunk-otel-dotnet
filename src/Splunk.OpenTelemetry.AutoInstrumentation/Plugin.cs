@@ -14,9 +14,15 @@
 // limitations under the License.
 // </copyright>
 
+using OpenTelemetry;
+using OpenTelemetry.Context.Propagation;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
+#if NET
+using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
+#endif
 
 #if NETFRAMEWORK
 using OpenTelemetry.Instrumentation.AspNet;
@@ -32,12 +38,21 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 /// </summary>
 public class Plugin
 {
-    private static readonly PluginSettings Settings = PluginSettings.FromDefaultSources();
+#pragma warning disable SA1401
+    internal static Func<PluginSettings> DefaultSettingsFactory = PluginSettings.FromDefaultSources;
+#pragma warning restore SA1401
+    private static readonly Lazy<PluginSettings> SettingsFactory = new(() => DefaultSettingsFactory());
+
     private static readonly ILogger Log = new Logger();
+#if NET
+    private static PprofInOtlpLogsExporter? _pprofInOtlpLogsExporter;
+#endif
 
     private readonly Metrics _metrics = new(Settings);
     private readonly Traces _traces = new(Settings);
     private readonly Sdk _sdk = new();
+
+    internal static PluginSettings Settings => SettingsFactory.Value;
 
     /// <summary>
     /// Configures Sdk
@@ -101,6 +116,24 @@ public class Plugin
     public void ConfigureTracesOptions(AspNetCoreTraceInstrumentationOptions options)
     {
         _traces.ConfigureTracesOptions(options);
+        if (Settings.SnapshotsEnabled)
+        {
+            // This is needed because Baggage.Current is set by instrumentation after activity is started.
+            options.EnrichWithHttpRequest += (activity, _) =>
+            {
+                if (!SnapshotVolumeDetector.IsLoud(Baggage.Current))
+                {
+                    return;
+                }
+
+                if (activity.IsEntry())
+                {
+                    activity.MarkLoud();
+                }
+
+                SnapshotFilter.Instance.Add(activity);
+            };
+        }
     }
 
 #endif
@@ -119,15 +152,80 @@ public class Plugin
         var exportInterval = TimeSpan.FromMilliseconds(Settings.ProfilerExportInterval);
         var exportTimeout = TimeSpan.FromMilliseconds(Settings.ProfilerHttpClientTimeout);
 
-        var sampleProcessor = new SampleProcessor(TimeSpan.FromMilliseconds(threadSamplingInterval));
+        var pprofInOtlpLogsExporter = GetPprofInOtlpLogsExporter();
+        pprofInOtlpLogsExporter.SampleProcessor.ContinuousSamplingPeriod = threadSamplingInterval;
 
-        var logSender = new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint);
-
-        var sampleExporter = new SampleExporter(logSender);
-
-        object continuousProfilerExporter = new PprofInOtlpLogsExporter(sampleProcessor, sampleExporter);
-
-        return Tuple.Create(threadSamplingEnabled, threadSamplingInterval, allocationSamplingEnabled, maxMemorySamplesPerMinute, exportInterval, exportTimeout, continuousProfilerExporter);
+        return Tuple.Create(threadSamplingEnabled, threadSamplingInterval, allocationSamplingEnabled, maxMemorySamplesPerMinute, exportInterval, exportTimeout, (object)pprofInOtlpLogsExporter);
     }
+
+    /// <summary>
+    /// Returns selective sampling configuration.
+    /// </summary>
+    /// <returns>(frequentSamplingInterval, exportInterval, exportTimeout, pprofInOtlpLogsExporter) or null.</returns>
+    public Tuple<uint, TimeSpan, TimeSpan, object?>? GetSelectiveSamplingConfiguration()
+    {
+#if NET
+        if (Settings.SnapshotsEnabled)
+        {
+            var frequentSamplingInterval = (uint)Settings.SnapshotsSamplingInterval;
+            var pprofInOtlpLogsExporter = GetPprofInOtlpLogsExporter();
+            pprofInOtlpLogsExporter.SampleProcessor.SelectedSamplingPeriod = frequentSamplingInterval;
+            var exportInterval = GetSampleExportInterval();
+            var exportTimeout = GetSampleExportTimeout();
+            return Tuple.Create(frequentSamplingInterval, exportInterval, exportTimeout, (object)pprofInOtlpLogsExporter)!;
+        }
+#endif
+
+        return null;
+    }
+
+    /// <summary>
+    /// Modify SDK config.
+    /// </summary>
+    /// <param name="builder">TracerProviderBuilder instance to customize.</param>
+    /// <returns>TracerProviderBuilder instance for chaining.</returns>
+    public TracerProviderBuilder BeforeConfigureTracerProvider(TracerProviderBuilder builder)
+    {
+#if NET
+        if (Settings.SnapshotsEnabled)
+        {
+            var currentPropagator = Propagators.DefaultTextMapPropagator;
+            // Ensure baggage propagator is configured.
+            if (currentPropagator.Fields == null || !currentPropagator.Fields.Contains("baggage"))
+            {
+                // This will make SDK init fail. Native side sampling loop will already be started,
+                // but as no spans will be selected, no snapshots will be collected.
+                throw new NotSupportedException("Collecting snapshots requires baggage propagator usage.");
+            }
+
+            global::OpenTelemetry.Sdk.SetDefaultTextMapPropagator(new CompositeTextMapPropagator([currentPropagator, new SnapshotVolumePropagator(new CompositeSelector(Settings.SnapshotsSelectionRate))]));
+            builder.AddProcessor(new SnapshotSelectingProcessor());
+        }
+
+        return builder;
+    }
+
+    private static TimeSpan GetSampleExportTimeout()
+    {
+        return TimeSpan.FromMilliseconds(Settings.ProfilerHttpClientTimeout);
+    }
+
+    private static TimeSpan GetSampleExportInterval()
+    {
+        return TimeSpan.FromMilliseconds(Settings.ProfilerExportInterval);
+    }
+
+    private static PprofInOtlpLogsExporter GetPprofInOtlpLogsExporter()
+    {
+        _pprofInOtlpLogsExporter ??= CreatePprofInOtlpLogsExporter();
+        return _pprofInOtlpLogsExporter;
+    }
+
+    private static PprofInOtlpLogsExporter CreatePprofInOtlpLogsExporter()
+    {
+        return new PprofInOtlpLogsExporter(new SampleProcessor(), new SampleExporter(new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint)), new NativeFormatParser(Settings.SnapshotsEnabled));
+    }
+#endif
+
 #endif
 }

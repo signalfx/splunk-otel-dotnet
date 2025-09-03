@@ -31,15 +31,28 @@ internal class SampleProcessor
     private readonly KeyValue _format;
     private readonly KeyValue _profilingDataTypeCpu;
     private readonly KeyValue _profilingDataTypeAllocation;
-    private readonly TimeSpan _threadSamplingPeriod;
+    private readonly KeyValue _instrumentationSource;
+    private uint _selectedSamplingPeriod;
+    private uint _continuousSamplingPeriod;
 
-    public SampleProcessor(TimeSpan threadSamplingPeriod)
+    public SampleProcessor()
     {
         _format = GdiProfilingConventions.LogRecord.Attributes.Format("pprof-gzip-base64");
         _profilingDataTypeCpu = GdiProfilingConventions.LogRecord.Attributes.Type("cpu");
         _profilingDataTypeAllocation = GdiProfilingConventions.LogRecord.Attributes.Type("allocation");
+        _instrumentationSource = GdiProfilingConventions.LogRecord.Attributes.InstrumentationSource("snapshot");
+    }
 
-        _threadSamplingPeriod = threadSamplingPeriod;
+    public uint ContinuousSamplingPeriod
+    {
+        get => Volatile.Read(ref _continuousSamplingPeriod);
+        set => Volatile.Write(ref _continuousSamplingPeriod, value);
+    }
+
+    public uint SelectedSamplingPeriod
+    {
+        get => Volatile.Read(ref _selectedSamplingPeriod);
+        set => Volatile.Write(ref _selectedSamplingPeriod, value);
     }
 
     public LogRecord? ProcessThreadSamples(List<ThreadSample>? threadSamples)
@@ -49,7 +62,7 @@ internal class SampleProcessor
             return null;
         }
 
-        var cpuProfile = BuildCpuProfile(threadSamples);
+        var cpuProfile = BuildCpuProfile(threadSamples, (long)ContinuousSamplingPeriod!);
         var totalFrameCount = CountFrames(threadSamples);
 
         return BuildLogRecord(cpuProfile, _profilingDataTypeCpu, totalFrameCount);
@@ -66,6 +79,21 @@ internal class SampleProcessor
         var totalFrameCount = CountFrames(allocationSamples);
 
         return BuildLogRecord(allocationProfile, _profilingDataTypeAllocation, totalFrameCount);
+    }
+
+    public LogRecord? ProcessSnapshots(List<ThreadSample> selectedSamples)
+    {
+        if (selectedSamples == null || selectedSamples.Count < 1)
+        {
+            return null;
+        }
+
+        var selectedSampleProfile = BuildCpuProfile(selectedSamples, (long)SelectedSamplingPeriod!);
+        var totalFrameCount = CountFrames(selectedSamples);
+
+        var processSelectedSamples = BuildLogRecord(selectedSampleProfile, _profilingDataTypeCpu, totalFrameCount);
+        processSelectedSamples.Attributes.Add(_instrumentationSource);
+        return processSelectedSamples;
     }
 
     private static int CountFrames(List<AllocationSample> samples)
@@ -140,7 +168,7 @@ internal class SampleProcessor
         return Serialize(pprof.Profile);
     }
 
-    private string BuildCpuProfile(List<ThreadSample> threadSamples)
+    private string BuildCpuProfile(List<ThreadSample> threadSamples, long valueTotalMilliseconds)
     {
         var pprof = new Pprof();
         for (var index = 0; index < threadSamples.Count; index++)
@@ -148,7 +176,7 @@ internal class SampleProcessor
             var threadSample = threadSamples[index];
             var sampleBuilder = CreateSampleBuilder(pprof, threadSample);
 
-            pprof.AddLabel(sampleBuilder, "source.event.period", (long)_threadSamplingPeriod.TotalMilliseconds);
+            pprof.AddLabel(sampleBuilder, "source.event.period", valueTotalMilliseconds);
             pprof.Profile.Samples.Add(sampleBuilder.Build());
         }
 

@@ -73,6 +73,24 @@ internal static class ConfigurationKeys
             /// </summary>
             public const string ProfilerExportInterval = "SPLUNK_PROFILER_EXPORT_INTERVAL";
         }
+
+        public static class Snapshots
+        {
+            /// <summary>
+            /// Configuration key for enabling snapshots.
+            /// </summary>
+            public const string Enabled = "SPLUNK_SNAPSHOT_PROFILER_ENABLED";
+
+            /// <summary>
+            /// Configuration key for snapshots sampling interval in ms.
+            /// </summary>
+            public const string SamplingIntervalMs = "SPLUNK_SNAPSHOT_SAMPLING_INTERVAL";
+
+            /// <summary>
+            /// Configuration key for snapshots sampling ratio.
+            /// </summary>
+            public const string SelectionRate = "SPLUNK_SNAPSHOT_SELECTION_RATE";
+        }
 #endif
     }
 

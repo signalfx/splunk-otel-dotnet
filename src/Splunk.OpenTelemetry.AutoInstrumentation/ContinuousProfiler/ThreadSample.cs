@@ -20,7 +20,14 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 
 internal class ThreadSample
 {
-    public ThreadSample(Time timestamp, long spanId, long traceIdHigh, long traceIdLow, string threadName, uint threadIndex)
+    public ThreadSample(
+        Time timestamp,
+        long spanId,
+        long traceIdHigh,
+        long traceIdLow,
+        string threadName,
+        uint threadIndex,
+        bool selectedForFrequentSampling)
     {
         Timestamp = timestamp;
         SpanId = spanId;
@@ -28,6 +35,7 @@ internal class ThreadSample
         TraceIdLow = traceIdLow;
         ThreadName = threadName;
         ThreadIndex = threadIndex;
+        SelectedForFrequentSampling = selectedForFrequentSampling;
     }
 
     public Time Timestamp { get; set; }
@@ -41,6 +49,8 @@ internal class ThreadSample
     public string ThreadName { get; set; }
 
     public uint ThreadIndex { get; set; }
+
+    public bool SelectedForFrequentSampling { get; set; }
 
     public IList<string> Frames { get; } = new List<string>();
 

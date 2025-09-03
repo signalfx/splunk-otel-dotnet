@@ -73,5 +73,8 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
       <_Parameter1>Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests</_Parameter1>
     </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Splunk.OpenTelemetry.AutoInstrumentation.Tests</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 </Project>
