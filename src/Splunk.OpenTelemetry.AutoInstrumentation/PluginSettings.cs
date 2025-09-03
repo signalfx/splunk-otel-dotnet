@@ -20,6 +20,14 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class PluginSettings
 {
+    // Maximum/default values, are defined in GDI spec.
+    private const double MaxSnapshotSelectionRate = 0.1;
+    private const double DefaultSnapshotSelectionRate = 0.01;
+
+    // Runtime suspensions done to collect thread samples often take ~0.25ms. Use `20ms` as default sampling interval
+    // to limit induced overhead.
+    private const int DefaultSnapshotSamplingIntervalMs = 20;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginSettings"/> class
     /// using the specified <see cref="IConfigurationSource"/> to initialize values.
@@ -40,6 +48,11 @@ internal class PluginSettings
 
 #if NET
         CpuProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled) ?? false;
+        SnapshotsEnabled = source.GetBool(ConfigurationKeys.Splunk.Snapshots.Enabled) ?? false;
+
+        SnapshotsSamplingInterval = source.GetInt32(ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs) ?? DefaultSnapshotSamplingIntervalMs;
+        var configuredSelectionRate = source.GetDouble(ConfigurationKeys.Splunk.Snapshots.SelectionRate) ?? DefaultSnapshotSelectionRate;
+        SnapshotsSelectionRate = configuredSelectionRate > MaxSnapshotSelectionRate ? MaxSnapshotSelectionRate : configuredSelectionRate;
         MemoryProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled) ?? false;
         var callStackInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval) ?? 10000;
         CpuProfilerCallStackInterval = callStackInterval < 0 ? 10000u : (uint)callStackInterval;
@@ -53,6 +66,12 @@ internal class PluginSettings
         ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
 #endif
     }
+
+    public int SnapshotsSamplingInterval { get; set; }
+
+    public bool SnapshotsEnabled { get; set; }
+
+    public double SnapshotsSelectionRate { get; set; }
 
     public string Realm { get; }
 

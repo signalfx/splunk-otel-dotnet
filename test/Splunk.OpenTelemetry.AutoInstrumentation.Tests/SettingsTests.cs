@@ -14,6 +14,9 @@
 // limitations under the License.
 // </copyright>
 
+using System.Collections.Specialized;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 {
     public class SettingsTests : IDisposable
@@ -27,6 +30,19 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
         {
             ClearEnvVars();
         }
+
+#if NET
+        [Fact]
+        public void MaxSnapshotSelectionRate_IsBoundedByTheValueFromTheSpec()
+        {
+            var settings = new PluginSettings(new NameValueConfigurationSource(
+                new NameValueCollection
+                {
+                    ["SPLUNK_SNAPSHOT_SELECTION_RATE"] = "0.5"
+                }));
+            Assert.Equal(0.1, settings.SnapshotsSelectionRate);
+        }
+#endif
 
         [Fact]
         internal void PluginSettings_DefaultValues()
@@ -60,6 +76,9 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportTimeout, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportInterval, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Snapshots.Enabled, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Snapshots.SelectionRate, null);
 #endif
         }
     }

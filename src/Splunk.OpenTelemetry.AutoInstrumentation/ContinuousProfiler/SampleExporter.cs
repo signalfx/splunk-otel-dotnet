@@ -26,7 +26,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 /// <summary>
 /// Exports Cpu/Allocation samples, accumulating LogRecords created by provided native buffer processors.
 /// </summary>
-internal class SampleExporter
+internal class SampleExporter : ISampleExporter
 {
     private static readonly ILogger Logger = new Logger();
 
