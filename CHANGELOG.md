@@ -9,15 +9,6 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Added
 
-- Added support for environmental variable `SPLUNK_PROFILER_EXPORT_TIMEOUT`.
-  It allows to set timeout in milliseconds. Default is `3000` ms.
-- Added support for environmental variable `SPLUNK_PROFILER_MAX_MEMORY_SAMPLES`.
-  It allows to set maximum memory samples collected per minute. The maximum value is 200.
-  Default is `200`.
-- Added support for environmental variable `SPLUNK_PROFILER_EXPORT_INTERVAL`.
-  It allows to set export interval in milliseconds. The minimum value is `500` ms.
-  Default is `500` ms.
-
 ### Changed
 
 ### Deprecated
@@ -27,6 +18,23 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 ### Fixed
 
 ### Security
+
+## [1.12.0-beta.1](https://github.com/signalfx/splunk-otel-dotnet/releases/tag/v1.12.0-beta.1)
+
+This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.13.0-beta.1](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.13.0-beta.1).
+
+### Added
+
+- Added support for environmental variable `SPLUNK_PROFILER_EXPORT_TIMEOUT`.
+  It allows to set timeout in milliseconds. Default is `3000` ms.
+- Added support for environmental variable `SPLUNK_PROFILER_MAX_MEMORY_SAMPLES`.
+  It allows to set maximum memory samples collected per minute. The maximum value is 200.
+  Default is `200`.
+- Added support for environmental variable `SPLUNK_PROFILER_EXPORT_INTERVAL`.
+  It allows to set export interval in milliseconds. The minimum value is `500` ms.
+  Default is `500` ms.
+
+- Added experimental support for snapshots collection.
 
 ## [1.11.0](https://github.com/signalfx/splunk-otel-dotnet/releases/tag/v1.11.0)
 
