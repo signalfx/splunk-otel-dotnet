@@ -89,7 +89,7 @@ public class ContinuousProfilerTests : TestHelper
         var logsData = logsCollector.GetAllLogs();
         // The application works for 6 seconds with debug logging enabled we expect at least 2 attempts of thread sampling in CI.
         // On a dev box it is typical to get at least 4 but the CI machines seem slower, using 2
-        Assert.True(logsData.Length > 2);
+        Assert.True(logsData.Length >= 2, "Expected to receive at least 2 messages with thread samples.");
 
         await DumpLogRecords(logsData);
 
