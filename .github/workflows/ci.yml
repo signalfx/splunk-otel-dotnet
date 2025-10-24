@@ -78,11 +78,11 @@ jobs:
             base-image: alpine-x64
             os-type: linux-musl
             # architecture: "x64"
-          - machine: [self-hosted, Linux, ARM64]
+          - machine: ubuntu-22.04-arm
             base-image: alpine-arm64
             os-type: linux-musl
             # architecture: "arm64"
-          - machine: [self-hosted, Linux, ARM64]
+          - machine: ubuntu-22.04-arm
             base-image: debian-arm64
             os-type: linux-glibc
             # architecture: "arm64"
