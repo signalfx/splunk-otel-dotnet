@@ -64,6 +64,11 @@ internal static class SettingsData
             new("SPLUNK_PROFILER_MAX_MEMORY_SAMPLES", "Maximum memory samples collected per minute. Maximum value is 200.", "200", "int", ProfilingCategory),
             new("SPLUNK_PROFILER_EXPORT_INTERVAL", "Export interval timeout, in milliseconds. Minimum value is 500.", "500", "int", ProfilingCategory),
 
+            // snapshots
+            new("SPLUNK_SNAPSHOT_PROFILER_ENABLED", "Activates snapshots collection.", "false", "boolean", ProfilingCategory),
+            new("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL", "Sampling interval for snapshot collections, in milliseconds.", "20", "int", ProfilingCategory),
+            new("SPLUNK_SNAPSHOT_SELECTION_RATE", "Sets probability of selecting trace for snapshots.", "0.01", "double", ProfilingCategory),
+
             // trace propagation
             new("OTEL_PROPAGATORS", "Comma-separated list of propagators for the tracer. The default value is `tracecontext,baggage`. Supported values are `b3multi`, `b3`, `tracecontext`, and `baggage`.", "tracecontext,baggage", "string", TracePropagationCategory),
 
