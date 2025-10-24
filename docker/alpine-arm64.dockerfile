@@ -25,10 +25,4 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
     && ./dotnet-install.sh -v 8.0.413 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
-# uid 1000 is the uid of the user in our environement
-# we should execute build process in the same context
-# to have priviliges to modify data
-RUN addgroup -S appgroup && adduser -S user -G appgroup -u 1000
-USER user
-
 WORKDIR /project
