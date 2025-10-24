@@ -80,6 +80,7 @@ internal static class ConfigurationKeys
             /// Configuration key for enabling snapshots.
             /// </summary>
             public const string Enabled = "SPLUNK_SNAPSHOT_PROFILER_ENABLED";
+            public const string HighResolutionTimerEnabled = "SPLUNK_SNAPSHOT_HIGH_RES_TIMER_ENABLED";
 
             /// <summary>
             /// Configuration key for snapshots sampling interval in ms.
