@@ -14,11 +14,14 @@
 // limitations under the License.
 // </copyright>
 
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using OpenTelemetry;
 using OpenTelemetry.Context.Propagation;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 #if NET
 using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
@@ -46,6 +49,7 @@ public class Plugin
     private static readonly ILogger Log = new Logger();
 #if NET
     private static PprofInOtlpLogsExporter? _pprofInOtlpLogsExporter;
+    private static int _isExiting;
 #endif
 
     private readonly Metrics _metrics = new(Settings);
@@ -65,6 +69,19 @@ public class Plugin
         {
             Log.LogConfigurationSetup();
         }
+
+#if NET
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Settings is { SnapshotsEnabled: true, HighResolutionTimerEnabled: true })
+        {
+            if (!WinApi.TryEnableHighResolutionTimer())
+            {
+                return;
+            }
+
+            AppDomain.CurrentDomain.ProcessExit += RunCleanup;
+            AppDomain.CurrentDomain.DomainUnload += RunCleanup;
+        }
+#endif
     }
 
     /// <summary>
@@ -204,6 +221,19 @@ public class Plugin
 
         return builder;
     }
+
+#if NET
+    private static void RunCleanup(object? o, EventArgs args)
+    {
+        if (Interlocked.Exchange(ref _isExiting, value: 1) != 0)
+        {
+            // OnExit() was already called before
+            return;
+        }
+
+        WinApi.TryDisableHighResolutionTimer();
+    }
+#endif
 
     private static TimeSpan GetSampleExportTimeout()
     {
