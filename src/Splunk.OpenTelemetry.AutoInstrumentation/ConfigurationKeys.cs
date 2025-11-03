@@ -89,7 +89,7 @@ internal static class ConfigurationKeys
             /// <summary>
             /// Configuration key for snapshots sampling ratio.
             /// </summary>
-            public const string SelectionRate = "SPLUNK_SNAPSHOT_SELECTION_RATE";
+            public const string SelectionRate = "SPLUNK_SNAPSHOT_SELECTION_PROBABILITY";
         }
 #endif
     }
