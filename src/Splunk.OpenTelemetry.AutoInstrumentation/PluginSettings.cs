@@ -15,6 +15,7 @@
 // </copyright>
 
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
@@ -67,6 +68,49 @@ internal class PluginSettings
 #endif
     }
 
+    internal PluginSettings(SplunkConfiguration configuration)
+    {
+        if (configuration == null)
+        {
+            throw new ArgumentNullException(nameof(configuration));
+        }
+
+        Realm = Constants.None;
+        AccessToken = null;
+        IsOtlpEndpointSet = false;
+        TraceResponseHeaderEnabled = configuration.TraceResponseHeaderEnabled;
+
+#if NET
+        var profiler = configuration.Profiler;
+        if (profiler != null)
+        {
+            CpuProfilerEnabled = true;
+            MemoryProfilerEnabled = profiler.MemoryProfilerEnabled;
+            ProfilerLogsEndpoint = new Uri(profiler.LogsEndpoint);
+            var exportInterval = profiler.ExportInterval;
+            ProfilerExportInterval = exportInterval < 500u ? 500u : exportInterval;
+
+            ProfilerHttpClientTimeout = profiler.ExportTimeout;
+
+            var maxMemorySamplesPerMinute = profiler.MaxMemorySamples;
+            MemoryProfilerMaxMemorySamplesPerMinute = maxMemorySamplesPerMinute > 200u ? 200u : maxMemorySamplesPerMinute;
+
+            var callStackInterval = profiler.CallStackInterval;
+            CpuProfilerCallStackInterval = callStackInterval < 0u ? 10000u : callStackInterval;
+        }
+
+        var callGraphs = configuration.CallGraphs;
+        if (callGraphs != null)
+        {
+            SnapshotsEnabled = true;
+
+            SnapshotsSamplingInterval = callGraphs.SamplingInterval;
+            var configuredSelectionRate = callGraphs.SelectionProbability;
+            SnapshotsSelectionRate = configuredSelectionRate > MaxSnapshotSelectionRate ? MaxSnapshotSelectionRate : configuredSelectionRate;
+        }
+#endif
+    }
+
     public int SnapshotsSamplingInterval { get; set; }
 
     public bool SnapshotsEnabled { get; set; }
@@ -90,7 +134,7 @@ internal class PluginSettings
 
     public bool MemoryProfilerEnabled { get; }
 
-    public Uri ProfilerLogsEndpoint { get; }
+    public Uri ProfilerLogsEndpoint { get; } = new Uri("http://localhost:4318/v1/logs");
 
     public uint ProfilerHttpClientTimeout { get; }
 
