@@ -11,6 +11,10 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Changed
 
+- **Breaking change for 1.12.0-beta.1 users**. Environmental variable
+  `SPLUNK_SNAPSHOT_SELECTION_RATE` renamed to
+  `SPLUNK_SNAPSHOT_SELECTION_PROBABILITY`.
+
 ### Deprecated
 
 ### Removed
@@ -28,8 +32,8 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.13.0
 - Added support for environmental variable `SPLUNK_PROFILER_EXPORT_TIMEOUT`.
   It allows to set timeout in milliseconds. Default is `3000` ms.
 - Added support for environmental variable `SPLUNK_PROFILER_MAX_MEMORY_SAMPLES`.
-  It allows to set maximum memory samples collected per minute. The maximum value is 200.
-  Default is `200`.
+  It allows to set maximum memory samples collected per minute. The maximum
+  value is 200. Default is `200`.
 - Added support for environmental variable `SPLUNK_PROFILER_EXPORT_INTERVAL`.
   It allows to set export interval in milliseconds. The minimum value is `500` ms.
   Default is `500` ms.

@@ -38,7 +38,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             var settings = new PluginSettings(new NameValueConfigurationSource(
                 new NameValueCollection
                 {
-                    ["SPLUNK_SNAPSHOT_SELECTION_RATE"] = "0.5"
+                    ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.5"
                 }));
             Assert.Equal(0.1, settings.SnapshotsSelectionRate);
         }
