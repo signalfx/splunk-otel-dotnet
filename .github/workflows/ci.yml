@@ -21,7 +21,7 @@ jobs:
             log-dir: "/var/log/opentelemetry/dotnet"
     runs-on: ${{ matrix.machine }}
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           fetch-depth: 0 # fetching all, needed to correctly calculate version
       - uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5.0.0
@@ -90,7 +90,7 @@ jobs:
     runs-on: ${{ matrix.machine }}
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       with:
         fetch-depth: 0 # fetching all, needed to correctly calculate version
     - name: Build Docker image
@@ -126,7 +126,7 @@ jobs:
   build-nuget-package:
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           fetch-depth: 0 # fetching all, needed to correctly calculate version
       - uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5.0.0
@@ -151,7 +151,7 @@ jobs:
           - machine: macos-13
     runs-on: ${{ matrix.machine }}
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           fetch-depth: 0 # fetching all, needed to correctly calculate version
       - uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5.0.0
@@ -177,7 +177,7 @@ jobs:
       contents: write
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           path: .
