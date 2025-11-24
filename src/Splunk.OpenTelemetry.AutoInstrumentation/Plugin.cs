@@ -72,7 +72,11 @@ public class Plugin
         }
 
 #if NET
-        TryEnableHighResTimer();
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
+            Settings is { SnapshotsEnabled: true, HighResolutionTimerEnabled: true })
+        {
+            EnableHighResTimer();
+        }
 #endif
     }
 
@@ -211,31 +215,28 @@ public class Plugin
         return builder;
     }
 
-    private static void TryEnableHighResTimer()
+    private static void EnableHighResTimer()
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Settings is { SnapshotsEnabled: true, HighResolutionTimerEnabled: true })
+        if (Interlocked.Exchange(ref _highResTimerEnabled, value: 1) != 0)
         {
-            if (Interlocked.Exchange(ref _highResTimerEnabled, value: 1) != 0)
-            {
-                // Timer already enabled
-                return;
-            }
-
-            if (!WinApi.TryEnableHighResolutionTimer())
-            {
-                return;
-            }
-
-            AppDomain.CurrentDomain.ProcessExit += TryDisableHighResTimer;
-            AppDomain.CurrentDomain.DomainUnload += TryDisableHighResTimer;
+            // Timer already enabled
+            return;
         }
+
+        if (!WinApi.TryEnableHighResolutionTimer())
+        {
+            return;
+        }
+
+        AppDomain.CurrentDomain.ProcessExit += DisableHighResTimer;
+        AppDomain.CurrentDomain.DomainUnload += DisableHighResTimer;
     }
 
-    private static void TryDisableHighResTimer(object? o, EventArgs args)
+    private static void DisableHighResTimer(object? o, EventArgs args)
     {
         if (Interlocked.Exchange(ref _highResTimerDisabled, value: 1) != 0)
         {
-            // RunCleanup() was already called before
+            // Timer already disabled
             return;
         }
 
