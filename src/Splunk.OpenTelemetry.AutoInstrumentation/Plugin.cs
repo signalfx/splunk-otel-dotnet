@@ -49,7 +49,8 @@ public class Plugin
     private static readonly ILogger Log = new Logger();
 #if NET
     private static PprofInOtlpLogsExporter? _pprofInOtlpLogsExporter;
-    private static int _isExiting;
+    private static int _highResTimerEnabled;
+    private static int _highResTimerDisabled;
 #endif
 
     private readonly Metrics _metrics = new(Settings);
@@ -71,16 +72,7 @@ public class Plugin
         }
 
 #if NET
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Settings is { SnapshotsEnabled: true, HighResolutionTimerEnabled: true })
-        {
-            if (!WinApi.TryEnableHighResolutionTimer())
-            {
-                return;
-            }
-
-            AppDomain.CurrentDomain.ProcessExit += RunCleanup;
-            AppDomain.CurrentDomain.DomainUnload += RunCleanup;
-        }
+        TryEnableHighResTimer();
 #endif
     }
 
@@ -181,7 +173,6 @@ public class Plugin
     /// <returns>(frequentSamplingInterval, exportInterval, exportTimeout, pprofInOtlpLogsExporter) or null.</returns>
     public Tuple<uint, TimeSpan, TimeSpan, object?>? GetSelectiveSamplingConfiguration()
     {
-#if NET
         if (Settings.SnapshotsEnabled)
         {
             var frequentSamplingInterval = (uint)Settings.SnapshotsSamplingInterval;
@@ -191,7 +182,6 @@ public class Plugin
             var exportTimeout = GetSampleExportTimeout();
             return Tuple.Create(frequentSamplingInterval, exportInterval, exportTimeout, (object)pprofInOtlpLogsExporter)!;
         }
-#endif
 
         return null;
     }
@@ -203,7 +193,6 @@ public class Plugin
     /// <returns>TracerProviderBuilder instance for chaining.</returns>
     public TracerProviderBuilder BeforeConfigureTracerProvider(TracerProviderBuilder builder)
     {
-#if NET
         if (Settings.SnapshotsEnabled)
         {
             var currentPropagator = Propagators.DefaultTextMapPropagator;
@@ -222,18 +211,36 @@ public class Plugin
         return builder;
     }
 
-#if NET
-    private static void RunCleanup(object? o, EventArgs args)
+    private static void TryEnableHighResTimer()
     {
-        if (Interlocked.Exchange(ref _isExiting, value: 1) != 0)
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Settings is { SnapshotsEnabled: true, HighResolutionTimerEnabled: true })
         {
-            // OnExit() was already called before
+            if (Interlocked.Exchange(ref _highResTimerEnabled, value: 1) != 0)
+            {
+                // Timer already enabled
+                return;
+            }
+
+            if (!WinApi.TryEnableHighResolutionTimer())
+            {
+                return;
+            }
+
+            AppDomain.CurrentDomain.ProcessExit += TryDisableHighResTimer;
+            AppDomain.CurrentDomain.DomainUnload += TryDisableHighResTimer;
+        }
+    }
+
+    private static void TryDisableHighResTimer(object? o, EventArgs args)
+    {
+        if (Interlocked.Exchange(ref _highResTimerDisabled, value: 1) != 0)
+        {
+            // RunCleanup() was already called before
             return;
         }
 
         WinApi.TryDisableHighResolutionTimer();
     }
-#endif
 
     private static TimeSpan GetSampleExportTimeout()
     {
@@ -255,7 +262,5 @@ public class Plugin
     {
         return new PprofInOtlpLogsExporter(new SampleProcessor(), new SampleExporter(new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint)), new NativeFormatParser(Settings.SnapshotsEnabled));
     }
-#endif
-
 #endif
 }

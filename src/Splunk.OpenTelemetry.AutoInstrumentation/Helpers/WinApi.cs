@@ -25,7 +25,7 @@ internal static class WinApi
 {
     // Corresponds to TIMERR_NOERROR
     // https://learn.microsoft.com/en-us/windows/win32/api/timeapi/nf-timeapi-timebeginperiod
-    private const int SuccessResult = 0;
+    private const uint SuccessResult = 0;
     // Set period to 1 ms, from default 15.625ms
     private const uint HighResolutionTimerPeriodMs = 1;
 
