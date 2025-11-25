@@ -17,7 +17,7 @@ jobs:
             log-dir: "/c/ProgramData/OpenTelemetry .NET AutoInstrumentation/logs"
           - machine: ubuntu-22.04
             log-dir: "/var/log/opentelemetry/dotnet"
-          - machine: macos-13
+          - machine: macos-14
             log-dir: "/var/log/opentelemetry/dotnet"
     runs-on: ${{ matrix.machine }}
     steps:
@@ -148,7 +148,7 @@ jobs:
       matrix:
         include:
           - machine: ubuntu-22.04
-          - machine: macos-13
+          - machine: macos-14
     runs-on: ${{ matrix.machine }}
     steps:
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
@@ -186,7 +186,7 @@ jobs:
       - run: cp bin-ubuntu-22.04/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-glibc-x64.zip
       - run: cp bin-debian-arm64/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-glibc-arm64.zip
       - run: cp bin-windows-2022/splunk-*.zip ./splunk-opentelemetry-dotnet-windows.zip
-      - run: cp bin-macos-13/splunk-*.zip ./splunk-opentelemetry-dotnet-macos.zip
+      - run: cp bin-macos-14/splunk-*.zip ./splunk-opentelemetry-dotnet-macos.zip
       - run: cp bin-windows-2022/InstallationScripts/splunk-otel-dotnet-install.sh ./splunk-otel-dotnet-install.sh
       - run: cp bin-windows-2022/InstallationScripts/Splunk.OTel.DotNet.psm1 ./Splunk.OTel.DotNet.psm1
       - run: cp bin-windows-2022/Matrix/splunk-otel-dotnet-metadata.yaml ./splunk-otel-dotnet-metadata.yaml
