@@ -16,6 +16,4 @@
 
 namespace MatrixHelper;
 
-internal class Trace
-{
-}
+internal class Trace;
