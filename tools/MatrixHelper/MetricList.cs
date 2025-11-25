@@ -19,7 +19,7 @@ namespace MatrixHelper;
 internal class MetricList : SignalsList
 {
     public MetricList()
-        : this(Array.Empty<MetricData>())
+        : this([])
     {
     }
 

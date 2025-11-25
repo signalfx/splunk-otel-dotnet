@@ -25,7 +25,7 @@ internal class ResourceDetector
         Attributes = attributes;
         Stability = stability;
         Support = support;
-        Dependencies = new Dependency[] { dependency };
+        Dependencies = [dependency];
     }
 
     public string Key { get; set; }
