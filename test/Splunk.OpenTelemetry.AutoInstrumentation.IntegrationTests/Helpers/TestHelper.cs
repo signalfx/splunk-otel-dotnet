@@ -14,23 +14,8 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="TestHelper.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
-
-#nullable disable
+// SPDX-License-Identifier: Apache-2.0
 
 using System.Diagnostics;
 using System.Reflection;
@@ -59,12 +44,9 @@ public abstract class TestHelper
 
     protected ITestOutputHelper Output { get; }
 
-    /// <summary>
-    /// Gets the path for the test assembly, not the shadow copy created by xunit.
-    /// </summary>
-    /// <returns>Path for the test assembly</returns>
     public string GetTestAssemblyPath()
     {
+        // Gets the path for the test assembly, not the shadow copy created by xunit.
 #if NETFRAMEWORK
         // CodeBase is deprecated outside .NET Framework, instead of suppressing the error
         // build the code as per recommendation for each runtime.
@@ -73,11 +55,11 @@ public abstract class TestHelper
         var directory = Path.GetDirectoryName(codeBasePath);
         return Path.GetFullPath(directory);
 #else
-        return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
 #endif
     }
 
-    public void SetEnvironmentVariable(string key, string value)
+    public void SetEnvironmentVariable(string key, string? value)
     {
         EnvironmentHelper.CustomEnvironmentVariables[key] = value;
     }
@@ -93,10 +75,20 @@ public abstract class TestHelper
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://localhost:{collector.Port}");
     }
 
+    public void SetFileBasedExporter(MockSpansCollector collector)
+    {
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", $"http://localhost:{collector.Port}/v1/traces");
+    }
+
     public void SetExporter(MockMetricsCollector collector)
     {
         SetEnvironmentVariable("OTEL_METRICS_EXPORTER", "otlp");
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://localhost:{collector.Port}");
+    }
+
+    public void SetFileBasedExporter(MockMetricsCollector collector)
+    {
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", $"http://localhost:{collector.Port}/v1/metrics");
     }
 
     public void SetExporter(MockLogsCollector collector)
@@ -105,8 +97,13 @@ public abstract class TestHelper
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://localhost:{collector.Port}");
     }
 
+    public void SetFileBasedExporter(MockLogsCollector collector)
+    {
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", $"http://localhost:{collector.Port}/v1/logs");
+    }
+
 #if NET
-    public void SetExporter(MockLContinuousProfilerCollector collector)
+    public void SetExporter(MockContinuousProfilerCollector collector)
     {
         SetEnvironmentVariable("SPLUNK_PROFILER_LOGS_ENDPOINT", $"http://localhost:{collector.Port}/v1/logs");
     }
@@ -124,19 +121,26 @@ public abstract class TestHelper
         RemoveEnvironmentVariable("OTEL_LOGS_EXPORTER");
     }
 
-    /// <summary>
-    /// RunTestApplication starts the test application, wait up to DefaultProcessTimeout.
-    /// Assertion exceptions are thrown if it timed out or the exit code is non-zero.
-    /// </summary>
-    /// <param name="testSettings">Test settings</param>
-    public void RunTestApplication(TestSettings testSettings = null)
+    public void EnableFileBasedConfigWithDefaultPath()
     {
+        SetEnvironmentVariable("OTEL_EXPERIMENTAL_FILE_BASED_CONFIGURATION_ENABLED", "true");
+        SetEnvironmentVariable("OTEL_EXPERIMENTAL_CONFIG_FILE", Path.Combine(EnvironmentHelper.GetTestApplicationApplicationOutputDirectory(), "config.yaml"));
+    }
+
+    public (string StandardOutput, string ErrorOutput, int ProcessId) RunTestApplication(TestSettings? testSettings = null)
+    {
+        // RunTestApplication starts the test application, wait up to DefaultProcessTimeout.
+        // Assertion exceptions are thrown if it timed out or the exit code is non-zero.
         testSettings ??= new();
         using var process = StartTestApplication(testSettings);
-        Output.WriteLine($"ProcessName: " + process.ProcessName);
+        Output.WriteLine($"ProcessName: " + process?.ProcessName);
         using var helper = new ProcessHelper(process);
 
-        bool processTimeout = !process.WaitForExit((int)Timeout.ProcessExit.TotalMilliseconds);
+        Assert.NotNull(process);
+
+        var processId = process!.Id;
+
+        bool processTimeout = !process!.WaitForExit((int)TestTimeout.ProcessExit.TotalMilliseconds);
         if (processTimeout)
         {
             process.Kill();
@@ -148,28 +152,44 @@ public abstract class TestHelper
 
         Assert.False(processTimeout, "Test application timed out");
         Assert.Equal(0, process.ExitCode);
+
+        return (helper.StandardOutput, helper.ErrorOutput, processId);
     }
 
-    /// <summary>
-    /// StartTestApplication starts the test application
-    /// and returns the Process instance for further interaction.
-    /// </summary>
-    /// <param name="testSettings">Test settings</param>
-    /// <returns>Test application process</returns>
-    public Process StartTestApplication(TestSettings testSettings = null)
+    public Process? StartTestApplication(TestSettings? testSettings = null)
     {
+        // StartTestApplication starts the test application
+        // and returns the Process instance for further interaction.
         testSettings ??= new();
 
+        var startupMode = testSettings.StartupMode;
+        if (startupMode == TestAppStartupMode.Auto)
+        {
+            startupMode = EnvironmentHelper.IsCoreClr() ? TestAppStartupMode.DotnetCLI : TestAppStartupMode.Exe;
+        }
+
         // get path to test application that the profiler will attach to
-        string testApplicationPath = EnvironmentHelper.GetTestApplicationPath(testSettings.PackageVersion, testSettings.Framework);
+        var testApplicationPath = EnvironmentHelper.GetTestApplicationPath(testSettings.PackageVersion, testSettings.Framework, startupMode);
         if (!File.Exists(testApplicationPath))
         {
             throw new Exception($"application not found: {testApplicationPath}");
         }
 
-        Output.WriteLine($"Starting Application: {testApplicationPath}");
-        var executable = EnvironmentHelper.IsCoreClr() ? EnvironmentHelper.GetTestApplicationExecutionSource() : testApplicationPath;
-        var args = EnvironmentHelper.IsCoreClr() ? $"{testApplicationPath} {testSettings.Arguments ?? string.Empty}" : testSettings.Arguments;
-        return InstrumentedProcessHelper.Start(executable, args, EnvironmentHelper);
+        if (startupMode == TestAppStartupMode.DotnetCLI)
+        {
+            Output.WriteLine($"DotnetCLI Starting Application: {testApplicationPath}");
+            var executable = EnvironmentHelper.GetTestApplicationExecutionSource();
+            var args = $"{testApplicationPath} {testSettings.Arguments ?? string.Empty}";
+            return InstrumentedProcessHelper.Start(executable, args, EnvironmentHelper);
+        }
+        else if (startupMode == TestAppStartupMode.Exe)
+        {
+            Output.WriteLine($"Starting Application: {testApplicationPath}");
+            return InstrumentedProcessHelper.Start(testApplicationPath, testSettings.Arguments, EnvironmentHelper);
+        }
+        else
+        {
+            throw new InvalidOperationException($"StartupMode '{startupMode}' has no logic defined.");
+        }
     }
 }

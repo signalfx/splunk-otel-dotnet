@@ -1,4 +1,4 @@
-// <copyright file="Timeout.cs" company="Splunk Inc.">
+// <copyright file="TestTimeout.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,27 +14,12 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="Timeout.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
-
-#nullable disable
+// SPDX-License-Identifier: Apache-2.0
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-internal static class Timeout
+internal static class TestTimeout
 {
     public static readonly TimeSpan ProcessExit = TimeSpan.FromMinutes(5); // caution: long timeouts can cause integer overflow!
     public static readonly TimeSpan Expectation = TimeSpan.FromMinutes(1); // long to avoid flaky tests

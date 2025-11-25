@@ -32,7 +32,7 @@ public class EnvironmentHelper
     private readonly ITestOutputHelper _output;
     private readonly int _major;
     private readonly int _minor;
-    private readonly string? _patch = null;
+    private readonly string? _patch;
 
     private readonly string _appNamePrepend;
     private readonly string _runtime;
@@ -76,6 +76,10 @@ public class EnvironmentHelper
         {
             // Only integration tests assume the default environment variable settings.
             SetDefaultEnvironmentVariables();
+        }
+        else if (testApplicationType == "nuget-packages")
+        {
+            SetDefaultLogEnvironmentVariables();
         }
     }
 
@@ -284,8 +288,7 @@ public class EnvironmentHelper
         CustomEnvironmentVariables["COR_PROFILER"] = EnvironmentTools.ProfilerClsId;
         CustomEnvironmentVariables["COR_PROFILER_PATH"] = profilerPath;
 
-        CustomEnvironmentVariables["OTEL_LOG_LEVEL"] = "debug";
-        CustomEnvironmentVariables["OTEL_DOTNET_AUTO_LOG_DIRECTORY"] = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "test-artifacts", "profiler-logs");
+        SetDefaultLogEnvironmentVariables();
         CustomEnvironmentVariables["OTEL_DOTNET_AUTO_HOME"] = GetNukeBuildOutput();
         CustomEnvironmentVariables["OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES"] = "TestApplication.*";
 
@@ -295,5 +298,11 @@ public class EnvironmentHelper
         CustomEnvironmentVariables["OTEL_LOGS_EXPORTER"] = "none";
 
         CustomEnvironmentVariables["OTEL_DOTNET_AUTO_PLUGINS"] = "Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation";
+    }
+
+    private void SetDefaultLogEnvironmentVariables()
+    {
+        CustomEnvironmentVariables["OTEL_LOG_LEVEL"] = "debug";
+        CustomEnvironmentVariables["OTEL_DOTNET_AUTO_LOG_DIRECTORY"] = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "test-artifacts", "profiler-logs");
     }
 }

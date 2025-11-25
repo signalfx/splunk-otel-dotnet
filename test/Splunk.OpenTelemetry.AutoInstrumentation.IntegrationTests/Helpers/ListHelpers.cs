@@ -1,4 +1,4 @@
-﻿// <copyright file="ListHelpers.cs" company="Splunk Inc.">
+// <copyright file="ListHelpers.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,9 @@
 // limitations under the License.
 // </copyright>
 
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 internal static class ListHelpers
@@ -21,11 +24,11 @@ internal static class ListHelpers
     public static ICollection<KeyValuePair<string, string>> ToEnvironmentVariablesList(this IEnumerable<string> list)
     {
         return list.Select(x =>
-        {
-            var keyValuePair = x.Split(['='], 2);
+            {
+                var keyValuePair = x.Split(new[] { '=' }, 2);
 
-            return new KeyValuePair<string, string>(keyValuePair[0], keyValuePair[1]);
-        })
-        .ToList();
+                return new KeyValuePair<string, string>(keyValuePair[0], keyValuePair[1]);
+            })
+            .ToList();
     }
 }

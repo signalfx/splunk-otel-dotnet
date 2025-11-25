@@ -59,7 +59,7 @@ public class ServerTimingHeaderTests : TestHelper
         var url = $"http://localhost:{port}";
 
         using var process = StartTestApplication(new() { Arguments = $"--urls {url}" });
-        Output.WriteLine($"ProcessName: {process.ProcessName}");
+        Output.WriteLine($"ProcessName: {process?.ProcessName}");
         using var helper = new ProcessHelper(process);
 
         await HealthzHelper.TestAsync($"{url}/alive-check", Output);
@@ -70,7 +70,7 @@ public class ServerTimingHeaderTests : TestHelper
 
         await client.GetAsync($"{url}/shutdown");
 
-        bool processTimeout = !process.WaitForExit((int)Helpers.Timeout.ProcessExit.TotalMilliseconds);
+        bool processTimeout = !process!.WaitForExit((int)TestTimeout.ProcessExit.TotalMilliseconds);
         if (processTimeout)
         {
             process.Kill();
