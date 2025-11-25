@@ -86,7 +86,23 @@ internal static class InstrumentationData
             new("aspnetcore.rate_limiting.request_lease.duration", histogram, "The duration of rate limiting leases held by HTTP requests on the server."),
             new("aspnetcore.rate_limiting.queued_requests", upDownCounter, "Number of HTTP requests that are currently queued, waiting to acquire a rate limiting lease."),
             new("aspnetcore.rate_limiting.request.time_in_queue", histogram, "The duration of HTTP requests in a queue, waiting to acquire a rate limiting lease."),
-            new("aspnetcore.rate_limiting.requests", counter,  "Number of requests that tried to acquire a rate limiting lease. Requests could be rejected by global or endpoint rate limiting policies. Or the request could be canceled while waiting for the lease.")
+            new("aspnetcore.rate_limiting.requests", counter,  "Number of requests that tried to acquire a rate limiting lease. Requests could be rejected by global or endpoint rate limiting policies. Or the request could be canceled while waiting for the lease."),
+            // following metrics .NET10+ only
+            new("aspnetcore.components.navigation", counter, "racks the total number of route changes in the app. Supported only on .NET 10+"),
+            new("aspnetcore.components.event_handler", histogram, "Measures the duration of processing browser events, including business logic of the component, excluding the duration of child component event handling. Supported only on .NET 10+"),
+            new("aspnetcore.components.update_parameters", histogram, "Measures the duration of processing component parameters, including business logic. Supported only on .NET 10+"),
+            new("aspnetcore.components.render_diff", histogram, "Tracks the duration of rendering batches. Supported only on .NET 10+"),
+            new("aspnetcore.components.circuit.active", upDownCounter, "Shows the number of active circuits currently in memory. Supported only on .NET 10+"),
+            new("aspnetcore.components.circuit.connected", upDownCounter, "Tracks the number of circuits connected to clients. Supported only on .NET 10+"),
+            new("aspnetcore.components.circuit.duration", histogram, "Measures circuit lifetime duration and provides total circuit count. Supported only on .NET 10+"),
+            new("aspnetcore.header_parsing.parse_errors", counter, "Number of errors that occurred when parsing HTTP request headers. Supported only on .NET 10+"),
+            new("aspnetcore.header_parsing.cache_accesses", counter, "Number of times a cache storing parsed header values was accessed. Supported only on .NET 10+"),
+            new("aspnetcore.authorization.attempts", counter, "The total number of requests for which authorization was attempted. Supported only on .NET 10+"),
+            new("aspnetcore.authentication.authenticate.duration", histogram, "The authentication duration for a request. Supported only on .NET 10+"),
+            new("aspnetcore.authentication.challenges", counter, "The total number of times a scheme is challenged. Supported only on .NET 10+"),
+            new("aspnetcore.authentication.forbids", counter, "The total number of times an authenticated user attempts to access a resource they aren't permitted to access. Supported only on .NET 10+"),
+            new("aspnetcore.authentication.sign_ins", counter, "The total number of times a principal is signed in with a scheme. Supported only on .NET 10+"),
+            new("aspnetcore.authentication.sign_outs", counter, "The total number of times a principal is signed out with a scheme. Supported only on .NET 10+")
         };
 
         var httpClientMetrics = new MetricData[]
