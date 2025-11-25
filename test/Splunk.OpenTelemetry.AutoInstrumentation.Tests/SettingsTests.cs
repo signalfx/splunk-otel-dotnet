@@ -56,6 +56,8 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             Assert.Equal("http://localhost:4318/v1/logs", settings.ProfilerLogsEndpoint.ToString());
             Assert.False(settings.CpuProfilerEnabled);
             Assert.False(settings.MemoryProfilerEnabled);
+            Assert.False(settings.SnapshotsEnabled);
+            Assert.False(settings.HighResolutionTimerEnabled);
             Assert.Equal(10000u, settings.CpuProfilerCallStackInterval);
             Assert.Equal(3000u, settings.ProfilerHttpClientTimeout);
             Assert.Equal(500u, settings.ProfilerExportInterval);
