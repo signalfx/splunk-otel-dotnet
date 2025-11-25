@@ -14,34 +14,20 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="MockLogsCollector.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
+// SPDX-License-Identifier: Apache-2.0
 
-#nullable disable
+using System.Collections.Concurrent;
+using System.Text;
+using OpenTelemetry.Proto.Collector.Logs.V1;
+using OpenTelemetry.Proto.Logs.V1;
+using Xunit.Abstractions;
 
 #if NETFRAMEWORK
 using System.Net;
 #else
 using Microsoft.AspNetCore.Http;
 #endif
-using System.Collections.Concurrent;
-using System.Text;
-using OpenTelemetry.Proto.Collector.Logs.V1;
-using OpenTelemetry.Proto.Logs.V1;
-using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
@@ -50,7 +36,9 @@ public class MockLogsCollector : IDisposable
     private readonly ITestOutputHelper _output;
     private readonly TestHttpServer _listener;
     private readonly BlockingCollection<LogRecord> _logs = new(100); // bounded to avoid memory leak
-    private readonly List<Expectation> _expectations = [];
+    private readonly List<Expectation> _expectations = new();
+
+    private CollectedExpectation? _collectedExpectation;
 
     public MockLogsCollector(ITestOutputHelper output, string host = "localhost")
     {
@@ -59,7 +47,7 @@ public class MockLogsCollector : IDisposable
 #if NETFRAMEWORK
         _listener = new(output, HandleHttpRequests, host, "/v1/logs/");
 #else
-        _listener = new(output, HandleHttpRequests, "/v1/logs");
+        _listener = new(output, nameof(MockLogsCollector), new PathHandler(HandleHttpRequests, "/v1/logs"));
 #endif
     }
 
@@ -78,11 +66,31 @@ public class MockLogsCollector : IDisposable
         _listener.Dispose();
     }
 
-    public void Expect(Func<LogRecord, bool> predicate, string description = null)
+    public void Expect(Func<LogRecord, bool> predicate, string? description = null)
     {
         description ??= "<no description>";
 
-        _expectations.Add(new Expectation { Predicate = predicate, Description = description });
+        _expectations.Add(new Expectation(predicate, description));
+    }
+
+    public void ExpectCollected(Func<ICollection<LogRecord>, bool> collectedExpectation, string description)
+    {
+        _collectedExpectation = new(collectedExpectation, description);
+    }
+
+    public void AssertCollected()
+    {
+        if (_collectedExpectation == null)
+        {
+            throw new InvalidOperationException("Expectation for collected logs was not set");
+        }
+
+        var collected = _logs.ToArray();
+
+        if (!_collectedExpectation.Predicate(collected))
+        {
+            FailCollectedExpectation(_collectedExpectation.Description, collected);
+        }
     }
 
     public void AssertExpectations(TimeSpan? timeout = null)
@@ -96,8 +104,8 @@ public class MockLogsCollector : IDisposable
         var expectationsMet = new List<LogRecord>();
         var additionalEntries = new List<LogRecord>();
 
-        timeout ??= Timeout.Expectation;
-        var cts = new CancellationTokenSource();
+        timeout ??= TestTimeout.Expectation;
+        using var cts = new CancellationTokenSource();
 
         try
         {
@@ -144,11 +152,24 @@ public class MockLogsCollector : IDisposable
 
     public void AssertEmpty(TimeSpan? timeout = null)
     {
-        timeout ??= Timeout.NoExpectation;
+        timeout ??= TestTimeout.NoExpectation;
         if (_logs.TryTake(out var logRecord, timeout.Value))
         {
             Assert.Fail($"Expected nothing, but got: {logRecord}");
         }
+    }
+
+    private static void FailCollectedExpectation(string? collectedExpectationDescription, LogRecord[] collectedLogRecords)
+    {
+        var message = new StringBuilder();
+        message.AppendLine($"Collected logs expectation failed: {collectedExpectationDescription}");
+        message.AppendLine("Collected logs:");
+        foreach (var logRecord in collectedLogRecords)
+        {
+            message.AppendLine($"    \"{logRecord}\"");
+        }
+
+        Assert.Fail(message.ToString());
     }
 
     private static void FailExpectations(
@@ -222,8 +243,27 @@ public class MockLogsCollector : IDisposable
 
     private class Expectation
     {
-        public Func<LogRecord, bool> Predicate { get; set; }
+        public Expectation(Func<LogRecord, bool> predicate, string? description)
+        {
+            Predicate = predicate;
+            Description = description;
+        }
 
-        public string Description { get; set; }
+        public Func<LogRecord, bool> Predicate { get; }
+
+        public string? Description { get; }
+    }
+
+    private class CollectedExpectation
+    {
+        public CollectedExpectation(Func<ICollection<LogRecord>, bool> predicate, string? description)
+        {
+            Predicate = predicate;
+            Description = description;
+        }
+
+        public Func<ICollection<LogRecord>, bool> Predicate { get; }
+
+        public string? Description { get; }
     }
 }

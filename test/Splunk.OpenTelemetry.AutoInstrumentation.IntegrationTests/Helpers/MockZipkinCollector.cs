@@ -14,30 +14,9 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="MockZipkinCollector.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
+// SPDX-License-Identifier: Apache-2.0
 
-#nullable disable
-
-#if NETFRAMEWORK
-using System.Net;
-using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers.Compatibility;
-#else
-using Microsoft.AspNetCore.Http;
-#endif
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.Serialization;
@@ -45,6 +24,13 @@ using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit.Abstractions;
+
+#if NETFRAMEWORK
+using System.Net;
+using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers.Compatibility;
+#else
+using Microsoft.AspNetCore.Http;
+#endif
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
@@ -54,7 +40,7 @@ public class MockZipkinCollector : IDisposable
     private readonly TestHttpServer _listener;
 
     private readonly BlockingCollection<ZSpanMock> _spans = new(100); // bounded to avoid memory leak
-    private readonly List<Expectation> _expectations = [];
+    private readonly List<Expectation> _expectations = new();
 
     public MockZipkinCollector(ITestOutputHelper output, string host = "localhost")
     {
@@ -62,7 +48,7 @@ public class MockZipkinCollector : IDisposable
 #if NETFRAMEWORK
         _listener = new TestHttpServer(output, HandleHttpRequests, host, "/api/v2/spans/");
 #else
-        _listener = new TestHttpServer(output, HandleHttpRequests, "/api/v2/spans");
+        _listener = new TestHttpServer(output, nameof(MockZipkinCollector), new PathHandler(HandleHttpRequests, "/api/v2/spans"));
 #endif
     }
 
@@ -78,12 +64,12 @@ public class MockZipkinCollector : IDisposable
         _listener.Dispose();
     }
 
-    public void Expect(Func<ZSpanMock, bool> predicate = null, string description = null)
+    public void Expect(Func<ZSpanMock, bool>? predicate = null, string? description = null)
     {
         predicate ??= x => true;
         description ??= "<no description>";
 
-        _expectations.Add(new Expectation { Predicate = predicate, Description = description });
+        _expectations.Add(new Expectation(predicate, description));
     }
 
     public void AssertExpectations(TimeSpan? timeout = null)
@@ -97,8 +83,8 @@ public class MockZipkinCollector : IDisposable
         var expectationsMet = new List<ZSpanMock>();
         var additionalEntries = new List<ZSpanMock>();
 
-        timeout ??= Timeout.Expectation;
-        var cts = new CancellationTokenSource();
+        timeout ??= TestTimeout.Expectation;
+        using var cts = new CancellationTokenSource();
 
         try
         {
@@ -226,14 +212,14 @@ public class MockZipkinCollector : IDisposable
             get => Convert.ToUInt64(_zipkinData["id"].ToString(), 16);
         }
 
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
-        public string Service
+        public string? Service
         {
-            get => _zipkinData["localEndpoint"]["serviceName"].ToString();
+            get => _zipkinData["localEndpoint"]?["serviceName"]?.ToString();
         }
 
-        public string Library { get; set; }
+        public string? Library { get; set; }
 
         public ActivityKind Kind
         {
@@ -259,14 +245,14 @@ public class MockZipkinCollector : IDisposable
         {
             get
             {
-                _zipkinData.TryGetValue("parentId", out JToken parentId);
+                _zipkinData.TryGetValue("parentId", out var parentId);
                 return parentId == null ? null : Convert.ToUInt64(parentId.ToString(), 16);
             }
         }
 
         public byte Error { get; set; }
 
-        public Dictionary<string, string> Tags { get; set; }
+        public Dictionary<string, string>? Tags { get; set; }
 
         public Dictionary<DateTimeOffset, Dictionary<string, object>> Logs
         {
@@ -274,13 +260,17 @@ public class MockZipkinCollector : IDisposable
             {
                 var logs = new Dictionary<DateTimeOffset, Dictionary<string, object>>();
 
-                if (_zipkinData.TryGetValue("annotations", out JToken annotations))
+                if (_zipkinData.TryGetValue("annotations", out var annotations) && annotations != null)
                 {
-                    foreach (var item in annotations.ToObject<List<Dictionary<string, object>>>())
+                    var list = annotations.ToObject<List<Dictionary<string, object>>>();
+                    if (list != null)
                     {
-                        DateTimeOffset timestamp = ((long)item["timestamp"]).UnixMicrosecondsToDateTimeOffset();
-                        item.Remove("timestamp");
-                        logs[timestamp] = item;
+                        foreach (var item in list)
+                        {
+                            var timestamp = ((long)item["timestamp"]).UnixMicrosecondsToDateTimeOffset();
+                            item.Remove("timestamp");
+                            logs[timestamp] = item;
+                        }
                     }
                 }
 
@@ -288,7 +278,7 @@ public class MockZipkinCollector : IDisposable
             }
         }
 
-        public Dictionary<string, double> Metrics { get; set; }
+        public Dictionary<string, double>? Metrics { get; set; }
 
         public override string ToString()
         {
@@ -329,6 +319,11 @@ public class MockZipkinCollector : IDisposable
         [OnDeserialized]
         private void OnDeserialized(StreamingContext context)
         {
+            if (Tags == null)
+            {
+                return;
+            }
+
             Library = Tags.GetValueOrDefault("otel.library.name");
 
             var error = Tags.GetValueOrDefault("error") ?? "false";
@@ -344,8 +339,14 @@ public class MockZipkinCollector : IDisposable
 
     private class Expectation
     {
-        public Func<ZSpanMock, bool> Predicate { get; set; }
+        public Expectation(Func<ZSpanMock, bool> predicate, string? description)
+        {
+            Predicate = predicate;
+            Description = description;
+        }
 
-        public string Description { get; set; }
+        public Func<ZSpanMock, bool> Predicate { get; }
+
+        public string? Description { get; }
     }
 }

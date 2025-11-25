@@ -14,34 +14,20 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="MockMetricsCollector.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
+// SPDX-License-Identifier: Apache-2.0
 
-#nullable disable
+using System.Collections.Concurrent;
+using System.Text;
+using OpenTelemetry.Proto.Collector.Metrics.V1;
+using OpenTelemetry.Proto.Metrics.V1;
+using Xunit.Abstractions;
 
 #if NETFRAMEWORK
 using System.Net;
 #else
 using Microsoft.AspNetCore.Http;
 #endif
-using System.Collections.Concurrent;
-using System.Text;
-using OpenTelemetry.Proto.Collector.Metrics.V1;
-using OpenTelemetry.Proto.Metrics.V1;
-using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
@@ -50,8 +36,9 @@ public class MockMetricsCollector : IDisposable
     private readonly ITestOutputHelper _output;
     private readonly TestHttpServer _listener;
 
-    private readonly List<Expectation> _expectations = [];
+    private readonly List<Expectation> _expectations = new();
     private readonly BlockingCollection<List<Collected>> _metricsSnapshots = new(10); // bounded to avoid memory leak; contains protobuf type
+    private Func<ICollection<Collected>, bool>? _additionalEntriesExpectation;
 
     public MockMetricsCollector(ITestOutputHelper output, string host = "localhost")
     {
@@ -59,7 +46,7 @@ public class MockMetricsCollector : IDisposable
 #if NETFRAMEWORK
         _listener = new(output, HandleHttpRequests, host, "/v1/metrics/");
 #else
-        _listener = new(output, HandleHttpRequests, "/v1/metrics");
+        _listener = new(output, nameof(MockMetricsCollector), new PathHandler(HandleHttpRequests, "/v1/metrics"));
 #endif
     }
 
@@ -72,18 +59,23 @@ public class MockMetricsCollector : IDisposable
 
     public void Dispose()
     {
-        WriteOutput($"Shutting down.");
+        WriteOutput("Shutting down.");
         ResourceExpector.Dispose();
         _metricsSnapshots.Dispose();
         _listener.Dispose();
     }
 
-    public void Expect(string instrumentationScopeName, Func<Metric, bool> predicate = null, string description = null)
+    public void Expect(string instrumentationScopeName, Func<Metric, bool>? predicate = null, string? description = null)
     {
         predicate ??= x => true;
         description ??= instrumentationScopeName;
 
-        _expectations.Add(new Expectation { InstrumentationScopeName = instrumentationScopeName, Predicate = predicate, Description = description });
+        _expectations.Add(new Expectation(instrumentationScopeName, predicate, description));
+    }
+
+    public void ExpectAdditionalEntries(Func<ICollection<Collected>, bool> additionalEntriesExpectation)
+    {
+        _additionalEntriesExpectation = additionalEntriesExpectation;
     }
 
     public void AssertExpectations(TimeSpan? timeout = null)
@@ -97,8 +89,8 @@ public class MockMetricsCollector : IDisposable
         var expectationsMet = new List<Collected>();
         var additionalEntries = new List<Collected>();
 
-        timeout ??= Timeout.Expectation;
-        var cts = new CancellationTokenSource();
+        timeout ??= TestTimeout.Expectation;
+        using var cts = new CancellationTokenSource();
 
         try
         {
@@ -106,8 +98,8 @@ public class MockMetricsCollector : IDisposable
             foreach (var collectedMetricsSnapshot in _metricsSnapshots.GetConsumingEnumerable(cts.Token))
             {
                 missingExpectations = new List<Expectation>(_expectations);
-                expectationsMet = [];
-                additionalEntries = [];
+                expectationsMet = new List<Collected>();
+                additionalEntries = new List<Collected>();
 
                 foreach (var collected in collectedMetricsSnapshot)
                 {
@@ -138,6 +130,11 @@ public class MockMetricsCollector : IDisposable
 
                 if (missingExpectations.Count == 0)
                 {
+                    if (_additionalEntriesExpectation != null && !_additionalEntriesExpectation(additionalEntries))
+                    {
+                        FailAdditionalEntriesExpectation(additionalEntries);
+                    }
+
                     return;
                 }
             }
@@ -145,25 +142,41 @@ public class MockMetricsCollector : IDisposable
         catch (ArgumentOutOfRangeException)
         {
             // CancelAfter called with non-positive value
-            FailMetrics(missingExpectations, expectationsMet, additionalEntries);
+            FailExpectations(missingExpectations, expectationsMet, additionalEntries);
         }
         catch (OperationCanceledException)
         {
             // timeout
-            FailMetrics(missingExpectations, expectationsMet, additionalEntries);
+            FailExpectations(missingExpectations, expectationsMet, additionalEntries);
         }
     }
 
     internal void AssertEmpty(TimeSpan? timeout = null)
     {
-        timeout ??= Timeout.NoExpectation;
-        if (_metricsSnapshots.TryTake(out var metricsResource, timeout.Value))
+        timeout ??= TestTimeout.NoExpectation;
+        while (_metricsSnapshots.TryTake(out var metricsResource, timeout.Value))
         {
-            Assert.Fail($"Expected nothing, but got: {metricsResource}");
+            if (metricsResource.Count > 0)
+            {
+                Assert.Fail($"Expected nothing, but got: {metricsResource}");
+            }
         }
     }
 
-    private static void FailMetrics(
+    private static void FailAdditionalEntriesExpectation(List<Collected> expectationsMet)
+    {
+        var message = new StringBuilder();
+        message.AppendLine("Additional entries - metrics expectation failed.");
+        message.AppendLine("Additional entries -  metrics:");
+        foreach (var line in expectationsMet)
+        {
+            message.AppendLine($"    \"{line}\"");
+        }
+
+        Assert.Fail(message.ToString());
+    }
+
+    private static void FailExpectations(
         List<Expectation> missingExpectations,
         List<Collected> expectationsMet,
         List<Collected> additionalEntries)
@@ -223,11 +236,7 @@ public class MockMetricsCollector : IDisposable
             {
                 foreach (var metric in scopeMetrics.Metrics ?? Enumerable.Empty<Metric>())
                 {
-                    metricsSnapshot.Add(new Collected
-                    {
-                        InstrumentationScopeName = scopeMetrics.Scope.Name,
-                        Metric = metric
-                    });
+                    metricsSnapshot.Add(new Collected(scopeMetrics.Scope.Name, metric));
                 }
             }
 
@@ -241,24 +250,37 @@ public class MockMetricsCollector : IDisposable
         _output.WriteLine($"[{name}]: {msg}");
     }
 
-    private class Expectation
+    public class Collected
     {
-        public string InstrumentationScopeName { get; set; }
+        public Collected(string instrumentationScopeName, Metric metric)
+        {
+            InstrumentationScopeName = instrumentationScopeName;
+            Metric = metric;
+        }
 
-        public Func<Metric, bool> Predicate { get; set; }
+        public string InstrumentationScopeName { get; }
 
-        public string Description { get; set; }
-    }
-
-    private class Collected
-    {
-        public string InstrumentationScopeName { get; set; }
-
-        public Metric Metric { get; set; } // protobuf type
+        public Metric Metric { get; } // protobuf type
 
         public override string ToString()
         {
             return $"InstrumentationScopeName = {InstrumentationScopeName}, Metric = {Metric}";
         }
+    }
+
+    private class Expectation
+    {
+        public Expectation(string instrumentationScopeName, Func<Metric, bool> predicate, string? description)
+        {
+            InstrumentationScopeName = instrumentationScopeName;
+            Predicate = predicate;
+            Description = description;
+        }
+
+        public string InstrumentationScopeName { get; }
+
+        public Func<Metric, bool> Predicate { get; }
+
+        public string? Description { get; }
     }
 }

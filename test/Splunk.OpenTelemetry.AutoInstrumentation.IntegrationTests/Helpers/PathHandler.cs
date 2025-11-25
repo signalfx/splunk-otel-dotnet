@@ -1,4 +1,4 @@
-// <copyright file="OutputHelper.cs" company="Splunk Inc.">
+// <copyright file="PathHandler.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,28 +17,21 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-using Xunit.Abstractions;
+#if NET
+using Microsoft.AspNetCore.Http;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-public static class OutputHelper
+public class PathHandler
 {
-    public static void WriteResult(this ITestOutputHelper outputHelper, ProcessHelper processHelper)
+    public PathHandler(RequestDelegate @delegate, string path)
     {
-        processHelper.Drain();
-
-        var standardOutput = processHelper.StandardOutput;
-        if (!string.IsNullOrWhiteSpace(standardOutput))
-        {
-            outputHelper.WriteLine("StandardOutput:");
-            outputHelper.WriteLine(standardOutput);
-        }
-
-        var standardError = processHelper.ErrorOutput;
-        if (!string.IsNullOrWhiteSpace(standardError))
-        {
-            outputHelper.WriteLine("StandardError:");
-            outputHelper.WriteLine(standardError);
-        }
+        Delegate = @delegate;
+        Path = path;
     }
+
+    public RequestDelegate Delegate { get; }
+
+    public string Path { get; }
 }
+#endif

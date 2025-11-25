@@ -42,7 +42,7 @@ public class ContinuousProfilerTests : TestHelper
         SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
         SetEnvironmentVariable("SPLUNK_PROFILER_MEMORY_ENABLED", "true");
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "TestApplication.ContinuousProfiler");
-        using var logsCollector = new MockLContinuousProfilerCollector(Output);
+        using var logsCollector = new MockContinuousProfilerCollector(Output);
         SetExporter(logsCollector);
         RunTestApplication();
         var logsData = logsCollector.GetAllLogs();
@@ -83,7 +83,7 @@ public class ContinuousProfilerTests : TestHelper
         SetEnvironmentVariable("SPLUNK_PROFILER_ENABLED", "true");
         SetEnvironmentVariable("SPLUNK_PROFILER_CALL_STACK_INTERVAL", "1000");
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "TestApplication.ContinuousProfiler");
-        using var logsCollector = new MockLContinuousProfilerCollector(Output);
+        using var logsCollector = new MockContinuousProfilerCollector(Output);
         SetExporter(logsCollector);
         RunTestApplication();
         var logsData = logsCollector.GetAllLogs();
