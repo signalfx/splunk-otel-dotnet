@@ -10,15 +10,15 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.29.3" />
+    <PackageReference Include="Google.Protobuf" Version="3.33.1" />
     <PackageReference Include="Grpc.Tools" Version="2.68.1" PrivateAssets="all" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="System.Collections.Immutable" Version="9.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="System.Collections.Immutable" Version="10.0.0" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.0" />
     <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
-    <PackageReference Include="Testcontainers" Version="4.1.0" />
-    <PackageReference Include="Verify.Xunit" Version="20.8.2" />
+    <PackageReference Include="Testcontainers" Version="4.9.0" />
+    <PackageReference Include="Verify.Xunit" Version="31.7.2" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' != 'net462'">
