@@ -162,7 +162,7 @@ internal static class InstrumentationData
                     new("process.cpu.count", upDownCounter, "Total CPU seconds broken down by different states, such as user and system.", conditionallyBundled),
                     new("process.threads", upDownCounter, "Process threads count.", conditionallyBundled))
             ]),
-            new("ILOGGER", new InstrumentedComponent("Microsoft.Extensions.Logging", "9.0.0 and higher"), "Not supported on .NET Framework", "beta", "community", new LogLists()),
+            new("ILOGGER", new InstrumentedComponent("Microsoft.Extensions.Logging", "8.0.0 and higher"), "Not supported on .NET Framework", "beta", "community", new LogLists()),
             new(["LOG4NET"], [new InstrumentedComponent("log4net", "2.0.13 to 4.0.0")], null, "beta", "community", [], [new LogLists()], [new Setting("OTEL_DOTNET_AUTO_LOGS_ENABLE_LOG4NET_BRIDGE", "Enables `log4net` bridge. When `log4net` logs bridge is enabled, and `log4net` is configured with at least 1 appender, application logs are exported in OTLP format in addition to being written into their currently configured destination.", "false", "boolean", SettingsData.InstrumentationCategory)])
         };
 
