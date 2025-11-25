@@ -24,7 +24,7 @@ fi
 if [ -z "$ARCHITECTURE" ]; then
   case $(uname -m) in
     x86_64)  ARCHITECTURE="x64" ;;
-    aarch64) ARCHITECTURE="arm64" ;;
+    aarch64|arm64) ARCHITECTURE="arm64" ;;
   esac
 fi
 

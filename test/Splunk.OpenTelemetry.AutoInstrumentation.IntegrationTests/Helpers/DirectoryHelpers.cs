@@ -1,4 +1,4 @@
-﻿// <copyright file="DirectoryHelpers.cs" company="Splunk Inc.">
+// <copyright file="DirectoryHelpers.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,9 @@
 // limitations under the License.
 // </copyright>
 
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 internal static class DirectoryHelpers
@@ -21,9 +24,9 @@ internal static class DirectoryHelpers
     public static DirectoryInfo CreateTempDirectory()
     {
 #if NET
-        return Directory.CreateTempSubdirectory("managed_logs");
+        return Directory.CreateTempSubdirectory("native_logs");
 #else
-        var tempDir = Path.Combine(Path.GetTempPath(), "managed_logs_" + Path.GetRandomFileName());
+        var tempDir = Path.Combine(Path.GetTempPath(), "native_logs_" + Path.GetRandomFileName());
         return Directory.CreateDirectory(tempDir);
 #endif
     }
