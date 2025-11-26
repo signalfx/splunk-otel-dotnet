@@ -14,27 +14,22 @@
 // limitations under the License.
 // </copyright>
 
-using static System.Net.WebRequestMethods;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration.Utils;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 
+[EmptyObjectOnEmptyYaml]
 internal class ProfilerConfiguration
 {
-    [YamlMember(Alias = "memory_enabled")]
-    public bool MemoryProfilerEnabled { get; set; } = false;
+    public bool MemoryEnabled { get; set; } = false;
 
-    [YamlMember(Alias = "logs_endpoint")]
     public string LogsEndpoint { get; set; } = "http://localhost:4318/v1/logs";
 
-    [YamlMember(Alias = "call_stack_interval")]
     public uint CallStackInterval { get; set; } = 10000;
 
-    [YamlMember(Alias = "export_interval")]
     public uint ExportInterval { get; set; } = 500;
 
-    [YamlMember(Alias = "export_timeout")]
     public uint ExportTimeout { get; set; } = 3000;
 
-    [YamlMember(Alias = "max_memory_samples")]
     public uint MaxMemorySamples { get; set; } = 200;
 }

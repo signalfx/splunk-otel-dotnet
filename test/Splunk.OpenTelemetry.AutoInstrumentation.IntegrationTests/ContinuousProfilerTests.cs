@@ -36,12 +36,22 @@ public class ContinuousProfilerTests : TestHelper
     {
     }
 
-    [Fact]
-    public async Task SubmitAllocationSamples()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SubmitAllocationSamples(bool isFileBased)
     {
         SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
-        SetEnvironmentVariable("SPLUNK_PROFILER_MEMORY_ENABLED", "true");
-        SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "TestApplication.ContinuousProfiler");
+        if (isFileBased)
+        {
+            EnableFileBasedConfigWithDefaultPath();
+        }
+        else
+        {
+            SetEnvironmentVariable("SPLUNK_PROFILER_MEMORY_ENABLED", "true");
+            SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "TestApplication.ContinuousProfiler");
+        }
+
         using var logsCollector = new MockLContinuousProfilerCollector(Output);
         SetExporter(logsCollector);
         RunTestApplication();
@@ -76,13 +86,23 @@ public class ContinuousProfilerTests : TestHelper
         }
     }
 
-    [Fact]
-    public async Task SubmitThreadSamples()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SubmitThreadSamples(bool isFileBased)
     {
         SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
-        SetEnvironmentVariable("SPLUNK_PROFILER_ENABLED", "true");
-        SetEnvironmentVariable("SPLUNK_PROFILER_CALL_STACK_INTERVAL", "1000");
-        SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "TestApplication.ContinuousProfiler");
+        if (isFileBased)
+        {
+            EnableFileBasedConfigWithDefaultPath();
+        }
+        else
+        {
+            SetEnvironmentVariable("SPLUNK_PROFILER_ENABLED", "true");
+            SetEnvironmentVariable("SPLUNK_PROFILER_CALL_STACK_INTERVAL", "1000");
+            SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "TestApplication.ContinuousProfiler");
+        }
+
         using var logsCollector = new MockLContinuousProfilerCollector(Output);
         SetExporter(logsCollector);
         RunTestApplication();

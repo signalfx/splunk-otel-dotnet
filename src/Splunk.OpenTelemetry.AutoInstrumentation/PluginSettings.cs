@@ -14,8 +14,11 @@
 // limitations under the License.
 // </copyright>
 
+using System.Reflection;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration.Utils;
+using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
@@ -28,6 +31,10 @@ internal class PluginSettings
     // Runtime suspensions done to collect thread samples often take ~0.25ms. Use `20ms` as default sampling interval
     // to limit induced overhead.
     private const int DefaultSnapshotSamplingIntervalMs = 20;
+
+    private static readonly bool IsYamlConfigEnabled = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.Enabled) == "true";
+
+    private static readonly ILogger Log = new Logger();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginSettings"/> class
@@ -78,14 +85,14 @@ internal class PluginSettings
         Realm = Constants.None;
         AccessToken = null;
         IsOtlpEndpointSet = false;
-        TraceResponseHeaderEnabled = configuration.TraceResponseHeaderEnabled;
+        TraceResponseHeaderEnabled = configuration.ResponseHeaderEnabled;
 
 #if NET
-        var profiler = configuration.Profiler;
+        var profiler = configuration.Profiling;
         if (profiler != null)
         {
             CpuProfilerEnabled = true;
-            MemoryProfilerEnabled = profiler.MemoryProfilerEnabled;
+            MemoryProfilerEnabled = profiler.MemoryEnabled;
             ProfilerLogsEndpoint = new Uri(profiler.LogsEndpoint);
             var exportInterval = profiler.ExportInterval;
             ProfilerExportInterval = exportInterval < 500u ? 500u : exportInterval;
@@ -99,7 +106,7 @@ internal class PluginSettings
             CpuProfilerCallStackInterval = callStackInterval < 0u ? 10000u : callStackInterval;
         }
 
-        var callGraphs = configuration.CallGraphs;
+        var callGraphs = configuration.Callgraphs;
         if (callGraphs != null)
         {
             SnapshotsEnabled = true;
@@ -143,6 +150,21 @@ internal class PluginSettings
 
     public static PluginSettings FromDefaultSources()
     {
+        if (IsYamlConfigEnabled)
+        {
+            var fileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName) ?? "config.yaml";
+
+            var splunkConfiguration = LoadSplunkConfig(fileName);
+            if (splunkConfiguration != null)
+            {
+                return new PluginSettings(splunkConfiguration);
+            }
+            else
+            {
+                Log.Error($"Failed to load Splunk configuration from file '{fileName}'. Falling back to environment variables.");
+            }
+        }
+
         var configurationSource = new CompositeConfigurationSource
         {
             new EnvironmentConfigurationSource(),
@@ -175,4 +197,44 @@ internal class PluginSettings
         return new Uri(profilerLogsEndpoint);
     }
 #endif
+
+    private static SplunkConfiguration? LoadSplunkConfig(string fileName)
+    {
+        var parserTypeFullName = "OpenTelemetry.AutoInstrumentation.Configurations.FileBasedConfiguration.Parser.Parser";
+
+        var parserType = AppDomain.CurrentDomain
+            .GetAssemblies()
+            .Select(a => a.GetType(parserTypeFullName, throwOnError: false, ignoreCase: false))
+            .FirstOrDefault(t => t != null);
+
+        if (parserType == null)
+        {
+            throw new TypeLoadException($"Could not find Parser type for YAML configuration parsing.");
+        }
+
+        var parseYaml = parserType
+            .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+            .FirstOrDefault(m =>
+                m.Name == "ParseYaml" &&
+                m.IsGenericMethodDefinition &&
+                m.GetParameters().Length == 1 &&
+                m.GetParameters()[0].ParameterType == typeof(string));
+
+        if (parseYaml == null)
+        {
+            throw new MissingMethodException(parserType.FullName, "ParseYaml<T>(string)");
+        }
+
+        var closed = parseYaml.MakeGenericMethod(typeof(SplunkWrapper));
+
+        var wrapperObj = closed.Invoke(null, [fileName]);
+        if (wrapperObj == null)
+        {
+            return null;
+        }
+
+        var splunkProp = wrapperObj.GetType().GetProperty("Splunk", BindingFlags.Public | BindingFlags.Instance);
+
+        return (SplunkConfiguration?)splunkProp?.GetValue(wrapperObj);
+    }
 }

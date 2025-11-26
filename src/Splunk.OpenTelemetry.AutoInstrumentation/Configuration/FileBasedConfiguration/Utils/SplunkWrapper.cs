@@ -1,4 +1,4 @@
-﻿// <copyright file="SplunkConfiguration.cs" company="Splunk Inc.">
+﻿// <copyright file="SplunkWrapper.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,13 +14,9 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration.Utils;
 
-internal class SplunkConfiguration
+internal class SplunkWrapper
 {
-    public bool ResponseHeaderEnabled { get; set; } = false;
-
-    public ProfilerConfiguration? Profiling { get; set; }
-
-    public CallGraphsConfiguration? Callgraphs { get; set; }
+    public SplunkConfiguration? Splunk { get; set; }
 }

@@ -14,13 +14,14 @@
 // limitations under the License.
 // </copyright>
 
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration.Utils;
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 
+[EmptyObjectOnEmptyYaml]
 internal class CallGraphsConfiguration
 {
-    [YamlMember(Alias = "sampling_interval")]
     public int SamplingInterval { get; set; } = 20;
 
-    [YamlMember(Alias = "selection_probability")]
     public double SelectionProbability { get; set; } = 0.01;
 }

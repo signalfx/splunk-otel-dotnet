@@ -1,0 +1,20 @@
+file_format: "1.0-rc.1"
+
+# logger_provider:
+#   processors:
+#     - batch:
+#         exporter:
+#           otlp_http:
+#             endpoint: ${SPLUNK_PROFILER_LOGS_ENDPOINT}
+
+instrumentation/development:
+  dotnet:
+    traces:
+      additional_sources:
+        - "TestApplication.ContinuousProfiler"
+
+splunk:
+  profiling:
+    memory_enabled: true
+    call_stack_interval: 1000
+    logs_endpoint: ${SPLUNK_PROFILER_LOGS_ENDPOINT}

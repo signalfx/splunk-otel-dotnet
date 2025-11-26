@@ -63,8 +63,71 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 #endif
         }
 
+        [Fact]
+        internal void PluginSettings_FileBased()
+        {
+            Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.Enabled, "true");
+            Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName, "ConfigFiles/config.yaml");
+            var settings = PluginSettings.FromDefaultSources();
+
+            Assert.True(settings.TraceResponseHeaderEnabled);
+#if NET
+            Assert.True(settings.CpuProfilerEnabled);
+            Assert.True(settings.MemoryProfilerEnabled);
+            Assert.Equal("http://localhost:4444/v1/logs", settings.ProfilerLogsEndpoint.ToString());
+            Assert.Equal(1000u, settings.CpuProfilerCallStackInterval);
+            Assert.Equal(300u, settings.ProfilerHttpClientTimeout);
+            Assert.Equal(50u, settings.ProfilerExportInterval);
+            Assert.Equal(20u, settings.MemoryProfilerMaxMemorySamplesPerMinute);
+
+            Assert.True(settings.SnapshotsEnabled);
+            Assert.Equal(0.2, settings.SnapshotsSelectionRate);
+            Assert.Equal(15, settings.SnapshotsSamplingInterval);
+#endif
+        }
+
+        [Fact]
+        internal void PluginSettings_FileBasedEnvVar()
+        {
+            Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.Enabled, "true");
+            Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName, "ConfigFiles/updatedConfig.yaml");
+
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled, "true");
+#if NET
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, "2000");
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled, "true");
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint, "http://localhost:9999/v1/logs");
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportTimeout, "600");
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportInterval, "120");
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples, "10");
+
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, "25");
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Snapshots.SelectionRate, "0.1");
+#endif
+
+            var settings = PluginSettings.FromDefaultSources();
+
+            Assert.True(settings.TraceResponseHeaderEnabled);
+#if NET
+            Assert.True(settings.CpuProfilerEnabled);
+            Assert.True(settings.MemoryProfilerEnabled);
+            Assert.Equal("http://localhost:9999/v1/logs", settings.ProfilerLogsEndpoint.ToString());
+            Assert.Equal(2000u, settings.CpuProfilerCallStackInterval);
+            Assert.Equal(600u, settings.ProfilerHttpClientTimeout);
+            Assert.Equal(120u, settings.ProfilerExportInterval);
+            Assert.Equal(10u, settings.MemoryProfilerMaxMemorySamplesPerMinute);
+
+            Assert.True(settings.SnapshotsEnabled);
+            Assert.Equal(0.1, settings.SnapshotsSelectionRate);
+            Assert.Equal(25, settings.SnapshotsSamplingInterval);
+#endif
+            ClearEnvVars();
+        }
+
         private static void ClearEnvVars()
         {
+            Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.Enabled, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Realm, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AccessToken, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled, null);
