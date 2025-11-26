@@ -52,7 +52,7 @@ public class ContinuousProfilerTests : TestHelper
             SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "TestApplication.ContinuousProfiler");
         }
 
-        using var logsCollector = new MockLContinuousProfilerCollector(Output);
+        using var logsCollector = new MockContinuousProfilerCollector(Output);
         SetExporter(logsCollector);
         RunTestApplication();
         var logsData = logsCollector.GetAllLogs();
@@ -103,7 +103,7 @@ public class ContinuousProfilerTests : TestHelper
             SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "TestApplication.ContinuousProfiler");
         }
 
-        using var logsCollector = new MockLContinuousProfilerCollector(Output);
+        using var logsCollector = new MockContinuousProfilerCollector(Output);
         SetExporter(logsCollector);
         RunTestApplication();
         var logsData = logsCollector.GetAllLogs();
