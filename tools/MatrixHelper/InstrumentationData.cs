@@ -88,7 +88,7 @@ internal static class InstrumentationData
             new("aspnetcore.rate_limiting.request.time_in_queue", histogram, "The duration of HTTP requests in a queue, waiting to acquire a rate limiting lease."),
             new("aspnetcore.rate_limiting.requests", counter,  "Number of requests that tried to acquire a rate limiting lease. Requests could be rejected by global or endpoint rate limiting policies. Or the request could be canceled while waiting for the lease."),
             // following metrics .NET10+ only
-            new("aspnetcore.components.navigation", counter, "racks the total number of route changes in the app. Supported only on .NET 10+"),
+            new("aspnetcore.components.navigation", counter, "Tracks the total number of route changes in the app. Supported only on .NET 10+"),
             new("aspnetcore.components.event_handler", histogram, "Measures the duration of processing browser events, including business logic of the component, excluding the duration of child component event handling. Supported only on .NET 10+"),
             new("aspnetcore.components.update_parameters", histogram, "Measures the duration of processing component parameters, including business logic. Supported only on .NET 10+"),
             new("aspnetcore.components.render_diff", histogram, "Tracks the duration of rendering batches. Supported only on .NET 10+"),
