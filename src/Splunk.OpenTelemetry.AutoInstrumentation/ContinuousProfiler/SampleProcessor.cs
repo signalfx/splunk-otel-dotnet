@@ -31,7 +31,7 @@ internal class SampleProcessor
     private readonly KeyValue _format;
     private readonly KeyValue _profilingDataTypeCpu;
     private readonly KeyValue _profilingDataTypeAllocation;
-    private readonly KeyValue _instrumentationSource;
+    private readonly KeyValue _snapshotInstrumentationSource;
     private uint _selectedSamplingPeriod;
     private uint _continuousSamplingPeriod;
 
@@ -40,7 +40,7 @@ internal class SampleProcessor
         _format = GdiProfilingConventions.LogRecord.Attributes.Format("pprof-gzip-base64");
         _profilingDataTypeCpu = GdiProfilingConventions.LogRecord.Attributes.Type("cpu");
         _profilingDataTypeAllocation = GdiProfilingConventions.LogRecord.Attributes.Type("allocation");
-        _instrumentationSource = GdiProfilingConventions.LogRecord.Attributes.InstrumentationSource("snapshot");
+        _snapshotInstrumentationSource = GdiProfilingConventions.LogRecord.Attributes.InstrumentationSource("snapshot");
     }
 
     public uint ContinuousSamplingPeriod
@@ -92,7 +92,7 @@ internal class SampleProcessor
         var totalFrameCount = CountFrames(selectedSamples);
 
         var processSelectedSamples = BuildLogRecord(selectedSampleProfile, _profilingDataTypeCpu, totalFrameCount);
-        processSelectedSamples.Attributes.Add(_instrumentationSource);
+        processSelectedSamples.Attributes.Add(_snapshotInstrumentationSource);
         return processSelectedSamples;
     }
 

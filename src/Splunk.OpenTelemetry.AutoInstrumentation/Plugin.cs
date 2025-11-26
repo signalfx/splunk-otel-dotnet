@@ -134,17 +134,7 @@ public class Plugin
             // This is needed because Baggage.Current is set by instrumentation after activity is started.
             options.EnrichWithHttpRequest += (activity, _) =>
             {
-                if (!SnapshotVolumeDetector.IsLoud(Baggage.Current))
-                {
-                    return;
-                }
-
-                if (activity.IsEntry())
-                {
-                    activity.MarkLoud();
-                }
-
-                SnapshotFilter.Instance.Add(activity);
+                SnapshotProcessorHelper.Instance.ProcessSpanStart(activity);
             };
         }
     }
@@ -209,7 +199,9 @@ public class Plugin
             }
 
             global::OpenTelemetry.Sdk.SetDefaultTextMapPropagator(new CompositeTextMapPropagator([currentPropagator, new SnapshotVolumePropagator(new CompositeSelector(Settings.SnapshotsSelectionRate))]));
-            builder.AddProcessor(new SnapshotSelectingProcessor());
+            builder.AddProcessor(new SnapshotSelectingProcessor(SnapshotProcessorHelper.Instance));
+            // Timer in SnapshotProcessorHelper will be disposed when SDK is shutdown.
+            builder.AddInstrumentation(SnapshotProcessorHelper.Instance);
         }
 
         return builder;
