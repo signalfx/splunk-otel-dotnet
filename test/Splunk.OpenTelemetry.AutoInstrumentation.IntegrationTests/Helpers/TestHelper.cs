@@ -132,13 +132,6 @@ public abstract class TestHelper
     /// Assertion exceptions are thrown if it timed out or the exit code is non-zero.
     /// </summary>
     /// <param name="testSettings">Test settings</param>
-    public void RunTestApplication(TestSettings testSettings = null)
-    public void EnableFileBasedConfigWithDefaultPath()
-    {
-        SetEnvironmentVariable("OTEL_EXPERIMENTAL_FILE_BASED_CONFIGURATION_ENABLED", "true");
-        SetEnvironmentVariable("OTEL_EXPERIMENTAL_CONFIG_FILE", Path.Combine(EnvironmentHelper.GetTestApplicationApplicationOutputDirectory(), "config.yaml"));
-    }
-
     public (string StandardOutput, string ErrorOutput, int ProcessId) RunTestApplication(TestSettings? testSettings = null)
     {
         // RunTestApplication starts the test application, wait up to DefaultProcessTimeout.
