@@ -37,7 +37,7 @@ internal static class SettingsData
             new("OTEL_DOTNET_AUTO_TRACES_ENABLED", "Long Traces are collected by default. To deactivate trace collection, set the environment variable to `false`. Data from custom or manual instrumentation is not affected.", "true", "boolean", GeneralCategory),
             new("OTEL_DOTNET_AUTO_METRICS_ENABLED", "Metrics are collected by default. To deactivate metric collection, set the environment variable to `false`. Data from custom or manual instrumentation is not affected.", "true", "boolean", GeneralCategory),
             new("OTEL_DOTNET_AUTO_LOGS_ENABLED", "Logs are collected by default. To deactivate log collection, set the environment variable to `false`. Data from custom or manual instrumentation is not affected.", "true", "boolean", GeneralCategory),
-            new("OTEL_DOTNET_AUTO_OPENTRACING_ENABLED", "Activates the OpenTracing tracer. The default value is `false`.", "false", "boolean", GeneralCategory),
+            new("OTEL_DOTNET_AUTO_OPENTRACING_ENABLED", "This feature is deprecated. Avoid usage. Convert your OpenTracing dependency to OpenTelemetry. It activates the OpenTracing tracer. The default value is `false`.", "false", "boolean", GeneralCategory),
             new("OTEL_DOTNET_AUTO_NETFX_REDIRECT_ENABLED", "Activates immediate redirection of the assemblies used by the automatic instrumentation on the .NET Framework. The default values is `true`. Can't be set using the web.config or app.config files.", "true", "boolean", GeneralCategory),
             new("OTEL_DOTNET_AUTO_FLUSH_ON_UNHANDLEDEXCEPTION", "Controls whether the telemetry data is flushed when an `AppDomain.UnhandledException` event is raised. Set to `true` when experiencing missing telemetry at the same time of unhandled exceptions.", "false", "boolean", GeneralCategory),
             new("OTEL_DOTNET_AUTO_RULE_ENGINE_ENABLED", "Activates RuleEngine. The default values is `true`. RuleEngine increases the stability of the instrumentation by validating assemblies for unsupported scenarios.", "true", "boolean", GeneralCategory),
@@ -68,6 +68,7 @@ internal static class SettingsData
             new("SPLUNK_SNAPSHOT_PROFILER_ENABLED", "Activates snapshots collection.", "false", "boolean", ProfilingCategory),
             new("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL", "Sampling interval for snapshot collections, in milliseconds.", "20", "int", ProfilingCategory),
             new("SPLUNK_SNAPSHOT_SELECTION_PROBABILITY", "Sets probability of selecting trace for snapshots.", "0.01", "double", ProfilingCategory),
+            new("SPLUNK_SNAPSHOT_HIGH_RES_TIMER_ENABLED", "Sets default timer precision on Windows to 1ms.", "false", "bool", ProfilingCategory),
 
             // trace propagation
             new("OTEL_PROPAGATORS", "Comma-separated list of propagators for the tracer. The default value is `tracecontext,baggage`. Supported values are `b3multi`, `b3`, `tracecontext`, and `baggage`.", "tracecontext,baggage", "string", TracePropagationCategory),
@@ -101,7 +102,7 @@ internal static class SettingsData
             // diagnostic logging
             new("OTEL_DOTNET_AUTO_LOGGER", "AutoInstrumentation diagnostic logs sink. (supported values: `none`,`file`,`console`.", "file", "string", DiagnosticCategory),
             new("OTEL_LOG_LEVEL", "Sets the logging level for instrumentation log messages. Possible values are `none`, `error`, `warn`, `info`, and `debug`. Can't be set using the web.config or app.config files.", "info", "string", DiagnosticCategory),
-            new("OTEL_DOTNET_AUTO_LOG_DIRECTORY", "Directory of the .NET tracer logs. The default value is `/var/log/opentelemetry/dotnet` for Linux, and `%ProgramData%\\OpenTelemetry .NET AutoInstrumentation\\logs` for Windows. Can't be set using the web.config or app.config files.", string.Empty, "string", DiagnosticCategory),
+            new("OTEL_DOTNET_AUTO_LOG_DIRECTORY", @"Directory of the .NET tracer logs. The default value is `/var/log/opentelemetry/dotnet` for Linux, and `%ProgramData%\OpenTelemetry .NET AutoInstrumentation\logs` for Windows. Can't be set using the web.config or app.config files.", string.Empty, "string", DiagnosticCategory),
             new("OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED", "Deprecated. Whether the traces console exporter is activated. It can be configured by `OTEL_TRACES_EXPORTER`.", "false", "boolean", DiagnosticCategory)
         };
 

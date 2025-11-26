@@ -57,6 +57,7 @@ internal class PluginSettings
 #if NET
         CpuProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled) ?? false;
         SnapshotsEnabled = source.GetBool(ConfigurationKeys.Splunk.Snapshots.Enabled) ?? false;
+        HighResolutionTimerEnabled = source.GetBool(ConfigurationKeys.Splunk.Snapshots.HighResolutionTimerEnabled) ?? false;
 
         SnapshotsSamplingInterval = source.GetInt32(ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs) ?? DefaultSnapshotSamplingIntervalMs;
         var configuredSelectionRate = source.GetDouble(ConfigurationKeys.Splunk.Snapshots.SelectionRate) ?? DefaultSnapshotSelectionRate;
@@ -121,6 +122,8 @@ internal class PluginSettings
     public int SnapshotsSamplingInterval { get; set; }
 
     public bool SnapshotsEnabled { get; set; }
+
+    public bool HighResolutionTimerEnabled { get; set; }
 
     public double SnapshotsSelectionRate { get; set; }
 

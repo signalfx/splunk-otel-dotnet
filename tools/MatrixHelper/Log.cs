@@ -16,6 +16,4 @@
 
 namespace MatrixHelper;
 
-internal class Log
-{
-}
+internal class Log;

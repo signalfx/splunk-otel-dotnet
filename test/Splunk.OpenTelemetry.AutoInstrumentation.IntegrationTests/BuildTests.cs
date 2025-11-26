@@ -35,7 +35,6 @@ using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests;
 
-[UsesVerify]
 public class BuildTests
 {
     [Fact]

@@ -18,5 +18,5 @@ namespace MatrixHelper;
 
 internal class LogLists : SignalsList
 {
-    public Log[] Logs { get; set; } = Array.Empty<Log>();
+    public Log[] Logs { get; set; } = [];
 }

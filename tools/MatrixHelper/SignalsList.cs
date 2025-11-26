@@ -16,6 +16,4 @@
 
 namespace MatrixHelper;
 
-internal class SignalsList
-{
-}
+internal class SignalsList;

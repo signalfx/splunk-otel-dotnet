@@ -7,15 +7,24 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.11.0...HEAD)
 
+This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.13.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.13.0).
+
+This release includes all changes from [1.12.0-beta.1](https://github.com/signalfx/splunk-otel-dotnet/releases/tag/v1.12.0-beta.1)
+release.
+
 ### Added
 
 ### Changed
 
-- **Breaking change for 1.12.0-beta.1 users**. Environmental variable
+- **Breaking change for 1.12.0-beta.1 users**. Environment variable
   `SPLUNK_SNAPSHOT_SELECTION_RATE` renamed to
   `SPLUNK_SNAPSHOT_SELECTION_PROBABILITY`.
 
 ### Deprecated
+
+- Support for environment variable `OTEL_DOTNET_AUTO_OPENTRACING_ENABLED`
+  is deprecated. If your application is still depending on legacy [OpenTracing](https://www.nuget.org/packages/OpenTracing)
+  update it to use OpenTelemetry API.
 
 ### Removed
 

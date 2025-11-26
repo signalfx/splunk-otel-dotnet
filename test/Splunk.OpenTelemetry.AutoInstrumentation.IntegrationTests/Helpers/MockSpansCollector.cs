@@ -14,34 +14,20 @@
 // limitations under the License.
 // </copyright>
 
-// <copyright file="MockSpansCollector.cs" company="OpenTelemetry Authors">
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
+// SPDX-License-Identifier: Apache-2.0
 
-#nullable disable
+using System.Collections.Concurrent;
+using System.Text;
+using OpenTelemetry.Proto.Collector.Trace.V1;
+using OpenTelemetry.Proto.Trace.V1;
+using Xunit.Abstractions;
 
 #if NETFRAMEWORK
 using System.Net;
 #else
 using Microsoft.AspNetCore.Http;
 #endif
-using System.Collections.Concurrent;
-using System.Text;
-using OpenTelemetry.Proto.Collector.Trace.V1;
-using OpenTelemetry.Proto.Trace.V1;
-using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
@@ -51,7 +37,8 @@ public class MockSpansCollector : IDisposable
     private readonly TestHttpServer _listener;
 
     private readonly BlockingCollection<Collected> _spans = new(100); // bounded to avoid memory leak
-    private readonly List<Expectation> _expectations = [];
+    private readonly List<Expectation> _expectations = new();
+    private Func<ICollection<Collected>, bool>? _collectedExpectation;
 
     public MockSpansCollector(ITestOutputHelper output, string host = "localhost")
     {
@@ -60,7 +47,7 @@ public class MockSpansCollector : IDisposable
 #if NETFRAMEWORK
         _listener = new TestHttpServer(output, HandleHttpRequests, host, "/v1/traces/");
 #else
-        _listener = new TestHttpServer(output, HandleHttpRequests, "/v1/traces");
+        _listener = new TestHttpServer(output, nameof(MockSpansCollector), new PathHandler(HandleHttpRequests, "/v1/traces"));
 #endif
     }
 
@@ -79,12 +66,17 @@ public class MockSpansCollector : IDisposable
         _listener.Dispose();
     }
 
-    public void Expect(string instrumentationScopeName, Func<Span, bool> predicate = null, string description = null)
+    public void Expect(string instrumentationScopeName, Func<Span, bool>? predicate = null, string? description = null)
     {
+        description ??= $"<no description> Instrumentation Scope Name: '{instrumentationScopeName}', predicate is null: '{predicate == null}'";
         predicate ??= x => true;
-        description ??= "<no description>";
 
-        _expectations.Add(new Expectation { InstrumentationScopeName = instrumentationScopeName, Predicate = predicate, Description = description });
+        _expectations.Add(new Expectation(instrumentationScopeName, predicate, description));
+    }
+
+    public void ExpectCollected(Func<ICollection<Collected>, bool> collectedExpectation)
+    {
+        _collectedExpectation = collectedExpectation;
     }
 
     public void AssertExpectations(TimeSpan? timeout = null)
@@ -98,8 +90,8 @@ public class MockSpansCollector : IDisposable
         var expectationsMet = new List<Collected>();
         var additionalEntries = new List<Collected>();
 
-        timeout ??= Timeout.Expectation;
-        var cts = new CancellationTokenSource();
+        timeout ??= TestTimeout.Expectation;
+        using var cts = new CancellationTokenSource();
 
         try
         {
@@ -133,6 +125,11 @@ public class MockSpansCollector : IDisposable
 
                 if (missingExpectations.Count == 0)
                 {
+                    if (_collectedExpectation != null && !_collectedExpectation(expectationsMet))
+                    {
+                        FailCollectedExpectation(expectationsMet);
+                    }
+
                     return;
                 }
             }
@@ -151,11 +148,24 @@ public class MockSpansCollector : IDisposable
 
     public void AssertEmpty(TimeSpan? timeout = null)
     {
-        timeout ??= Timeout.NoExpectation;
+        timeout ??= TestTimeout.NoExpectation;
         if (_spans.TryTake(out var resourceSpan, timeout.Value))
         {
             Assert.Fail($"Expected nothing, but got: {resourceSpan}");
         }
+    }
+
+    private static void FailCollectedExpectation(List<Collected> expectationsMet)
+    {
+        var message = new StringBuilder();
+        message.AppendLine("Collected spans expectation failed.");
+        message.AppendLine("Collected spans:");
+        foreach (var line in expectationsMet)
+        {
+            message.AppendLine($"    \"{line}\"");
+        }
+
+        Assert.Fail(message.ToString());
     }
 
     private static void FailExpectations(
@@ -215,11 +225,7 @@ public class MockSpansCollector : IDisposable
             {
                 foreach (var span in scopeSpans.Spans ?? Enumerable.Empty<Span>())
                 {
-                    _spans.Add(new Collected
-                    {
-                        InstrumentationScopeName = scopeSpans.Scope.Name,
-                        Span = span
-                    });
+                    _spans.Add(new Collected(scopeSpans.Scope.Name, span));
                 }
             }
         }
@@ -231,24 +237,37 @@ public class MockSpansCollector : IDisposable
         _output.WriteLine($"[{name}]: {msg}");
     }
 
-    private class Expectation
+    public class Collected
     {
-        public string InstrumentationScopeName { get; set; }
+        public Collected(string instrumentationScopeName, Span span)
+        {
+            InstrumentationScopeName = instrumentationScopeName;
+            Span = span;
+        }
 
-        public Func<Span, bool> Predicate { get; set; }
+        public string InstrumentationScopeName { get; }
 
-        public string Description { get; set; }
-    }
-
-    private class Collected
-    {
-        public string InstrumentationScopeName { get; set; }
-
-        public Span Span { get; set; } // protobuf type
+        public Span Span { get; } // protobuf type
 
         public override string ToString()
         {
             return $"InstrumentationScopeName = {InstrumentationScopeName}, Span = {Span}";
         }
+    }
+
+    private class Expectation
+    {
+        public Expectation(string instrumentationScopeName, Func<Span, bool> predicate, string? description)
+        {
+            InstrumentationScopeName = instrumentationScopeName;
+            Predicate = predicate;
+            Description = description;
+        }
+
+        public string InstrumentationScopeName { get; }
+
+        public Func<Span, bool> Predicate { get; }
+
+        public string? Description { get; }
     }
 }

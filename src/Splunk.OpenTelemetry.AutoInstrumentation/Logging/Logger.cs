@@ -52,7 +52,8 @@ internal class Logger : ILogger
             var isDebugEnabledResult = isLogLevelEnabled?.Invoke(Log, [debugLevel]);
             IsDebugEnabledField = isDebugEnabledResult is true;
 
-            AppDomain.CurrentDomain.ProcessExit += (_, _) => closeLoggerMethod.Invoke(null, [SplunkLoggerSuffix, Log]);
+            AppDomain.CurrentDomain.ProcessExit += (_, _) => CloseLogger(closeLoggerMethod);
+            AppDomain.CurrentDomain.DomainUnload += (_, _) => CloseLogger(closeLoggerMethod);
         }
         catch (Exception ex)
         {
@@ -80,6 +81,11 @@ internal class Logger : ILogger
     public void Error(Exception ex, string message)
     {
         ErrorWithExceptionMethod?.Invoke(Log, [ex, message, true]);
+    }
+
+    private static void CloseLogger(MethodInfo closeLoggerMethod)
+    {
+        closeLoggerMethod.Invoke(null, [SplunkLoggerSuffix, Log]);
     }
 
     private static MethodInfo? GetMethod(string method)

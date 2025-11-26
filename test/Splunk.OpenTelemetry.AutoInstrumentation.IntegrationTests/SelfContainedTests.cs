@@ -59,7 +59,7 @@ public sealed class SelfContainedTests : TestHelper
     {
         RunAndAssertHttpSpans(() =>
         {
-            using var testServer = TestHttpServer.CreateDefault(Output);
+            using var testServer = TestHttpServer.CreateDefaultTestServer(Output);
             var instrumentationTarget = Path.Combine(_selfContainedAppDir, EnvironmentHelper.FullTestApplicationName);
             instrumentationTarget = EnvironmentTools.IsWindows() ? instrumentationTarget + ".exe" : instrumentationTarget;
             RunInstrumentationTarget($"{instrumentationTarget} --test-server-port {testServer.Port}");
@@ -72,7 +72,7 @@ public sealed class SelfContainedTests : TestHelper
     {
         RunAndAssertHttpSpans(() =>
         {
-            using var testServer = TestHttpServer.CreateDefault(Output);
+            using var testServer = TestHttpServer.CreateDefaultTestServer(Output);
             var dllName = EnvironmentHelper.FullTestApplicationName.EndsWith(".exe")
                 ? EnvironmentHelper.FullTestApplicationName.Replace(".exe", ".dll")
                 : EnvironmentHelper.FullTestApplicationName + ".dll";
@@ -95,7 +95,7 @@ public sealed class SelfContainedTests : TestHelper
 
         Assert.NotNull(process);
 
-        bool processTimeout = !process!.WaitForExit((int)Helpers.Timeout.ProcessExit.TotalMilliseconds);
+        bool processTimeout = !process!.WaitForExit((int)TestTimeout.ProcessExit.TotalMilliseconds);
         if (processTimeout)
         {
             process.Kill();

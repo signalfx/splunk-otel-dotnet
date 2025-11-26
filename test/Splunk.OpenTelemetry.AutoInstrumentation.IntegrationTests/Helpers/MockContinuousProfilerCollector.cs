@@ -1,4 +1,4 @@
-// <copyright file="MockLContinuousProfilerCollector.cs" company="Splunk Inc.">
+// <copyright file="MockContinuousProfilerCollector.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,17 +40,17 @@ using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-public class MockLContinuousProfilerCollector : IDisposable
+public class MockContinuousProfilerCollector : IDisposable
 {
     private readonly ITestOutputHelper _output;
     private readonly TestHttpServer _listener;
     private readonly BlockingCollection<ExportLogsServiceRequest> _logs = new(100); // bounded to avoid memory leak
 
-    public MockLContinuousProfilerCollector(ITestOutputHelper output, string host = "localhost")
+    public MockContinuousProfilerCollector(ITestOutputHelper output, string host = "localhost")
     {
         _output = output;
 
-        _listener = new(output, HandleHttpRequests, "/v1/logs");
+        _listener = new(output, nameof(MockContinuousProfilerCollector), new PathHandler(HandleHttpRequests, "/v1/logs"));
     }
 
     /// <summary>
@@ -86,7 +86,7 @@ public class MockLContinuousProfilerCollector : IDisposable
 
     private void WriteOutput(string msg)
     {
-        const string name = nameof(MockLContinuousProfilerCollector);
+        const string name = nameof(MockContinuousProfilerCollector);
         _output.WriteLine($"[{name}]: {msg}");
     }
 }

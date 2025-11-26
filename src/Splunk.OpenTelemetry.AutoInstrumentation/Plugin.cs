@@ -14,11 +14,14 @@
 // limitations under the License.
 // </copyright>
 
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using OpenTelemetry;
 using OpenTelemetry.Context.Propagation;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 #if NET
 using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
@@ -46,6 +49,8 @@ public class Plugin
     private static readonly ILogger Log = new Logger();
 #if NET
     private static PprofInOtlpLogsExporter? _pprofInOtlpLogsExporter;
+    private static int _highResTimerEnabled;
+    private static int _highResTimerDisabled;
 #endif
 
     private readonly Metrics _metrics = new(Settings);
@@ -65,6 +70,14 @@ public class Plugin
         {
             Log.LogConfigurationSetup();
         }
+
+#if NET
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
+            Settings is { SnapshotsEnabled: true, HighResolutionTimerEnabled: true })
+        {
+            EnableHighResTimer();
+        }
+#endif
     }
 
     /// <summary>
@@ -164,7 +177,6 @@ public class Plugin
     /// <returns>(frequentSamplingInterval, exportInterval, exportTimeout, pprofInOtlpLogsExporter) or null.</returns>
     public Tuple<uint, TimeSpan, TimeSpan, object?>? GetSelectiveSamplingConfiguration()
     {
-#if NET
         if (Settings.SnapshotsEnabled)
         {
             var frequentSamplingInterval = (uint)Settings.SnapshotsSamplingInterval;
@@ -174,7 +186,6 @@ public class Plugin
             var exportTimeout = GetSampleExportTimeout();
             return Tuple.Create(frequentSamplingInterval, exportInterval, exportTimeout, (object)pprofInOtlpLogsExporter)!;
         }
-#endif
 
         return null;
     }
@@ -186,7 +197,6 @@ public class Plugin
     /// <returns>TracerProviderBuilder instance for chaining.</returns>
     public TracerProviderBuilder BeforeConfigureTracerProvider(TracerProviderBuilder builder)
     {
-#if NET
         if (Settings.SnapshotsEnabled)
         {
             var currentPropagator = Propagators.DefaultTextMapPropagator;
@@ -203,6 +213,34 @@ public class Plugin
         }
 
         return builder;
+    }
+
+    private static void EnableHighResTimer()
+    {
+        if (Interlocked.Exchange(ref _highResTimerEnabled, value: 1) != 0)
+        {
+            // Timer already enabled
+            return;
+        }
+
+        if (!WinApi.TryEnableHighResolutionTimer())
+        {
+            return;
+        }
+
+        AppDomain.CurrentDomain.ProcessExit += DisableHighResTimer;
+        AppDomain.CurrentDomain.DomainUnload += DisableHighResTimer;
+    }
+
+    private static void DisableHighResTimer(object? o, EventArgs args)
+    {
+        if (Interlocked.Exchange(ref _highResTimerDisabled, value: 1) != 0)
+        {
+            // Timer already disabled
+            return;
+        }
+
+        WinApi.TryDisableHighResolutionTimer();
     }
 
     private static TimeSpan GetSampleExportTimeout()
@@ -225,7 +263,5 @@ public class Plugin
     {
         return new PprofInOtlpLogsExporter(new SampleProcessor(), new SampleExporter(new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint)), new NativeFormatParser(Settings.SnapshotsEnabled));
     }
-#endif
-
 #endif
 }
