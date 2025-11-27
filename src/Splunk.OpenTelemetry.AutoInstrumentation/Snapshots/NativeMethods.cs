@@ -36,11 +36,11 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
                     throw new Exception("OpenTelemetry.AutoInstrumentation.NativeMethods could not be found.");
                 }
 
-                var startMethod = nativeMethodsType.GetMethod("SelectiveSamplingStart", BindingFlags.Static | BindingFlags.Public, null, [typeof(Activity)], null);
-                var stopMethod = nativeMethodsType!.GetMethod("SelectiveSamplingStop", BindingFlags.Static | BindingFlags.Public, null, [typeof(Activity)], null);
+                var startMethod = nativeMethodsType.GetMethod("SelectiveSamplingStart", BindingFlags.Static | BindingFlags.Public, null, [typeof(ActivityTraceId)], null);
+                var stopMethod = nativeMethodsType!.GetMethod("SelectiveSamplingStop", BindingFlags.Static | BindingFlags.Public, null, [typeof(ActivityTraceId)], null);
 
-                StartSamplingDelegate = (Action<Activity>)Delegate.CreateDelegate(typeof(Action<Activity>), startMethod!);
-                StopSamplingDelegate = (Action<Activity>)Delegate.CreateDelegate(typeof(Action<Activity>), stopMethod!);
+                StartSamplingDelegate = (Action<ActivityTraceId>)Delegate.CreateDelegate(typeof(Action<ActivityTraceId>), startMethod!);
+                StopSamplingDelegate = (Action<ActivityTraceId>)Delegate.CreateDelegate(typeof(Action<ActivityTraceId>), stopMethod!);
             }
             catch (Exception ex)
             {
@@ -48,9 +48,9 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
             }
         }
 
-        public static Action<Activity>? StopSamplingDelegate { get; }
+        public static Action<ActivityTraceId>? StopSamplingDelegate { get; }
 
-        public static Action<Activity>? StartSamplingDelegate { get; }
+        public static Action<ActivityTraceId>? StartSamplingDelegate { get; }
     }
 }
 #endif

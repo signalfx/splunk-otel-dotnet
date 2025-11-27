@@ -1,0 +1,74 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/build/">
+    <Project Path="build/_build.csproj">
+      <Build Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Common.props" />
+    <File Path="Directory.Build.props" />
+    <File Path="GlobalSuppressions.cs" />
+    <File Path="LICENSE" />
+    <File Path="stylecop.json" />
+  </Folder>
+  <Folder Name="/Solution Items/docs/">
+    <File Path="docs/README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <File Path="src/Directory.Build.props" />
+    <Project Path="src/Splunk.OpenTelemetry.AutoInstrumentation/Splunk.OpenTelemetry.AutoInstrumentation.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <File Path="test/Directory.Build.props" />
+    <Project Path="test/Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests/Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.csproj" />
+    <Project Path="test/Splunk.OpenTelemetry.AutoInstrumentation.Tests/Splunk.OpenTelemetry.AutoInstrumentation.Tests.csproj" />
+  </Folder>
+  <Folder Name="/test/test-applications/" />
+  <Folder Name="/test/test-applications/integrations/">
+    <File Path="test/test-applications/integrations/Directory.Build.props" />
+    <File Path="test/test-applications/integrations/GlobalSuppressions.cs" />
+    <Project Path="test/test-applications/integrations/TestApplication.ContinuousProfiler/TestApplication.ContinuousProfiler.csproj">
+      <Platform Solution="*|Any CPU" Project="x64" />
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="x86" />
+    </Project>
+    <Project Path="test/test-applications/integrations/TestApplication.HttpServer/TestApplication.HttpServer.csproj">
+      <Platform Solution="*|Any CPU" Project="x64" />
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="x86" />
+    </Project>
+    <Project Path="test/test-applications/integrations/TestApplication.Smoke/TestApplication.Smoke.csproj">
+      <Platform Solution="*|Any CPU" Project="x64" />
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="x86" />
+    </Project>
+    <Project Path="test/test-applications/integrations/TestApplication.Snapshots/TestApplication.Snapshots.csproj">
+      <Platform Solution="*|Any CPU" Project="x64" />
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="x86" />
+    </Project>
+  </Folder>
+  <Folder Name="/test/test-applications/integrations/dependency-libs/">
+    <Project Path="test/test-applications/integrations/dependency-libs/TestApplication.Shared/TestApplication.Shared.csproj">
+      <Platform Solution="*|Any CPU" Project="x64" />
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="x86" />
+    </Project>
+  </Folder>
+  <Folder Name="/test/test-applications/nuget-package/">
+    <File Path="test/test-applications/nuget-package/Directory.Build.props" />
+    <File Path="test/test-applications/nuget-package/Directory.Build.targets" />
+    <File Path="test/test-applications/nuget-package/Directory.Packages.props" />
+    <File Path="test/test-applications/nuget-package/nuget.config" />
+    <Project Path="test/test-applications/nuget-package/TestApplication.SelfContained/TestApplication.SelfContained.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/MatrixHelper/MatrixHelper.csproj" />
+  </Folder>
+</Solution>

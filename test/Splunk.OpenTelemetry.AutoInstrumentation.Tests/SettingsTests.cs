@@ -42,6 +42,32 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
                 }));
             Assert.Equal(0.1, settings.SnapshotsSelectionRate);
         }
+
+        [Theory]
+        [InlineData("0")]
+        [InlineData("-0.1")]
+        public void SnapshotSelectionRate_HasToBeInBounds(string rate)
+        {
+            var settings = new PluginSettings(new NameValueConfigurationSource(
+                new NameValueCollection
+                {
+                    ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = rate
+                }));
+            Assert.Equal(0.01, settings.SnapshotsSelectionRate);
+        }
+
+        [Theory]
+        [InlineData("0")]
+        [InlineData("-1")]
+        public void SnapshotSamplingInterval_HasToBeInBounds(string interval)
+        {
+            var settings = new PluginSettings(new NameValueConfigurationSource(
+                new NameValueCollection
+                {
+                    ["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"] = interval
+                }));
+            Assert.Equal(60, settings.SnapshotsSamplingInterval);
+        }
 #endif
 
         [Fact]

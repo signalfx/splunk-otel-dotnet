@@ -40,7 +40,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
         {
             var baggage = context.Baggage;
             var volume = baggage.GetBaggage(SnapshotConstants.VolumeBaggageKeyName);
-            if (volume != null)
+            if (IsSpecified(volume))
             {
                 return context;
             }
@@ -49,6 +49,12 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
 
             var updatedBaggage = context.Baggage.SetBaggage(SnapshotConstants.VolumeBaggageKeyName, GetStringValue(newVolume));
             return new PropagationContext(context.ActivityContext, updatedBaggage);
+        }
+
+        private static bool IsSpecified(string? volume)
+        {
+            return string.Equals(volume, nameof(Volume.highest), StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(volume, nameof(Volume.off), StringComparison.OrdinalIgnoreCase);
         }
 
         private static string GetStringValue(Volume newVolume)

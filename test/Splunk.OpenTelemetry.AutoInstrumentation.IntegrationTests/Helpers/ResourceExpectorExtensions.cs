@@ -36,12 +36,12 @@ internal static class ResourceExpectorExtensions
         resourceExpector.Expect("splunk.distro.version", ExpectedDistributionVersion);
     }
 
-    internal static void AssertProfileResources(Resource resource)
+    internal static void AssertProfileResources(Resource resource, string serviceName)
     {
         // asserting resource attribute with values
         var constantAttributes = new List<KeyValue>
         {
-            new() { Key = "service.name", Value = new AnyValue { StringValue = "TestApplication.ContinuousProfiler" } },
+            new() { Key = "service.name", Value = new AnyValue { StringValue = serviceName } },
             new() { Key = "telemetry.sdk.name", Value = new AnyValue { StringValue = "opentelemetry" } },
             new() { Key = "telemetry.sdk.language", Value = new AnyValue { StringValue = "dotnet" } },
             new() { Key = "telemetry.distro.name", Value = new AnyValue { StringValue = "splunk-otel-dotnet" } },
