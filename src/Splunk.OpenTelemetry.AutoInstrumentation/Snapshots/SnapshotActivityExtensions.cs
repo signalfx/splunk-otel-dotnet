@@ -27,7 +27,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
             activity.SetTag(SnapshotConstants.SplunkSnapshotProfilingAttributeName, true);
         }
 
-        public static bool IsEntry(this Activity activity)
+        public static bool IsLocalRoot(this Activity activity)
         {
             return activity.Parent is null || activity.HasRemoteParent;
         }

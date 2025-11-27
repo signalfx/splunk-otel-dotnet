@@ -62,6 +62,24 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests.Snapshots
         [Theory]
         [InlineData(1.0, "highest")]
         [InlineData(0.0, "off")]
+        public void IfVolumeIsUnspecified_MakeADecisionForRootSpans(double ratio, string expectedValue)
+        {
+            var propagator = new SnapshotVolumePropagator(new CompositeSelector(ratio));
+
+            var dict = new Dictionary<string, object>();
+
+            var rootSpanIndicatingContext = default(ActivityContext);
+            var extractedContext = propagator.Extract(
+                new PropagationContext(rootSpanIndicatingContext, Baggage.Create(new Dictionary<string, string> { ["splunk.trace.snapshot.volume"] = "unspecified" })),
+                dict,
+                (_, _) => throw new InvalidOperationException());
+
+            Assert.Equal(expectedValue, extractedContext.Baggage.GetBaggage("splunk.trace.snapshot.volume"));
+        }
+
+        [Theory]
+        [InlineData(1.0, "highest")]
+        [InlineData(0.0, "off")]
         public void IfVolumeWasNotDecided_MakeADecisionForNonRootSpans(double ratio, string expectedValue)
         {
             var propagator = new SnapshotVolumePropagator(new CompositeSelector(ratio));
@@ -71,6 +89,24 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests.Snapshots
             var nonRootSpanContext = new ActivityContext(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(), ActivityTraceFlags.Recorded);
             var extractedContext = propagator.Extract(
                 new PropagationContext(nonRootSpanContext, default),
+                dict,
+                (_, _) => throw new InvalidOperationException());
+
+            Assert.Equal(expectedValue, extractedContext.Baggage.GetBaggage("splunk.trace.snapshot.volume"));
+        }
+
+        [Theory]
+        [InlineData(1.0, "highest")]
+        [InlineData(0.0, "off")]
+        public void IfVolumeIsUnspecified_MakeADecisionForNonRootSpans(double ratio, string expectedValue)
+        {
+            var propagator = new SnapshotVolumePropagator(new CompositeSelector(ratio));
+
+            var dict = new Dictionary<string, object>();
+
+            var nonRootSpanContext = new ActivityContext(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(), ActivityTraceFlags.Recorded);
+            var extractedContext = propagator.Extract(
+                new PropagationContext(nonRootSpanContext, Baggage.Create(new Dictionary<string, string> { ["splunk.trace.snapshot.volume"] = "unspecified" })),
                 dict,
                 (_, _) => throw new InvalidOperationException());
 

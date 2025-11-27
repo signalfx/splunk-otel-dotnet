@@ -275,7 +275,7 @@ internal class NativeFormatParser
         }
         catch (Exception e)
         {
-            Console.WriteLine(e + "Unexpected error while parsing selected threads samples.");
+            Log.Error(e, "Unexpected error while parsing selected threads samples.");
         }
 
         return selectiveSamplerSamples;

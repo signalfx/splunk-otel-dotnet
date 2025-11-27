@@ -1,4 +1,4 @@
-﻿// <copyright file="SnapshotVolumeDetector.cs" company="Splunk Inc.">
+// <copyright file="WeatherForecast.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,20 +14,15 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
+namespace TestApplication.Snapshots;
 
-using OpenTelemetry;
-
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
+public class WeatherForecast
 {
-    internal static class SnapshotVolumeDetector
-    {
-        public static bool IsLoud(Baggage baggage)
-        {
-            var volume = baggage.GetBaggage(SnapshotConstants.VolumeBaggageKeyName);
+    public DateOnly Date { get; set; }
 
-            return volume != null && string.Equals(volume, nameof(Volume.highest), StringComparison.OrdinalIgnoreCase);
-        }
-    }
+    public int TemperatureC { get; set; }
+
+    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+
+    public string? Summary { get; set; }
 }
-#endif

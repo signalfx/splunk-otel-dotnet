@@ -23,40 +23,21 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
 {
     internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
     {
-        private readonly SnapshotFilter _snapshotFilter;
+        private readonly SnapshotProcessorHelper _snapshotProcessorHelper;
 
-        public SnapshotSelectingProcessor()
-            : this(SnapshotFilter.Instance)
+        public SnapshotSelectingProcessor(SnapshotProcessorHelper snapshotProcessorHelper)
         {
-        }
-
-        public SnapshotSelectingProcessor(SnapshotFilter snapshotFilter)
-        {
-            _snapshotFilter = snapshotFilter;
+            _snapshotProcessorHelper = snapshotProcessorHelper;
         }
 
         public override void OnStart(Activity data)
         {
-            if (SnapshotVolumeDetector.IsLoud(Baggage.Current))
-            {
-                if (data.IsEntry())
-                {
-                    data.MarkLoud();
-                }
-
-                _snapshotFilter.Add(data);
-            }
+            _snapshotProcessorHelper.ProcessSpanStart(data);
         }
 
         public override void OnEnd(Activity data)
         {
-            // Instead of relying on entry being present in Baggage.Current,
-            // we could track entries added in OnStart in a ConcurrentDictionary.
-            // This would help if baggage was to change between OnStart and OnEnd.
-            if (SnapshotVolumeDetector.IsLoud(Baggage.Current))
-            {
-                _snapshotFilter.Remove(data);
-            }
+            _snapshotProcessorHelper.ProcessSpanStop(data);
         }
     }
 }
