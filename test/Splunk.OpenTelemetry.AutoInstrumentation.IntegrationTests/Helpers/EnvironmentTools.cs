@@ -35,13 +35,13 @@ public static class EnvironmentTools
     {
         var startDirectory = Environment.CurrentDirectory;
         var currentDirectory = Directory.GetParent(startDirectory);
-        const string searchItem = @"Splunk.OpenTelemetry.AutoInstrumentation.sln";
+        const string searchItem = @"Splunk.OpenTelemetry.AutoInstrumentation.slnx";
 
         while (true)
         {
-            var slnFile = currentDirectory?.GetFiles(searchItem).SingleOrDefault();
+            var solutionFile = currentDirectory?.GetFiles(searchItem).SingleOrDefault();
 
-            if (slnFile != null)
+            if (solutionFile != null)
             {
                 break;
             }

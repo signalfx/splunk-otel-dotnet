@@ -10,7 +10,7 @@ partial class Build : NukeBuild
 {
     private readonly static AbsolutePath TestNuGetPackageApps = NukeBuild.RootDirectory / "test" / "test-applications" / "nuget-package";
 
-    [Solution("Splunk.OpenTelemetry.AutoInstrumentation.sln")] readonly Solution Solution;
+    [Solution("Splunk.OpenTelemetry.AutoInstrumentation.slnx")] readonly Solution Solution;
     public static int Main() => Execute<Build>(x => x.Workflow);
 
     [Parameter("Configuration to build - Default is 'Release'")]
