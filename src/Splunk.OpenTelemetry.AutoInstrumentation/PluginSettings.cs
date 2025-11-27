@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 
+using System.Diagnostics;
 using System.Reflection;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
@@ -153,6 +154,8 @@ internal class PluginSettings
 
     public static PluginSettings FromDefaultSources()
     {
+        Console.WriteLine("FromDefaultSources");
+        Debugger.Launch();
         if (IsYamlConfigEnabled)
         {
             var fileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName) ?? "config.yaml";
@@ -203,10 +206,18 @@ internal class PluginSettings
 
     private static SplunkConfiguration? LoadSplunkConfig(string fileName)
     {
+        Debugger.Launch();
         var parserTypeFullName = "OpenTelemetry.AutoInstrumentation.Configurations.FileBasedConfiguration.Parser.Parser";
 
-        var parserType = AppDomain.CurrentDomain
-            .GetAssemblies()
+        var assembly = AppDomain.CurrentDomain
+            .GetAssemblies();
+
+        foreach (var asm in assembly)
+        {
+            Console.WriteLine($"Assembly: {asm.FullName}");
+        }
+
+        var parserType = assembly
             .Select(a => a.GetType(parserTypeFullName, throwOnError: false, ignoreCase: false))
             .FirstOrDefault(t => t != null);
 

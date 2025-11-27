@@ -1,12 +1,12 @@
 splunk:
-  response_header_enabled: ${SPLUNK_TRACE_RESPONSE_HEADER_ENABLED}
+  response_header_enabled: true
   profiling:
-    memory_enabled: ${SPLUNK_PROFILER_MEMORY_ENABLED}
-    logs_endpoint: ${SPLUNK_PROFILER_LOGS_ENDPOINT}
-    call_stack_interval: ${SPLUNK_PROFILER_CALL_STACK_INTERVAL}
-    export_interval: ${SPLUNK_PROFILER_EXPORT_INTERVAL}
-    export_timeout: ${SPLUNK_PROFILER_EXPORT_TIMEOUT}
-    max_memory_size: ${SPLUNK_PROFILER_MAX_MEMORY_SIZE}
+    memory_enabled: true
+    logs_endpoint: http://localhost:4444/v1/logs
+    call_stack_interval: 1000
+    export_interval: 50
+    export_timeout: 300
+    max_memory_size: 20
   callgraphs:
-    sampling_interval: ${SPLUNK_SNAPSHOT_SAMPLING_INTERVAL}
-    selection_probability: ${SPLUNK_SNAPSHOT_SELECTION_PROBABILITY}
+    sampling_interval: 15
+    selection_probability: 0.2

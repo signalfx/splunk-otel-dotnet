@@ -9,10 +9,10 @@
   </ItemGroup>
   
   <ItemGroup>
-    <None Update="ConfigFiles\config.yaml">
+    <None Update="ConfigFiles\configEnvVar.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="ConfigFiles\configEnvVar.yaml">
+    <None Update="ConfigFiles\config.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
