@@ -24,4 +24,6 @@ internal class CallGraphsConfiguration
     public int SamplingInterval { get; set; } = 20;
 
     public double SelectionProbability { get; set; } = 0.01;
+
+    public bool HighResolutionTimerEnabled { get; set; } = false;
 }

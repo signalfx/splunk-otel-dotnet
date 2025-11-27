@@ -1,4 +1,4 @@
-﻿// <copyright file="SplunkWrapper.cs" company="Splunk Inc.">
+﻿// <copyright file="ExporterConfig.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +14,12 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration.Utils;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration.Utils;
 
-internal class SplunkWrapper
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
+
+[EmptyObjectOnEmptyYaml]
+internal class ExporterConfig
 {
-    public SplunkConfiguration? Splunk { get; set; }
+    public OtlpLogHttpConfig OtlpLogHttp { get; set; } = new OtlpLogHttpConfig();
 }

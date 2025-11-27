@@ -30,15 +30,23 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
         {
         }
 
-        [Fact]
-        public async Task SubmitSnapshots()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task SubmitSnapshots(bool isFileBased)
         {
             SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
-            SetEnvironmentVariable("SPLUNK_SNAPSHOT_PROFILER_ENABLED", "true");
-            SetEnvironmentVariable("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL", "30");
-
-            // Disable to ensure trace starts on the server side.
-            SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_HTTPCLIENT_INSTRUMENTATION_ENABLED", "false");
+            if (isFileBased)
+            {
+                EnableFileBasedConfigWithDefaultPath();
+            }
+            else
+            {
+                SetEnvironmentVariable("SPLUNK_SNAPSHOT_PROFILER_ENABLED", "true");
+                SetEnvironmentVariable("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL", "30");
+                // Disable to ensure trace starts on the server side.
+                SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_HTTPCLIENT_INSTRUMENTATION_ENABLED", "false");
+            }
 
             using var logsCollector = new MockContinuousProfilerCollector(Output);
             SetExporter(logsCollector);

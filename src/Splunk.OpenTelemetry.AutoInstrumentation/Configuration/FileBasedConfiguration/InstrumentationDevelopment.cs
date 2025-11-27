@@ -1,4 +1,4 @@
-﻿// <copyright file="SplunkConfiguration.cs" company="Splunk Inc.">
+﻿// <copyright file="InstrumentationDevelopment.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 
-internal class SplunkConfiguration
+internal class InstrumentationDevelopment
 {
-    public ProfilerConfiguration? Profiling { get; set; }
+    public Dotnet? Dotnet { get; set; }
 }

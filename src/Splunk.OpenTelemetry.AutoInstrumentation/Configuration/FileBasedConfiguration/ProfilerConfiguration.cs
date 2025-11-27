@@ -21,15 +21,15 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfig
 [EmptyObjectOnEmptyYaml]
 internal class ProfilerConfiguration
 {
-    public bool MemoryEnabled { get; set; } = false;
-
-    public string LogsEndpoint { get; set; } = "http://localhost:4318/v1/logs";
-
-    public uint CallStackInterval { get; set; } = 10000;
-
-    public uint ExportInterval { get; set; } = 500;
+    public uint ScheduleDelay { get; set; } = 500;
 
     public uint ExportTimeout { get; set; } = 3000;
 
-    public uint MaxMemorySamples { get; set; } = 200;
+    public ExporterConfig Exporter { get; set; } = new ExporterConfig();
+
+    public MemoryAllocationSampling? MemoryAllocationSampling { get; set; }
+
+    public CallStackSampling? CallStackSampling { get; set; }
+
+    public CallGraphsConfiguration? Snapshotting { get; set; }
 }

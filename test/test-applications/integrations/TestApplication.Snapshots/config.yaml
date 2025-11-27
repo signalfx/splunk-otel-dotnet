@@ -11,18 +11,11 @@ tracer_provider:
         exporter:
           otlp_http:
 
-instrumentation/development:
-  dotnet:
-    traces:
-      additional_sources:
-        - "TestApplication.ContinuousProfiler"
-
 distribution:
   splunk:
     profiling:
       exporter:
         otlp_log_http:
           endpoint: ${SPLUNK_PROFILER_LOGS_ENDPOINT}
-      memory_allocation_sampling:
-      callstack_sampling:
-      sampling_interval: 1000
+      snapshoting:
+        callstack_sampling_interval: 30

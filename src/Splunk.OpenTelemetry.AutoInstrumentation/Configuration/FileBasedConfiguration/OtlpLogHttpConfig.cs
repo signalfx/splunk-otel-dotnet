@@ -1,4 +1,4 @@
-﻿// <copyright file="SplunkConfiguration.cs" company="Splunk Inc.">
+﻿// <copyright file="OtlpLogHttpConfig.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +14,12 @@
 // limitations under the License.
 // </copyright>
 
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration.Utils;
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 
-internal class SplunkConfiguration
+[EmptyObjectOnEmptyYaml]
+internal class OtlpLogHttpConfig
 {
-    public ProfilerConfiguration? Profiling { get; set; }
+    public string Endpoint { get; set; } = "http://localhost:4318/v1/logs";
 }

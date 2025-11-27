@@ -1,4 +1,4 @@
-﻿// <copyright file="SplunkConfiguration.cs" company="Splunk Inc.">
+﻿// <copyright file="TracesConfig.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 
-internal class SplunkConfiguration
+internal class TracesConfig
 {
-    public ProfilerConfiguration? Profiling { get; set; }
+    public bool ResponseHeaderEnabled { get; set; } = false;
 }
