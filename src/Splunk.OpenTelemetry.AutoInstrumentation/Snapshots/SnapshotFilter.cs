@@ -24,10 +24,10 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
     {
         private static readonly Lazy<SnapshotFilter> InstanceFactory = new(() => new SnapshotFilter(NativeMethods.StartSamplingDelegate, NativeMethods.StopSamplingDelegate));
 
-        private readonly Action<Activity>? _startSamplingDelegate;
-        private readonly Action<Activity>? _stopSamplingDelegate;
+        private readonly Action<ActivityTraceId>? _startSamplingDelegate;
+        private readonly Action<ActivityTraceId>? _stopSamplingDelegate;
 
-        internal SnapshotFilter(Action<Activity>? startSamplingDelegate, Action<Activity>? stopSamplingDelegate)
+        internal SnapshotFilter(Action<ActivityTraceId>? startSamplingDelegate, Action<ActivityTraceId>? stopSamplingDelegate)
         {
             _startSamplingDelegate = startSamplingDelegate;
             _stopSamplingDelegate = stopSamplingDelegate;
@@ -35,14 +35,14 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
 
         public static SnapshotFilter Instance => InstanceFactory.Value;
 
-        public void Add(Activity data)
+        public void Add(ActivityTraceId traceId)
         {
-            _startSamplingDelegate?.Invoke(data);
+            _startSamplingDelegate?.Invoke(traceId);
         }
 
-        public void Remove(Activity data)
+        public void Remove(ActivityTraceId traceId)
         {
-            _stopSamplingDelegate?.Invoke(data);
+            _stopSamplingDelegate?.Invoke(traceId);
         }
     }
 }

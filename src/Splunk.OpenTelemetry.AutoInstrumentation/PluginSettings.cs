@@ -24,9 +24,9 @@ internal class PluginSettings
     private const double MaxSnapshotSelectionRate = 0.1;
     private const double DefaultSnapshotSelectionRate = 0.01;
 
-    // Runtime suspensions done to collect thread samples often take ~0.25ms. Use `20ms` as default sampling interval
+    // Runtime suspensions done to collect thread samples often take ~0.25ms. Use `60ms` as default sampling interval
     // to limit induced overhead.
-    private const int DefaultSnapshotSamplingIntervalMs = 20;
+    private const int DefaultSnapshotSamplingIntervalMs = 60;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginSettings"/> class
@@ -51,9 +51,10 @@ internal class PluginSettings
         SnapshotsEnabled = source.GetBool(ConfigurationKeys.Splunk.Snapshots.Enabled) ?? false;
         HighResolutionTimerEnabled = source.GetBool(ConfigurationKeys.Splunk.Snapshots.HighResolutionTimerEnabled) ?? false;
 
-        SnapshotsSamplingInterval = source.GetInt32(ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs) ?? DefaultSnapshotSamplingIntervalMs;
+        var snapshotInterval = source.GetInt32(ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs) ?? DefaultSnapshotSamplingIntervalMs;
+        SnapshotsSamplingInterval = snapshotInterval <= 0 ? DefaultSnapshotSamplingIntervalMs : snapshotInterval;
         var configuredSelectionRate = source.GetDouble(ConfigurationKeys.Splunk.Snapshots.SelectionRate) ?? DefaultSnapshotSelectionRate;
-        SnapshotsSelectionRate = configuredSelectionRate > MaxSnapshotSelectionRate ? MaxSnapshotSelectionRate : configuredSelectionRate;
+        SnapshotsSelectionRate = GetFinalSnapshotSelectionProbability(configuredSelectionRate);
         MemoryProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled) ?? false;
         var callStackInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval) ?? 10000;
         CpuProfilerCallStackInterval = callStackInterval < 0 ? 10000u : (uint)callStackInterval;
@@ -114,6 +115,16 @@ internal class PluginSettings
         };
 
         return new PluginSettings(configurationSource);
+    }
+
+    private static double GetFinalSnapshotSelectionProbability(double configuredSelectionRate)
+    {
+        return configuredSelectionRate switch
+        {
+            <= 0 => DefaultSnapshotSelectionRate,
+            > MaxSnapshotSelectionRate => MaxSnapshotSelectionRate,
+            _ => configuredSelectionRate
+        };
     }
 
 #if NET

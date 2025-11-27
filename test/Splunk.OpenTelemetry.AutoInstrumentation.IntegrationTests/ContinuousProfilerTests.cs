@@ -66,11 +66,11 @@ public class ContinuousProfilerTests : TestHelper
                 profiles.Add(profile);
             }
 
-            AllShouldHaveBasicAttributes(logRecords, ConstantValuedAttributes("allocation"));
-            ProfilesContainAllocationValue(profiles);
-            RecordsContainFrameCountAttribute(logRecords);
-            ResourceContainsExpectedAttributes(dataResourceLog.Resource);
-            HasNameAndVersionSet(instrumentationLibraryLogs.Scope);
+            ProfilerTestHelpers.AllShouldHaveBasicAttributes(logRecords, ProfilerTestHelpers.ConstantValuedAttributes("allocation"));
+            ProfilerTestHelpers.ProfilesContainAllocationValue(profiles);
+            ProfilerTestHelpers.RecordsContainFrameCountAttribute(logRecords);
+            ProfilerTestHelpers.ResourceContainsExpectedAttributes(dataResourceLog.Resource, "TestApplication.ContinuousProfiler");
+            ProfilerTestHelpers.HasNameAndVersionSet(instrumentationLibraryLogs.Scope);
 
             logRecords.Clear();
         }
@@ -93,7 +93,7 @@ public class ContinuousProfilerTests : TestHelper
 
         await DumpLogRecords(logsData);
 
-        var containStackTraceForClassHierarchy = false;
+        var stackTraceForClassHierarchyCount = 0;
         var expectedStackTrace = string.Join("\n", CreateExpectedStackTrace());
 
         foreach (var data in logsData)
@@ -111,77 +111,18 @@ public class ContinuousProfilerTests : TestHelper
                 profiles.Add(profile);
             }
 
-            containStackTraceForClassHierarchy |= profiles.Any(profile => ContainsStackTrace(profile, expectedStackTrace));
+            stackTraceForClassHierarchyCount += profiles.Sum(profile => ProfilerTestHelpers.GetContainsStackTraceCount(profile, expectedStackTrace));
 
-            AllShouldHaveBasicAttributes(logRecords, ConstantValuedAttributes("cpu"));
-            ProfilesDoNotContainAnyValue(profiles);
-            RecordsContainFrameCountAttribute(logRecords);
-            ResourceContainsExpectedAttributes(dataResourceLog.Resource);
-            HasNameAndVersionSet(instrumentationLibraryLogs.Scope);
+            ProfilerTestHelpers.AllShouldHaveBasicAttributes(logRecords, ProfilerTestHelpers.ConstantValuedAttributes("cpu"));
+            ProfilerTestHelpers.ProfilesDoNotContainAnyValue(profiles);
+            ProfilerTestHelpers.RecordsContainFrameCountAttribute(logRecords);
+            ProfilerTestHelpers.ResourceContainsExpectedAttributes(dataResourceLog.Resource, "TestApplication.ContinuousProfiler");
+            ProfilerTestHelpers.HasNameAndVersionSet(instrumentationLibraryLogs.Scope);
 
             logRecords.Clear();
         }
 
-        Assert.True(containStackTraceForClassHierarchy, "At least one stack trace containing class hierarchy should be reported.");
-    }
-
-    private static void ProfilesContainAllocationValue(List<Profile> profiles)
-    {
-        foreach (var profile in profiles)
-        {
-            Assert.All(profile.Samples, x => Assert.Single(x.Values));
-        }
-    }
-
-    private static void ProfilesDoNotContainAnyValue(List<Profile> profiles)
-    {
-        foreach (var profile in profiles)
-        {
-            Assert.All(profile.Samples, x => Assert.Empty(x.Values));
-        }
-    }
-
-    private static void RecordsContainFrameCountAttribute(RepeatedField<LogRecord> logRecords)
-    {
-        foreach (var logRecord in logRecords)
-        {
-            Assert.Single(logRecord.Attributes, attr => attr.Key == "profiling.data.total.frame.count");
-        }
-    }
-
-    private static List<KeyValue> ConstantValuedAttributes(string dataType)
-    {
-        return
-        [
-            new()
-            {
-                Key = "com.splunk.sourcetype",
-                Value = new AnyValue { StringValue = "otel.profiling" }
-            },
-
-            new()
-            {
-                Key = "profiling.data.format",
-                Value = new AnyValue { StringValue = "pprof-gzip-base64" }
-            },
-
-            new()
-            {
-                Key = "profiling.data.type",
-                Value = new AnyValue { StringValue = dataType }
-            }
-        ];
-    }
-
-    private static void AllShouldHaveBasicAttributes(RepeatedField<LogRecord> logRecords, List<KeyValue> attributes)
-    {
-        foreach (var logRecord in logRecords)
-        {
-            foreach (var attribute in attributes)
-            {
-                Assert.Contains(attribute, logRecord.Attributes);
-            }
-        }
+        Assert.True(stackTraceForClassHierarchyCount > 0, "At least one stack trace containing class hierarchy should be reported.");
     }
 
     private static IEnumerable<string> CreateExpectedStackTrace()
@@ -193,29 +134,6 @@ public class ContinuousProfilerTests : TestHelper
         };
 
         return stackTrace;
-    }
-
-    private static void ResourceContainsExpectedAttributes(global::OpenTelemetry.Proto.Resource.V1.Resource resource)
-    {
-        ResourceExpectorExtensions.AssertProfileResources(resource);
-    }
-
-    private static void HasNameAndVersionSet(InstrumentationScope instrumentationScope)
-    {
-        Assert.Equal("otel.profiling", instrumentationScope.Name);
-        Assert.Equal("0.1.0", instrumentationScope.Version);
-    }
-
-    private static bool ContainsStackTrace(Profile profile, string expectedStackTrace)
-    {
-        var frames = profile.Locations
-            .SelectMany(location => location.Lines)
-            .Select(line => line.FunctionId)
-            .Select(functionId => profile.Functions[(int)functionId - 1])
-            .Select(function => profile.StringTables[(int)function.Name]);
-
-        var stackTrace = string.Join("\n", frames);
-        return stackTrace.Contains(expectedStackTrace);
     }
 
     private async Task DumpLogRecords(ExportLogsServiceRequest[] logsData)
