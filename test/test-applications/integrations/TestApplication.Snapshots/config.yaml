@@ -23,4 +23,4 @@ distribution:
         otlp_log_http:
           endpoint: ${SPLUNK_PROFILER_LOGS_ENDPOINT}
       snapshotting:
-        callstack_sampling_interval: 30
+        sampling_interval: 30
