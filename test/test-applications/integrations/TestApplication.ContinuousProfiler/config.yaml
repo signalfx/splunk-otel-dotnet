@@ -24,5 +24,5 @@ distribution:
         otlp_log_http:
           endpoint: ${SPLUNK_PROFILER_LOGS_ENDPOINT}
       memory_allocation_sampling:
-      callstack_sampling:
-      sampling_interval: 1000
+      call_stack_sampling:
+        sampling_interval: 1000

@@ -21,5 +21,5 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfig
 [EmptyObjectOnEmptyYaml]
 internal class CallStackSampling
 {
-    public uint SamplingInterval { get; set; } = 10;
+    public uint SamplingInterval { get; set; } = 10000;
 }

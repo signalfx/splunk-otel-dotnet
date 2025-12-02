@@ -21,5 +21,5 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfig
 [EmptyObjectOnEmptyYaml]
 internal class MemoryAllocationSampling
 {
-    public uint SamplingInterval { get; set; } = 20;
+    public uint SamplingInterval { get; set; } = 200;
 }

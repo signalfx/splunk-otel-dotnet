@@ -4,6 +4,11 @@ plugins/development:
   plugins:
     - Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation
 
+propagator:
+  composite:
+    tracecontext:
+    baggage:
+
 #tracer_provider or metric_provider is needed for profiler exports
 tracer_provider:
   processors:
@@ -17,5 +22,5 @@ distribution:
       exporter:
         otlp_log_http:
           endpoint: ${SPLUNK_PROFILER_LOGS_ENDPOINT}
-      snapshoting:
+      snapshotting:
         callstack_sampling_interval: 30
