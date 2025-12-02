@@ -44,7 +44,7 @@ public class ContinuousProfilerTests : TestHelper
         SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
         if (isFileBased)
         {
-            EnableFileBasedConfigWithDefaultPath();
+            EnableFileBasedConfig("configMemoryProfiller.yaml");
         }
         else
         {
@@ -94,7 +94,7 @@ public class ContinuousProfilerTests : TestHelper
         SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
         if (isFileBased)
         {
-            EnableFileBasedConfigWithDefaultPath();
+            EnableFileBasedConfig("configCpuProfiller.yaml");
         }
         else
         {

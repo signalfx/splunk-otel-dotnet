@@ -6,7 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="config.yaml">
+    <None Update="configMemoryProfiller.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="configCpuProfiller.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

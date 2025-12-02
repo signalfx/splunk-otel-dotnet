@@ -38,7 +38,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
             SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
             if (isFileBased)
             {
-                EnableFileBasedConfigWithDefaultPath();
+                EnableFileBasedConfig();
             }
             else
             {

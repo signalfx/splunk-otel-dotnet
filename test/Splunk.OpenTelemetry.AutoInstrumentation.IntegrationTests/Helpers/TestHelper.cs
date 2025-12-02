@@ -121,10 +121,10 @@ public abstract class TestHelper
         RemoveEnvironmentVariable("OTEL_LOGS_EXPORTER");
     }
 
-    public void EnableFileBasedConfigWithDefaultPath()
+    public void EnableFileBasedConfig(string fileName = "config.yaml")
     {
         SetEnvironmentVariable("OTEL_EXPERIMENTAL_FILE_BASED_CONFIGURATION_ENABLED", "true");
-        SetEnvironmentVariable("OTEL_EXPERIMENTAL_CONFIG_FILE", Path.Combine(EnvironmentHelper.GetTestApplicationApplicationOutputDirectory(), "config.yaml"));
+        SetEnvironmentVariable("OTEL_EXPERIMENTAL_CONFIG_FILE", Path.Combine(EnvironmentHelper.GetTestApplicationApplicationOutputDirectory(), fileName));
     }
 
     /// <summary>
