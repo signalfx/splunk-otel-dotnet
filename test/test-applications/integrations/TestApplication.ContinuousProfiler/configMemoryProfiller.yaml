@@ -1,0 +1,35 @@
+file_format: "1.0-rc.1"
+
+plugins/development:
+  plugins:
+    - Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation
+
+# tracer_provider or metric_provider is needed for profiler exports
+tracer_provider:
+  processors:
+    - batch:
+        exporter:
+          otlp_http:
+
+# resource detectors is needed for profiler tests
+resource:
+  detection/development:
+    # If no detectors are specified, none will be added automatically.
+    detectors:
+      host:
+      process:
+
+instrumentation/development:
+  dotnet:
+    traces:
+      additional_sources:
+        - "TestApplication.ContinuousProfiler"
+
+distribution:
+  splunk:
+    profiling:
+      schedule_delay: 1000
+      exporter:
+        otlp_log_http:
+          endpoint: ${SPLUNK_PROFILER_LOGS_ENDPOINT}
+      memory_allocation_sampling:
