@@ -35,7 +35,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
         [InlineData(true)]
         public async Task SubmitSnapshots(bool isFileBased)
         {
-            SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
+            EnableBytecodeInstrumentation();
             if (isFileBased)
             {
                 EnableFileBasedConfig();
