@@ -4,9 +4,9 @@ plugins/development:
   plugins:
     - Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation
 
+# baggage propagator is needed for snapshot tests
 propagator:
   composite:
-    tracecontext:
     baggage:
 
 # tracer_provider or metric_provider is needed for profiler exports
@@ -23,10 +23,10 @@ resource:
       host:
       process:
 
+# instrumentation settings is needed for snapshot tests
 instrumentation/development:
   dotnet:
     traces:
-      response_header_enabled: true # SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       aspnetcore:
 
 distribution:
@@ -36,4 +36,4 @@ distribution:
         otlp_log_http:
           endpoint: ${SPLUNK_PROFILER_LOGS_ENDPOINT}
       snapshotting:
-        sampling_interval: 10
+        sampling_interval: 30
