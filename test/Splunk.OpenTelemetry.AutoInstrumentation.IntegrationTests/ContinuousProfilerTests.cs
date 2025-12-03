@@ -41,7 +41,7 @@ public class ContinuousProfilerTests : TestHelper
     [InlineData(true)]
     public async Task SubmitAllocationSamples(bool isFileBased)
     {
-        SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
+        EnableBytecodeInstrumentation();
         if (isFileBased)
         {
             EnableFileBasedConfig("configMemoryProfiller.yaml");
@@ -91,7 +91,7 @@ public class ContinuousProfilerTests : TestHelper
     [InlineData(true)]
     public async Task SubmitThreadSamples(bool isFileBased)
     {
-        SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
+        EnableBytecodeInstrumentation();
         if (isFileBased)
         {
             EnableFileBasedConfig("configCpuProfiller.yaml");
