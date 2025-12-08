@@ -79,7 +79,7 @@ internal static class SettingsData
 
             // snapshots
             new("SPLUNK_SNAPSHOT_PROFILER_ENABLED", "Activates snapshots collection.", "false", "boolean", ProfilingCategory),
-            new("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL", "Sampling interval for snapshot collections, in milliseconds.", "60", "int", ProfilingCategory),
+            new("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL", "Sampling interval for snapshot collections, in milliseconds.", "30", "int", ProfilingCategory),
             new("SPLUNK_SNAPSHOT_SELECTION_PROBABILITY", "Sets probability of selecting trace for snapshots.", "0.01", "double", ProfilingCategory),
             new("SPLUNK_SNAPSHOT_HIGH_RES_TIMER_ENABLED", "Sets default timer precision on Windows to 1ms.", "false", "bool", ProfilingCategory),
 
