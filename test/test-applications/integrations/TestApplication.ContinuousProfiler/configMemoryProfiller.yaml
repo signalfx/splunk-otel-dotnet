@@ -28,8 +28,9 @@ instrumentation/development:
 distribution:
   splunk:
     profiling:
-      schedule_delay: 1000
       exporter:
+        schedule_delay: 1000
         otlp_log_http:
           endpoint: ${SPLUNK_PROFILER_LOGS_ENDPOINT}
-      memory_allocation_sampling:
+      always_on:
+        memory_profiler:

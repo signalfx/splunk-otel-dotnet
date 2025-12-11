@@ -87,38 +87,38 @@ internal class PluginSettings
         Realm = Constants.None;
         AccessToken = null;
         IsOtlpEndpointSet = false;
+        TraceResponseHeaderEnabled = false;
 
-        if (configuration.InstrumentationDevelopment?.Dotnet?.Traces != null)
-        {
-            TraceResponseHeaderEnabled = configuration.InstrumentationDevelopment.Dotnet.Traces.ResponseHeaderEnabled;
-        }
 #if NET
         var profilingConfig = configuration.Distribution?.Splunk?.Profiling;
         if (profilingConfig != null)
         {
-            if (profilingConfig.Snapshotting != null)
+            if (profilingConfig.Callgraphs != null)
             {
                 SnapshotsEnabled = true;
-                HighResolutionTimerEnabled = profilingConfig.Snapshotting.HighResolutionTimerEnabled;
-                SnapshotsSamplingInterval = profilingConfig.Snapshotting.SamplingInterval <= 0 ? DefaultSnapshotSamplingIntervalMs : profilingConfig.Snapshotting.SamplingInterval;
-                var configuredSelectionRate = profilingConfig.Snapshotting.SelectionProbability;
+                HighResolutionTimerEnabled = profilingConfig.Callgraphs.HighResolutionTimerEnabled;
+                SnapshotsSamplingInterval = profilingConfig.Callgraphs.SamplingInterval <= 0 ? DefaultSnapshotSamplingIntervalMs : profilingConfig.Callgraphs.SamplingInterval;
+                var configuredSelectionRate = profilingConfig.Callgraphs.SelectionProbability;
                 SnapshotsSelectionRate = GetFinalSnapshotSelectionProbability(configuredSelectionRate);
             }
 
-            if (profilingConfig.CallStackSampling != null)
+            if (profilingConfig.AlwaysOn != null)
             {
-                CpuProfilerEnabled = true;
-                CpuProfilerCallStackInterval = profilingConfig.CallStackSampling.SamplingInterval;
+                if (profilingConfig.AlwaysOn.CpuProfiler != null)
+                {
+                    CpuProfilerEnabled = true;
+                    CpuProfilerCallStackInterval = profilingConfig.AlwaysOn.CpuProfiler.SamplingInterval;
+                }
+
+                if (profilingConfig.AlwaysOn.MemoryProfiler != null)
+                {
+                    MemoryProfilerEnabled = true;
+                    MemoryProfilerMaxMemorySamplesPerMinute = profilingConfig.AlwaysOn.MemoryProfiler.SamplingInterval;
+                }
             }
 
-            if (profilingConfig.MemoryAllocationSampling != null)
-            {
-                MemoryProfilerEnabled = true;
-                MemoryProfilerMaxMemorySamplesPerMinute = profilingConfig.MemoryAllocationSampling.SamplingInterval;
-            }
-
-            ProfilerHttpClientTimeout = profilingConfig.ExportTimeout;
-            ProfilerExportInterval = profilingConfig.ScheduleDelay;
+            ProfilerHttpClientTimeout = profilingConfig.Exporter.ExportTimeout;
+            ProfilerExportInterval = profilingConfig.Exporter.ScheduleDelay;
             ProfilerLogsEndpoint = new Uri(profilingConfig.Exporter.OtlpLogHttp.Endpoint);
         }
 #endif

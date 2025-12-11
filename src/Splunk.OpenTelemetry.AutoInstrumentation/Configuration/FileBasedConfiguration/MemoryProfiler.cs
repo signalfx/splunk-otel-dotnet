@@ -1,4 +1,4 @@
-﻿// <copyright file="TracesConfig.cs" company="Splunk Inc.">
+﻿// <copyright file="MemoryProfiler.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +14,12 @@
 // limitations under the License.
 // </copyright>
 
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration.Utils;
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 
-internal class TracesConfig
+[EmptyObjectOnEmptyYaml]
+internal class MemoryProfiler
 {
-    public bool ResponseHeaderEnabled { get; set; } = false;
+    public uint SamplingInterval { get; set; } = 200;
 }

@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 
+using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration.Utils;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
@@ -21,15 +22,9 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfig
 [EmptyObjectOnEmptyYaml]
 internal class ProfilerConfiguration
 {
-    public uint ScheduleDelay { get; set; } = 500;
-
-    public uint ExportTimeout { get; set; } = 3000;
-
     public ExporterConfig Exporter { get; set; } = new ExporterConfig();
 
-    public MemoryAllocationSampling? MemoryAllocationSampling { get; set; }
+    public AlwaysOn? AlwaysOn { get; set; }
 
-    public CallStackSampling? CallStackSampling { get; set; }
-
-    public CallGraphsConfiguration? Snapshotting { get; set; }
+    public CallGraphsConfiguration? Callgraphs { get; set; }
 }

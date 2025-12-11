@@ -1,4 +1,4 @@
-﻿// <copyright file="Dotnet.cs" company="Splunk Inc.">
+﻿// <copyright file="AlwaysOn.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,9 @@
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 
-internal class Dotnet
+internal class AlwaysOn
 {
-    public TracesConfig? Traces { get; set; }
+    public CpuProfiler? CpuProfiler { get; set; }
+
+    public MemoryProfiler? MemoryProfiler { get; set; }
 }

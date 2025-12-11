@@ -1,4 +1,4 @@
-﻿// <copyright file="InstrumentationDevelopment.cs" company="Splunk Inc.">
+﻿// <copyright file="CpuProfiler.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +14,12 @@
 // limitations under the License.
 // </copyright>
 
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration.Utils;
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 
-internal class InstrumentationDevelopment
+[EmptyObjectOnEmptyYaml]
+internal class CpuProfiler
 {
-    public Dotnet? Dotnet { get; set; }
+    public uint SamplingInterval { get; set; } = 10000;
 }
