@@ -117,8 +117,8 @@ internal class PluginSettings
                 }
             }
 
-            ProfilerHttpClientTimeout = profilingConfig.Exporter.ExportTimeout;
-            ProfilerExportInterval = profilingConfig.Exporter.ScheduleDelay;
+            ProfilerHttpClientTimeout = profilingConfig.Exporter.OtlpLogHttp.ExportTimeout;
+            ProfilerExportInterval = profilingConfig.Exporter.OtlpLogHttp.ScheduleDelay;
             ProfilerLogsEndpoint = new Uri(profilingConfig.Exporter.OtlpLogHttp.Endpoint);
         }
 #endif

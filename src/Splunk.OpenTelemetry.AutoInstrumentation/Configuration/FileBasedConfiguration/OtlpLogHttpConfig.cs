@@ -22,4 +22,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfig
 internal class OtlpLogHttpConfig
 {
     public string Endpoint { get; set; } = "http://localhost:4318/v1/logs";
+    public uint ScheduleDelay { get; set; } = 500;
+    public uint ExportTimeout { get; set; } = 3000;
 }

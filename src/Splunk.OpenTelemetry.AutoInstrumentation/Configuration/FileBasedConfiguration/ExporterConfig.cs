@@ -21,9 +21,5 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfig
 [EmptyObjectOnEmptyYaml]
 internal class ExporterConfig
 {
-    public uint ScheduleDelay { get; set; } = 500;
-
-    public uint ExportTimeout { get; set; } = 3000;
-
     public OtlpLogHttpConfig OtlpLogHttp { get; set; } = new OtlpLogHttpConfig();
 }
