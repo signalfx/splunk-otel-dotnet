@@ -15,6 +15,7 @@
 // </copyright>
 
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
@@ -26,6 +27,8 @@ internal class PluginSettings
 
     // Runtime suspensions done to collect thread samples often take ~0.25ms.
     private const int DefaultSnapshotSamplingIntervalMs = 40;
+
+    private static readonly ILogger Log = new Logger();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginSettings"/> class
@@ -123,7 +126,13 @@ internal class PluginSettings
         var interval = callStackInterval < 0 ? 10000u : (uint)callStackInterval;
         if (snapshotsEnabled)
         {
-            return (interval / snapshotsSamplingInterval) * snapshotsSamplingInterval;
+            var finalContinuousSamplingInterval = (interval / snapshotsSamplingInterval) * snapshotsSamplingInterval;
+            if (finalContinuousSamplingInterval != interval)
+            {
+                Log.Warning($"Adjusting continuous profiler call stack interval from {interval}ms to {finalContinuousSamplingInterval}ms to be aligned with snapshot sampling interval of {snapshotsSamplingInterval}ms.");
+            }
+
+            return finalContinuousSamplingInterval;
         }
 
         return interval;
