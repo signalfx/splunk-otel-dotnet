@@ -25,6 +25,12 @@ Future versions may extend file-based configuration to include these parameters.
 
 ## Profiling configuration
 
+> ⚠️ **Important:**  
+> Profiling configuration via file-based configuration requires
+> `meter_provider` or `tracer_provider` to be configured via file-based configuration as well.
+> Without any of them, profiling configuration will not work.
+> `callgraphs` requires `baggage propagator` to be set via file-based configuration.
+
 Demonstration of all possible configuration options.
 
 ```yaml
