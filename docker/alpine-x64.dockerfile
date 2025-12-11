@@ -20,7 +20,7 @@ ENV gRPC_PluginFullPath=/usr/bin/grpc_csharp_plugin
 # Install older sdks using the install script
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
     && echo "SHA256: $(sha256sum dotnet-install.sh)" \
-    && echo "9d310fe9c949b9635f27c2d59c4c742101ebad52a16db5265ecc0fdb29ec7f45  dotnet-install.sh" | sha256sum -c \
+    && echo "102a6849303713f15462bb28eb10593bf874bbeec17122e0522f10a3b57ce442  dotnet-install.sh" | sha256sum -c \
     && chmod +x ./dotnet-install.sh \
     && ./dotnet-install.sh -v 9.0.308 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh -v 8.0.416 --install-dir /usr/share/dotnet --no-path \
