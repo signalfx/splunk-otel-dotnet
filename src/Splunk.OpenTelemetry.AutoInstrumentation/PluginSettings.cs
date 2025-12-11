@@ -28,9 +28,8 @@ internal class PluginSettings
     private const double MaxSnapshotSelectionRate = 0.1;
     private const double DefaultSnapshotSelectionRate = 0.01;
 
-    // Runtime suspensions done to collect thread samples often take ~0.25ms. Use `60ms` as default sampling interval
-    // to limit induced overhead.
-    private const int DefaultSnapshotSamplingIntervalMs = 60;
+    // Runtime suspensions done to collect thread samples often take ~0.25ms.
+    private const int DefaultSnapshotSamplingIntervalMs = 30;
 
     private static readonly bool IsYamlConfigEnabled = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.Enabled) == "true";
 
@@ -191,7 +190,7 @@ internal class PluginSettings
     {
         return configuredSelectionRate switch
         {
-            <= 0 => DefaultSnapshotSelectionRate,
+            <= 0 or double.NaN => DefaultSnapshotSelectionRate,
             > MaxSnapshotSelectionRate => MaxSnapshotSelectionRate,
             _ => configuredSelectionRate
         };

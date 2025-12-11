@@ -46,6 +46,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
         [Theory]
         [InlineData("0")]
         [InlineData("-0.1")]
+        [InlineData("NaN")]
         public void SnapshotSelectionRate_HasToBeInBounds(string rate)
         {
             var settings = new PluginSettings(new NameValueConfigurationSource(
@@ -66,7 +67,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
                 {
                     ["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"] = interval
                 }));
-            Assert.Equal(60, settings.SnapshotsSamplingInterval);
+            Assert.Equal(30, settings.SnapshotsSamplingInterval);
         }
 #endif
 
