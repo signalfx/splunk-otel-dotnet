@@ -113,7 +113,7 @@ internal class PluginSettings
                 if (profilingConfig.AlwaysOn.MemoryProfiler != null)
                 {
                     MemoryProfilerEnabled = true;
-                    MemoryProfilerMaxMemorySamplesPerMinute = profilingConfig.AlwaysOn.MemoryProfiler.SamplingInterval;
+                    MemoryProfilerMaxMemorySamplesPerMinute = profilingConfig.AlwaysOn.MemoryProfiler.MaxMemorySamples;
                 }
             }
 
