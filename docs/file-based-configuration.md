@@ -44,17 +44,17 @@ distribution:
           # Configure interval for exporting collected stack data. 
           # Minimum value is 500.
           # If omitted or null, 500 is used.
-          schedule_delay: 500 
+          schedule_delay: 500
           # Configure timeout for exporting stack data.
           # If omitted or null, 3000 is used.
-          export_timeout: 3000 
+          export_timeout: 3000
       # Always-on profiling configuration    
       always_on:
         # Configure CPU call stack profiler
         cpu_profiler:
           # Configure frequency with which call stacks are sampled.
           # If omitted or null, 10000 is used.
-          sampling_interval: 10000 
+          sampling_interval: 10000
         # Configure memory allocation profiler
         memory_profiler:
           # Configure maximum memory samples collected per minute. 
@@ -136,7 +136,7 @@ distribution:
         cpu_profiler:
           # Configure frequency with which call stacks are sampled.
           # If omitted or null, 10000 is used.
-          sampling_interval: ${SPLUNK_PROFILER_CALL_STACK_INTERVAL} 
+          sampling_interval: ${SPLUNK_PROFILER_CALL_STACK_INTERVAL}
         # Configure memory allocation profiler
         memory_profiler:
           # Configure maximum memory samples collected per minute. 
