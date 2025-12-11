@@ -121,12 +121,17 @@ public abstract class TestHelper
         RemoveEnvironmentVariable("OTEL_LOGS_EXPORTER");
     }
 
-    public void EnableFileBasedConfigWithDefaultPath()
+    public void EnableFileBasedConfig(string fileName = "config.yaml")
     {
         SetEnvironmentVariable("OTEL_EXPERIMENTAL_FILE_BASED_CONFIGURATION_ENABLED", "true");
-        SetEnvironmentVariable("OTEL_EXPERIMENTAL_CONFIG_FILE", Path.Combine(EnvironmentHelper.GetTestApplicationApplicationOutputDirectory(), "config.yaml"));
+        SetEnvironmentVariable("OTEL_EXPERIMENTAL_CONFIG_FILE", Path.Combine(EnvironmentHelper.GetTestApplicationApplicationOutputDirectory(), fileName));
     }
 
+    /// <summary>
+    /// RunTestApplication starts the test application, wait up to DefaultProcessTimeout.
+    /// Assertion exceptions are thrown if it timed out or the exit code is non-zero.
+    /// </summary>
+    /// <param name="testSettings">Test settings</param>
     public (string StandardOutput, string ErrorOutput, int ProcessId) RunTestApplication(TestSettings? testSettings = null)
     {
         // RunTestApplication starts the test application, wait up to DefaultProcessTimeout.

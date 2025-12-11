@@ -14,7 +14,11 @@
 // limitations under the License.
 // </copyright>
 
+using System.Diagnostics;
+using System.Reflection;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
@@ -26,6 +30,10 @@ internal class PluginSettings
 
     // Runtime suspensions done to collect thread samples often take ~0.25ms.
     private const int DefaultSnapshotSamplingIntervalMs = 30;
+
+    private static readonly bool IsYamlConfigEnabled = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.Enabled) == "true";
+
+    private static readonly ILogger Log = new Logger();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginSettings"/> class
@@ -68,6 +76,53 @@ internal class PluginSettings
 #endif
     }
 
+    internal PluginSettings(YamlRoot configuration)
+    {
+        if (configuration == null)
+        {
+            throw new ArgumentNullException(nameof(configuration));
+        }
+
+        Realm = Constants.None;
+        AccessToken = null;
+        IsOtlpEndpointSet = false;
+        TraceResponseHeaderEnabled = false;
+
+#if NET
+        var profilingConfig = configuration.Distribution?.Splunk?.Profiling;
+        if (profilingConfig != null)
+        {
+            if (profilingConfig.Callgraphs != null)
+            {
+                SnapshotsEnabled = true;
+                HighResolutionTimerEnabled = profilingConfig.Callgraphs.HighResolutionTimerEnabled;
+                SnapshotsSamplingInterval = profilingConfig.Callgraphs.SamplingInterval <= 0 ? DefaultSnapshotSamplingIntervalMs : profilingConfig.Callgraphs.SamplingInterval;
+                var configuredSelectionRate = profilingConfig.Callgraphs.SelectionProbability;
+                SnapshotsSelectionRate = GetFinalSnapshotSelectionProbability(configuredSelectionRate);
+            }
+
+            if (profilingConfig.AlwaysOn != null)
+            {
+                if (profilingConfig.AlwaysOn.CpuProfiler != null)
+                {
+                    CpuProfilerEnabled = true;
+                    CpuProfilerCallStackInterval = profilingConfig.AlwaysOn.CpuProfiler.SamplingInterval;
+                }
+
+                if (profilingConfig.AlwaysOn.MemoryProfiler != null)
+                {
+                    MemoryProfilerEnabled = true;
+                    MemoryProfilerMaxMemorySamplesPerMinute = profilingConfig.AlwaysOn.MemoryProfiler.MaxMemorySamples;
+                }
+            }
+
+            ProfilerHttpClientTimeout = profilingConfig.Exporter.OtlpLogHttp.ExportTimeout;
+            ProfilerExportInterval = profilingConfig.Exporter.OtlpLogHttp.ScheduleDelay;
+            ProfilerLogsEndpoint = new Uri(profilingConfig.Exporter.OtlpLogHttp.Endpoint);
+        }
+#endif
+    }
+
     public int SnapshotsSamplingInterval { get; set; }
 
     public bool SnapshotsEnabled { get; set; }
@@ -93,7 +148,7 @@ internal class PluginSettings
 
     public bool MemoryProfilerEnabled { get; }
 
-    public Uri ProfilerLogsEndpoint { get; }
+    public Uri ProfilerLogsEndpoint { get; } = new Uri("http://localhost:4318/v1/logs");
 
     public uint ProfilerHttpClientTimeout { get; }
 
@@ -102,6 +157,21 @@ internal class PluginSettings
 
     public static PluginSettings FromDefaultSources()
     {
+        if (IsYamlConfigEnabled)
+        {
+            var fileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName) ?? "config.yaml";
+
+            var splunkConfiguration = LoadSplunkConfig(fileName);
+            if (splunkConfiguration != null)
+            {
+                return new PluginSettings(splunkConfiguration);
+            }
+            else
+            {
+                Log.Error($"Failed to load Splunk configuration from file '{fileName}'. Falling back to environment variables.");
+            }
+        }
+
         var configurationSource = new CompositeConfigurationSource
         {
             new EnvironmentConfigurationSource(),
@@ -144,4 +214,50 @@ internal class PluginSettings
         return new Uri(profilerLogsEndpoint);
     }
 #endif
+
+    private static YamlRoot? LoadSplunkConfig(string fileName)
+    {
+        var parserTypeFullName = "OpenTelemetry.AutoInstrumentation.Configurations.FileBasedConfiguration.Parser.Parser";
+
+        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+        var parserType = assemblies
+            .Select(a =>
+            {
+                var t = a.GetType(parserTypeFullName, throwOnError: false, ignoreCase: false);
+                return t;
+            })
+            .FirstOrDefault(t => t != null);
+
+        if (parserType == null)
+        {
+            throw new TypeLoadException("Could not find Parser type for YAML configuration parsing.");
+        }
+
+        var parseYaml = parserType
+            .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+            .FirstOrDefault(m =>
+                m.Name == "ParseYaml" &&
+                m.IsGenericMethodDefinition &&
+                m.GetParameters().Length == 1 &&
+                m.GetParameters()[0].ParameterType == typeof(string));
+
+        if (parseYaml == null)
+        {
+            throw new MissingMethodException(parserType.FullName, "ParseYaml<T>(string)");
+        }
+
+        var closed = parseYaml.MakeGenericMethod(typeof(YamlRoot));
+
+        var yamlRoot = closed.Invoke(null, new object[] { fileName });
+
+        if (yamlRoot == null)
+        {
+            return null;
+        }
+        else
+        {
+            return (YamlRoot)yamlRoot;
+        }
+    }
 }
