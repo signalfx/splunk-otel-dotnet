@@ -67,7 +67,23 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
                 {
                     ["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"] = interval
                 }));
-            Assert.Equal(30, settings.SnapshotsSamplingInterval);
+            Assert.Equal(40u, settings.SnapshotsSamplingInterval);
+        }
+
+        [Theory]
+        [InlineData("40", "1000", 1000u)]
+        [InlineData("30", "1000", 990u)]
+        public void SamplingIntervals_HaveToBeAligned(string snapshotSamplingInterval, string configuredContinuousProfilingSamplingInterval, uint finalSamplingInterval)
+        {
+            var settings = new PluginSettings(new NameValueConfigurationSource(
+                new NameValueCollection
+                {
+                    // Enable snapshots to test alignment logic, otherwise the continuous profiling interval is used as is.
+                    ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "true",
+                    ["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"] = snapshotSamplingInterval,
+                    ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = configuredContinuousProfilingSamplingInterval,
+                }));
+            Assert.Equal(finalSamplingInterval, settings.CpuProfilerCallStackInterval);
         }
 #endif
 
