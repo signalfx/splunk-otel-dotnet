@@ -9,7 +9,7 @@ stages:
 
 build:
   stage: build
-  image: "${DOCKER_MCR_REPO}/dotnet/sdk:10.0.100-noble"
+  image: "${DOCKER_MCR_REPO}/dotnet/sdk:10.0.101-noble"
   script:
     - './build.sh Restore'
     - './build.sh BuildNugetPackage'
