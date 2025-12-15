@@ -21,5 +21,5 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfig
 [EmptyObjectOnEmptyYaml]
 internal class MemoryProfiler
 {
-    public uint MaxMemorySamples { get; set; } = 200;
+    public uint MaxMemorySamples { get; set; } = Constants.DefaultMaxMemorySamples;
 }

@@ -21,9 +21,9 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfig
 [EmptyObjectOnEmptyYaml]
 internal class CallGraphsConfiguration
 {
-    public uint SamplingInterval { get; set; } = 40;
+    public uint SamplingInterval { get; set; } = Constants.DefaultSnapshotSamplingIntervalMs;
 
-    public double SelectionProbability { get; set; } = 0.01;
+    public double SelectionProbability { get; set; } = Constants.DefaultSnapshotSelectionRate;
 
-    public bool HighResolutionTimerEnabled { get; set; } = false;
+    public bool HighResolutionTimerEnabled { get; set; } = Constants.DefaultHighResolutionTimer;
 }

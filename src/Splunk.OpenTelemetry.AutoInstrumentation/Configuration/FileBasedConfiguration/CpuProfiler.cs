@@ -21,5 +21,5 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfig
 [EmptyObjectOnEmptyYaml]
 internal class CpuProfiler
 {
-    public uint SamplingInterval { get; set; } = 10000;
+    public uint SamplingInterval { get; set; } = Constants.DefaultSamplingInterval;
 }

@@ -24,13 +24,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class PluginSettings
 {
-    // Maximum/default values, are defined in GDI spec.
-    private const double MaxSnapshotSelectionRate = 0.1;
-    private const double DefaultSnapshotSelectionRate = 0.01;
-
-    // Runtime suspensions done to collect thread samples often take ~0.25ms.
-    private const int DefaultSnapshotSamplingIntervalMs = 40;
-
     private static readonly ILogger Log = new Logger();
 
     private static readonly bool IsYamlConfigEnabled = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.Enabled) == "true";
@@ -55,22 +48,22 @@ internal class PluginSettings
 
 #if NET
         SnapshotsEnabled = source.GetBool(ConfigurationKeys.Splunk.Snapshots.Enabled) ?? false;
-        var snapshotInterval = source.GetInt32(ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs) ?? DefaultSnapshotSamplingIntervalMs;
-        SnapshotsSamplingInterval = (uint)(snapshotInterval <= 0 ? DefaultSnapshotSamplingIntervalMs : snapshotInterval);
-        var configuredSelectionRate = source.GetDouble(ConfigurationKeys.Splunk.Snapshots.SelectionRate) ?? DefaultSnapshotSelectionRate;
+        var snapshotInterval = source.GetInt32(ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs) ?? Constants.DefaultSnapshotSamplingIntervalMs;
+        SnapshotsSamplingInterval = (uint)(snapshotInterval <= 0 ? Constants.DefaultSnapshotSamplingIntervalMs : snapshotInterval);
+        var configuredSelectionRate = source.GetDouble(ConfigurationKeys.Splunk.Snapshots.SelectionRate) ?? Constants.DefaultSnapshotSelectionRate;
         SnapshotsSelectionRate = GetFinalSnapshotSelectionProbability(configuredSelectionRate);
         HighResolutionTimerEnabled = source.GetBool(ConfigurationKeys.Splunk.Snapshots.HighResolutionTimerEnabled) ?? false;
 
         CpuProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled) ?? false;
-        var callStackInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval) ?? 10000;
+        var callStackInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval) ?? Constants.DefaultSamplingInterval;
         CpuProfilerCallStackInterval = GetFinalContinuousSamplingInterval(callStackInterval, SnapshotsEnabled, SnapshotsSamplingInterval);
 
-        MemoryProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled) ?? false;
-        var maxMemorySamplesPerMinute = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples) ?? 200;
+        MemoryProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled) ?? Constants.DefaultHighResolutionTimer;
+        var maxMemorySamplesPerMinute = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples) ?? Constants.DefaultMaxMemorySamples;
         MemoryProfilerMaxMemorySamplesPerMinute = maxMemorySamplesPerMinute > 200 ? 200u : (uint)maxMemorySamplesPerMinute;
-        var httpClientTimeout = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportTimeout) ?? 3000;
+        var httpClientTimeout = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportTimeout) ?? Constants.DefaultProfilerExportTimeout;
         ProfilerHttpClientTimeout = (uint)httpClientTimeout;
-        var exportInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportInterval) ?? 500;
+        var exportInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportInterval) ?? Constants.DefaultProfilerExportInterval;
         ProfilerExportInterval = exportInterval < 500 ? 500u : (uint)exportInterval;
 
         ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
@@ -97,7 +90,7 @@ internal class PluginSettings
             {
                 SnapshotsEnabled = true;
                 HighResolutionTimerEnabled = profilingConfig.Callgraphs.HighResolutionTimerEnabled;
-                SnapshotsSamplingInterval = profilingConfig.Callgraphs.SamplingInterval <= 0 ? DefaultSnapshotSamplingIntervalMs : profilingConfig.Callgraphs.SamplingInterval;
+                SnapshotsSamplingInterval = profilingConfig.Callgraphs.SamplingInterval;
                 var configuredSelectionRate = profilingConfig.Callgraphs.SelectionProbability;
                 SnapshotsSelectionRate = GetFinalSnapshotSelectionProbability(configuredSelectionRate);
             }
@@ -150,7 +143,7 @@ internal class PluginSettings
 
     public bool MemoryProfilerEnabled { get; }
 
-    public Uri ProfilerLogsEndpoint { get; } = new Uri("http://localhost:4318/v1/logs");
+    public Uri ProfilerLogsEndpoint { get; } = new Uri(Constants.DefaultProfilerLogsEndpoint);
 
     public uint ProfilerHttpClientTimeout { get; }
 
@@ -210,8 +203,8 @@ internal class PluginSettings
     {
         return configuredSelectionRate switch
         {
-            <= 0 or double.NaN => DefaultSnapshotSelectionRate,
-            > MaxSnapshotSelectionRate => MaxSnapshotSelectionRate,
+            <= 0 or double.NaN => Constants.DefaultSnapshotSelectionRate,
+            > Constants.MaxSnapshotSelectionRate => Constants.MaxSnapshotSelectionRate,
             _ => configuredSelectionRate
         };
     }
@@ -224,7 +217,7 @@ internal class PluginSettings
         {
             if (otlpFallback == null)
             {
-                return new Uri("http://localhost:4318/v1/logs");
+                return new Uri(Constants.DefaultProfilerLogsEndpoint);
             }
 
             return otlpFallback.ToString().EndsWith("v1/logs") ? otlpFallback : new Uri(otlpFallback, "v1/logs");
@@ -268,7 +261,7 @@ internal class PluginSettings
 
         var closed = parseYaml.MakeGenericMethod(typeof(YamlRoot));
 
-        var yamlRoot = closed.Invoke(null, new object[] { fileName });
+        var yamlRoot = closed.Invoke(null, [fileName]);
 
         if (yamlRoot == null)
         {
