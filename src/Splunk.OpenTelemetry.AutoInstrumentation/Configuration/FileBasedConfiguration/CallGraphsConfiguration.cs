@@ -21,7 +21,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfig
 [EmptyObjectOnEmptyYaml]
 internal class CallGraphsConfiguration
 {
-    public int SamplingInterval { get; set; } = 20;
+    public uint SamplingInterval { get; set; } = 20;
 
     public double SelectionProbability { get; set; } = 0.01;
 

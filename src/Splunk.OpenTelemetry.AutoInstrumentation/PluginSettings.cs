@@ -35,8 +35,6 @@ internal class PluginSettings
 
     private static readonly bool IsYamlConfigEnabled = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.Enabled) == "true";
 
-    private static readonly ILogger Log = new Logger();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="PluginSettings"/> class
     /// using the specified <see cref="IConfigurationSource"/> to initialize values.
@@ -109,7 +107,8 @@ internal class PluginSettings
                 if (profilingConfig.AlwaysOn.CpuProfiler != null)
                 {
                     CpuProfilerEnabled = true;
-                    CpuProfilerCallStackInterval = profilingConfig.AlwaysOn.CpuProfiler.SamplingInterval;
+                    var callStackInterval = profilingConfig.AlwaysOn.CpuProfiler.SamplingInterval;
+                    CpuProfilerCallStackInterval = GetFinalContinuousSamplingInterval((int)callStackInterval, SnapshotsEnabled, SnapshotsSamplingInterval);
                 }
 
                 if (profilingConfig.AlwaysOn.MemoryProfiler != null)
