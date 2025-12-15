@@ -70,8 +70,8 @@ distribution:
       # Configure Callgraph snapshot profiler
       callgraphs:
         # Configure sampling interval.
-        # If omitted or null, 20 is used.
-        sampling_interval: 20
+        # If omitted or null, 40 is used.
+        sampling_interval: 40
         # Configure probability of selecting a trace. 
         # Maximum value is 0.1.
         # If omitted or null, 0.01 is used.
