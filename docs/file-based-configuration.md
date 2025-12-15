@@ -110,7 +110,7 @@ distribution:
       callgraphs:
 ```
 
-### Envarironment Variable Migration Example
+### Environment Variable Migration Example
 
 Here is a typical starting point for configuring the Splunk Distribution of OpenTelemetry .NET
 when migrating from environment variable based configuration.
