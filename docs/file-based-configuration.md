@@ -135,7 +135,7 @@ distribution:
           schedule_delay: ${SPLUNK_PROFILER_EXPORT_INTERVAL}
           # Configure timeout for exporting stack data.
           # If omitted or null, 3000 is used.
-          export_timeout: ${SPLUNK_PROFILER_LOGS_EXPORT_TIMEOUT}
+          export_timeout: ${SPLUNK_PROFILER_EXPORT_TIMEOUT}
       # Always-on profiling configuration    
       always_on:
         # Configure CPU call stack profiler
@@ -160,5 +160,5 @@ distribution:
         selection_probability: ${SPLUNK_SNAPSHOT_SELECTION_PROBABILITY}
         # Configure if the High-resolution Timer is enabled or not.
         # If omitted or null, false is used.
-        high_resolution_timer_enabled: ${SPLUNK_SNAPSHOT_HIGH_RESOLUTION_TIMER_ENABLED}
+        high_resolution_timer_enabled: ${SPLUNK_SNAPSHOT_HIGH_RES_TIMER_ENABLED}
 ```
