@@ -44,7 +44,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
         }
 
         [Theory]
-        [InlineData("0")]
         [InlineData("-0.1")]
         [InlineData("NaN")]
         public void SnapshotSelectionRate_HasToBeInBounds(string rate)
@@ -55,6 +54,17 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
                     ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = rate
                 }));
             Assert.Equal(0.01, settings.SnapshotsSelectionRate);
+        }
+
+        [Fact]
+        public void ZeroSelectionRate_IsConsideredValid()
+        {
+            var settings = new PluginSettings(new NameValueConfigurationSource(
+                new NameValueCollection
+                {
+                    ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0"
+                }));
+            Assert.Equal(0, settings.SnapshotsSelectionRate);
         }
 
         [Theory]

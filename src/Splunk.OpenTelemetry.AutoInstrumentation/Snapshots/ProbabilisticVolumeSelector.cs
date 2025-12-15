@@ -36,7 +36,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
                 return false;
             }
 
-            return Random.Shared.NextDouble() <= _ratio;
+            return Random.Shared.NextDouble() < _ratio;
         }
 
         private static bool IndicatesRootSpan(ActivityContext context)

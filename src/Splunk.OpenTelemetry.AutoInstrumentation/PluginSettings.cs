@@ -142,7 +142,7 @@ internal class PluginSettings
     {
         return configuredSelectionRate switch
         {
-            <= 0 or double.NaN => DefaultSnapshotSelectionRate,
+            < 0 or double.NaN => DefaultSnapshotSelectionRate,
             > MaxSnapshotSelectionRate => MaxSnapshotSelectionRate,
             _ => configuredSelectionRate
         };
