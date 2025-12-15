@@ -27,7 +27,8 @@ Future versions may extend file-based configuration to include these parameters.
 
 > ⚠️ **Important:**  
 > Profiling configuration via file-based configuration requires
-> `meter_provider` or `tracer_provider` to be configured via file-based configuration as well.
+> `meter_provider` or `tracer_provider` to be configured via file-based
+> configuration as well.
 > Without any of them, profiling configuration will not work.
 > `callgraphs` requires `baggage propagator` to be set via file-based configuration.
 
@@ -83,7 +84,8 @@ distribution:
 
 ## Configuration Examples
 
-To start using file-based configuration, put this YAML content into a your configuration file.
+To start using file-based configuration, put
+this YAML content into a your configuration file.
 
 ### Default Configuration With All Profilings
 
@@ -112,7 +114,8 @@ distribution:
 
 ### Environment Variable Migration Example
 
-Here is a typical starting point for configuring the Splunk Distribution of OpenTelemetry .NET
+Here is a typical starting point for configuring
+the Splunk Distribution of OpenTelemetry .NET
 when migrating from environment variable based configuration.
 
 ```yaml
