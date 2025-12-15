@@ -169,7 +169,7 @@ public class Plugin
     {
         if (Settings.SnapshotsEnabled)
         {
-            var frequentSamplingInterval = (uint)Settings.SnapshotsSamplingInterval;
+            var frequentSamplingInterval = Settings.SnapshotsSamplingInterval;
             var pprofInOtlpLogsExporter = GetPprofInOtlpLogsExporter();
             pprofInOtlpLogsExporter.SampleProcessor.SelectedSamplingPeriod = frequentSamplingInterval;
             var exportInterval = GetSampleExportInterval();
