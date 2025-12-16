@@ -27,6 +27,7 @@ internal class PluginSettings
 
     // Runtime suspensions done to collect thread samples often take ~0.25ms.
     private const int DefaultSnapshotSamplingIntervalMs = 40;
+    private const int DefaultContinuousCpuProfilingInterval = 10000;
 
     private static readonly ILogger Log = new Logger();
 
@@ -57,8 +58,8 @@ internal class PluginSettings
         HighResolutionTimerEnabled = source.GetBool(ConfigurationKeys.Splunk.Snapshots.HighResolutionTimerEnabled) ?? false;
 
         CpuProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled) ?? false;
-        var callStackInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval) ?? 10000;
-        CpuProfilerCallStackInterval = GetFinalContinuousSamplingInterval(callStackInterval, SnapshotsEnabled, SnapshotsSamplingInterval);
+        var callStackInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval) ?? DefaultContinuousCpuProfilingInterval;
+        CpuProfilerCallStackInterval = CpuProfilerEnabled ? GetFinalContinuousSamplingInterval(callStackInterval, SnapshotsEnabled, SnapshotsSamplingInterval) : DefaultContinuousCpuProfilingInterval;
 
         MemoryProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled) ?? false;
         var maxMemorySamplesPerMinute = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples) ?? 200;
@@ -123,7 +124,7 @@ internal class PluginSettings
 #if NET
     private static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)
     {
-        var interval = callStackInterval < 0 ? 10000u : (uint)callStackInterval;
+        var interval = callStackInterval < 0 ? DefaultContinuousCpuProfilingInterval : (uint)callStackInterval;
         if (snapshotsEnabled)
         {
             var finalContinuousSamplingInterval = (interval / snapshotsSamplingInterval) * snapshotsSamplingInterval;

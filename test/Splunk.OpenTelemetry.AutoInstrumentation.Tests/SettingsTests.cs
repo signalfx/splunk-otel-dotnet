@@ -79,6 +79,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
                 new NameValueCollection
                 {
                     // Enable snapshots to test alignment logic, otherwise the continuous profiling interval is used as is.
+                    ["SPLUNK_PROFILER_ENABLED"] = "true",
                     ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "true",
                     ["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"] = snapshotSamplingInterval,
                     ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = configuredContinuousProfilingSamplingInterval,
