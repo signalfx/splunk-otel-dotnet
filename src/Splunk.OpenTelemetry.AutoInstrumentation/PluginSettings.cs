@@ -249,21 +249,10 @@ internal class PluginSettings
 
     private static YamlRoot? LoadSplunkConfig(string fileName)
     {
-        var parserTypeFullName = "OpenTelemetry.AutoInstrumentation.Configurations.FileBasedConfiguration.Parser.Parser";
-
-        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-        var parserType = assemblies
-            .Select(a =>
-            {
-                var t = a.GetType(parserTypeFullName, throwOnError: false, ignoreCase: false);
-                return t;
-            })
-            .FirstOrDefault(t => t != null);
-
+        var parserType = Type.GetType("OpenTelemetry.AutoInstrumentation.Configurations.FileBasedConfiguration.Parser.Parser, OpenTelemetry.AutoInstrumentation");
         if (parserType == null)
         {
-            throw new TypeLoadException("Could not find Parser type for YAML configuration parsing.");
+            throw new Exception("Could not find Parser type for YAML configuration parsing.");
         }
 
         var parseYaml = parserType
