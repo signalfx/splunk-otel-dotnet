@@ -4,11 +4,9 @@ You can configure Splunk Distribution of OpenTelemetry .NET using a YAML file.
 
 ## Not Supported configurations
 
-> ⚠️ **Important:**  
-> File-based configuration support is currently **limited**.  
-> Some settings **cannot be configured via YAML files**.  
-> These options **must still be set using environment variables** to
-> ensure correct runtime behavior and instrumentation activation.
+> ⚠️ **Important:**
+> File-based configuration support is currently **limited**.
+> Some settings **cannot be configured via YAML files**.
 
 The settings listed below are **not supported** through the configuration file.
 
