@@ -12,8 +12,8 @@ The settings listed below are **not supported** through the configuration file.
 
 Future versions may extend file-based configuration to include these parameters.
 
-If you intend to use features controlled by these env variables,
-instrumentation must be configured using env vars exclusively.
+If you intend to use features controlled by these environment variables,
+instrumentation must be configured using environment variables exclusively.
 
 ### General
 
