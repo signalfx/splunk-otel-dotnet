@@ -60,11 +60,11 @@ internal class PluginSettings
 
         MemoryProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled) ?? Constants.DefaultHighResolutionTimer;
         var maxMemorySamplesPerMinute = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples) ?? Constants.DefaultMaxMemorySamples;
-        MemoryProfilerMaxMemorySamplesPerMinute = maxMemorySamplesPerMinute > 200 ? 200u : (uint)maxMemorySamplesPerMinute;
+        MemoryProfilerMaxMemorySamplesPerMinute = GetFinalMaxMemorySamples(maxMemorySamplesPerMinute);
         var httpClientTimeout = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportTimeout) ?? Constants.DefaultProfilerExportTimeout;
         ProfilerHttpClientTimeout = (uint)httpClientTimeout;
         var exportInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportInterval) ?? Constants.DefaultProfilerExportInterval;
-        ProfilerExportInterval = exportInterval < 500 ? 500u : (uint)exportInterval;
+        ProfilerExportInterval = GetFinalExportInterval(exportInterval);
 
         ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
 #endif
@@ -90,7 +90,7 @@ internal class PluginSettings
             {
                 SnapshotsEnabled = true;
                 HighResolutionTimerEnabled = profilingConfig.Callgraphs.HighResolutionTimerEnabled;
-                SnapshotsSamplingInterval = profilingConfig.Callgraphs.SamplingInterval;
+                SnapshotsSamplingInterval = profilingConfig.Callgraphs.SamplingInterval <= 0 ? Constants.DefaultSnapshotSamplingIntervalMs : profilingConfig.Callgraphs.SamplingInterval;
                 var configuredSelectionRate = profilingConfig.Callgraphs.SelectionProbability;
                 SnapshotsSelectionRate = GetFinalSnapshotSelectionProbability(configuredSelectionRate);
             }
@@ -107,12 +107,12 @@ internal class PluginSettings
                 if (profilingConfig.AlwaysOn.MemoryProfiler != null)
                 {
                     MemoryProfilerEnabled = true;
-                    MemoryProfilerMaxMemorySamplesPerMinute = profilingConfig.AlwaysOn.MemoryProfiler.MaxMemorySamples;
+                    MemoryProfilerMaxMemorySamplesPerMinute = GetFinalMaxMemorySamples((int)profilingConfig.AlwaysOn.MemoryProfiler.MaxMemorySamples);
                 }
             }
 
             ProfilerHttpClientTimeout = profilingConfig.Exporter.OtlpLogHttp.ExportTimeout;
-            ProfilerExportInterval = profilingConfig.Exporter.OtlpLogHttp.ScheduleDelay;
+            ProfilerExportInterval = GetFinalExportInterval((int)profilingConfig.Exporter.OtlpLogHttp.ScheduleDelay);
             ProfilerLogsEndpoint = new Uri(profilingConfig.Exporter.OtlpLogHttp.Endpoint);
         }
 #endif
@@ -197,6 +197,26 @@ internal class PluginSettings
         }
 
         return interval;
+    }
+
+    private static uint GetFinalMaxMemorySamples(int maxMemorySamplesPerMinute)
+    {
+        if (maxMemorySamplesPerMinute < 0 || maxMemorySamplesPerMinute > 200)
+        {
+            return Constants.DefaultMaxMemorySamples;
+        }
+
+        return (uint)maxMemorySamplesPerMinute;
+    }
+
+    private static uint GetFinalExportInterval(int exportInterval)
+    {
+        if (exportInterval < 500)
+        {
+            return Constants.DefaultProfilerExportInterval;
+        }
+
+        return (uint)exportInterval;
     }
 
     private static double GetFinalSnapshotSelectionProbability(double configuredSelectionRate)
