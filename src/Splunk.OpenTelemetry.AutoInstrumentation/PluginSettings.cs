@@ -56,7 +56,7 @@ internal class PluginSettings
 
         CpuProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled) ?? false;
         var callStackInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval) ?? Constants.DefaultSamplingInterval;
-        CpuProfilerCallStackInterval = GetFinalContinuousSamplingInterval(callStackInterval, SnapshotsEnabled, SnapshotsSamplingInterval);
+        CpuProfilerCallStackInterval = CpuProfilerEnabled ? GetFinalContinuousSamplingInterval(callStackInterval, SnapshotsEnabled, SnapshotsSamplingInterval) : Constants.DefaultSamplingInterval;
 
         MemoryProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled) ?? Constants.DefaultHighResolutionTimer;
         var maxMemorySamplesPerMinute = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples) ?? Constants.DefaultMaxMemorySamples;
@@ -184,7 +184,7 @@ internal class PluginSettings
 #if NET
     private static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)
     {
-        var interval = callStackInterval < 0 ? 10000u : (uint)callStackInterval;
+        var interval = callStackInterval < 0 ? DefaultContinuousCpuProfilingInterval : (uint)callStackInterval;
         if (snapshotsEnabled)
         {
             var finalContinuousSamplingInterval = (interval / snapshotsSamplingInterval) * snapshotsSamplingInterval;
