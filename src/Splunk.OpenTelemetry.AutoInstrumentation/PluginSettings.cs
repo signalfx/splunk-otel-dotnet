@@ -184,7 +184,7 @@ internal class PluginSettings
 #if NET
     private static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)
     {
-        var interval = callStackInterval < 0 ? DefaultContinuousCpuProfilingInterval : (uint)callStackInterval;
+        var interval = callStackInterval < 0 ? Constants.DefaultSamplingInterval : (uint)callStackInterval;
         if (snapshotsEnabled)
         {
             var finalContinuousSamplingInterval = (interval / snapshotsSamplingInterval) * snapshotsSamplingInterval;
