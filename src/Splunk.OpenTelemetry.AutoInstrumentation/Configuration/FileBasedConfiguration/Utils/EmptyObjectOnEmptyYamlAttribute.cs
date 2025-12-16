@@ -16,5 +16,9 @@
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration.Utils;
 
+/// <summary>
+/// Attribute indicating that the upstream deserializer should treat an empty YAML node as an empty object
+/// for the decorated class. This attribute is handled specially by the upstream deserializer.
+/// </summary>
 [AttributeUsage(AttributeTargets.Class)]
 internal sealed class EmptyObjectOnEmptyYamlAttribute : Attribute;
