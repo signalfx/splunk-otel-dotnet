@@ -49,7 +49,7 @@ internal class PluginSettings
 #if NET
         SnapshotsEnabled = source.GetBool(ConfigurationKeys.Splunk.Snapshots.Enabled) ?? false;
         var snapshotInterval = source.GetInt32(ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs) ?? Constants.DefaultSnapshotSamplingIntervalMs;
-        SnapshotsSamplingInterval = (uint)(snapshotInterval <= 0 ? Constants.DefaultSnapshotSamplingIntervalMs : snapshotInterval);
+        SnapshotsSamplingInterval = GetFinalSnapshotSamplingInterval(snapshotInterval);
         var configuredSelectionRate = source.GetDouble(ConfigurationKeys.Splunk.Snapshots.SelectionRate) ?? Constants.DefaultSnapshotSelectionRate;
         SnapshotsSelectionRate = GetFinalSnapshotSelectionProbability(configuredSelectionRate);
         HighResolutionTimerEnabled = source.GetBool(ConfigurationKeys.Splunk.Snapshots.HighResolutionTimerEnabled) ?? false;
@@ -90,7 +90,7 @@ internal class PluginSettings
             {
                 SnapshotsEnabled = true;
                 HighResolutionTimerEnabled = profilingConfig.Callgraphs.HighResolutionTimerEnabled;
-                SnapshotsSamplingInterval = profilingConfig.Callgraphs.SamplingInterval <= 0 ? Constants.DefaultSnapshotSamplingIntervalMs : profilingConfig.Callgraphs.SamplingInterval;
+                SnapshotsSamplingInterval = GetFinalSnapshotSamplingInterval((int)profilingConfig.Callgraphs.SamplingInterval);
                 var configuredSelectionRate = profilingConfig.Callgraphs.SelectionProbability;
                 SnapshotsSelectionRate = GetFinalSnapshotSelectionProbability(configuredSelectionRate);
             }
@@ -217,6 +217,16 @@ internal class PluginSettings
         }
 
         return (uint)exportInterval;
+    }
+
+    private static uint GetFinalSnapshotSamplingInterval(int snapshotsSamplingInterval)
+    {
+        if (snapshotsSamplingInterval <= 0)
+        {
+            return Constants.DefaultSnapshotSamplingIntervalMs;
+        }
+
+        return (uint)snapshotsSamplingInterval;
     }
 
     private static double GetFinalSnapshotSelectionProbability(double configuredSelectionRate)
