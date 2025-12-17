@@ -69,6 +69,12 @@ jobs:
             bin/InstallationScripts/splunk-otel-dotnet-install.sh
             bin/InstallationScripts/Splunk.OTel.DotNet.psm1
             bin/Matrix/splunk-otel-dotnet-metadata.yaml
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # tag: v6.0.0
+        with:
+          name: test-logs-${{ matrix.machine }}
+          path: test-artifacts/
 
   container-build:
     strategy:
