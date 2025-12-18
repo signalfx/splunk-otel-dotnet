@@ -43,7 +43,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
             else
             {
                 SetEnvironmentVariable("SPLUNK_SNAPSHOT_PROFILER_ENABLED", "true");
-                SetEnvironmentVariable("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL", "30");
+                SetEnvironmentVariable("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL", "300");
                 // Disable to ensure trace starts on the server side.
                 SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_HTTPCLIENT_INSTRUMENTATION_ENABLED", "false");
             }
