@@ -47,7 +47,8 @@ public class MockSpansCollector : IDisposable
 #if NETFRAMEWORK
         _listener = new TestHttpServer(output, HandleHttpRequests, host, "/v1/traces/");
 #else
-        _listener = new TestHttpServer(output, nameof(MockSpansCollector), new PathHandler(HandleHttpRequests, "/v1/traces"));
+        _listener = new TestHttpServer(output, nameof(MockSpansCollector), new PathHandler(HandleHttpRequests, "/v1/traces"), MockCollectorHealthZ.CreateHealthZHandler());
+        MockCollectorHealthZ.WarmupHealthZEndpoint(output, host, Port);
 #endif
     }
 
