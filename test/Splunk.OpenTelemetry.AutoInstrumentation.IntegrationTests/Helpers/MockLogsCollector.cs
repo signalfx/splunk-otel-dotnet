@@ -46,25 +46,8 @@ public class MockLogsCollector : IDisposable
 #if NETFRAMEWORK
         _listener = new(output, HandleHttpRequests, host, "/v1/logs/");
 #else
-        _listener = new(output, nameof(MockLogsCollector), new PathHandler(HandleHttpRequests, "/v1/logs"), new PathHandler(HandleHealthZRequests, "/healthz"));
-
-        while (true)
-        {
-            try
-            {
-                using var httpClient = new HttpClient();
-                httpClient.BaseAddress = new Uri($"http://{host}:{Port}/");
-                var response = httpClient.GetAsync("/healthz").Result;
-                if (response.StatusCode == HttpStatusCode.OK)
-                {
-                    break;
-                }
-            }
-            catch (Exception e)
-            {
-                output.WriteLine(e.ToString());
-            }
-        }
+        _listener = new(output, nameof(MockLogsCollector), new PathHandler(HandleHttpRequests, "/v1/logs"), MockCollectorHealthZ.CreateHealthZHandler());
+        MockCollectorHealthZ.WarmupHealthZEndpoint(output, host, Port);
 #endif
     }
 
@@ -175,14 +158,6 @@ public class MockLogsCollector : IDisposable
             Assert.Fail($"Expected nothing, but got: {logRecord}");
         }
     }
-
-#if NET
-    private static async Task HandleHealthZRequests(HttpContext context)
-    {
-        context.Response.StatusCode = 200;
-        await context.Response.WriteAsync("OK");
-    }
-#endif
 
     private static void FailCollectedExpectation(string? collectedExpectationDescription, LogRecord[] collectedLogRecords)
     {
