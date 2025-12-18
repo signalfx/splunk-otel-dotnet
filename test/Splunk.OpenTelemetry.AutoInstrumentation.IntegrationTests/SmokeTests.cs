@@ -106,6 +106,7 @@ public class SmokeTests : TestHelper
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE", "true");
         EnableBytecodeInstrumentation();
+        SetEnvironmentVariable("OTEL_BLRP_MAX_EXPORT_BATCH_SIZE", "1");
         RunTestApplication();
 
         collector.AssertExpectations();
@@ -153,6 +154,8 @@ public class SmokeTests : TestHelper
         collector.ResourceExpector.ExpectDistributionResources(ServiceName);
 
         EnableBytecodeInstrumentation();
+        SetEnvironmentVariable("OTEL_BLRP_MAX_EXPORT_BATCH_SIZE", "1");
+
         RunTestApplication();
 
         collector.ResourceExpector.AssertExpectations();
