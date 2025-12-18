@@ -50,7 +50,8 @@ public class MockContinuousProfilerCollector : IDisposable
     {
         _output = output;
 
-        _listener = new(output, nameof(MockContinuousProfilerCollector), new PathHandler(HandleHttpRequests, "/v1/logs"));
+        _listener = new(output, nameof(MockContinuousProfilerCollector), new PathHandler(HandleHttpRequests, "/v1/logs"), MockCollectorHealthZ.CreateHealthZHandler());
+        MockCollectorHealthZ.WarmupHealthZEndpoint(output, host, Port);
     }
 
     /// <summary>
