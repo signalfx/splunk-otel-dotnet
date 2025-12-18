@@ -47,7 +47,7 @@ internal class MockCollectorHealthZ
                 var response = HttpClient.GetAsync(healthZUrl).Result;
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    break;
+                    return;
                 }
             }
             catch (Exception e)
