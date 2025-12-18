@@ -18,6 +18,25 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal static class Constants
 {
+    // Callgraphs
+    // Maximum/default values, are defined in GDI spec.
+    public const double MaxSnapshotSelectionRate = 0.1;
+    public const double DefaultSnapshotSelectionRate = 0.01;
+    // Runtime suspensions done to collect thread samples often take ~0.25ms.
+    public const int DefaultSnapshotSamplingIntervalMs = 40;
+    public const bool DefaultHighResolutionTimer = false;
+
+    // Cpu Profiler
+    public const int DefaultSamplingInterval = 10000;
+
+    // Memory Profiler
+    public const int DefaultMaxMemorySamples = 200;
+
+    // Profiler Exporter
+    public const int DefaultProfilerExportTimeout = 3000;
+    public const int DefaultProfilerExportInterval = 500;
+    public const string DefaultProfilerLogsEndpoint = "http://localhost:4318/v1/logs";
+
     public const string None = "none";
 
     public static class Ingest

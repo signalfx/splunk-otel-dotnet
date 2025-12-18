@@ -18,14 +18,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using System.Collections.Concurrent;
+using System.Net;
 using System.Text;
 using OpenTelemetry.Proto.Collector.Logs.V1;
 using OpenTelemetry.Proto.Logs.V1;
 using Xunit.Abstractions;
 
-#if NETFRAMEWORK
-using System.Net;
-#else
+#if NET
 using Microsoft.AspNetCore.Http;
 #endif
 
@@ -47,7 +46,25 @@ public class MockLogsCollector : IDisposable
 #if NETFRAMEWORK
         _listener = new(output, HandleHttpRequests, host, "/v1/logs/");
 #else
-        _listener = new(output, nameof(MockLogsCollector), new PathHandler(HandleHttpRequests, "/v1/logs"));
+        _listener = new(output, nameof(MockLogsCollector), new PathHandler(HandleHttpRequests, "/v1/logs"), new PathHandler(HandleHealthZRequests, "/healthz"));
+
+        while (true)
+        {
+            try
+            {
+                using var httpClient = new HttpClient();
+                httpClient.BaseAddress = new Uri($"http://{host}:{Port}/");
+                var response = httpClient.GetAsync("/healthz").Result;
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    break;
+                }
+            }
+            catch (Exception e)
+            {
+                output.WriteLine(e.ToString());
+            }
+        }
 #endif
     }
 
@@ -158,6 +175,14 @@ public class MockLogsCollector : IDisposable
             Assert.Fail($"Expected nothing, but got: {logRecord}");
         }
     }
+
+#if NET
+    private static async Task HandleHealthZRequests(HttpContext context)
+    {
+        context.Response.StatusCode = 200;
+        await context.Response.WriteAsync("OK");
+    }
+#endif
 
     private static void FailCollectedExpectation(string? collectedExpectationDescription, LogRecord[] collectedLogRecords)
     {

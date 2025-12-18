@@ -14,6 +14,8 @@ release.
 
 ### Added
 
+- Experimental support for file-based configuration.
+
 ### Changed
 
 - **Breaking change for 1.12.0-beta.1 users**. Environment variable

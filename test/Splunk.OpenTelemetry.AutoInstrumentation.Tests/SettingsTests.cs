@@ -111,6 +111,8 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 
         private static void ClearEnvVars()
         {
+            Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.Enabled, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Realm, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AccessToken, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled, null);
