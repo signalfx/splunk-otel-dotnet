@@ -52,7 +52,7 @@ internal class MockCollectorHealthZ
             }
             catch (Exception e)
             {
-                output.WriteLine($"Exception while calling {healthZUrl}: {e}");
+                output.WriteLine($"Exception while calling {healthZUrl}: {e.Message}. Attempt {i} of {maxAttempts}.");
             }
 
             if (i == maxAttempts)

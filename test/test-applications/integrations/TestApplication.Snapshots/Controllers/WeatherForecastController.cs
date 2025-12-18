@@ -37,7 +37,7 @@ public class WeatherForecastController : ControllerBase
     [HttpGet]
     public IEnumerable<WeatherForecast> Get()
     {
-        Thread.Sleep(100);
+        Thread.Sleep(1_000);
         return Enumerable.Range(1, 5)
             .Select(index => new WeatherForecast
             {
