@@ -14,8 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 using Splunk.OpenTelemetry.AutoInstrumentation.Pprof.Proto.Profile;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
@@ -47,10 +45,8 @@ internal class SampleBuilder
     public Sample Build()
     {
         _sample.LocationIds = _locationIds.ToArray();
-        _sample.Values = _value.HasValue ? [_value.Value] : [];
+        _sample.Values = _value.HasValue ? new[] { _value.Value } : Array.Empty<long>();
 
         return _sample;
     }
 }
-
-#endif

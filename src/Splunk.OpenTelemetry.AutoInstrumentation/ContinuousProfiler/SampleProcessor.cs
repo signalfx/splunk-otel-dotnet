@@ -14,8 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 using System.IO.Compression;
 using System.Runtime.CompilerServices;
 using Splunk.OpenTelemetry.AutoInstrumentation.Pprof.Proto.Profile;
@@ -30,7 +28,9 @@ internal class SampleProcessor
     private const string TotalFrameCountAttributeName = "profiling.data.total.frame.count";
     private readonly KeyValue _format;
     private readonly KeyValue _profilingDataTypeCpu;
+#if NET
     private readonly KeyValue _profilingDataTypeAllocation;
+#endif
     private readonly KeyValue _snapshotInstrumentationSource;
     private uint _selectedSamplingPeriod;
     private uint _continuousSamplingPeriod;
@@ -39,7 +39,9 @@ internal class SampleProcessor
     {
         _format = GdiProfilingConventions.LogRecord.Attributes.Format("pprof-gzip-base64");
         _profilingDataTypeCpu = GdiProfilingConventions.LogRecord.Attributes.Type("cpu");
+#if NET
         _profilingDataTypeAllocation = GdiProfilingConventions.LogRecord.Attributes.Type("allocation");
+#endif
         _snapshotInstrumentationSource = GdiProfilingConventions.LogRecord.Attributes.InstrumentationSource("snapshot");
     }
 
@@ -68,6 +70,7 @@ internal class SampleProcessor
         return BuildLogRecord(cpuProfile, _profilingDataTypeCpu, totalFrameCount);
     }
 
+#if NET
     public LogRecord? ProcessAllocationSamples(List<AllocationSample> allocationSamples)
     {
         if (allocationSamples == null || allocationSamples.Count < 1)
@@ -80,6 +83,7 @@ internal class SampleProcessor
 
         return BuildLogRecord(allocationProfile, _profilingDataTypeAllocation, totalFrameCount);
     }
+#endif
 
     public LogRecord? ProcessSnapshots(List<ThreadSample> selectedSamples)
     {
@@ -96,6 +100,7 @@ internal class SampleProcessor
         return processSelectedSamples;
     }
 
+#if NET
     private static int CountFrames(List<AllocationSample> samples)
     {
         var sum = 0;
@@ -106,6 +111,7 @@ internal class SampleProcessor
 
         return sum;
     }
+#endif
 
     private static int CountFrames(List<ThreadSample> samples)
     {
@@ -153,6 +159,7 @@ internal class SampleProcessor
         return sampleBuilder;
     }
 
+#if NET
     private static string BuildAllocationProfile(List<AllocationSample> allocationSamples)
     {
         var pprof = new Pprof();
@@ -167,6 +174,7 @@ internal class SampleProcessor
 
         return Serialize(pprof.Profile);
     }
+#endif
 
     private string BuildCpuProfile(List<ThreadSample> threadSamples, long valueTotalMilliseconds)
     {
@@ -211,5 +219,3 @@ internal class SampleProcessor
         private static string ToString(ulong higher, ulong lower) => $"{higher:x16}{lower:x16}";
     }
 }
-
-#endif

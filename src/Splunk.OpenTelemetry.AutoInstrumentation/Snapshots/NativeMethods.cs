@@ -14,43 +14,39 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 using System.Diagnostics;
 using System.Reflection;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
+
+internal static class NativeMethods
 {
-    internal static class NativeMethods
+    private static readonly ILogger Log = new Logger();
+
+    static NativeMethods()
     {
-        private static readonly ILogger Log = new Logger();
-
-        static NativeMethods()
+        try
         {
-            try
+            var nativeMethodsType = Type.GetType("OpenTelemetry.AutoInstrumentation.NativeMethods, OpenTelemetry.AutoInstrumentation");
+            if (nativeMethodsType == null)
             {
-                var nativeMethodsType = Type.GetType("OpenTelemetry.AutoInstrumentation.NativeMethods, OpenTelemetry.AutoInstrumentation");
-                if (nativeMethodsType == null)
-                {
-                    throw new Exception("OpenTelemetry.AutoInstrumentation.NativeMethods could not be found.");
-                }
-
-                var startMethod = nativeMethodsType.GetMethod("SelectiveSamplingStart", BindingFlags.Static | BindingFlags.Public, null, [typeof(ActivityTraceId)], null);
-                var stopMethod = nativeMethodsType!.GetMethod("SelectiveSamplingStop", BindingFlags.Static | BindingFlags.Public, null, [typeof(ActivityTraceId)], null);
-
-                StartSamplingDelegate = (Action<ActivityTraceId>)Delegate.CreateDelegate(typeof(Action<ActivityTraceId>), startMethod!);
-                StopSamplingDelegate = (Action<ActivityTraceId>)Delegate.CreateDelegate(typeof(Action<ActivityTraceId>), stopMethod!);
+                throw new Exception("OpenTelemetry.AutoInstrumentation.NativeMethods could not be found.");
             }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to initialize sampling methods");
-            }
+
+            var startMethod = nativeMethodsType.GetMethod("SelectiveSamplingStart", BindingFlags.Static | BindingFlags.Public, null, new[] { typeof(ActivityTraceId) }, null);
+            var stopMethod = nativeMethodsType!.GetMethod("SelectiveSamplingStop", BindingFlags.Static | BindingFlags.Public, null, new[] { typeof(ActivityTraceId) }, null);
+
+            StartSamplingDelegate = (Action<ActivityTraceId>)Delegate.CreateDelegate(typeof(Action<ActivityTraceId>), startMethod!);
+            StopSamplingDelegate = (Action<ActivityTraceId>)Delegate.CreateDelegate(typeof(Action<ActivityTraceId>), stopMethod!);
         }
-
-        public static Action<ActivityTraceId>? StopSamplingDelegate { get; }
-
-        public static Action<ActivityTraceId>? StartSamplingDelegate { get; }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to initialize sampling methods");
+        }
     }
+
+    public static Action<ActivityTraceId>? StopSamplingDelegate { get; }
+
+    public static Action<ActivityTraceId>? StartSamplingDelegate { get; }
 }
-#endif

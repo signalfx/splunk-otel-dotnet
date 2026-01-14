@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
 namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 
 internal class PprofInOtlpLogsExporter
@@ -37,6 +36,7 @@ internal class PprofInOtlpLogsExporter
         ExportThreadSamplesCore(threadSamples, cancellationToken);
     }
 
+#if NET
     public void ExportAllocationSamples(byte[] buffer, int read, CancellationToken cancellationToken)
     {
         var allocationSamples = _nativeFormatParser.ParseAllocationSamples(buffer, read);
@@ -46,6 +46,7 @@ internal class PprofInOtlpLogsExporter
             _sampleExporter.Export(logRecord, cancellationToken);
         }
     }
+#endif
 
     public void ExportSelectedThreadSamples(byte[] buffer, int read, CancellationToken cancellationToken)
     {
@@ -96,4 +97,3 @@ internal class PprofInOtlpLogsExporter
         return snapshots;
     }
 }
-#endif

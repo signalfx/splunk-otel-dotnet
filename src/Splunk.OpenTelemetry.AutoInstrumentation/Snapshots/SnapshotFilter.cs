@@ -16,34 +16,30 @@
 
 using System.Diagnostics;
 
-#if NET
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
+internal class SnapshotFilter
 {
-    internal class SnapshotFilter
+    private static readonly Lazy<SnapshotFilter> InstanceFactory = new(() => new SnapshotFilter(NativeMethods.StartSamplingDelegate, NativeMethods.StopSamplingDelegate));
+
+    private readonly Action<ActivityTraceId>? _startSamplingDelegate;
+    private readonly Action<ActivityTraceId>? _stopSamplingDelegate;
+
+    internal SnapshotFilter(Action<ActivityTraceId>? startSamplingDelegate, Action<ActivityTraceId>? stopSamplingDelegate)
     {
-        private static readonly Lazy<SnapshotFilter> InstanceFactory = new(() => new SnapshotFilter(NativeMethods.StartSamplingDelegate, NativeMethods.StopSamplingDelegate));
+        _startSamplingDelegate = startSamplingDelegate;
+        _stopSamplingDelegate = stopSamplingDelegate;
+    }
 
-        private readonly Action<ActivityTraceId>? _startSamplingDelegate;
-        private readonly Action<ActivityTraceId>? _stopSamplingDelegate;
+    public static SnapshotFilter Instance => InstanceFactory.Value;
 
-        internal SnapshotFilter(Action<ActivityTraceId>? startSamplingDelegate, Action<ActivityTraceId>? stopSamplingDelegate)
-        {
-            _startSamplingDelegate = startSamplingDelegate;
-            _stopSamplingDelegate = stopSamplingDelegate;
-        }
+    public void Add(ActivityTraceId traceId)
+    {
+        _startSamplingDelegate?.Invoke(traceId);
+    }
 
-        public static SnapshotFilter Instance => InstanceFactory.Value;
-
-        public void Add(ActivityTraceId traceId)
-        {
-            _startSamplingDelegate?.Invoke(traceId);
-        }
-
-        public void Remove(ActivityTraceId traceId)
-        {
-            _stopSamplingDelegate?.Invoke(traceId);
-        }
+    public void Remove(ActivityTraceId traceId)
+    {
+        _stopSamplingDelegate?.Invoke(traceId);
     }
 }
-#endif

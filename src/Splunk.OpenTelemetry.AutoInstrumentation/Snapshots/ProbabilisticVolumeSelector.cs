@@ -14,35 +14,38 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 using System.Diagnostics;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
+
+internal class ProbabilisticVolumeSelector : ISnapshotSelector
 {
-    internal class ProbabilisticVolumeSelector : ISnapshotSelector
+    private readonly double _ratio;
+#if NETFRAMEWORK
+    private readonly Random _random = new();
+#endif
+
+    public ProbabilisticVolumeSelector(double ratio)
     {
-        private readonly double _ratio;
+        _ratio = ratio;
+    }
 
-        public ProbabilisticVolumeSelector(double ratio)
+    public bool Select(ActivityContext context)
+    {
+        if (!IndicatesRootSpan(context))
         {
-            _ratio = ratio;
+            return false;
         }
 
-        public bool Select(ActivityContext context)
-        {
-            if (!IndicatesRootSpan(context))
-            {
-                return false;
-            }
+#if NET
+        return Random.Shared.NextDouble() <= _ratio;
+#else
+        return _random.NextDouble() <= _ratio;
+#endif
+    }
 
-            return Random.Shared.NextDouble() <= _ratio;
-        }
-
-        private static bool IndicatesRootSpan(ActivityContext context)
-        {
-            return context == default;
-        }
+    private static bool IndicatesRootSpan(ActivityContext context)
+    {
+        return context == default;
     }
 }
-#endif

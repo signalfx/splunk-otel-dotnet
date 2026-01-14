@@ -14,8 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 using Splunk.OpenTelemetry.AutoInstrumentation.Proto.Common.V1;
 using Splunk.OpenTelemetry.AutoInstrumentation.Proto.Logs.V1;
@@ -108,4 +106,3 @@ internal class SampleExporter : ISampleExporter
         };
     }
 }
-#endif

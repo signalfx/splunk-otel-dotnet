@@ -14,59 +14,55 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 using OpenTelemetry;
 using OpenTelemetry.Context.Propagation;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
+
+internal class SnapshotVolumePropagator : TextMapPropagator
 {
-    internal class SnapshotVolumePropagator : TextMapPropagator
+    private readonly ISnapshotSelector _selector;
+
+    public SnapshotVolumePropagator(ISnapshotSelector selector)
     {
-        private readonly ISnapshotSelector _selector;
+        _selector = selector;
+    }
 
-        public SnapshotVolumePropagator(ISnapshotSelector selector)
+    public override ISet<string>? Fields { get; } = new HashSet<string>();
+
+    public override void Inject<T>(PropagationContext context, T carrier, Action<T, string, string> setter)
+    {
+    }
+
+    public override PropagationContext Extract<T>(PropagationContext context, T carrier, Func<T, string, IEnumerable<string>?> getter)
+    {
+        var baggage = context.Baggage;
+        var volume = baggage.GetBaggage(SnapshotConstants.VolumeBaggageKeyName);
+        if (IsSpecified(volume))
         {
-            _selector = selector;
+            return context;
         }
 
-        public override ISet<string>? Fields { get; } = new HashSet<string>();
+        var newVolume = _selector.Select(context.ActivityContext) ? Volume.highest : Volume.off;
 
-        public override void Inject<T>(PropagationContext context, T carrier, Action<T, string, string> setter)
+        var updatedBaggage = context.Baggage.SetBaggage(SnapshotConstants.VolumeBaggageKeyName, GetStringValue(newVolume));
+        return new PropagationContext(context.ActivityContext, updatedBaggage);
+    }
+
+    private static bool IsSpecified(string? volume)
+    {
+        return string.Equals(volume, nameof(Volume.highest), StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(volume, nameof(Volume.off), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string GetStringValue(Volume newVolume)
+    {
+        return newVolume switch
         {
-        }
-
-        public override PropagationContext Extract<T>(PropagationContext context, T carrier, Func<T, string, IEnumerable<string>?> getter)
-        {
-            var baggage = context.Baggage;
-            var volume = baggage.GetBaggage(SnapshotConstants.VolumeBaggageKeyName);
-            if (IsSpecified(volume))
-            {
-                return context;
-            }
-
-            var newVolume = _selector.Select(context.ActivityContext) ? Volume.highest : Volume.off;
-
-            var updatedBaggage = context.Baggage.SetBaggage(SnapshotConstants.VolumeBaggageKeyName, GetStringValue(newVolume));
-            return new PropagationContext(context.ActivityContext, updatedBaggage);
-        }
-
-        private static bool IsSpecified(string? volume)
-        {
-            return string.Equals(volume, nameof(Volume.highest), StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(volume, nameof(Volume.off), StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static string GetStringValue(Volume newVolume)
-        {
-            return newVolume switch
-            {
-                Volume.highest => nameof(Volume.highest),
-                Volume.off => nameof(Volume.off),
-                Volume.unspecified => nameof(Volume.unspecified),
-                _ => newVolume.ToString()
-            };
-        }
+            Volume.highest => nameof(Volume.highest),
+            Volume.off => nameof(Volume.off),
+            Volume.unspecified => nameof(Volume.unspecified),
+            _ => newVolume.ToString()
+        };
     }
 }
-#endif

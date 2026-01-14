@@ -14,31 +14,27 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 using System.Diagnostics;
 using OpenTelemetry;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
+
+internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
 {
-    internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
+    private readonly SnapshotProcessorHelper _snapshotProcessorHelper;
+
+    public SnapshotSelectingProcessor(SnapshotProcessorHelper snapshotProcessorHelper)
     {
-        private readonly SnapshotProcessorHelper _snapshotProcessorHelper;
+        _snapshotProcessorHelper = snapshotProcessorHelper;
+    }
 
-        public SnapshotSelectingProcessor(SnapshotProcessorHelper snapshotProcessorHelper)
-        {
-            _snapshotProcessorHelper = snapshotProcessorHelper;
-        }
+    public override void OnStart(Activity data)
+    {
+        _snapshotProcessorHelper.ProcessSpanStart(data);
+    }
 
-        public override void OnStart(Activity data)
-        {
-            _snapshotProcessorHelper.ProcessSpanStart(data);
-        }
-
-        public override void OnEnd(Activity data)
-        {
-            _snapshotProcessorHelper.ProcessSpanStop(data);
-        }
+    public override void OnEnd(Activity data)
+    {
+        _snapshotProcessorHelper.ProcessSpanStop(data);
     }
 }
-#endif

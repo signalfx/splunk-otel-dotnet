@@ -14,8 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 using System.Text;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
@@ -154,6 +152,7 @@ internal class NativeFormatParser
         return samples;
     }
 
+#if NET
     /// <summary>
     /// Parses the allocation sample batch.
     /// </summary>
@@ -221,6 +220,7 @@ internal class NativeFormatParser
 
         return allocationSamples;
     }
+#endif
 
     public List<ThreadSample> ParseSelectiveSamplerSamples(byte[] buffer, int read)
     {
@@ -402,5 +402,3 @@ internal class NativeFormatParser
         public const byte SelectiveSampleBatchEnd = 0x0B;
     }
 }
-
-#endif

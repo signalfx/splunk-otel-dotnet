@@ -14,23 +14,19 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 using System.Diagnostics;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
-{
-    internal static class SnapshotActivityExtensions
-    {
-        public static void MarkLoud(this Activity activity)
-        {
-            activity.SetTag(SnapshotConstants.SplunkSnapshotProfilingAttributeName, true);
-        }
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 
-        public static bool IsLocalRoot(this Activity activity)
-        {
-            return activity.Parent is null || activity.HasRemoteParent;
-        }
+internal static class SnapshotActivityExtensions
+{
+    public static void MarkLoud(this Activity activity)
+    {
+        activity.SetTag(SnapshotConstants.SplunkSnapshotProfilingAttributeName, true);
+    }
+
+    public static bool IsLocalRoot(this Activity activity)
+    {
+        return activity.Parent is null || activity.HasRemoteParent;
     }
 }
-#endif

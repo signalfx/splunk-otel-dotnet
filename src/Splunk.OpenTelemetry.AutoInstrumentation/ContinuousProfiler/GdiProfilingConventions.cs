@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
 using Splunk.OpenTelemetry.AutoInstrumentation.Proto.Common.V1;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
@@ -88,4 +87,3 @@ internal static class GdiProfilingConventions
         }
     }
 }
-#endif

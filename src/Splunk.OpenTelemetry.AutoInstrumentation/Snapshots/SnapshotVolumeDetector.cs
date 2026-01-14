@@ -14,20 +14,16 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 using OpenTelemetry;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
-{
-    internal static class SnapshotVolumeDetector
-    {
-        public static bool IsLoud(Baggage baggage)
-        {
-            var volume = baggage.GetBaggage(SnapshotConstants.VolumeBaggageKeyName);
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 
-            return volume != null && string.Equals(volume, nameof(Volume.highest), StringComparison.OrdinalIgnoreCase);
-        }
+internal static class SnapshotVolumeDetector
+{
+    public static bool IsLoud(Baggage baggage)
+    {
+        var volume = baggage.GetBaggage(SnapshotConstants.VolumeBaggageKeyName);
+
+        return volume != null && string.Equals(volume, nameof(Volume.highest), StringComparison.OrdinalIgnoreCase);
     }
 }
-#endif

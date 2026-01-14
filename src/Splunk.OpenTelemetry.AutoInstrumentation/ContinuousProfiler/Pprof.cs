@@ -14,8 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 using Splunk.OpenTelemetry.AutoInstrumentation.Pprof.Proto.Profile;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
@@ -144,5 +142,3 @@ internal class Pprof
         }
     }
 }
-
-#endif

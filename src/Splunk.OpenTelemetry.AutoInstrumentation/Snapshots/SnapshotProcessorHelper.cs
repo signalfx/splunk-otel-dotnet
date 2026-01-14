@@ -14,98 +14,94 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using OpenTelemetry;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
+
+internal class SnapshotProcessorHelper : IDisposable
 {
-    internal class SnapshotProcessorHelper : IDisposable
+    private const int SnapshotLocalRootLimit = 50;
+    private static readonly int CleanUpPeriodMs = GetCleanUpPeriodMs();
+
+    private static readonly TimeSpan DefaultTimeToLive = TimeSpan.FromMinutes(15);
+
+    private static readonly ILogger Log = new Logger();
+
+    private static readonly Lazy<SnapshotProcessorHelper> InstanceFactory = new(() => new SnapshotProcessorHelper(SnapshotFilter.Instance));
+
+    private readonly SnapshotFilter _snapshotFilter;
+
+    private readonly ConcurrentDictionary<(ActivitySpanId, ActivityTraceId), DateTimeOffset> _localRootSpans = new();
+
+    private readonly Timer _timer;
+
+    private SnapshotProcessorHelper(SnapshotFilter snapshotFilter)
     {
-        private const int SnapshotLocalRootLimit = 50;
-        private static readonly int CleanUpPeriodMs = GetCleanUpPeriodMs();
+        _snapshotFilter = snapshotFilter;
+        _timer = new Timer(Clean, null, CleanUpPeriodMs, CleanUpPeriodMs);
+    }
 
-        private static readonly TimeSpan DefaultTimeToLive = TimeSpan.FromMinutes(15);
+    public static SnapshotProcessorHelper Instance => InstanceFactory.Value;
 
-        private static readonly ILogger Log = new Logger();
+    public void Dispose()
+    {
+        _timer.Dispose();
+    }
 
-        private static readonly Lazy<SnapshotProcessorHelper> InstanceFactory = new(() => new SnapshotProcessorHelper(SnapshotFilter.Instance));
-
-        private readonly SnapshotFilter _snapshotFilter;
-
-        private readonly ConcurrentDictionary<(ActivitySpanId, ActivityTraceId), DateTimeOffset> _localRootSpans = new();
-
-        private readonly Timer _timer;
-
-        private SnapshotProcessorHelper(SnapshotFilter snapshotFilter)
+    internal void ProcessSpanStart(Activity data)
+    {
+        if (!data.IsLocalRoot())
         {
-            _snapshotFilter = snapshotFilter;
-            _timer = new Timer(Clean, null, CleanUpPeriodMs, CleanUpPeriodMs);
+            return;
         }
 
-        public static SnapshotProcessorHelper Instance => InstanceFactory.Value;
-
-        public void Dispose()
+        if (!SnapshotVolumeDetector.IsLoud(Baggage.Current))
         {
-            _timer.Dispose();
+            return;
         }
 
-        internal void ProcessSpanStart(Activity data)
+        if (_localRootSpans.Count > SnapshotLocalRootLimit)
         {
-            if (!data.IsLocalRoot())
-            {
-                return;
-            }
-
-            if (!SnapshotVolumeDetector.IsLoud(Baggage.Current))
-            {
-                return;
-            }
-
-            if (_localRootSpans.Count > SnapshotLocalRootLimit)
-            {
-                Log.Warning("Too many traces selected for snapshotting.");
-                return;
-            }
-
-            data.MarkLoud();
-            _snapshotFilter.Add(data.TraceId);
-            var cacheKey = (data.SpanId, data.TraceId);
-            if (!_localRootSpans.TryAdd(cacheKey, DateTimeOffset.UtcNow + DefaultTimeToLive))
-            {
-                Log.Warning("Local root span already registered.");
-            }
+            Log.Warning("Too many traces selected for snapshotting.");
+            return;
         }
 
-        internal void ProcessSpanStop(Activity data)
+        data.MarkLoud();
+        _snapshotFilter.Add(data.TraceId);
+        var cacheKey = (data.SpanId, data.TraceId);
+        if (!_localRootSpans.TryAdd(cacheKey, DateTimeOffset.UtcNow + DefaultTimeToLive))
         {
-            var cacheKey = (data.SpanId, data.TraceId);
-            if (_localRootSpans.TryRemove(cacheKey, out _))
-            {
-                _snapshotFilter.Remove(data.TraceId);
-            }
+            Log.Warning("Local root span already registered.");
         }
+    }
 
-        private static int GetCleanUpPeriodMs()
+    internal void ProcessSpanStop(Activity data)
+    {
+        var cacheKey = (data.SpanId, data.TraceId);
+        if (_localRootSpans.TryRemove(cacheKey, out _))
         {
-            return Convert.ToInt32(DefaultTimeToLive.TotalMilliseconds);
+            _snapshotFilter.Remove(data.TraceId);
         }
+    }
 
-        private void Clean(object? state)
+    private static int GetCleanUpPeriodMs()
+    {
+        return Convert.ToInt32(DefaultTimeToLive.TotalMilliseconds);
+    }
+
+    private void Clean(object? state)
+    {
+        var now = DateTimeOffset.UtcNow;
+        foreach (var kvp in _localRootSpans)
         {
-            var now = DateTimeOffset.UtcNow;
-            foreach (var (key, value) in _localRootSpans)
+            if (now > kvp.Value)
             {
-                if (now > value)
-                {
-                    _localRootSpans.TryRemove(key, out _);
-                    _snapshotFilter.Remove(key.Item2);
-                }
+                _localRootSpans.TryRemove(kvp.Key, out _);
+                _snapshotFilter.Remove(kvp.Key.Item2);
             }
         }
     }
 }
-#endif

@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -49,7 +48,11 @@ internal class OtlpHttpLogSender
 
             using var request = new HttpRequestMessage(HttpMethod.Post, _logsEndpointUrl);
             request.Content = new ExportLogsDataContent(logsData);
+#if NET
             using var httpResponse = _httpClient.Send(request, cancellationToken);
+#else
+            using var httpResponse = _httpClient.SendAsync(request, cancellationToken).GetAwaiter().GetResult();
+#endif
             httpResponse.EnsureSuccessStatusCode();
         }
         catch (Exception ex)
@@ -70,10 +73,12 @@ internal class OtlpHttpLogSender
             Headers.ContentType = ProtobufMediaTypeHeader;
         }
 
+#if NET
         protected override void SerializeToStream(Stream stream, TransportContext? context, CancellationToken cancellationToken)
         {
             SerializeToStreamInternal(stream);
         }
+#endif
 
         protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
         {
@@ -95,4 +100,3 @@ internal class OtlpHttpLogSender
         }
     }
 }
-#endif
