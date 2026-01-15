@@ -102,12 +102,10 @@ public abstract class TestHelper
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", $"http://localhost:{collector.Port}/v1/logs");
     }
 
-#if NET
     public void SetExporter(MockContinuousProfilerCollector collector)
     {
         SetEnvironmentVariable("SPLUNK_PROFILER_LOGS_ENDPOINT", $"http://localhost:{collector.Port}/v1/logs");
     }
-#endif
 
     public void EnableBytecodeInstrumentation()
     {
@@ -132,6 +130,7 @@ public abstract class TestHelper
     /// Assertion exceptions are thrown if it timed out or the exit code is non-zero.
     /// </summary>
     /// <param name="testSettings">Test settings</param>
+    /// <returns>A tuple containing the standard output, error output, and process ID.</returns>
     public (string StandardOutput, string ErrorOutput, int ProcessId) RunTestApplication(TestSettings? testSettings = null)
     {
         // RunTestApplication starts the test application, wait up to DefaultProcessTimeout.

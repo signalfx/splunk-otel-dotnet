@@ -14,24 +14,31 @@
 // limitations under the License.
 // </copyright>
 
-namespace My.Custom.Test.Namespace;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
 
-internal static class ClassA
+namespace My.Custom.Test.Namespace
 {
-    public static void MethodA()
+    internal static class ClassA
     {
-        const int numberOfItems = 1024;
-        var items = new List<string>();
-        for (var i = 0; i < numberOfItems; i++)
+        public static void MethodA()
         {
-            items.Add(i.ToString("D10000"));
-        }
+            const int numberOfItems = 1024;
+            var items = new List<string>();
+            for (var i = 0; i < numberOfItems; i++)
+            {
+                items.Add(i.ToString("D10000"));
+            }
 
-        Thread.Sleep(TimeSpan.FromSeconds(5));
+            Thread.Sleep(TimeSpan.FromSeconds(5));
 
-        for (var i = 0; i < numberOfItems; i++)
-        {
-            TextWriter.Null.Write(items[i][^2]);
+            for (var i = 0; i < numberOfItems; i++)
+            {
+                var item = items[i];
+                TextWriter.Null.Write(item[item.Length - 2]);
+            }
         }
     }
 }

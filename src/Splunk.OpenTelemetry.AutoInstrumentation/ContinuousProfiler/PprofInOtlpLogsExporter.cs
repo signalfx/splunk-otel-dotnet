@@ -14,10 +14,13 @@
 // limitations under the License.
 // </copyright>
 
+using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 
 internal class PprofInOtlpLogsExporter
 {
+    private static readonly ILogger Log = new Logger();
     private readonly ISampleExporter _sampleExporter;
     private readonly NativeFormatParser _nativeFormatParser;
 
@@ -36,17 +39,17 @@ internal class PprofInOtlpLogsExporter
         ExportThreadSamplesCore(threadSamples, cancellationToken);
     }
 
-#if NET
     public void ExportAllocationSamples(byte[] buffer, int read, CancellationToken cancellationToken)
     {
+#if NET
         var allocationSamples = _nativeFormatParser.ParseAllocationSamples(buffer, read);
         var logRecord = SampleProcessor.ProcessAllocationSamples(allocationSamples);
         if (logRecord != null)
         {
             _sampleExporter.Export(logRecord, cancellationToken);
         }
-    }
 #endif
+    }
 
     public void ExportSelectedThreadSamples(byte[] buffer, int read, CancellationToken cancellationToken)
     {
@@ -68,8 +71,10 @@ internal class PprofInOtlpLogsExporter
         if (threadSamples != null)
         {
             var logRecord = SampleProcessor.ProcessThreadSamples(threadSamples);
+            Log.Debug($"Processed {threadSamples.Count} thread samples");
             if (logRecord != null)
             {
+                Log.Debug("Exporting thread samples");
                 _sampleExporter.Export(logRecord, cancellationToken);
             }
 
@@ -78,8 +83,13 @@ internal class PprofInOtlpLogsExporter
             var snapshotLogRecord = SampleProcessor.ProcessSnapshots(snapshots);
             if (snapshotLogRecord != null)
             {
+                Log.Debug("Exporting snapshots");
                 _sampleExporter.Export(snapshotLogRecord, cancellationToken);
             }
+        }
+        else
+        {
+            Log.Debug("No thread samples to export");
         }
     }
 
