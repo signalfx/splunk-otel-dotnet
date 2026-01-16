@@ -80,7 +80,13 @@ internal class PluginSettings
         Realm = Constants.None;
         AccessToken = null;
         IsOtlpEndpointSet = false;
-        TraceResponseHeaderEnabled = false;
+
+        var traceConfig = configuration.InstrumentationDevelopment?.Dotnet?.Traces;
+#if NETFRAMEWORK
+        TraceResponseHeaderEnabled = traceConfig?.Aspnet?.ResponseHeaderEnabled ?? false;
+#else
+        TraceResponseHeaderEnabled = traceConfig?.Aspnetcore?.ResponseHeaderEnabled ?? false;
+#endif
 
 #if NET
         var profilingConfig = configuration.Distribution?.Splunk?.Profiling;

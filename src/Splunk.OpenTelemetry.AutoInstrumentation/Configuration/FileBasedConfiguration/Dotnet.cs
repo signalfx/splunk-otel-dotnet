@@ -16,9 +16,7 @@
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 
-internal class YamlRoot
+internal class Dotnet
 {
-    public Distribution? Distribution { get; set; }
-
-    public InstrumentationDevelopment? InstrumentationDevelopment { get; set; }
+    public Traces? Traces { get; set; }
 }

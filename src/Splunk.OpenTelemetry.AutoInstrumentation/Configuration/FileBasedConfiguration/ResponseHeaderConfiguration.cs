@@ -16,9 +16,7 @@
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 
-internal class YamlRoot
+internal class ResponseHeaderConfiguration
 {
-    public Distribution? Distribution { get; set; }
-
-    public InstrumentationDevelopment? InstrumentationDevelopment { get; set; }
+    public bool? ResponseHeaderEnabled { get; set; }
 }
