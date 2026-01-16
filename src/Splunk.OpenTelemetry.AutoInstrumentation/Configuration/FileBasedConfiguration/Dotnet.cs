@@ -1,4 +1,4 @@
-﻿// <copyright file="YamlRoot.cs" company="Splunk Inc.">
+﻿// <copyright file="Dotnet.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
