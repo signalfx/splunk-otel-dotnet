@@ -206,12 +206,12 @@ instrumentation/development:
       aspnet:
         # Configure response header injection
         # Adds server trace information to HTTP response headers.
-        # If omitted or null, false is used.
+        # If omitted or null, true is used.
         response_header_enabled: ${SPLUNK_TRACE_RESPONSE_HEADER_ENABLED}
       # ASP.NET Core
       aspnetcore:
         # Configure response header injection
         # Adds server trace information to HTTP response headers.
-        # If omitted or null, false is used.
+        # If omitted or null, true is used.
         response_header_enabled: ${SPLUNK_TRACE_RESPONSE_HEADER_ENABLED}
 ```
