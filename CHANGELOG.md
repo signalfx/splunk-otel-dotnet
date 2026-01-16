@@ -9,6 +9,9 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Added
 
+- Support for response header injection(SPLUNK_TRACE_RESPONSE_HEADER_ENABLED) configuration
+  for ASP.NET and ASP.NET Core instrumentations via file-based configuration.
+
 ### Changed
 
 ### Deprecated
