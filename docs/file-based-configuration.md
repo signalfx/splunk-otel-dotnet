@@ -33,13 +33,13 @@ instrumentation/development:
       aspnet:
         # Configure response header injection
         # Adds server trace information to HTTP response headers.
-        # If omitted or null, false is used.
+        # If omitted or null, true is used.
         response_header_enabled: true
       # ASP.NET Core
       aspnetcore:
         # Configure response header injection
         # Adds server trace information to HTTP response headers.
-        # If omitted or null, false is used.
+        # If omitted or null, true is used.
         response_header_enabled: true
 ```
 
@@ -137,17 +137,11 @@ instrumentation/development:
     # Traces instrumentation configuration
     traces:
       # ASP.NET
+      # It will enable response header injection by default
       aspnet:
-        # Configure response header injection
-        # Adds server trace information to HTTP response headers.
-        # If omitted or null, false is used.
-        response_header_enabled: true
       # ASP.NET Core
+      # It will enable response header injection by default
       aspnetcore:
-        # Configure response header injection
-        # Adds server trace information to HTTP response headers.
-        # If omitted or null, false is used.
-        response_header_enabled: true
 ```
 
 ### Environment Variable Migration Example
