@@ -209,8 +209,7 @@ public class EnvironmentHelper
             solutionDirectory,
             _testApplicationDirectory,
             $"{FullTestApplicationName}",
-            "bin",
-            EnvironmentTools.GetPlatformDir());
+            "bin");
         return projectDir;
     }
 
