@@ -72,7 +72,7 @@ public class Program
 
         using var client = new HttpClient
         {
-            Timeout = TimeSpan.FromSeconds(1)
+            Timeout = TimeSpan.FromSeconds(5)
         };
 
         try
