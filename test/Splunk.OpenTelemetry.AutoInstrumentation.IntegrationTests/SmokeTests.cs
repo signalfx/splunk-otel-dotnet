@@ -35,15 +35,17 @@ using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests;
 
-public class SmokeTests : TestHelper
+public class SmokeTests : TestHelper, IDisposable
 {
     private const string ServiceName = "TestApplication.Smoke";
+    private readonly TestHttpServer _testServer;
 
     public SmokeTests(ITestOutputHelper output)
         : base("Smoke", output)
     {
         SetEnvironmentVariable("OTEL_SERVICE_NAME", ServiceName);
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS", "HttpClient");
+        _testServer = TestHttpServer.CreateDefaultTestServer(output);
     }
 
     [Fact]
@@ -60,7 +62,7 @@ public class SmokeTests : TestHelper
 #endif
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
-        RunTestApplication();
+        RunTestApplication(TestSettingsWithDefaultArgs());
 
         collector.AssertExpectations();
     }
@@ -76,7 +78,7 @@ public class SmokeTests : TestHelper
             span => span.Attributes.FirstOrDefault(att => att.Key == "long")?.Value.StringValue == new string('*', 12000));
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
-        RunTestApplication();
+        RunTestApplication(TestSettingsWithDefaultArgs());
 
         collector.AssertExpectations();
     }
@@ -90,7 +92,7 @@ public class SmokeTests : TestHelper
         collector.Expect("MyCompany.MyProduct.MyLibrary", metric => metric.Name == "MyFruitCounter");
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
-        RunTestApplication();
+        RunTestApplication(TestSettingsWithDefaultArgs());
 
         collector.AssertExpectations();
     }
@@ -102,15 +104,16 @@ public class SmokeTests : TestHelper
     {
         using var collector = new MockLogsCollector(Output);
         SetExporter(collector);
-        collector.Expect(logRecord => System.Convert.ToString(logRecord.Body) == "{ \"stringValue\": \"SmokeTest app log\" }");
+        collector.Expect(logRecord => Convert.ToString(logRecord.Body) == "{ \"stringValue\": \"SmokeTest app log\" }");
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE", "true");
         EnableBytecodeInstrumentation();
         SetEnvironmentVariable("OTEL_BLRP_MAX_EXPORT_BATCH_SIZE", "1");
-        RunTestApplication();
+        RunTestApplication(TestSettingsWithDefaultArgs());
 
         collector.AssertExpectations();
     }
+
 #endif
 
     [Fact]
@@ -123,7 +126,7 @@ public class SmokeTests : TestHelper
         collector.ResourceExpector.ExpectDistributionResources(ServiceName);
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
-        RunTestApplication();
+        RunTestApplication(TestSettingsWithDefaultArgs());
 
         collector.ResourceExpector.AssertExpectations();
     }
@@ -138,7 +141,7 @@ public class SmokeTests : TestHelper
         collector.ResourceExpector.ExpectDistributionResources(ServiceName);
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES", "MyCompany.MyProduct.MyLibrary");
-        RunTestApplication();
+        RunTestApplication(TestSettingsWithDefaultArgs());
 
         collector.ResourceExpector.AssertExpectations();
     }
@@ -156,10 +159,11 @@ public class SmokeTests : TestHelper
         EnableBytecodeInstrumentation();
         SetEnvironmentVariable("OTEL_BLRP_MAX_EXPORT_BATCH_SIZE", "1");
 
-        RunTestApplication();
+        RunTestApplication(TestSettingsWithDefaultArgs());
 
         collector.ResourceExpector.AssertExpectations();
     }
+
 #endif
 
     [Fact]
@@ -179,7 +183,7 @@ public class SmokeTests : TestHelper
 
         try
         {
-            RunTestApplication();
+            RunTestApplication(TestSettingsWithDefaultArgs());
 
             var managedLog = tempLogsDirectory.GetFiles("otel-dotnet-auto-*-Splunk-*.log").Single();
             var managedLogContent = File.ReadAllText(managedLog.FullName);
@@ -211,6 +215,11 @@ public class SmokeTests : TestHelper
         }
     }
 
+    public void Dispose()
+    {
+        _testServer.Dispose();
+    }
+
     private static ICollection<KeyValuePair<string, string>> ParseSettingsLog(string log, string marker)
     {
         var lines = log.Split([Environment.NewLine], StringSplitOptions.None);
@@ -222,5 +231,13 @@ public class SmokeTests : TestHelper
             .ToEnvironmentVariablesList();
 
         return variables;
+    }
+
+    private TestSettings TestSettingsWithDefaultArgs()
+    {
+        return new TestSettings
+        {
+            Arguments = $"--test-server-port {_testServer.Port}"
+        };
     }
 }
