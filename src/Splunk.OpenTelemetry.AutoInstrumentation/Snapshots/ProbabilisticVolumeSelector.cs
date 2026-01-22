@@ -23,6 +23,7 @@ internal class ProbabilisticVolumeSelector : ISnapshotSelector
     private readonly double _ratio;
 #if NETFRAMEWORK
     private readonly Random _random = new();
+    private readonly object _lock = new();
 #endif
 
     public ProbabilisticVolumeSelector(double ratio)
@@ -40,7 +41,10 @@ internal class ProbabilisticVolumeSelector : ISnapshotSelector
 #if NET
         return Random.Shared.NextDouble() <= _ratio;
 #else
-        return _random.NextDouble() <= _ratio;
+        lock (_lock)
+        {
+            return _random.NextDouble() <= _ratio;
+        }
 #endif
     }
 

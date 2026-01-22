@@ -51,7 +51,8 @@ internal class OtlpHttpLogSender
 #if NET
             using var httpResponse = _httpClient.Send(request, cancellationToken);
 #else
-            using var httpResponse = _httpClient.SendAsync(request, cancellationToken).GetAwaiter().GetResult();
+            // To be safe, we will use ConfigureAwait(false).GetAwaiter().GetResult() to avoid any potential deadlocks in sync-over-async calls.
+            using var httpResponse = _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false).GetAwaiter().GetResult();
 #endif
             httpResponse.EnsureSuccessStatusCode();
         }
