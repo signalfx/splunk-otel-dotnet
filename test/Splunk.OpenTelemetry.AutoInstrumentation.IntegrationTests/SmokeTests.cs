@@ -45,6 +45,8 @@ public class SmokeTests : TestHelper, IDisposable
     {
         SetEnvironmentVariable("OTEL_SERVICE_NAME", ServiceName);
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS", "HttpClient");
+        SetEnvironmentVariable("OTEL_EXPERIMENTAL_FILE_BASED_CONFIGURATION_ENABLED", "false");
+
         _testServer = TestHttpServer.CreateDefaultTestServer(output);
     }
 
@@ -152,12 +154,12 @@ public class SmokeTests : TestHelper, IDisposable
     public void LogsResource()
     {
         using var collector = new MockLogsCollector(Output);
-        SetExporter(collector);
+        EnableFileBasedConfig("log-exporter-config.yaml");
+        SetFileBasedExporter(collector);
 
         collector.ResourceExpector.ExpectDistributionResources(ServiceName);
 
         EnableBytecodeInstrumentation();
-        SetEnvironmentVariable("OTEL_BLRP_MAX_EXPORT_BATCH_SIZE", "1");
 
         RunTestApplication(TestSettingsWithDefaultArgs());
 
