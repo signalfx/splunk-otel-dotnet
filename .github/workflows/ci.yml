@@ -166,6 +166,8 @@ jobs:
             8.0.416
             9.0.308
             10.0.101
+      - name: Create test directory
+        run: sudo mkdir -p /var/log/opentelemetry/dotnet && sudo chmod a+rw- /var/log/opentelemetry/dotnet
       - name: Download NuGet Artifacts from build-nuget-package job
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
