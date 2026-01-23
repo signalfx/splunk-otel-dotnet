@@ -39,6 +39,8 @@ internal static class Constants
 
     public const string None = "none";
 
+    public const bool DefaultTraceResponseHeaderEnabled = true;
+
     public static class Ingest
     {
         public const string TracesIngestTemplate = "https://ingest.{0}.signalfx.com/v2/trace/otlp";
