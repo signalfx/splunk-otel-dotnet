@@ -31,7 +31,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-public class MockMetricsCollector : IDisposable
+internal sealed class MockMetricsCollector : IDisposable
 {
     private readonly ITestOutputHelper _output;
     private readonly TestHttpServer _listener;

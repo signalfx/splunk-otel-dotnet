@@ -69,59 +69,59 @@ public abstract class TestHelper
         EnvironmentHelper.CustomEnvironmentVariables.Remove(key);
     }
 
-    public void SetExporter(MockSpansCollector collector)
+    internal void SetExporter(MockSpansCollector collector)
     {
         SetEnvironmentVariable("OTEL_TRACES_EXPORTER", "otlp");
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://localhost:{collector.Port}");
     }
 
-    public void SetFileBasedExporter(MockSpansCollector collector)
+    internal void SetFileBasedExporter(MockSpansCollector collector)
     {
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", $"http://localhost:{collector.Port}/v1/traces");
     }
 
-    public void SetExporter(MockMetricsCollector collector)
+    internal void SetExporter(MockMetricsCollector collector)
     {
         SetEnvironmentVariable("OTEL_METRICS_EXPORTER", "otlp");
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://localhost:{collector.Port}");
     }
 
-    public void SetFileBasedExporter(MockMetricsCollector collector)
+    internal void SetFileBasedExporter(MockMetricsCollector collector)
     {
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", $"http://localhost:{collector.Port}/v1/metrics");
     }
 
-    public void SetExporter(MockLogsCollector collector)
+    internal void SetExporter(MockLogsCollector collector)
     {
         SetEnvironmentVariable("OTEL_LOGS_EXPORTER", "otlp");
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://localhost:{collector.Port}");
     }
 
-    public void SetFileBasedExporter(MockLogsCollector collector)
+    internal void SetFileBasedExporter(MockLogsCollector collector)
     {
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", $"http://localhost:{collector.Port}/v1/logs");
     }
 
 #if NET
-    public void SetExporter(MockContinuousProfilerCollector collector)
+    internal void SetExporter(MockContinuousProfilerCollector collector)
     {
         SetEnvironmentVariable("SPLUNK_PROFILER_LOGS_ENDPOINT", $"http://localhost:{collector.Port}/v1/logs");
     }
 #endif
 
-    public void EnableBytecodeInstrumentation()
+    internal void EnableBytecodeInstrumentation()
     {
         SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
     }
 
-    public void EnableDefaultExporters()
+    internal void EnableDefaultExporters()
     {
         RemoveEnvironmentVariable("OTEL_TRACES_EXPORTER");
         RemoveEnvironmentVariable("OTEL_METRICS_EXPORTER");
         RemoveEnvironmentVariable("OTEL_LOGS_EXPORTER");
     }
 
-    public void EnableFileBasedConfig(string fileName = "config.yaml")
+    internal void EnableFileBasedConfig(string fileName = "config.yaml")
     {
         SetEnvironmentVariable("OTEL_EXPERIMENTAL_FILE_BASED_CONFIGURATION_ENABLED", "true");
         SetEnvironmentVariable("OTEL_EXPERIMENTAL_CONFIG_FILE", Path.Combine(EnvironmentHelper.GetTestApplicationApplicationOutputDirectory(), fileName));
@@ -132,7 +132,7 @@ public abstract class TestHelper
     /// Assertion exceptions are thrown if it timed out or the exit code is non-zero.
     /// </summary>
     /// <param name="testSettings">Test settings</param>
-    public (string StandardOutput, string ErrorOutput, int ProcessId) RunTestApplication(TestSettings? testSettings = null)
+    internal (string StandardOutput, string ErrorOutput, int ProcessId) RunTestApplication(TestSettings? testSettings = null)
     {
         // RunTestApplication starts the test application, wait up to DefaultProcessTimeout.
         // Assertion exceptions are thrown if it timed out or the exit code is non-zero.
@@ -161,7 +161,7 @@ public abstract class TestHelper
         return (helper.StandardOutput, helper.ErrorOutput, processId);
     }
 
-    public Process? StartTestApplication(TestSettings? testSettings = null)
+    internal Process? StartTestApplication(TestSettings? testSettings = null)
     {
         // StartTestApplication starts the test application
         // and returns the Process instance for further interaction.
