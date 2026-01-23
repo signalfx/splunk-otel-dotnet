@@ -11,6 +11,9 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.14.0
 
 ### Added
 
+- Support for response header injection (`SPLUNK_TRACE_RESPONSE_HEADER_ENABLED`)
+  configuration for ASP.NET and ASP.NET Core instrumentations via file-based configuration.
+
 ### Changed
 
 - Updated [OpenTelemetry .NET Auto Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation):

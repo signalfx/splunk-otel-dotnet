@@ -42,7 +42,7 @@ internal class PluginSettings
 
         Realm = source.GetString(ConfigurationKeys.Splunk.Realm) ?? Constants.None;
         AccessToken = source.GetString(ConfigurationKeys.Splunk.AccessToken);
-        TraceResponseHeaderEnabled = source.GetBool(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled) ?? true;
+        TraceResponseHeaderEnabled = source.GetBool(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled) ?? Constants.DefaultTraceResponseHeaderEnabled;
         var otlpEndpoint = source.GetString(ConfigurationKeys.OpenTelemetry.OtlpEndpoint);
         IsOtlpEndpointSet = !string.IsNullOrEmpty(otlpEndpoint);
 
@@ -80,7 +80,13 @@ internal class PluginSettings
         Realm = Constants.None;
         AccessToken = null;
         IsOtlpEndpointSet = false;
-        TraceResponseHeaderEnabled = false;
+
+        var traceConfig = configuration.InstrumentationDevelopment?.Dotnet?.Traces;
+#if NETFRAMEWORK
+        TraceResponseHeaderEnabled = traceConfig?.Aspnet?.ResponseHeaderEnabled ?? Constants.DefaultTraceResponseHeaderEnabled;
+#else
+        TraceResponseHeaderEnabled = traceConfig?.Aspnetcore?.ResponseHeaderEnabled ?? Constants.DefaultTraceResponseHeaderEnabled;
+#endif
 
 #if NET
         var profilingConfig = configuration.Distribution?.Splunk?.Profiling;
