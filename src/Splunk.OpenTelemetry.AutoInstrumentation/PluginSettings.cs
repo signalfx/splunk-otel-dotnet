@@ -83,9 +83,9 @@ internal class PluginSettings
 
         var traceConfig = configuration.InstrumentationDevelopment?.Dotnet?.Traces;
 #if NETFRAMEWORK
-        TraceResponseHeaderEnabled = traceConfig?.Aspnet?.ResponseHeaderEnabled ?? true;
+        TraceResponseHeaderEnabled = traceConfig?.Aspnet?.ResponseHeaderEnabled ?? Constants.DefaultTraceResponseHeaderEnabled;
 #else
-        TraceResponseHeaderEnabled = traceConfig?.Aspnetcore?.ResponseHeaderEnabled ?? true;
+        TraceResponseHeaderEnabled = traceConfig?.Aspnetcore?.ResponseHeaderEnabled ?? Constants.DefaultTraceResponseHeaderEnabled;
 #endif
 
 #if NET
