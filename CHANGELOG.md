@@ -7,12 +7,17 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.12.0...HEAD)
 
+This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.14.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.14.0).
+
 ### Added
 
 - Support for response header injection(SPLUNK_TRACE_RESPONSE_HEADER_ENABLED) configuration
   for ASP.NET and ASP.NET Core instrumentations via file-based configuration.
 
 ### Changed
+
+- Updated [OpenTelemetry .NET Auto Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation):
+  [`1.14.0`](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.14.0).
 
 ### Deprecated
 

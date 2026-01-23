@@ -25,10 +25,10 @@ using OpenTelemetry.Proto.Resource.V1;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
-public class OtlpResourceExpector : IDisposable
+internal sealed class OtlpResourceExpector : IDisposable
 {
-    private readonly List<ResourceExpectation> _resourceExpectations = new();
-    private readonly List<string> _existenceChecks = new();
+    private readonly List<ResourceExpectation> _resourceExpectations = [];
+    private readonly List<string> _existenceChecks = [];
 
     private readonly ManualResetEvent _resourceAttributesEvent = new(false); // synchronizes access to _resourceAttributes
     private RepeatedField<KeyValue>? _resourceAttributes; // protobuf type
@@ -61,6 +61,11 @@ public class OtlpResourceExpector : IDisposable
     public void Expect(string key, long value)
     {
         _resourceExpectations.Add(new ResourceExpectation(key, value));
+    }
+
+    public void Matches(string key, string regex)
+    {
+        _resourceExpectations.Add(new ResourceExpectation(key, regex, isRegex: true));
     }
 
     public void AssertExpectations(TimeSpan? timeout = null)
@@ -124,12 +129,16 @@ public class OtlpResourceExpector : IDisposable
                         continue;
                     }
 
-                    if (missingExpectations[i].StringValue != null && resourceAttribute.Value.StringValue != missingExpectations[i].StringValue)
+                    var expectation = missingExpectations[i];
+
+                    if (expectation.StringValue != null &&
+                        ((!expectation.IsRegex && resourceAttribute.Value.StringValue != expectation.StringValue) ||
+                         (expectation.IsRegex && !System.Text.RegularExpressions.Regex.IsMatch(resourceAttribute.Value.StringValue, expectation.StringValue))))
                     {
                         continue;
                     }
 
-                    if (missingExpectations[i].IntValue != null && resourceAttribute.Value.IntValue != missingExpectations[i].IntValue)
+                    if (expectation.IntValue != null && resourceAttribute.Value.IntValue != expectation.IntValue)
                     {
                         continue;
                     }
@@ -148,7 +157,7 @@ public class OtlpResourceExpector : IDisposable
 
     private static void FailResource(List<ResourceExpectation> missingExpectations, RepeatedField<KeyValue>? attributes)
     {
-        attributes ??= new();
+        attributes ??= [];
 
         var message = new StringBuilder();
         message.AppendLine();
@@ -156,7 +165,9 @@ public class OtlpResourceExpector : IDisposable
         message.AppendLine("Missing resource expectations:");
         foreach (var expectation in missingExpectations)
         {
-            var value = !string.IsNullOrEmpty(expectation.StringValue) ? expectation.StringValue : expectation.IntValue!.Value.ToString(CultureInfo.InvariantCulture);
+            var value = string.IsNullOrEmpty(expectation.StringValue)
+                ? expectation.IntValue!.Value.ToString(CultureInfo.InvariantCulture)
+                : expectation.IsRegex ? $"/{expectation.StringValue}/" : expectation.StringValue;
             message.AppendLine($"  - \"{expectation.Key}={value}\"");
         }
 
@@ -170,12 +181,13 @@ public class OtlpResourceExpector : IDisposable
         Assert.Fail(message.ToString());
     }
 
-    private class ResourceExpectation
+    private sealed class ResourceExpectation
     {
-        public ResourceExpectation(string key, string stringValue)
+        public ResourceExpectation(string key, string stringValue, bool isRegex = false)
         {
             Key = key;
             StringValue = stringValue;
+            IsRegex = isRegex;
         }
 
         public ResourceExpectation(string key, long intValue)
@@ -189,5 +201,7 @@ public class OtlpResourceExpector : IDisposable
         public string? StringValue { get; }
 
         public long? IntValue { get; }
+
+        public bool IsRegex { get; }
     }
 }

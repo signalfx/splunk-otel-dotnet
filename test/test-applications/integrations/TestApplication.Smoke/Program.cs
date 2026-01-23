@@ -16,6 +16,7 @@
 
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Globalization;
 using System.Net.Http;
 using Microsoft.Extensions.Logging;
 using TestApplication.Shared;
@@ -30,7 +31,14 @@ public class Program
     {
         ConsoleHelper.WriteSplashScreen(args);
 
-        EmitTraces();
+        if (args.Length != 2)
+        {
+            throw new InvalidOperationException("Missing arguments. Provide server port with --test-server-port <test-server-port>.");
+        }
+
+        var testServerPort = int.Parse(args[1], CultureInfo.InvariantCulture);
+
+        EmitTraces(testServerPort);
         EmitMetrics();
         EmitLogs();
 
@@ -49,7 +57,7 @@ public class Program
         }
     }
 
-    private static void EmitTraces()
+    private static void EmitTraces(int testServerPort)
     {
         var myActivitySource = new ActivitySource(SourceName, "1.0.0");
 
@@ -64,12 +72,12 @@ public class Program
 
         using var client = new HttpClient
         {
-            Timeout = TimeSpan.FromSeconds(1)
+            Timeout = TimeSpan.FromSeconds(5)
         };
 
         try
         {
-            client.GetStringAsync("http://httpstat.us/200").Wait();
+            client.GetStringAsync(new Uri($"http://localhost:{testServerPort}/test")).Wait();
         }
         catch (Exception ex)
         {

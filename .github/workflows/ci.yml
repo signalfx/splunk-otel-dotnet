@@ -21,10 +21,10 @@ jobs:
             log-dir: "/var/log/opentelemetry/dotnet"
     runs-on: ${{ matrix.machine }}
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0 # fetching all, needed to correctly calculate version
-      - uses: actions/setup-dotnet@2016bd2012dba4e32de620c46fe006a3ac9f0602 # v5.0.1
+      - uses: actions/setup-dotnet@baa11fbfe1d6520db94683bd5c7a3818018e4309 # v5.1.0
         with:
           dotnet-version: | 
             8.0.416
@@ -40,10 +40,10 @@ jobs:
         shell: bash
         run: |
           set -e
-          dotnet publish -f net8.0 -c Release ./test/test-applications/integrations/TestApplication.Smoke
+          dotnet publish -f net8.0 -c Release ./test/test-applications/integrations/TestApplication.HttpServer
           export OTEL_DOTNET_AUTO_HOME="${PWD}/OpenTelemetryDistribution"
           . ./instrument.sh
-          ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net8.0/publish/TestApplication.Smoke
+          ./test/test-applications/integrations/TestApplication.HttpServer/bin/Release/net8.0/publish/TestApplication.HttpServer
             test "$(ls -A '${{ matrix.log-dir }}' )"
       - name: Test the PowerShell module instructions from README.md
         if: ${{ runner.os == 'Windows' }}
@@ -53,12 +53,12 @@ jobs:
           Import-Module "${PWD}/bin/InstallationScripts/Splunk.OTel.DotNet.psm1"
           [System.Environment]::SetEnvironmentVariable("SPLUNK_OTEL_DOTNET_AUTO_INSTALL_DIR", "${PWD}\OpenTelemetryDistribution", [System.EnvironmentVariableTarget]::Machine)
           Register-OpenTelemetryForCurrentSession -OTelServiceName "MyServiceDisplayName"
-          ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net8.0/TestApplication.Smoke.exe
+          ./test/test-applications/integrations/TestApplication.HttpServer/bin/Release/net8.0/TestApplication.HttpServer.exe
           if (-not $?) { throw "dotnet help returned exit code: $LASTEXITCODE" }
           if (-not (Test-Path $log_path)) { throw "Log file does not exist. Instrumentation test failed." }
           Remove-Item $log_path
           Unregister-OpenTelemetryForCurrentSession
-          ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net8.0/TestApplication.Smoke.exe
+          ./test/test-applications/integrations/TestApplication.HttpServer/bin/Release/net8.0/TestApplication.HttpServer.exe
           if (-not $?) { throw "dotnet help returned exit code: $LASTEXITCODE" }
           if (Test-Path $log_path) { throw "Log file exists. Instrumentation unregister failed." }
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -96,7 +96,7 @@ jobs:
     runs-on: ${{ matrix.machine }}
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         fetch-depth: 0 # fetching all, needed to correctly calculate version
     - name: Build Docker image
@@ -117,10 +117,10 @@ jobs:
         docker build -t mybuildimage -f "./docker/${{ matrix.base-image }}.dockerfile" .
         docker run -e OTEL_DOTNET_AUTO_LOG_DIRECTORY=/home/user/opentelemetry/log/dotnet --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project --rm mybuildimage /bin/sh -c '
           set -e
-          dotnet publish -f net8.0 -c Release ./test/test-applications/integrations/TestApplication.Smoke
+          dotnet publish -f net8.0 -c Release ./test/test-applications/integrations/TestApplication.HttpServer
           export OTEL_DOTNET_AUTO_HOME="${PWD}/OpenTelemetryDistribution"
           . ./instrument.sh
-          ./test/test-applications/integrations/TestApplication.Smoke/bin/Release/net8.0/publish/TestApplication.Smoke
+          ./test/test-applications/integrations/TestApplication.HttpServer/bin/Release/net8.0/publish/TestApplication.HttpServer
             test "$(ls -A /home/user/opentelemetry/log )"
         '
     - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -132,10 +132,10 @@ jobs:
   build-nuget-package:
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0 # fetching all, needed to correctly calculate version
-      - uses: actions/setup-dotnet@2016bd2012dba4e32de620c46fe006a3ac9f0602 # v5.0.1
+      - uses: actions/setup-dotnet@baa11fbfe1d6520db94683bd5c7a3818018e4309 # v5.1.0
         with:
           dotnet-version: | 
             8.0.416
@@ -157,15 +157,17 @@ jobs:
           - machine: macos-14
     runs-on: ${{ matrix.machine }}
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0 # fetching all, needed to correctly calculate version
-      - uses: actions/setup-dotnet@2016bd2012dba4e32de620c46fe006a3ac9f0602 # v5.0.1
+      - uses: actions/setup-dotnet@baa11fbfe1d6520db94683bd5c7a3818018e4309 # v5.1.0
         with:
           dotnet-version: | 
             8.0.416
             9.0.308
             10.0.101
+      - name: Create test directory
+        run: sudo mkdir -p /var/log/opentelemetry/dotnet && sudo chmod a+rw- /var/log/opentelemetry/dotnet
       - name: Download NuGet Artifacts from build-nuget-package job
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
@@ -183,7 +185,7 @@ jobs:
       contents: write
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           path: .
