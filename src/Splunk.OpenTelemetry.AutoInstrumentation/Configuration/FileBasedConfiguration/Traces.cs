@@ -1,4 +1,4 @@
-﻿// <copyright file="YamlRoot.cs" company="Splunk Inc.">
+﻿// <copyright file="Traces.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +16,11 @@
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 
-internal class YamlRoot
+internal class Traces
 {
-    public Distribution? Distribution { get; set; }
-
-    public InstrumentationDevelopment? InstrumentationDevelopment { get; set; }
+#if NETFRAMEWORK
+    public ResponseHeaderConfiguration? Aspnet { get; set; }
+#else
+    public ResponseHeaderConfiguration? Aspnetcore { get; set; }
+#endif
 }

@@ -1,3 +1,5 @@
 CORECLR
 netcoreapp
 nupkg
+aspnet
+aspnetcore

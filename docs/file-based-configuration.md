@@ -20,9 +20,28 @@ instrumentation must be configured using environment variables exclusively.
 - `SPLUNK_ACCESS_TOKEN`
 - `SPLUNK_REALM`
 
-### Instrumentations configuration
+## Trace Response Header configuration
 
-- `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED`
+```yaml
+# Instrumentation configuration
+instrumentation/development:
+  # Dotnet instrumentation configuration
+  dotnet:
+    # Traces instrumentation configuration
+    traces:
+      # ASP.NET
+      aspnet:
+        # Configure response header injection
+        # Adds server trace information to HTTP response headers.
+        # If omitted or null, true is used.
+        response_header_enabled: true
+      # ASP.NET Core
+      aspnetcore:
+        # Configure response header injection
+        # Adds server trace information to HTTP response headers.
+        # If omitted or null, true is used.
+        response_header_enabled: true
+```
 
 ## Profiling configuration
 
@@ -109,8 +128,20 @@ distribution:
         cpu_profiler:
         # Configure Memory allocation profiler with default settings
         memory_profiler:
-    # Configure Callgraph snapshot profiler with default settings
+      # Configure Callgraph snapshot profiler with default settings
       callgraphs:
+# Instrumentation configuration
+instrumentation/development:
+  # Dotnet instrumentation configuration
+  dotnet:
+    # Traces instrumentation configuration
+    traces:
+      # ASP.NET
+      # It will enable response header injection by default
+      aspnet:
+      # ASP.NET Core
+      # It will enable response header injection by default
+      aspnetcore:
 ```
 
 ### Environment Variable Migration Example
@@ -165,4 +196,22 @@ distribution:
         # Configure if the High-resolution Timer is enabled or not.
         # If omitted or null, false is used.
         high_resolution_timer_enabled: ${SPLUNK_SNAPSHOT_HIGH_RES_TIMER_ENABLED}
+# Instrumentation configuration
+instrumentation/development:
+  # Dotnet instrumentation configuration
+  dotnet:
+    # Traces instrumentation configuration
+    traces:
+      # ASP.NET
+      aspnet:
+        # Configure response header injection
+        # Adds server trace information to HTTP response headers.
+        # If omitted or null, true is used.
+        response_header_enabled: ${SPLUNK_TRACE_RESPONSE_HEADER_ENABLED}
+      # ASP.NET Core
+      aspnetcore:
+        # Configure response header injection
+        # Adds server trace information to HTTP response headers.
+        # If omitted or null, true is used.
+        response_header_enabled: ${SPLUNK_TRACE_RESPONSE_HEADER_ENABLED}
 ```
