@@ -124,7 +124,7 @@ jobs:
             test "$(ls -A /home/user/opentelemetry/log )"
         '
     - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-      if: (${{ job.status }} != 'cancelled')
+      if: ${{ job.status != 'cancelled' }}
       with:
         name: bin-${{ matrix.base-image }}
         path: bin/splunk-*.zip
