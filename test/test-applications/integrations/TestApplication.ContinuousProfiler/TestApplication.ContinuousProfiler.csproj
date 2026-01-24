@@ -7,8 +7,9 @@
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.1" />
+  <!-- Only needed for net462 compilation - runtime version comes from auto-instrumentation -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.2"/>
   </ItemGroup>
 
   <ItemGroup>
