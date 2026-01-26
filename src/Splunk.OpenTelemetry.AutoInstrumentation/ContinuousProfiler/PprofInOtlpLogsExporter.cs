@@ -20,7 +20,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 
 internal class PprofInOtlpLogsExporter
 {
-    private static readonly ILogger Log = new Logger();
     private readonly ISampleExporter _sampleExporter;
     private readonly NativeFormatParser _nativeFormatParser;
 
@@ -71,10 +70,8 @@ internal class PprofInOtlpLogsExporter
         if (threadSamples != null)
         {
             var logRecord = SampleProcessor.ProcessThreadSamples(threadSamples);
-            Log.Debug($"Processed {threadSamples.Count} thread samples");
             if (logRecord != null)
             {
-                Log.Debug("Exporting thread samples");
                 _sampleExporter.Export(logRecord, cancellationToken);
             }
 
@@ -83,13 +80,8 @@ internal class PprofInOtlpLogsExporter
             var snapshotLogRecord = SampleProcessor.ProcessSnapshots(snapshots);
             if (snapshotLogRecord != null)
             {
-                Log.Debug("Exporting snapshots");
                 _sampleExporter.Export(snapshotLogRecord, cancellationToken);
             }
-        }
-        else
-        {
-            Log.Debug("No thread samples to export");
         }
     }
 
