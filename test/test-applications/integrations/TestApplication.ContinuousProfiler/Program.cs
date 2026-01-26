@@ -14,28 +14,26 @@
 // limitations under the License.
 // </copyright>
 
-using System;
 using System.Diagnostics;
 
-namespace TestApplication.ContinuousProfiler
+namespace TestApplication.ContinuousProfiler;
+
+public static class Program
 {
-    public static class Program
+    private static readonly ActivitySource ActivitySource = new ActivitySource("TestApplication.ContinuousProfiler");
+
+    public static void Main()
     {
-        private static readonly ActivitySource ActivitySource = new ActivitySource("TestApplication.ContinuousProfiler");
-
-        public static void Main()
+        using (var activity = ActivitySource.StartActivity("Main"))
         {
-            using (var activity = ActivitySource.StartActivity("Main"))
+            // Run for ~6 seconds to allow profiler to collect samples
+            var endTime = DateTime.UtcNow.AddSeconds(6);
+            while (DateTime.UtcNow < endTime)
             {
-                // Run for ~6 seconds to allow profiler to collect samples
-                var endTime = DateTime.UtcNow.AddSeconds(6);
-                while (DateTime.UtcNow < endTime)
-                {
-                    My.Custom.Test.Namespace.ClassA.MethodA();
-                }
+                My.Custom.Test.Namespace.ClassA.MethodA();
             }
-
-            Console.WriteLine("Test application completed.");
         }
+
+        Console.WriteLine("Test application completed.");
     }
 }
