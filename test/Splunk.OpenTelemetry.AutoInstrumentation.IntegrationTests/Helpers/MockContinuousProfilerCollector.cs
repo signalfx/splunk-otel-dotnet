@@ -33,11 +33,12 @@
 #nullable disable
 
 using System.Collections.Concurrent;
-using System.Net;
 using OpenTelemetry.Proto.Collector.Logs.V1;
 using Xunit.Abstractions;
 
-#if NET
+#if NETFRAMEWORK
+using System.Net;
+#else
 using Microsoft.AspNetCore.Http;
 #endif
 
