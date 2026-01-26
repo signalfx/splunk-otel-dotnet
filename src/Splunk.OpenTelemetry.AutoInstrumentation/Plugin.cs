@@ -202,7 +202,7 @@ public class Plugin
                 throw new NotSupportedException("Collecting snapshots requires baggage propagator usage.");
             }
 
-            global::OpenTelemetry.Sdk.SetDefaultTextMapPropagator(new CompositeTextMapPropagator(new TextMapPropagator[] { currentPropagator, new SnapshotVolumePropagator(new CompositeSelector(Settings.SnapshotsSelectionRate)) }));
+            global::OpenTelemetry.Sdk.SetDefaultTextMapPropagator(new CompositeTextMapPropagator([currentPropagator, new SnapshotVolumePropagator(new CompositeSelector(Settings.SnapshotsSelectionRate))]));
             builder.AddProcessor(new SnapshotSelectingProcessor(SnapshotProcessorHelper.Instance));
             // Timer in SnapshotProcessorHelper will be disposed when SDK is shutdown.
             builder.AddInstrumentation(SnapshotProcessorHelper.Instance);
