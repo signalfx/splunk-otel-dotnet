@@ -45,7 +45,7 @@ internal class SampleBuilder
     public Sample Build()
     {
         _sample.LocationIds = _locationIds.ToArray();
-        _sample.Values = _value.HasValue ? new[] { _value.Value } : Array.Empty<long>();
+        _sample.Values = _value.HasValue ? [_value.Value] : [];
 
         return _sample;
     }
