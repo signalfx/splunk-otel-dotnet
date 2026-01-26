@@ -34,8 +34,8 @@ internal static class NativeMethods
                 throw new Exception("OpenTelemetry.AutoInstrumentation.NativeMethods could not be found.");
             }
 
-            var startMethod = nativeMethodsType.GetMethod("SelectiveSamplingStart", BindingFlags.Static | BindingFlags.Public, null, new[] { typeof(ActivityTraceId) }, null);
-            var stopMethod = nativeMethodsType!.GetMethod("SelectiveSamplingStop", BindingFlags.Static | BindingFlags.Public, null, new[] { typeof(ActivityTraceId) }, null);
+            var startMethod = nativeMethodsType.GetMethod("SelectiveSamplingStart", BindingFlags.Static | BindingFlags.Public, null, [typeof(ActivityTraceId)], null);
+            var stopMethod = nativeMethodsType!.GetMethod("SelectiveSamplingStop", BindingFlags.Static | BindingFlags.Public, null, [typeof(ActivityTraceId)], null);
 
             StartSamplingDelegate = (Action<ActivityTraceId>)Delegate.CreateDelegate(typeof(Action<ActivityTraceId>), startMethod!);
             StopSamplingDelegate = (Action<ActivityTraceId>)Delegate.CreateDelegate(typeof(Action<ActivityTraceId>), stopMethod!);
