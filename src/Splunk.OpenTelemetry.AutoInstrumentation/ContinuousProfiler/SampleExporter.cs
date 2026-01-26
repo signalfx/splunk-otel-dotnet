@@ -39,10 +39,6 @@ internal class SampleExporter : ISampleExporter
 
     public void Export(LogRecord logRecord, CancellationToken cancellationToken)
     {
-        // Ensure _logsData is initialized - this handles the race condition where
-        // the profiler starts exporting before ConfigureResource is called.
-        EnsureLogsDataInitialized();
-
         if (_logsData == null)
         {
             return;
@@ -105,35 +101,6 @@ internal class SampleExporter : ISampleExporter
                         }
                     },
                     Resource = resource
-                }
-            }
-        };
-    }
-
-    private static void EnsureLogsDataInitialized()
-    {
-        if (_logsData != null)
-        {
-            return;
-        }
-
-        // Initialize with an empty resource if ConfigureResource hasn't been called yet.
-        // This ensures profiling data can be exported even if there's a timing issue
-        // with resource configuration.
-        _logsData = new LogsData
-        {
-            ResourceLogs =
-            {
-                new ResourceLogs
-                {
-                    ScopeLogs =
-                    {
-                        new ScopeLogs
-                        {
-                            Scope = GdiProfilingConventions.OpenTelemetry.InstrumentationLibrary
-                        }
-                    },
-                    Resource = new Resource()
                 }
             }
         };
