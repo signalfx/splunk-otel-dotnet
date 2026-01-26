@@ -14,14 +14,10 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
+internal static class SnapshotConstants
 {
-    internal static class SnapshotConstants
-    {
-        public const string VolumeBaggageKeyName = "splunk.trace.snapshot.volume";
-        public const string SplunkSnapshotProfilingAttributeName = "splunk.snapshot.profiling";
-    }
+    public const string VolumeBaggageKeyName = "splunk.trace.snapshot.volume";
+    public const string SplunkSnapshotProfilingAttributeName = "splunk.snapshot.profiling";
 }
-#endif

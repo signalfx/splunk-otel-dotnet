@@ -14,34 +14,30 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 using System.Diagnostics;
 using OpenTelemetry.Trace;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
+
+internal class TraceIdBasedSnapshotSelector : ISnapshotSelector
 {
-    internal class TraceIdBasedSnapshotSelector : ISnapshotSelector
+    private readonly TraceIdRatioBasedSampler _sampler;
+
+    public TraceIdBasedSnapshotSelector(double ratio)
     {
-        private readonly TraceIdRatioBasedSampler _sampler;
+        _sampler = new TraceIdRatioBasedSampler(ratio);
+    }
 
-        public TraceIdBasedSnapshotSelector(double ratio)
+    public bool Select(ActivityContext context)
+    {
+        // context.IsValid() checks if context != default
+        if (context.TraceId == default)
         {
-            _sampler = new TraceIdRatioBasedSampler(ratio);
+            return false;
         }
 
-        public bool Select(ActivityContext context)
-        {
-            // context.IsValid() checks if context != default
-            if (context.TraceId == default)
-            {
-                return false;
-            }
-
-            // Only TraceId is used from sampling parameters
-            var samplingParameters = new SamplingParameters(default, context.TraceId, string.Empty, ActivityKind.Internal);
-            return _sampler.ShouldSample(samplingParameters).Decision == SamplingDecision.RecordAndSample;
-        }
+        // Only TraceId is used from sampling parameters
+        var samplingParameters = new SamplingParameters(default, context.TraceId, string.Empty, ActivityKind.Internal);
+        return _sampler.ShouldSample(samplingParameters).Decision == SamplingDecision.RecordAndSample;
     }
 }
-#endif

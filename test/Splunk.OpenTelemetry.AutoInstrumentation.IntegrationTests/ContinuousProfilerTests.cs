@@ -14,15 +14,8 @@
 // limitations under the License.
 // </copyright>
 
-// Continuous Profiler is not supported by .NET Framework.
-
-#if NET
-
 using System.IO.Compression;
-using Google.Protobuf.Collections;
 using OpenTelemetry.Proto.Collector.Logs.V1;
-using OpenTelemetry.Proto.Common.V1;
-using OpenTelemetry.Proto.Logs.V1;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Pprof.Proto.Profile;
 using Xunit.Abstractions;
@@ -36,6 +29,7 @@ public class ContinuousProfilerTests : TestHelper
     {
     }
 
+#if NET
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -70,8 +64,8 @@ public class ContinuousProfilerTests : TestHelper
 
             foreach (var gzip in logRecords.Select(record => record.Body.StringValue).Select(Convert.FromBase64String))
             {
-                await using var memoryStream = new MemoryStream(gzip);
-                await using var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
+                using var memoryStream = new MemoryStream(gzip);
+                using var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
                 var profile = Vendors.ProtoBuf.Serializer.Deserialize<Profile>(gzipStream);
                 profiles.Add(profile);
             }
@@ -85,6 +79,7 @@ public class ContinuousProfilerTests : TestHelper
             logRecords.Clear();
         }
     }
+#endif
 
     [Theory]
     [InlineData(false)]
@@ -125,8 +120,8 @@ public class ContinuousProfilerTests : TestHelper
 
             foreach (var gzip in logRecords.Select(record => record.Body.StringValue).Select(Convert.FromBase64String))
             {
-                await using var memoryStream = new MemoryStream(gzip);
-                await using var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
+                using var memoryStream = new MemoryStream(gzip);
+                using var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
                 var profile = Vendors.ProtoBuf.Serializer.Deserialize<Profile>(gzipStream);
                 profiles.Add(profile);
             }
@@ -160,7 +155,7 @@ public class ContinuousProfilerTests : TestHelper
     {
         foreach (var data in logsData)
         {
-            await using var memoryStream = new MemoryStream();
+            using var memoryStream = new MemoryStream();
             await System.Text.Json.JsonSerializer.SerializeAsync(memoryStream, data);
             memoryStream.Position = 0;
             using var sr = new StreamReader(memoryStream);
@@ -170,4 +165,3 @@ public class ContinuousProfilerTests : TestHelper
         }
     }
 }
-#endif

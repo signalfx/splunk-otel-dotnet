@@ -27,11 +27,12 @@ internal static class ClassA
             items.Add(i.ToString("D10000"));
         }
 
-        Thread.Sleep(TimeSpan.FromSeconds(5));
+        Thread.Sleep(TimeSpan.FromSeconds(6));
 
         for (var i = 0; i < numberOfItems; i++)
         {
-            TextWriter.Null.Write(items[i][^2]);
+            var item = items[i];
+            TextWriter.Null.Write(item[item.Length - 2]);
         }
     }
 }

@@ -14,8 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 
 internal class ThreadSample
@@ -67,5 +65,3 @@ internal class ThreadSample
         public long Milliseconds { get; }
     }
 }
-
-#endif

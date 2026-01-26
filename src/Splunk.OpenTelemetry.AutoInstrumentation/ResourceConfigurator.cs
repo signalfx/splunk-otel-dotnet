@@ -16,9 +16,7 @@
 
 using System.Reflection;
 using OpenTelemetry.Resources;
-#if NET
 using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
-#endif
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
@@ -61,9 +59,7 @@ internal static class ResourceConfigurator
 
         resourceBuilder.AddAttributes(attributes);
 
-#if NET
         var resource = resourceBuilder.Build();
         SampleExporter.SetResources(resource);
-#endif
     }
 }

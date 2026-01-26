@@ -13,27 +13,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // </copyright>
-#if NET
 
 using System.Diagnostics;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
+
+internal class CompositeSelector : ISnapshotSelector
 {
-    internal class CompositeSelector : ISnapshotSelector
+    private readonly ProbabilisticVolumeSelector _probabilisticSelector;
+    private readonly TraceIdBasedSnapshotSelector _traceIdRatioBasedSelector;
+
+    public CompositeSelector(double ratio)
     {
-        private readonly ProbabilisticVolumeSelector _probabilisticSelector;
-        private readonly TraceIdBasedSnapshotSelector _traceIdRatioBasedSelector;
+        _probabilisticSelector = new ProbabilisticVolumeSelector(ratio);
+        _traceIdRatioBasedSelector = new TraceIdBasedSnapshotSelector(ratio);
+    }
 
-        public CompositeSelector(double ratio)
-        {
-            _probabilisticSelector = new ProbabilisticVolumeSelector(ratio);
-            _traceIdRatioBasedSelector = new TraceIdBasedSnapshotSelector(ratio);
-        }
-
-        public bool Select(ActivityContext context)
-        {
-            return _probabilisticSelector.Select(context) || _traceIdRatioBasedSelector.Select(context);
-        }
+    public bool Select(ActivityContext context)
+    {
+        return _probabilisticSelector.Select(context) || _traceIdRatioBasedSelector.Select(context);
     }
 }
-#endif

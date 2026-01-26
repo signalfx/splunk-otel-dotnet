@@ -14,22 +14,19 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
 using Splunk.OpenTelemetry.AutoInstrumentation.Proto.Logs.V1;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler
+namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
+
+/// <summary>
+/// Exports log records containing samples.
+/// </summary>
+internal interface ISampleExporter
 {
     /// <summary>
-    /// Exports log records containing samples.
+    /// Exports log record.
     /// </summary>
-    internal interface ISampleExporter
-    {
-        /// <summary>
-        /// Exports log record.
-        /// </summary>
-        /// <param name="logRecord">Log record containing samples.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        void Export(LogRecord logRecord, CancellationToken cancellationToken);
-    }
+    /// <param name="logRecord">Log record containing samples.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    void Export(LogRecord logRecord, CancellationToken cancellationToken);
 }
-#endif

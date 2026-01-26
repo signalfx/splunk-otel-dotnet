@@ -14,18 +14,14 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 // ReSharper disable InconsistentNaming
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
+
+internal enum Volume
 {
-    internal enum Volume
-    {
 #pragma warning disable SA1300
-        unspecified,
-        off,
-        highest
+    unspecified,
+    off,
+    highest
 #pragma warning restore SA1300
-    }
 }
-#endif

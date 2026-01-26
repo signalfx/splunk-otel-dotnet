@@ -21,17 +21,15 @@ using OpenTelemetry.Context.Propagation;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
-#if NET
 using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
-#endif
 
 #if NETFRAMEWORK
 using OpenTelemetry.Instrumentation.AspNet;
 #else
 using OpenTelemetry.Instrumentation.AspNetCore;
-using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 #endif
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
@@ -47,8 +45,9 @@ public class Plugin
     private static readonly Lazy<PluginSettings> SettingsFactory = new(() => DefaultSettingsFactory());
 
     private static readonly ILogger Log = new Logger();
-#if NET
+
     private static PprofInOtlpLogsExporter? _pprofInOtlpLogsExporter;
+#if NET
     private static int _highResTimerEnabled;
     private static int _highResTimerDisabled;
 #endif
@@ -141,7 +140,6 @@ public class Plugin
 
 #endif
 
-#if NET
     /// <summary>
     /// Configure Continuous Profiler.
     /// </summary>
@@ -150,8 +148,14 @@ public class Plugin
     {
         var threadSamplingEnabled = Settings.CpuProfilerEnabled;
         var threadSamplingInterval = Settings.CpuProfilerCallStackInterval;
+#if NET
         var allocationSamplingEnabled = Settings.MemoryProfilerEnabled;
         var maxMemorySamplesPerMinute = Settings.MemoryProfilerMaxMemorySamplesPerMinute;
+#else
+        // Allocation sampling is not supported on .NET Framework
+        var allocationSamplingEnabled = false;
+        var maxMemorySamplesPerMinute = 0u;
+#endif
         var exportInterval = TimeSpan.FromMilliseconds(Settings.ProfilerExportInterval);
         var exportTimeout = TimeSpan.FromMilliseconds(Settings.ProfilerHttpClientTimeout);
 
@@ -207,6 +211,7 @@ public class Plugin
         return builder;
     }
 
+#if NET
     private static void EnableHighResTimer()
     {
         if (Interlocked.Exchange(ref _highResTimerEnabled, value: 1) != 0)
@@ -234,6 +239,7 @@ public class Plugin
 
         WinApi.TryDisableHighResolutionTimer();
     }
+#endif
 
     private static TimeSpan GetSampleExportTimeout()
     {
@@ -255,5 +261,4 @@ public class Plugin
     {
         return new PprofInOtlpLogsExporter(new SampleProcessor(), new SampleExporter(new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint)), new NativeFormatParser(Settings.SnapshotsEnabled));
     }
-#endif
 }

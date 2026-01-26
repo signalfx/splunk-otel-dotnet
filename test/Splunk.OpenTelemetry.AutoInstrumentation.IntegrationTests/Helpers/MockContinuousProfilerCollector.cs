@@ -31,12 +31,16 @@
 // </copyright>
 
 #nullable disable
-#if NET
 
 using System.Collections.Concurrent;
-using Microsoft.AspNetCore.Http;
 using OpenTelemetry.Proto.Collector.Logs.V1;
 using Xunit.Abstractions;
+
+#if NETFRAMEWORK
+using System.Net;
+#else
+using Microsoft.AspNetCore.Http;
+#endif
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 
@@ -50,8 +54,12 @@ public class MockContinuousProfilerCollector : IDisposable
     {
         _output = output;
 
+#if NETFRAMEWORK
+        _listener = new(output, HandleHttpRequests, host, "/v1/logs/");
+#else
         _listener = new(output, nameof(MockContinuousProfilerCollector), new PathHandler(HandleHttpRequests, "/v1/logs"), MockCollectorHealthZ.CreateHealthZHandler());
         MockCollectorHealthZ.WarmupHealthZEndpoint(output, host, Port);
+#endif
     }
 
     /// <summary>
@@ -71,6 +79,15 @@ public class MockContinuousProfilerCollector : IDisposable
         _listener.Dispose();
     }
 
+#if NETFRAMEWORK
+    private void HandleHttpRequests(HttpListenerContext ctx)
+    {
+        var logsMessage = ExportLogsServiceRequest.Parser.ParseFrom(ctx.Request.InputStream);
+        HandleLogsMessage(logsMessage);
+
+        ctx.GenerateEmptyProtobufResponse<ExportLogsServiceResponse>();
+    }
+#else
     private async Task HandleHttpRequests(HttpContext ctx)
     {
         using var bodyStream = await ctx.ReadBodyToMemoryAsync();
@@ -79,6 +96,7 @@ public class MockContinuousProfilerCollector : IDisposable
 
         await ctx.GenerateEmptyProtobufResponseAsync<ExportLogsServiceResponse>();
     }
+#endif
 
     private void HandleLogsMessage(ExportLogsServiceRequest logsMessage)
     {
@@ -91,4 +109,3 @@ public class MockContinuousProfilerCollector : IDisposable
         _output.WriteLine($"[{name}]: {msg}");
     }
 }
-#endif

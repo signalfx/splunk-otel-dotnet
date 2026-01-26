@@ -14,8 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 using System.Diagnostics;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
@@ -33,4 +31,3 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
         public bool Select(ActivityContext context);
     }
 }
-#endif

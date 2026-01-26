@@ -14,8 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 using Google.Protobuf.Collections;
 using OpenTelemetry.Proto.Common.V1;
 using OpenTelemetry.Proto.Logs.V1;
@@ -105,8 +103,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
                 .Select(function => profile.StringTables[(int)function.Name]);
 
             var stackTrace = string.Join("\n", frames);
-            return stackTrace.Split(expectedStackTrace).Length - 1;
+            return stackTrace.Split([expectedStackTrace], StringSplitOptions.None).Length - 1;
         }
     }
 }
-#endif
