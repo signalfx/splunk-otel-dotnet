@@ -103,7 +103,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
                 .Select(function => profile.StringTables[(int)function.Name]);
 
             var stackTrace = string.Join("\n", frames);
-            return stackTrace.Split(new[] { expectedStackTrace }, StringSplitOptions.None).Length - 1;
+            return stackTrace.Split([expectedStackTrace], StringSplitOptions.None).Length - 1;
         }
     }
 }
