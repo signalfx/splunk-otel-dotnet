@@ -20,7 +20,7 @@ namespace TestApplication.ContinuousProfiler;
 
 public static class Program
 {
-    private static readonly ActivitySource ActivitySource = new ActivitySource("TestApplication.ContinuousProfiler");
+    private static readonly ActivitySource ActivitySource = new("TestApplication.ContinuousProfiler", "1.0.0");
 
     public static void Main()
     {
