@@ -15,25 +15,9 @@
 // </copyright>
 
 using System.Diagnostics;
+using My.Custom.Test.Namespace;
 
-namespace TestApplication.ContinuousProfiler;
+ActivitySource activitySource = new("TestApplication.ContinuousProfiler", "1.0.0");
 
-public static class Program
-{
-    private static readonly ActivitySource ActivitySource = new("TestApplication.ContinuousProfiler", "1.0.0");
-
-    public static void Main()
-    {
-        using (var activity = ActivitySource.StartActivity("Main"))
-        {
-            // Run for ~6 seconds to allow profiler to collect samples
-            var endTime = DateTime.UtcNow.AddSeconds(6);
-            while (DateTime.UtcNow < endTime)
-            {
-                My.Custom.Test.Namespace.ClassA.MethodA();
-            }
-        }
-
-        Console.WriteLine("Test application completed.");
-    }
-}
+using var activity = activitySource.StartActivity();
+ClassA.MethodA();

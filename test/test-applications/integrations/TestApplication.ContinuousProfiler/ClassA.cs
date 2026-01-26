@@ -27,7 +27,7 @@ internal static class ClassA
             items.Add(i.ToString("D10000"));
         }
 
-        Thread.Sleep(TimeSpan.FromSeconds(5));
+        Thread.Sleep(TimeSpan.FromSeconds(6));
 
         for (var i = 0; i < numberOfItems; i++)
         {
