@@ -33,6 +33,7 @@ internal static class SnapshotVolumeDetector
 #if NETFRAMEWORK
     public static bool IsLoud(HttpRequestBase? request)
     {
+        // TODO remove this method when https://github.com/open-telemetry/opentelemetry-dotnet-contrib/pull/3820 is resolved
         if (request == null)
         {
             return false;
