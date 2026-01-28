@@ -16,6 +16,13 @@ partial class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Release'")]
     readonly Configuration Configuration = Configuration.Release;
 
+    [Parameter($"Docker containers type to be used in tests. One of '{ContainersNone}', '{ContainersLinux}', '{ContainersWindows}'. Default is '{ContainersLinux}'")]
+    readonly string Containers = ContainersLinux;
+
+    const string ContainersNone = "none";
+    const string ContainersLinux = "linux";
+    const string ContainersWindows = "windows";
+
     const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.14.1";
 
     [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
@@ -26,9 +33,13 @@ partial class Build : NukeBuild
     private IEnumerable<Project> AllProjectsExceptNuGetTestApps() => Solution.AllProjects.Where(project => !TestNuGetPackageApps.Contains(project.Directory));
 
     Target Clean => _ => _
+        .After(SupportVs2026IfAvailable)
         .Executes(() =>
         {
-            DotNetClean();
+            foreach (var project in Solution.AllProjects.Where(p => !p.Name.EndsWith(".NetFramework") && p.Name != "_build"))
+            {
+                DotNetClean(s => s.SetProject(project));
+            }
             NuGetPackageFolder.DeleteDirectory();
             InstallationScriptsFolder.DeleteDirectory();
             MatrixScriptsFolder.DeleteDirectory();
@@ -40,7 +51,7 @@ partial class Build : NukeBuild
         .After(Clean)
         .Executes(() =>
         {
-            foreach (var project in AllProjectsExceptNuGetTestApps())
+            foreach (var project in AllProjectsExceptNuGetTestApps().Where(p => !LegacyMsBuildProjects.Contains(p.Name)))
             {
                 DotNetRestore(s => s
                     .SetProjectFile(project));
@@ -171,12 +182,18 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
             OpenTelemetryDistributionFolder.ZipTo(RootDirectory / "bin" / ("splunk-" + fileName), compressionLevel: CompressionLevel.SmallestSize, fileMode: FileMode.Create);
         });
 
+    // Projects that cannot be built with dotnet build (classic ASP.NET projects)
+    private static readonly string[] LegacyMsBuildProjects = new[]
+    {
+        "TestApplication.Snapshots.NetFramework"
+    };
+
     Target Compile => _ => _
         .After(Restore)
         .After(UnpackAutoInstrumentationDistribution)
         .Executes(() =>
         {
-            foreach (var project in AllProjectsExceptNuGetTestApps())
+            foreach (var project in AllProjectsExceptNuGetTestApps().Where(p => !LegacyMsBuildProjects.Contains(p.Name)))
             {
                 DotNetBuild(s => s
                     .SetProjectFile(project)
@@ -200,6 +217,7 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
     Target RunIntegrationTests => _ => _
         .After(Compile)
         .After(AddSplunkPlugins)
+        .After(PublishIisTestApplications)
         .Executes(() =>
         {
             var project = Solution.AllProjects.First(project => project.Name == "Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests");
@@ -212,13 +230,16 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
         });
 
     Target Workflow => _ => _
+        .DependsOn(SupportVs2026IfAvailable)
         .DependsOn(Clean)
         .DependsOn(Restore)
+        .DependsOn(RestoreLegacyNuGetPackages)
         .DependsOn(SerializeMatrix)
         .DependsOn(BuildInstallationScripts)
         .DependsOn(DownloadAutoInstrumentationDistribution)
         .DependsOn(UnpackAutoInstrumentationDistribution)
         .DependsOn(Compile)
+        .DependsOn(PublishIisTestApplications)
         .DependsOn(AddSplunkPlugins)
         .DependsOn(CopyInstrumentScripts)
         .DependsOn(ExtendLicenseFile)

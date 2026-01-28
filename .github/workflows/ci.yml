@@ -15,10 +15,13 @@ jobs:
         include:
           - machine: windows-2022
             log-dir: "/c/ProgramData/OpenTelemetry .NET AutoInstrumentation/logs"
+            containers: windows
           - machine: ubuntu-22.04
             log-dir: "/var/log/opentelemetry/dotnet"
+            containers: linux
           - machine: macos-14
             log-dir: "/var/log/opentelemetry/dotnet"
+            containers: none
     runs-on: ${{ matrix.machine }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -30,7 +33,7 @@ jobs:
             8.0.416
             9.0.308
             10.0.101
-      - run: ./build.cmd Workflow
+      - run: ./build.cmd Workflow --containers ${{ matrix.containers }}
       - run: brew install coreutils
         if: ${{ runner.os == 'macOS' }}
       - name: Create test directory

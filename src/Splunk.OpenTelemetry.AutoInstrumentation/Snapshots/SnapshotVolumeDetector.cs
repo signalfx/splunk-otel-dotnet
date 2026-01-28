@@ -14,6 +14,9 @@
 // limitations under the License.
 // </copyright>
 
+#if NETFRAMEWORK
+using System.Web;
+#endif
 using OpenTelemetry;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
@@ -26,4 +29,17 @@ internal static class SnapshotVolumeDetector
 
         return volume != null && string.Equals(volume, nameof(Volume.highest), StringComparison.OrdinalIgnoreCase);
     }
+
+#if NETFRAMEWORK
+    public static bool IsLoud(HttpRequestBase? request)
+    {
+        if (request == null)
+        {
+            return false;
+        }
+
+        var baggageHeader = request.Headers["baggage"];
+        return !string.IsNullOrEmpty(baggageHeader) && baggageHeader.Contains("splunk.trace.snapshot.volume=highest");
+    }
+#endif
 }

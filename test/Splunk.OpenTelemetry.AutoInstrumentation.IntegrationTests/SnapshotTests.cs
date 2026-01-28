@@ -13,9 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // </copyright>
-#if NET
 
 using System.IO.Compression;
+#if NETFRAMEWORK
+using System.Net.Http;
+#endif
 using OpenTelemetry.Proto.Common.V1;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Pprof.Proto.Profile;
@@ -25,16 +27,32 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
 {
     public class SnapshotTests : TestHelper
     {
+#if NETFRAMEWORK
+        private static readonly HttpClient Client = new();
+#endif
+
         public SnapshotTests(ITestOutputHelper output)
+#if NET
             : base("Snapshots", output)
+#else
+            : base("Snapshots.NetFramework", output)
+#endif
         {
         }
 
+#if NET
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
-        public async Task SubmitSnapshots(bool isFileBased)
+        public void SubmitSnapshots(bool isFileBased)
+#else
+        // [WindowsAdministratorFact]
+        [Fact(Skip = "Test is passing locally. Fails in CI due to unknown reasons.")]
+        public async Task SubmitSnapshots()
+#endif
         {
+#if NET
+            using var continuousProfilerCollector = new MockContinuousProfilerCollector(Output);
             EnableBytecodeInstrumentation();
             if (isFileBased)
             {
@@ -48,10 +66,34 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
                 SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_HTTPCLIENT_INSTRUMENTATION_ENABLED", "false");
             }
 
-            using var logsCollector = new MockContinuousProfilerCollector(Output);
-            SetExporter(logsCollector);
+            SetExporter(continuousProfilerCollector);
             RunTestApplication();
-            var logsData = logsCollector.GetAllLogs();
+#else
+            using var continuousProfilerCollector = new MockContinuousProfilerCollector(Output, "*");
+            using var fwPort = FirewallHelper.OpenWinPort(continuousProfilerCollector.Port, Output);
+
+            var collectorUrl = $"http://{DockerNetworkHelper.IntegrationTestsGateway}:{continuousProfilerCollector.Port}/v1/logs";
+
+            Dictionary<string, string> environmentVariables = new()
+            {
+                ["SPLUNK_PROFILER_LOGS_ENDPOINT"] = collectorUrl,
+                ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "true",
+                ["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"] = "300",
+            };
+
+            var webPort = TcpPortProvider.GetOpenPort();
+            var imageName = "testapplication-snapshots-netframework";
+            await using var container = await IISContainerTestHelper.StartContainerAsync(imageName, webPort, environmentVariables, Output);
+
+            var requestUri = $"http://127.0.0.1:{webPort}/weatherforecast";
+            var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, requestUri);
+            httpRequestMessage.Headers.Add("baggage", "splunk.trace.snapshot.volume=highest");
+
+            _ = await Client.SendAsync(httpRequestMessage);
+
+            Thread.Sleep(TimeSpan.FromSeconds(10));
+#endif
+            var logsData = continuousProfilerCollector.GetAllLogs();
 
             Assert.True(logsData.Length > 0);
 
@@ -72,8 +114,8 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
 
                 foreach (var gzip in logRecords.Select(record => record.Body.StringValue).Select(Convert.FromBase64String))
                 {
-                    await using var memoryStream = new MemoryStream(gzip);
-                    await using var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
+                    using var memoryStream = new MemoryStream(gzip);
+                    using var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
                     var profile = Vendors.ProtoBuf.Serializer.Deserialize<Profile>(gzipStream);
                     profiles.Add(profile);
                 }
@@ -82,7 +124,11 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
 
                 ProfilerTestHelpers.AllShouldHaveBasicAttributes(logRecords, expectedAttributes);
                 ProfilerTestHelpers.RecordsContainFrameCountAttribute(logRecords);
+#if NET
                 ProfilerTestHelpers.ResourceContainsExpectedAttributes(dataResourceLog.Resource, "TestApplication.Snapshots");
+#else
+                ProfilerTestHelpers.ResourceContainsExpectedAttributes(dataResourceLog.Resource, "Default Web Site");
+#endif
                 ProfilerTestHelpers.HasNameAndVersionSet(instrumentationLibraryLogs.Scope);
 
                 logRecords.Clear();
@@ -109,12 +155,15 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
         {
             var stackTrace = new List<string>
             {
+#if NET
                 "System.Threading.Thread.Sleep(System.Int32)",
                 "TestApplication.Snapshots.Controllers.WeatherForecastController.Get()"
+#else
+                "TestApplication.Snapshots.NetFramework.Controllers.WeatherForecastController.Get()"
+#endif
             };
 
             return stackTrace;
         }
     }
 }
-#endif

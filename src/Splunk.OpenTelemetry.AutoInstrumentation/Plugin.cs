@@ -14,15 +14,14 @@
 // limitations under the License.
 // </copyright>
 
-using System.Diagnostics;
+#if NET
 using System.Runtime.InteropServices;
-using OpenTelemetry;
+#endif
 using OpenTelemetry.Context.Propagation;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
-using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 
@@ -30,6 +29,7 @@ using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 using OpenTelemetry.Instrumentation.AspNet;
 #else
 using OpenTelemetry.Instrumentation.AspNetCore;
+using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 #endif
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
@@ -113,10 +113,18 @@ public class Plugin
     /// <summary>
     /// Configures ASP.NET instrumentation options.
     /// </summary>
-    /// <param name="options">Otlp options.</param>
+    /// <param name="options">ASP.NET Trace InstrumentationO options.</param>
     public void ConfigureTracesOptions(AspNetTraceInstrumentationOptions options)
     {
         _traces.ConfigureTracesOptions(options);
+        if (Settings.SnapshotsEnabled)
+        {
+            // This is needed because Baggage.Current is set by instrumentation after activity is started.
+            options.EnrichWithHttpRequest += (activity, request) =>
+            {
+                SnapshotProcessorHelper.Instance.ProcessSpanStart(activity, request);
+            };
+        }
     }
 
 #else
@@ -124,7 +132,7 @@ public class Plugin
     /// <summary>
     /// Configures ASP.NET Core instrumentation options.
     /// </summary>
-    /// <param name="options">Otlp options.</param>
+    /// <param name="options">ASP.NET Core Trace InstrumentationO options.</param>
     public void ConfigureTracesOptions(AspNetCoreTraceInstrumentationOptions options)
     {
         _traces.ConfigureTracesOptions(options);
