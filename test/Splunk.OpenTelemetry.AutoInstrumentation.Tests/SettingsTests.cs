@@ -96,15 +96,15 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             Assert.Equal("none", settings.Realm);
             Assert.Null(settings.AccessToken);
             Assert.True(settings.TraceResponseHeaderEnabled);
-#if NET
+            Assert.False(settings.HighResolutionTimerEnabled);
             Assert.Equal("http://localhost:4318/v1/logs", settings.ProfilerLogsEndpoint.ToString());
             Assert.False(settings.CpuProfilerEnabled);
-            Assert.False(settings.MemoryProfilerEnabled);
             Assert.False(settings.SnapshotsEnabled);
-            Assert.False(settings.HighResolutionTimerEnabled);
             Assert.Equal(10000u, settings.CpuProfilerCallStackInterval);
             Assert.Equal(3000u, settings.ProfilerHttpClientTimeout);
             Assert.Equal(500u, settings.ProfilerExportInterval);
+#if NET
+            Assert.False(settings.MemoryProfilerEnabled);
             Assert.Equal(200u, settings.MemoryProfilerMaxMemorySamplesPerMinute);
 #endif
         }
@@ -116,17 +116,17 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Realm, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AccessToken, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled, null);
-#if NET
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, null);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportTimeout, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportInterval, null);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Snapshots.Enabled, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Snapshots.SelectionRate, null);
+#if NET
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples, null);
 #endif
         }
     }

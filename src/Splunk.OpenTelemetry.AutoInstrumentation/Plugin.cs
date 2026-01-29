@@ -14,9 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
 using System.Runtime.InteropServices;
-#endif
 using OpenTelemetry.Context.Propagation;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
@@ -47,10 +45,8 @@ public class Plugin
     private static readonly ILogger Log = new Logger();
 
     private static PprofInOtlpLogsExporter? _pprofInOtlpLogsExporter;
-#if NET
     private static int _highResTimerEnabled;
     private static int _highResTimerDisabled;
-#endif
 
     private readonly Metrics _metrics = new(Settings);
     private readonly Traces _traces = new(Settings);
@@ -70,13 +66,14 @@ public class Plugin
             Log.LogConfigurationSetup();
         }
 
+        if (
 #if NET
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
+            RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
+#endif
             Settings is { SnapshotsEnabled: true, HighResolutionTimerEnabled: true })
         {
             EnableHighResTimer();
         }
-#endif
     }
 
     /// <summary>
@@ -211,7 +208,6 @@ public class Plugin
         return builder;
     }
 
-#if NET
     private static void EnableHighResTimer()
     {
         if (Interlocked.Exchange(ref _highResTimerEnabled, value: 1) != 0)
@@ -239,7 +235,6 @@ public class Plugin
 
         WinApi.TryDisableHighResolutionTimer();
     }
-#endif
 
     private static TimeSpan GetSampleExportTimeout()
     {
