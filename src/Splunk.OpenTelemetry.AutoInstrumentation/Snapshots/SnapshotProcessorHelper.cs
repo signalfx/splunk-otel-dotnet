@@ -16,7 +16,6 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Web;
 using OpenTelemetry;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
@@ -78,35 +77,6 @@ internal class SnapshotProcessorHelper : IDisposable
             Log.Warning("Local root span already registered.");
         }
     }
-
-#if NETFRAMEWORK
-    internal void ProcessSpanStart(Activity data, HttpRequestBase request)
-    {
-        if (!data.IsLocalRoot())
-        {
-            return;
-        }
-
-        if (!SnapshotVolumeDetector.IsLoud(request))
-        {
-            return;
-        }
-
-        if (_localRootSpans.Count > SnapshotLocalRootLimit)
-        {
-            Log.Warning("Too many traces selected for snapshotting.");
-            return;
-        }
-
-        data.MarkLoud();
-        _snapshotFilter.Add(data.TraceId);
-        var cacheKey = (data.SpanId, data.TraceId);
-        if (!_localRootSpans.TryAdd(cacheKey, DateTimeOffset.UtcNow + DefaultTimeToLive))
-        {
-            Log.Warning("Local root span already registered.");
-        }
-    }
-#endif
 
     internal void ProcessSpanStop(Activity data)
     {

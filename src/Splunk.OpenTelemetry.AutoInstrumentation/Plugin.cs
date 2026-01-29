@@ -117,14 +117,6 @@ public class Plugin
     public void ConfigureTracesOptions(AspNetTraceInstrumentationOptions options)
     {
         _traces.ConfigureTracesOptions(options);
-        if (Settings.SnapshotsEnabled)
-        {
-            // This is needed because Baggage.Current is set by instrumentation after activity is started.
-            options.EnrichWithHttpRequest += (activity, request) =>
-            {
-                SnapshotProcessorHelper.Instance.ProcessSpanStart(activity, request);
-            };
-        }
     }
 
 #else
