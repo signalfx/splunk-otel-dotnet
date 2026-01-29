@@ -53,6 +53,11 @@
       <Platform Solution="*|x64" Project="x64" />
       <Platform Solution="*|x86" Project="x86" />
     </Project>
+    <Project Path="test/test-applications/integrations/TestApplication.Snapshots.NetFramework/TestApplication.Snapshots.NetFramework.csproj">
+      <Platform Solution="*|Any CPU" Project="x64" />
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="x86" />
+    </Project>
   </Folder>
   <Folder Name="/test/test-applications/integrations/dependency-libs/">
     <Project Path="test/test-applications/integrations/dependency-libs/TestApplication.Shared/TestApplication.Shared.csproj">

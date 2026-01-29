@@ -1,0 +1,4 @@
+<!-- This file intentionally left minimal to not interfere with the traditional (non-SDK) project format -->
+<Project>
+  <!-- Do not import parent Directory.Build.props for this traditional ASP.NET project -->
+</Project>

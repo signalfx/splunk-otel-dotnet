@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="Nuke.Common" Version="10.1.0" />
+    <PackageReference Include="Nuget.CommandLine" Version="7.0.1" ExcludeAssets="all" />
   </ItemGroup>
 
   <!-- Reference MinVer so the locally built NuGet version is available when building test applications -->
