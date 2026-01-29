@@ -20,6 +20,7 @@ using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
+using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 
@@ -27,7 +28,6 @@ using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 using OpenTelemetry.Instrumentation.AspNet;
 #else
 using OpenTelemetry.Instrumentation.AspNetCore;
-using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 #endif
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
