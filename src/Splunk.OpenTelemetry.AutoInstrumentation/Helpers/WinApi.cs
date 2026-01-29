@@ -14,8 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-#if NET
-
 using System.Runtime.InteropServices;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
@@ -66,4 +64,3 @@ internal static class WinApi
         public static extern uint TimeEndPeriod(uint milliseconds);
     }
 }
-#endif
