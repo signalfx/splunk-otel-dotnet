@@ -5,19 +5,11 @@ All notable changes to this component are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.12.0...HEAD)
-
-This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.14.1](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.14.1).
+## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.13.0...HEAD)
 
 ### Added
 
-- Support for response header injection (`SPLUNK_TRACE_RESPONSE_HEADER_ENABLED`)
-  configuration for ASP.NET and ASP.NET Core instrumentations via file-based configuration.
-
 ### Changed
-
-- Updated [OpenTelemetry .NET Auto Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation):
-  [`1.14.1`](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.14.1).
 
 ### Deprecated
 
@@ -26,6 +18,22 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.14.1
 ### Fixed
 
 ### Security
+
+## [1.13.0](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.13.0...HEAD)
+
+This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.14.1](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.14.1).
+
+### Added
+
+- Added support for AlwaysOn Profiling for CPU on .NET Framework x64.
+- Added experimental support for snapshots collection on .NET Framework x64.
+- Support for response header injection (`SPLUNK_TRACE_RESPONSE_HEADER_ENABLED`)
+  configuration for ASP.NET and ASP.NET Core instrumentations via file-based configuration.
+
+### Changed
+
+- Updated [OpenTelemetry .NET Auto Instrumentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation):
+  [`1.14.1`](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.14.1).
 
 ## [1.12.0](https://github.com/signalfx/splunk-otel-dotnet/releases/tag/v1.12.0)
 
