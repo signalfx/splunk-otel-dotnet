@@ -61,7 +61,7 @@ jobs:
           ./test/test-applications/integrations/TestApplication.HttpServer/bin/Release/net8.0/TestApplication.HttpServer.exe
           if (-not $?) { throw "dotnet help returned exit code: $LASTEXITCODE" }
           if (Test-Path $log_path) { throw "Log file exists. Instrumentation unregister failed." }
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: bin-${{ matrix.machine }}
           path: |
@@ -71,7 +71,7 @@ jobs:
             bin/Matrix/splunk-otel-dotnet-metadata.yaml
       - name: Upload test logs
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # tag: v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # tag: v7.0.0
         with:
           name: test-logs-${{ matrix.machine }}
           path: test-artifacts/
@@ -123,7 +123,7 @@ jobs:
           ./test/test-applications/integrations/TestApplication.HttpServer/bin/Release/net8.0/publish/TestApplication.HttpServer
             test "$(ls -A /home/user/opentelemetry/log )"
         '
-    - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+    - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
       if: ${{ job.status != 'cancelled' }}
       with:
         name: bin-${{ matrix.base-image }}
@@ -142,7 +142,7 @@ jobs:
             9.0.308
             10.0.101
       - run: ./build.cmd NuGetWorkflow
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: nuget-package
           path: NuGetPackage/
