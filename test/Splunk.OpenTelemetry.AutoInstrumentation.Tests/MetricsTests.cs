@@ -37,7 +37,7 @@ public class MetricsTests
         var options = new OtlpExporterOptions();
         new Metrics(settings).ConfigureMetricsOptions(options);
 
-        Assert.Equal("https://ingest.my-realm.signalfx.com/v2/datapoint/otlp", options.Endpoint.ToString());
+        Assert.Equal("https://ingest.my-realm.observability.splunkcloud.com/v2/datapoint/otlp", options.Endpoint.ToString());
         Assert.Equal("X-Sf-Token=MyToken", options.Headers);
     }
 
