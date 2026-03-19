@@ -12,13 +12,6 @@ plugins/development:
     - Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation
 ```
 
-or
-
-```yaml
-plugins/development:
-  plugins_list: ${OTEL_DOTNET_AUTO_PLUGINS}
-```
-
 ## Not Supported configurations
 
 > ⚠️ **Important:**
