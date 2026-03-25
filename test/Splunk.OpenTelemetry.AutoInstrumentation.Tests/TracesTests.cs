@@ -37,7 +37,7 @@ public class TracesTests
         var options = new OtlpExporterOptions();
         new Traces(settings).ConfigureTracesOptions(options);
 
-        Assert.Equal("https://ingest.my-realm.signalfx.com/v2/trace/otlp", options.Endpoint.ToString());
+        Assert.Equal("https://ingest.my-realm.observability.splunkcloud.com/v2/trace/otlp", options.Endpoint.ToString());
         Assert.Equal("X-Sf-Token=MyToken", options.Headers);
     }
 

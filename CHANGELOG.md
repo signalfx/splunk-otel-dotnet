@@ -11,6 +11,9 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Changed
 
+- Updated ingestion URL templates to replace `signalfx.com`
+  endpoints with `observability.splunkcloud.com`.
+
 ### Deprecated
 
 ### Removed
