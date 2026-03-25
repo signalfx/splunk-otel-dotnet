@@ -56,6 +56,14 @@ internal class OtlpHttpLogSender
 #endif
             httpResponse.EnsureSuccessStatusCode();
         }
+        catch (OperationCanceledException ex) when (cancellationToken.IsCancellationRequested)
+        {
+            Logger.Error(ex, $"Sending thread samples was canceled. Url={_logsEndpointUrl}");
+        }
+        catch (TaskCanceledException ex)
+        {
+            Logger.Error(ex, $"Sending thread samples timed out. Url={_logsEndpointUrl}, Timeout={_httpClient.Timeout}");
+        }
         catch (Exception ex)
         {
             Logger.Error(ex, $"HTTP error sending thread samples to {_logsEndpointUrl}");
