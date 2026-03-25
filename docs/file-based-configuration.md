@@ -2,6 +2,16 @@
 
 You can configure Splunk Distribution of OpenTelemetry .NET using a YAML file.
 
+> [!IMPORTANT]
+> To start using the Splunk Distribution of OpenTelemetry .NET with file-based configuration,
+> you **must** configure the plugin in a YAML file.
+
+```yaml
+plugins/development:
+  plugins:
+    - Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation
+```
+
 ## Not Supported configurations
 
 > ⚠️ **Important:**
