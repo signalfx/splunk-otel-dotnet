@@ -1,4 +1,4 @@
-﻿// <copyright file="SnapshotSelectingProcessor.cs" company="Splunk Inc.">
+// <copyright file="SnapshotSelectingProcessor.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,15 +22,17 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
 {
     private readonly SnapshotProcessorHelper _snapshotProcessorHelper;
+    private readonly ISnapshotSelector _snapshotSelector;
 
-    public SnapshotSelectingProcessor(SnapshotProcessorHelper snapshotProcessorHelper)
+    public SnapshotSelectingProcessor(SnapshotProcessorHelper snapshotProcessorHelper, ISnapshotSelector snapshotSelector)
     {
         _snapshotProcessorHelper = snapshotProcessorHelper;
+        _snapshotSelector = snapshotSelector;
     }
 
     public override void OnStart(Activity data)
     {
-        _snapshotProcessorHelper.ProcessSpanStart(data);
+        _snapshotProcessorHelper.ProcessSpanStart(data, _snapshotSelector);
     }
 
     public override void OnEnd(Activity data)

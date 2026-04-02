@@ -1,4 +1,4 @@
-﻿// <copyright file="SnapshotProcessorHelper.cs" company="Splunk Inc.">
+// <copyright file="SnapshotProcessorHelper.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,6 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using OpenTelemetry;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
@@ -51,14 +50,14 @@ internal class SnapshotProcessorHelper : IDisposable
         _timer.Dispose();
     }
 
-    internal void ProcessSpanStart(Activity data)
+    internal void ProcessSpanStart(Activity data, ISnapshotSelector selector)
     {
         if (!data.IsLocalRoot())
         {
             return;
         }
 
-        if (!SnapshotVolumeDetector.IsLoud(Baggage.Current))
+        if (!selector.Select(data.Context))
         {
             return;
         }
