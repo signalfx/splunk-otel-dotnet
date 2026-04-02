@@ -181,9 +181,7 @@ public class Plugin
     {
         if (Settings.SnapshotsEnabled)
         {
-            builder.AddProcessor(new SnapshotSelectingProcessor(SnapshotProcessorHelper.Instance, new TraceIdBasedSnapshotSelector(Settings.SnapshotsSelectionRate)));
-            // Timer in SnapshotProcessorHelper will be disposed when SDK is shutdown.
-            builder.AddInstrumentation(SnapshotProcessorHelper.Instance);
+            builder.AddProcessor(new SnapshotSelectingProcessor(SnapshotFilter.Instance, new TraceIdBasedSnapshotSelector(Settings.SnapshotsSelectionRate)));
         }
 
         return builder;
