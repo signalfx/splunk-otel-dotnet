@@ -1,4 +1,4 @@
-﻿// <copyright file="SettingsTests.cs" company="Splunk Inc.">
+// <copyright file="SettingsTests.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,9 +38,9 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             var settings = new PluginSettings(new NameValueConfigurationSource(
                 new NameValueCollection
                 {
-                    ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.5"
+                    ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "1.5"
                 }));
-            Assert.Equal(0.1, settings.SnapshotsSelectionRate);
+            Assert.Equal(1.0, settings.SnapshotsSelectionRate);
         }
 
         [Theory]

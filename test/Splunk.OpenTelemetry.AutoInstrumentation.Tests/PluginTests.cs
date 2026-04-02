@@ -1,4 +1,4 @@
-﻿// <copyright file="PluginTests.cs" company="Splunk Inc.">
+// <copyright file="PluginTests.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,56 +17,22 @@
 #if NET
 
 using System.Collections.Specialized;
-using System.Runtime.CompilerServices;
 using OpenTelemetry.Context.Propagation;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
-using Splunk.OpenTelemetry.AutoInstrumentation.Pprof.Proto.Profile;
-using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 {
     public class PluginTests
     {
         [Fact]
-        public void WhenSnapshotsAreEnabledAndBaggagePropagatorIsNotConfigured_ExceptionIsThrown()
+        public void WhenSnapshotsAreEnabled_BaggagePropagatorIsNotRequired()
         {
             // Force SDK init.
             _ = global::OpenTelemetry.Sdk.SuppressInstrumentation;
 
             var defaultPropagator = global::OpenTelemetry.Context.Propagation.Propagators.DefaultTextMapPropagator;
-
-            // Replace default propagator which propagates baggage with something else.
             global::OpenTelemetry.Sdk.SetDefaultTextMapPropagator(new TraceContextPropagator());
-
-            var defaultFactory = Plugin.DefaultSettingsFactory;
-
-            try
-            {
-                Plugin.DefaultSettingsFactory = () => new PluginSettings(new NameValueConfigurationSource(
-                    new NameValueCollection
-                    {
-                        ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "true"
-                    }));
-
-                var plugin = new Plugin();
-                var builder = new TracerProviderBuilderBase();
-                Assert.Throws<NotSupportedException>(() => plugin.BeforeConfigureTracerProvider(builder));
-            }
-            finally
-            {
-                global::OpenTelemetry.Sdk.SetDefaultTextMapPropagator(defaultPropagator);
-                Plugin.DefaultSettingsFactory = defaultFactory;
-            }
-        }
-
-        [Fact]
-        public void WhenSnapshotsAreEnabledAndBaggagePropagatorIsConfigured_SdkIsCustomized()
-        {
-            // Force SDK init.
-            _ = global::OpenTelemetry.Sdk.SuppressInstrumentation;
-
-            var defaultPropagator = global::OpenTelemetry.Context.Propagation.Propagators.DefaultTextMapPropagator;
 
             var defaultFactory = Plugin.DefaultSettingsFactory;
 
@@ -83,13 +49,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 
                 plugin.BeforeConfigureTracerProvider(builder);
 
-                var configuredPropagator = Propagators.DefaultTextMapPropagator;
-                var propagators = GetPropagators((CompositeTextMapPropagator)configuredPropagator);
-
-                Assert.Equal(2, propagators.Count);
-
-                Assert.Equal(propagators[0], defaultPropagator);
-                Assert.IsType<SnapshotVolumePropagator>(propagators[1]);
+                Assert.IsType<TraceContextPropagator>(Propagators.DefaultTextMapPropagator);
             }
             finally
             {
@@ -98,8 +58,36 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             }
         }
 
-        [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "propagators")]
-        private static extern ref List<TextMapPropagator> GetPropagators(CompositeTextMapPropagator @this);
+        [Fact]
+        public void WhenSnapshotsAreEnabled_DefaultPropagatorIsUnchanged()
+        {
+            // Force SDK init.
+            _ = global::OpenTelemetry.Sdk.SuppressInstrumentation;
+
+            var defaultPropagator = global::OpenTelemetry.Context.Propagation.Propagators.DefaultTextMapPropagator;
+            var defaultFactory = Plugin.DefaultSettingsFactory;
+
+            try
+            {
+                Plugin.DefaultSettingsFactory = () => new PluginSettings(new NameValueConfigurationSource(
+                    new NameValueCollection
+                    {
+                        ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "true"
+                    }));
+
+                var plugin = new Plugin();
+                var builder = new TracerProviderBuilderBase();
+
+                plugin.BeforeConfigureTracerProvider(builder);
+
+                Assert.Same(defaultPropagator, Propagators.DefaultTextMapPropagator);
+            }
+            finally
+            {
+                global::OpenTelemetry.Sdk.SetDefaultTextMapPropagator(defaultPropagator);
+                Plugin.DefaultSettingsFactory = defaultFactory;
+            }
+        }
     }
 }
 #endif
