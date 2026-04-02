@@ -1,4 +1,4 @@
-﻿// <copyright file="Constants.cs" company="Splunk Inc.">
+// <copyright file="Constants.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +20,7 @@ internal static class Constants
 {
     // Callgraphs
     // Maximum/default values, are defined in GDI spec.
-    public const double MaxSnapshotSelectionRate = 0.1;
+    public const double MaxSnapshotSelectionRate = 1.0;
     public const double DefaultSnapshotSelectionRate = 0.01;
     // Runtime suspensions done to collect thread samples often take ~0.25ms.
     public const int DefaultSnapshotSamplingIntervalMs = 40;
