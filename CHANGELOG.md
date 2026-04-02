@@ -13,6 +13,8 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 - Updated ingestion URL templates to replace `signalfx.com`
   endpoints with `observability.splunkcloud.com`.
+- Updated snapshot profiling to make selection decisions from the trace ID instead of baggage propagation,
+  with a default selection probability of `0.01` and supported range of `(0.0, 1.0]`.
 
 ### Deprecated
 
