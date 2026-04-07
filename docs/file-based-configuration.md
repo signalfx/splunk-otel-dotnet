@@ -60,7 +60,6 @@ instrumentation/development:
 > `meter_provider` or `tracer_provider` to be configured via file-based
 > configuration as well.
 > Without any of them, profiling configuration will not work.
-> `callgraphs` requires `baggage propagator` to be set via file-based configuration.
 
 Demonstration of all possible configuration options.
 
@@ -104,7 +103,7 @@ distribution:
         # If omitted or null, 40 is used.
         sampling_interval: 40
         # Configure probability of selecting a trace. 
-        # Maximum value is 0.1.
+        # Value must be in range (0.0, 1.0].
         # If omitted or null, 0.01 is used.
         selection_probability: 0.01
         # Configure if the High-resolution Timer is enabled or not.
@@ -197,10 +196,10 @@ distribution:
       # Configure Callgraph snapshot profiler
       callgraphs:
         # Configure sampling interval.
-        # If omitted or null, 20 is used.
+        # If omitted or null, 40 is used.
         sampling_interval: ${SPLUNK_SNAPSHOT_SAMPLING_INTERVAL}
         # Configure probability of selecting a trace. 
-        # Maximum value is 0.1.
+        # Value must be in range (0.0, 1.0].
         # If omitted or null, 0.01 is used.
         selection_probability: ${SPLUNK_SNAPSHOT_SELECTION_PROBABILITY}
         # Configure if the High-resolution Timer is enabled or not.

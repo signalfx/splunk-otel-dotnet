@@ -16,18 +16,17 @@
 
 using System.Diagnostics;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
+
+/// <summary>
+/// Represents snapshot selector.
+/// </summary>
+internal interface ISnapshotSelector
 {
     /// <summary>
-    /// Represents snapshot selector.
+    /// Method for selecting trace for capturing snapshots.
     /// </summary>
-    internal interface ISnapshotSelector
-    {
-        /// <summary>
-        /// Method for selecting trace for capturing snapshots.
-        /// </summary>
-        /// <param name="context">Current span context.</param>
-        /// <returns>Returns <c>true</c> if snapshots should be captured for the trace; otherwise, <c>false</c>.</returns>
-        public bool Select(ActivityContext context);
-    }
+    /// <param name="context">Current span context.</param>
+    /// <returns>Returns <c>true</c> if snapshots should be captured for the trace; otherwise, <c>false</c>.</returns>
+    public bool Select(ActivityContext context);
 }

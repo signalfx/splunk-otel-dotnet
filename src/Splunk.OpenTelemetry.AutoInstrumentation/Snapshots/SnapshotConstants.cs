@@ -1,4 +1,4 @@
-﻿// <copyright file="SnapshotConstants.cs" company="Splunk Inc.">
+// <copyright file="SnapshotConstants.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,5 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 
 internal static class SnapshotConstants
 {
-    public const string VolumeBaggageKeyName = "splunk.trace.snapshot.volume";
     public const string SplunkSnapshotProfilingAttributeName = "splunk.snapshot.profiling";
 }

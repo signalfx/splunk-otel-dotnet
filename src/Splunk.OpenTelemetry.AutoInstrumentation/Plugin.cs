@@ -1,4 +1,4 @@
-﻿// <copyright file="Plugin.cs" company="Splunk Inc.">
+// <copyright file="Plugin.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,6 @@
 // </copyright>
 
 using System.Runtime.InteropServices;
-using OpenTelemetry.Context.Propagation;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -125,14 +124,6 @@ public class Plugin
     public void ConfigureTracesOptions(AspNetCoreTraceInstrumentationOptions options)
     {
         _traces.ConfigureTracesOptions(options);
-        if (Settings.SnapshotsEnabled)
-        {
-            // This is needed because Baggage.Current is set by instrumentation after activity is started.
-            options.EnrichWithHttpRequest += (activity, _) =>
-            {
-                SnapshotProcessorHelper.Instance.ProcessSpanStart(activity);
-            };
-        }
     }
 
 #endif
@@ -190,19 +181,7 @@ public class Plugin
     {
         if (Settings.SnapshotsEnabled)
         {
-            var currentPropagator = Propagators.DefaultTextMapPropagator;
-            // Ensure baggage propagator is configured.
-            if (currentPropagator.Fields == null || !currentPropagator.Fields.Contains("baggage"))
-            {
-                // This will make SDK init fail. Native side sampling loop will already be started,
-                // but as no spans will be selected, no snapshots will be collected.
-                throw new NotSupportedException("Collecting snapshots requires baggage propagator usage.");
-            }
-
-            global::OpenTelemetry.Sdk.SetDefaultTextMapPropagator(new CompositeTextMapPropagator([currentPropagator, new SnapshotVolumePropagator(new CompositeSelector(Settings.SnapshotsSelectionRate))]));
-            builder.AddProcessor(new SnapshotSelectingProcessor(SnapshotProcessorHelper.Instance));
-            // Timer in SnapshotProcessorHelper will be disposed when SDK is shutdown.
-            builder.AddInstrumentation(SnapshotProcessorHelper.Instance);
+            builder.AddProcessor(new SnapshotSelectingProcessor(SnapshotFilter.Instance, new TraceIdBasedSnapshotSelector(Settings.SnapshotsSelectionRate)));
         }
 
         return builder;
