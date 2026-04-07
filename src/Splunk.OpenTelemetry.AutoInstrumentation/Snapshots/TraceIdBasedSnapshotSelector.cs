@@ -1,4 +1,4 @@
-﻿// <copyright file="TraceIdBasedSnapshotSelector.cs" company="Splunk Inc.">
+// <copyright file="TraceIdBasedSnapshotSelector.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,29 +15,33 @@
 // </copyright>
 
 using System.Diagnostics;
-using OpenTelemetry.Trace;
+using System.Globalization;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 
 internal class TraceIdBasedSnapshotSelector : ISnapshotSelector
 {
-    private readonly TraceIdRatioBasedSampler _sampler;
+    private const int RandomnessHexLength = 7;
+    private const uint MaxRandomnessValue = 0x0FFFFFFF;
 
-    public TraceIdBasedSnapshotSelector(double ratio)
+    private readonly uint _threshold;
+
+    public TraceIdBasedSnapshotSelector(double selectionProbability)
     {
-        _sampler = new TraceIdRatioBasedSampler(ratio);
+        _threshold = (uint)(selectionProbability * MaxRandomnessValue);
     }
 
     public bool Select(ActivityContext context)
     {
-        // context.IsValid() checks if context != default
-        if (context.TraceId == default)
+        if (_threshold == 0 || context.TraceId == default)
         {
             return false;
         }
 
-        // Only TraceId is used from sampling parameters
-        var samplingParameters = new SamplingParameters(default, context.TraceId, string.Empty, ActivityKind.Internal);
-        return _sampler.ShouldSample(samplingParameters).Decision == SamplingDecision.RecordAndSample;
+        var traceId = context.TraceId.ToHexString();
+        var randomnessHex = traceId.Substring(traceId.Length - RandomnessHexLength, RandomnessHexLength);
+        var randomness = uint.Parse(randomnessHex, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+
+        return randomness <= _threshold;
     }
 }

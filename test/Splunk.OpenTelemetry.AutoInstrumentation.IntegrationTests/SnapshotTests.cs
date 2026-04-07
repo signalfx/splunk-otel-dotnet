@@ -1,4 +1,4 @@
-﻿// <copyright file="SnapshotTests.cs" company="Splunk Inc.">
+// <copyright file="SnapshotTests.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,6 +44,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests
             {
                 SetEnvironmentVariable("SPLUNK_SNAPSHOT_PROFILER_ENABLED", "true");
                 SetEnvironmentVariable("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL", "300");
+                SetEnvironmentVariable("SPLUNK_SNAPSHOT_SELECTION_PROBABILITY", "1.0");
                 // Disable to ensure trace starts on the server side.
                 SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_HTTPCLIENT_INSTRUMENTATION_ENABLED", "false");
             }

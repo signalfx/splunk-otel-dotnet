@@ -49,7 +49,6 @@ public class Program
         var requestUri = $"{address}/weatherforecast";
         var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, requestUri);
 
-        httpRequestMessage.Headers.Add("baggage", "splunk.trace.snapshot.volume=highest");
         httpClient.Send(httpRequestMessage);
 
         // Upstream buffer processor doesn't guarantee outstanding buffers are flushed on shutdown.
