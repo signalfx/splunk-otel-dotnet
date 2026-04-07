@@ -33,7 +33,7 @@ internal class TraceIdBasedSnapshotSelector : ISnapshotSelector
 
     public bool Select(ActivityContext context)
     {
-        if (context.TraceId == default)
+        if (_threshold == 0 || context.TraceId == default)
         {
             return false;
         }
