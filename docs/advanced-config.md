@@ -40,8 +40,6 @@ When running your application, make sure to:
 | `CORECLR_PROFILER_PATH`              | .NET on macOS       | `$INSTALL_DIR/osx-x64/OpenTelemetry.AutoInstrumentation.Native.dylib`                       |
 | `CORECLR_PROFILER_PATH_32`           | .NET on Windows     | `$INSTALL_DIR/win-x86/OpenTelemetry.AutoInstrumentation.Native.dll`                         |
 | `CORECLR_PROFILER_PATH_64`           | .NET on Windows     | `$INSTALL_DIR/win-x64/OpenTelemetry.AutoInstrumentation.Native.dll`                         |
-| `DOTNET_ADDITIONAL_DEPS`             | .NET                | `$INSTALL_DIR/AdditionalDeps`                                                               |
-| `DOTNET_SHARED_STORE`                | .NET                | `$INSTALL_DIR/store`                                                                        |
 | `DOTNET_STARTUP_HOOKS`               | .NET                | `$INSTALL_DIR/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll`              |
 | `OTEL_DOTNET_AUTO_HOME`              | All versions        | `$INSTALL_DIR`                                                                              |
 | `OTEL_DOTNET_AUTO_PLUGINS`           | All versions        | `Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation` |
