@@ -21,9 +21,10 @@ if [ -z "$OS_TYPE" ]; then
 fi
 
 # guess OS architecture if not provided
+ARCHITECTURE=${ARCHITECTURE:-}
 if [ -z "$ARCHITECTURE" ]; then
   case $(uname -m) in
-    x86_64)  ARCHITECTURE="x64" ;;
+    x86_64)        ARCHITECTURE="x64" ;;
     aarch64|arm64) ARCHITECTURE="arm64" ;;
   esac
 fi
@@ -47,7 +48,7 @@ case "$OS_TYPE" in
     DOTNET_RUNTIME_ID="linux-musl-$ARCHITECTURE"
     ;;
   "macos")
-    DOTNET_RUNTIME_ID="osx-x64"
+    DOTNET_RUNTIME_ID="osx-$ARCHITECTURE"
     ;;
   "windows")
     ;;
@@ -102,24 +103,10 @@ else
   SEPARATOR=":"
 fi
 
-# Configure OpenTelemetry .NET Auto-Instrumentation
+# Configure OpenTelemetry .NET Automatic Instrumentation
 export OTEL_DOTNET_AUTO_HOME
 
 # Configure .NET Core Runtime
-DOTNET_ADDITIONAL_DEPS=${DOTNET_ADDITIONAL_DEPS:-}
-if [ -z "$DOTNET_ADDITIONAL_DEPS" ]; then
-  export DOTNET_ADDITIONAL_DEPS="${OTEL_DOTNET_AUTO_HOME}/AdditionalDeps"
-else
-  export DOTNET_ADDITIONAL_DEPS="${OTEL_DOTNET_AUTO_HOME}/AdditionalDeps${SEPARATOR}${DOTNET_ADDITIONAL_DEPS}"
-fi
-
-DOTNET_SHARED_STORE=${DOTNET_SHARED_STORE:-}
-if [ -z "$DOTNET_SHARED_STORE" ]; then
-  export DOTNET_SHARED_STORE="${OTEL_DOTNET_AUTO_HOME}/store"
-else
-  export DOTNET_SHARED_STORE="${OTEL_DOTNET_AUTO_HOME}/store${SEPARATOR}${DOTNET_SHARED_STORE}"
-fi
-
 DOTNET_STARTUP_HOOKS=${DOTNET_STARTUP_HOOKS:-}
 if [ -z "$DOTNET_STARTUP_HOOKS" ]; then
   export DOTNET_STARTUP_HOOKS="${OTEL_DOTNET_AUTO_HOME}/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
@@ -170,3 +157,5 @@ if [ "$ENABLE_PROFILING" = "true" ]; then
 
   export OTEL_DOTNET_AUTO_PLUGINS="Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation"
 fi
+
+exec "$@"
