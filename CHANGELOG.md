@@ -5,19 +5,11 @@ All notable changes to this component are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.13.0...HEAD)
-
-This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.15.0-beta.1](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.15.0-beta.1).
+## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.14.0-beta.1...HEAD)
 
 ### Added
 
 ### Changed
-
-- Updated ingestion URL templates to replace `signalfx.com`
-  endpoints with `observability.splunkcloud.com`.
-- Updated snapshot profiling to make selection decisions from the trace ID
-  instead of baggage propagation,
-  with a default selection probability of `0.01` and supported range of `(0.0, 1.0]`.
 
 ### Deprecated
 
@@ -26,6 +18,18 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.15.0
 ### Fixed
 
 ### Security
+
+## [1.14.0-beta.1](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.14.0-beta.1...HEAD)
+
+This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.15.0-beta.1](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.15.0-beta.1).
+
+### Changed
+
+- Updated ingestion URL templates to replace `signalfx.com`
+  endpoints with `observability.splunkcloud.com`.
+- Updated snapshot profiling to make selection decisions from the trace ID
+  instead of baggage propagation,
+  with a default selection probability of `0.01` and supported range of `(0.0, 1.0]`.
 
 ## [1.13.0](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.13.0...HEAD)
 
