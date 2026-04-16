@@ -22,7 +22,7 @@ internal static class SnapshotActivityExtensions
 {
     public static void MarkLoud(this Activity activity)
     {
-        activity.SetTag(SnapshotConstants.SplunkSnapshotProfilingAttributeName, true);
+        activity.SetTag(SnapshotConstants.SplunkSnapshotProfilingAttributeName, "true");
     }
 
     public static bool IsLocalRoot(this Activity activity)

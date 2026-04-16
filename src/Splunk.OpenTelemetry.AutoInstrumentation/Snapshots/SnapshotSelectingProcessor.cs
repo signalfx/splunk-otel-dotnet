@@ -31,6 +31,7 @@ internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
     private readonly SnapshotFilter _snapshotFilter;
     private readonly ISnapshotSelector _snapshotSelector;
     private readonly ConcurrentDictionary<(ActivitySpanId, ActivityTraceId), DateTimeOffset> _localRootSpans = new();
+    private readonly ConcurrentDictionary<ActivityTraceId, byte> _selectedTraceIds = new();
     private readonly Timer _timer;
 
     public SnapshotSelectingProcessor(SnapshotFilter snapshotFilter, ISnapshotSelector snapshotSelector)
@@ -44,11 +45,20 @@ internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
     {
         if (!data.IsLocalRoot())
         {
+            // Propagate the snapshot tag to child activities whose trace
+            // was already selected for snapshotting by the local root.
+            if (_selectedTraceIds.ContainsKey(data.TraceId))
+            {
+                Log.Debug($"Propagating snapshot tag to child {data.DisplayName} (SpanId={data.SpanId}) on trace {data.TraceId}.");
+                data.MarkLoud();
+            }
+
             return;
         }
 
         if (!_snapshotSelector.Select(data.Context))
         {
+            Log.Debug($"Trace {data.TraceId} not selected by snapshot selector.");
             return;
         }
 
@@ -60,6 +70,7 @@ internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
 
         data.MarkLoud();
         _snapshotFilter.Add(data.TraceId);
+        _selectedTraceIds.TryAdd(data.TraceId, 0);
         var cacheKey = (data.SpanId, data.TraceId);
         if (!_localRootSpans.TryAdd(cacheKey, DateTimeOffset.UtcNow + DefaultTimeToLive))
         {
@@ -73,6 +84,7 @@ internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
         if (_localRootSpans.TryRemove(cacheKey, out _))
         {
             _snapshotFilter.Remove(data.TraceId);
+            _selectedTraceIds.TryRemove(data.TraceId, out _);
         }
     }
 
@@ -96,6 +108,7 @@ internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
             {
                 _localRootSpans.TryRemove(kvp.Key, out _);
                 _snapshotFilter.Remove(kvp.Key.Item2);
+                _selectedTraceIds.TryRemove(kvp.Key.Item2, out _);
             }
         }
     }
