@@ -1,17 +1,17 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0.101-alpine3.22@sha256:0fba99926e4f12405c78f37941312f00c1aadb178bd63616f5d96fc2af5a26a9
+FROM mcr.microsoft.com/dotnet/sdk:10.0.203-alpine3.23@sha256:0191ff386e93923edf795d363ea0ae0669ce467ada4010b370644b670fa495c1
 
 RUN apk update \
     && apk upgrade \
     && apk add --no-cache --update \
-        clang=20.1.8-r0 \
-        cmake=3.31.7-r1 \
+        clang=21.1.2-r2 \
+        cmake=4.1.3-r0 \
         make=4.4.1-r3 \
-        bash=5.2.37-r0 \
+        bash=5.3.3-r1 \
         alpine-sdk=1.1-r0 \
-        protobuf=29.4-r0 \
-        protobuf-dev=29.4-r0 \
-        grpc=1.72.0-r0 \
-        grpc-plugins=1.72.0-r0
+        protobuf=31.1-r1 \
+        protobuf-dev=31.1-r1 \
+        grpc=1.76.0-r2 \
+        grpc-plugins=1.76.0-r2
 
 ENV IsAlpine=true
 ENV PROTOBUF_PROTOC=/usr/bin/protoc
@@ -22,8 +22,8 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
     && echo "SHA256: $(sha256sum dotnet-install.sh)" \
     && echo "102a6849303713f15462bb28eb10593bf874bbeec17122e0522f10a3b57ce442  dotnet-install.sh" | sha256sum -c \
     && chmod +x ./dotnet-install.sh \
-    && ./dotnet-install.sh -v 9.0.308 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh -v 8.0.416 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh -v 9.0.313 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh -v 8.0.420 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
 WORKDIR /project

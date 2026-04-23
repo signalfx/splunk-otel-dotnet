@@ -27,9 +27,9 @@ jobs:
       - uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
         with:
           dotnet-version: | 
-            8.0.416
-            9.0.308
-            10.0.101
+            8.0.420
+            9.0.313
+            10.0.203
       - run: ./build.cmd Workflow
       - run: brew install coreutils
         if: ${{ runner.os == 'macOS' }}
@@ -138,9 +138,9 @@ jobs:
       - uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
         with:
           dotnet-version: | 
-            8.0.416
-            9.0.308
-            10.0.101
+            8.0.420
+            9.0.313
+            10.0.203
       - run: ./build.cmd NuGetWorkflow
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -163,9 +163,9 @@ jobs:
       - uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
         with:
           dotnet-version: | 
-            8.0.416
-            9.0.308
-            10.0.101
+            8.0.420
+            9.0.313
+            10.0.203
       - name: Create test directory
         run: sudo mkdir -p /var/log/opentelemetry/dotnet && sudo chmod a+rw- /var/log/opentelemetry/dotnet
       - name: Download NuGet Artifacts from build-nuget-package job
