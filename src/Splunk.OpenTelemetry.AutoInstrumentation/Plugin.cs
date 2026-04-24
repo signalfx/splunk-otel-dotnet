@@ -21,6 +21,7 @@ using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
+using Splunk.OpenTelemetry.AutoInstrumentation.Logging.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 
 #if NETFRAMEWORK
@@ -63,6 +64,15 @@ public class Plugin
         if (Log.IsDebugEnabled)
         {
             Log.LogConfigurationSetup();
+            try
+            {
+                var config = EffectiveConfigReader.Read(Settings);
+                Log.Debug($"{EffectiveConfigReader.EffectiveConfigStart}\n{EffectiveConfigReader.Format(config)}{EffectiveConfigReader.EffectiveConfigEnd}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to read effective configuration.");
+            }
         }
 
         if (

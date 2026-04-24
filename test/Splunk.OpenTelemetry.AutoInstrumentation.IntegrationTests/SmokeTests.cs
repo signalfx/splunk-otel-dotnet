@@ -31,6 +31,7 @@
 // </copyright>
 
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
+using Splunk.OpenTelemetry.AutoInstrumentation.Logging.EffectiveConfig;
 using Xunit.Abstractions;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests;
@@ -217,9 +218,117 @@ public class SmokeTests : TestHelper, IDisposable
         }
     }
 
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void EffectiveEnvVarConfigIsLogged()
+    {
+        var tempLogsDirectory = DirectoryHelpers.CreateTempDirectory();
+
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOG_DIRECTORY", tempLogsDirectory.FullName);
+        SetEnvironmentVariable("OTEL_LOG_LEVEL", "debug");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://traces-collector:4318/v1/traces");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "http://metrics-collector:4318/v1/metrics");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "http://logs-collector:4318/v1/logs");
+        SetEnvironmentVariable("SPLUNK_PROFILER_ENABLED", "true");
+        SetEnvironmentVariable("SPLUNK_PROFILER_MEMORY_ENABLED", "true");
+        SetEnvironmentVariable("SPLUNK_PROFILER_CALL_STACK_INTERVAL", "10000");
+        SetEnvironmentVariable("SPLUNK_SNAPSHOT_PROFILER_ENABLED", "true");
+        SetEnvironmentVariable("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL", "5000");
+
+        EnableBytecodeInstrumentation();
+
+        try
+        {
+            RunTestApplication(TestSettingsWithDefaultArgs());
+
+            var logContent = File.ReadAllText(tempLogsDirectory.GetFiles("otel-dotnet-auto-*-Splunk-*.log").Single().FullName);
+            var effectiveConfig = ExtractEffectiveConfigBlock(logContent);
+            Assert.False(string.IsNullOrWhiteSpace(effectiveConfig));
+
+            Assert.Contains("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://traces-collector:4318/v1/traces", effectiveConfig);
+            Assert.Contains("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://metrics-collector:4318/v1/metrics", effectiveConfig);
+            Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://logs-collector:4318/v1/logs", effectiveConfig);
+            Assert.Contains($"OTEL_SERVICE_NAME={ServiceName}", effectiveConfig);
+            Assert.Contains("SPLUNK_PROFILER_ENABLED=True", effectiveConfig);
+#if NET
+            Assert.Contains("SPLUNK_PROFILER_MEMORY_ENABLED=True", effectiveConfig);
+#endif
+            Assert.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=10000", effectiveConfig);
+            Assert.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=True", effectiveConfig);
+            Assert.Contains("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=5000", effectiveConfig);
+        }
+        finally
+        {
+            tempLogsDirectory.Delete(true);
+        }
+    }
+
+#if NET // File-based configuration is not supported on .NET Framework
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void EffectiveYamlConfigIsLogged()
+    {
+        var tempLogsDirectory = DirectoryHelpers.CreateTempDirectory();
+
+        EnableBytecodeInstrumentation();
+        EnableFileBasedConfig("config.yaml");
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOG_DIRECTORY", tempLogsDirectory.FullName);
+        SetEnvironmentVariable("OTEL_LOG_LEVEL", "debug");
+
+        // Set traces and service name via env var — yaml substitutes them in.
+        // Metrics endpoint is intentionally not set — yaml fallback value is used instead.
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://traces-collector:4318/v1/traces");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "http://logs-collector:4318/v1/logs");
+        SetEnvironmentVariable("OTEL_SERVICE_NAME", "env-var-service");
+
+        try
+        {
+            RunTestApplication(TestSettingsWithDefaultArgs());
+
+            var logContent = File.ReadAllText(tempLogsDirectory.GetFiles("otel-dotnet-auto-*-Splunk-*.log").Single().FullName);
+            var effectiveConfig = ExtractEffectiveConfigBlock(logContent);
+            Assert.False(string.IsNullOrWhiteSpace(effectiveConfig));
+
+            Assert.Contains("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://traces-collector:4318/v1/traces", effectiveConfig);
+            Assert.Contains("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics", effectiveConfig);
+            Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://logs-collector:4318/v1/logs", effectiveConfig);
+            Assert.Contains("OTEL_SERVICE_NAME=env-var-service", effectiveConfig);
+            Assert.Contains("SPLUNK_PROFILER_ENABLED=True", effectiveConfig);
+            Assert.Contains("SPLUNK_PROFILER_MEMORY_ENABLED=True", effectiveConfig);
+            Assert.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=10000", effectiveConfig);
+            Assert.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=True", effectiveConfig);
+            Assert.Contains("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=5000", effectiveConfig);
+        }
+        finally
+        {
+            tempLogsDirectory.Delete(true);
+        }
+    }
+#endif
+
     public void Dispose()
     {
         _testServer.Dispose();
+    }
+
+    private static string ExtractEffectiveConfigBlock(string output)
+    {
+        const string header = EffectiveConfigReader.EffectiveConfigStart;
+        const string footer = EffectiveConfigReader.EffectiveConfigEnd;
+
+        var start = output.IndexOf(header, StringComparison.Ordinal);
+        if (start < 0)
+        {
+            return string.Empty;
+        }
+
+        var end = output.IndexOf(footer, start, StringComparison.Ordinal);
+        if (end < 0)
+        {
+            return string.Empty;
+        }
+
+        return output.Substring(start, end + footer.Length - start);
     }
 
     private static ICollection<KeyValuePair<string, string>> ParseSettingsLog(string log, string marker)
