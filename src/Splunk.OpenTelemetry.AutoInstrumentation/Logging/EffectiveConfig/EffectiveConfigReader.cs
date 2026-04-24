@@ -89,21 +89,27 @@ internal static class EffectiveConfigReader
         return GetFallbackServiceName(instrumentationType);
     }
 
-    // Fallback for when reflection finds no resolved endpoint.
-    // Resolves protocol (signal-specific → base → default http/protobuf), then:
-    //   http/protobuf: OTEL_EXPORTER_OTLP_ENDPOINT + signal suffix, or http://localhost:4318 + suffix
-    //   grpc: OTEL_EXPORTER_OTLP_ENDPOINT as-is, or http://localhost:4317
+    // Fallback for when reflection finds no resolved endpoint (e.g. exporter is none).
+    // Resolution chain: signal-specific env var → base env var + signal suffix → spec default.
+    // Protocol (signal-specific → base → default http/protobuf) determines port and path for grpc.
     // Uri.TryCreate mirrors upstream's Configuration.GetUri — invalid URIs are discarded.
-    internal static string ResolveOtlpEndpointFallback(string protocolEnvVar, string httpSignalPathSuffix)
+    internal static string ResolveOtlpEndpointFallback(string signalEndpointEnvVar, string protocolEnvVar, string httpSignalPathSuffix)
     {
+        var signalEndpoint = Environment.GetEnvironmentVariable(signalEndpointEnvVar);
+        if (!string.IsNullOrEmpty(signalEndpoint) && Uri.TryCreate(signalEndpoint, UriKind.Absolute, out var signalUri))
+        {
+            return signalUri.ToString().TrimEnd('/');
+        }
+
         var isGrpc = ResolveIsGrpc(protocolEnvVar);
 
         var baseEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
-        if (!string.IsNullOrEmpty(baseEndpoint) && Uri.TryCreate(baseEndpoint, UriKind.Absolute, out _))
+        if (!string.IsNullOrEmpty(baseEndpoint) && Uri.TryCreate(baseEndpoint, UriKind.Absolute, out var baseUri))
         {
+            var normalized = baseUri.ToString().TrimEnd('/');
             return isGrpc
-                ? baseEndpoint.TrimEnd('/')
-                : baseEndpoint.TrimEnd('/') + httpSignalPathSuffix;
+                ? normalized
+                : normalized + httpSignalPathSuffix;
         }
 
         return isGrpc
@@ -315,7 +321,7 @@ internal static class EffectiveConfigReader
         try
         {
             var value = ReadOtlpEndpoint(instrumentationType, settingsPropertyName)
-                        ?? ResolveOtlpEndpointFallback(protocolEnvVar, httpSignalPathSuffix);
+                        ?? ResolveOtlpEndpointFallback(envVarName, protocolEnvVar, httpSignalPathSuffix);
             config[envVarName] = value;
         }
         catch (Exception ex)

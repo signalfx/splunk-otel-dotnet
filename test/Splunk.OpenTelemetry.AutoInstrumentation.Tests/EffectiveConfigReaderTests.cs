@@ -92,11 +92,19 @@ public class EffectiveConfigReaderTests : IDisposable
     // ── ResolveOtlpEndpointFallback ────────────────────────────────────────────
 
     [Fact]
+    public void ResolveOtlpEndpointFallback_ReturnsSignalEnvVar_WhenSet()
+    {
+        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://traces-collector:4318/v1/traces");
+
+        Assert.Equal("http://traces-collector:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
+    }
+
+    [Fact]
     public void ResolveOtlpEndpointFallback_ReturnsHttpDefault_WhenNoEnvVarsSet()
     {
-        Assert.Equal("http://localhost:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
-        Assert.Equal("http://localhost:4318/v1/metrics", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_METRICS_PROTOCOL", "/v1/metrics"));
-        Assert.Equal("http://localhost:4318/v1/logs", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_LOGS_PROTOCOL", "/v1/logs"));
+        Assert.Equal("http://localhost:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
+        Assert.Equal("http://localhost:4318/v1/metrics", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL", "/v1/metrics"));
+        Assert.Equal("http://localhost:4318/v1/logs", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL", "/v1/logs"));
     }
 
     [Fact]
@@ -104,7 +112,7 @@ public class EffectiveConfigReaderTests : IDisposable
     {
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318");
 
-        Assert.Equal("http://collector:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
+        Assert.Equal("http://collector:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
     }
 
     [Fact]
@@ -112,7 +120,7 @@ public class EffectiveConfigReaderTests : IDisposable
     {
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318/");
 
-        Assert.Equal("http://collector:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
+        Assert.Equal("http://collector:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
     }
 
     [Fact]
@@ -120,7 +128,7 @@ public class EffectiveConfigReaderTests : IDisposable
     {
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "not-a-url");
 
-        Assert.Equal("http://localhost:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
+        Assert.Equal("http://localhost:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
     }
 
     [Fact]
@@ -128,7 +136,7 @@ public class EffectiveConfigReaderTests : IDisposable
     {
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc");
 
-        Assert.Equal("http://localhost:4317", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
+        Assert.Equal("http://localhost:4317", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
     }
 
     [Fact]
@@ -137,7 +145,7 @@ public class EffectiveConfigReaderTests : IDisposable
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc");
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4317");
 
-        Assert.Equal("http://collector:4317", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
+        Assert.Equal("http://collector:4317", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
     }
 
     [Fact]
@@ -146,7 +154,7 @@ public class EffectiveConfigReaderTests : IDisposable
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc");
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "http/protobuf");
 
-        Assert.Equal("http://localhost:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
+        Assert.Equal("http://localhost:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
     }
 
     // ── Read ───────────────────────────────────────────────────────────────────
@@ -173,6 +181,9 @@ public class EffectiveConfigReaderTests : IDisposable
         Environment.SetEnvironmentVariable("OTEL_SERVICE_NAME", null);
         Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", null);
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", null);
+        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", null);
+        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", null);
+        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", null);
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", null);
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", null);
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_PROTOCOL", null);
