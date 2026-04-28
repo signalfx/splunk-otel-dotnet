@@ -15,6 +15,11 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Removed
 
+- `instrument.sh` no longer supports launching an application when the script
+  is sourced (for example, `. ./instrument.sh <command>`). To launch an
+  application, execute the script directly:
+  `./instrument.sh <application_executable>`.
+
 ### Fixed
 
 ### Security
