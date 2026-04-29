@@ -1,0 +1,55 @@
+file_format: "1.0-rc.1"
+
+plugins/development:
+  plugins:
+    - Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation
+
+instrumentation/development:
+  dotnet:
+    logs:
+      ilogger:
+
+resource:
+  attributes:
+    - name: service.name
+      value: yaml-multiple-endpoints-service
+      type: string
+
+tracer_provider:
+  processors:
+    - batch:
+        exporter:
+          otlp_http:
+            endpoint: http://localhost:4318/v1/traces
+            timeout: 1
+    - simple:
+        exporter:
+          otlp_http:
+            endpoint: http://localhost:4319/v1/traces
+            timeout: 1
+
+meter_provider:
+  readers:
+    - periodic:
+        exporter:
+          otlp_http:
+            endpoint: http://localhost:4318/v1/metrics
+            timeout: 1
+    - periodic:
+        exporter:
+          otlp_http:
+            endpoint: http://localhost:4319/v1/metrics
+            timeout: 1
+
+logger_provider:
+  processors:
+    - batch:
+        exporter:
+          otlp_http:
+            endpoint: http://localhost:4318/v1/logs
+            timeout: 1
+    - simple:
+        exporter:
+          otlp_http:
+            endpoint: http://localhost:4319/v1/logs
+            timeout: 1

@@ -22,9 +22,6 @@ internal class ServiceNameWarning
 {
     private const string ServiceNameEnvVarKey = "OTEL_SERVICE_NAME";
     private const string ResourcesEnvVarKey = "OTEL_RESOURCE_ATTRIBUTES";
-    private const string AttributeName = "service.name";
-    private const char AttributeListSplitter = ',';
-    private const char AttributeKeyValueSplitter = '=';
 
     private static readonly Lazy<ServiceNameWarning> LazyInstance = new(() => new ServiceNameWarning());
     private int _warningEmitted;
@@ -51,26 +48,7 @@ internal class ServiceNameWarning
             return;
         }
 
-        IDictionary<string, string> serviceNameAttribute = new Dictionary<string, string>();
-        var rawAttributes = attributes.Split(AttributeListSplitter);
-        foreach (var rawKeyValuePair in rawAttributes)
-        {
-            var keyValuePair = rawKeyValuePair.Split(AttributeKeyValueSplitter);
-            if (keyValuePair.Length != 2)
-            {
-                continue;
-            }
-
-            serviceNameAttribute[keyValuePair[0].Trim()] = keyValuePair[1].Trim();
-        }
-
-        if (!serviceNameAttribute.TryGetValue(AttributeName, out var serviceNameValue))
-        {
-            SendWarning(logger);
-            return;
-        }
-
-        if (string.IsNullOrEmpty(serviceNameValue))
+        if (ResourceAttributesHelper.ParseServiceName(attributes) == null)
         {
             SendWarning(logger);
         }

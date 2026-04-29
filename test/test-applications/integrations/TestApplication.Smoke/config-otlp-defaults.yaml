@@ -1,0 +1,29 @@
+file_format: "1.0-rc.1"
+
+plugins/development:
+  plugins:
+    - Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation
+
+resource:
+  attributes:
+    - name: service.name
+      value: yaml-defaults-service
+      type: string
+
+tracer_provider:
+  processors:
+    - batch:
+        exporter:
+          otlp_http:
+
+meter_provider:
+  readers:
+    - periodic:
+        exporter:
+          otlp_http:
+
+logger_provider:
+  processors:
+    - batch:
+        exporter:
+          otlp_http:

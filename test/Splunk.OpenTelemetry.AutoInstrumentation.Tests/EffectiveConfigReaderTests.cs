@@ -15,8 +15,9 @@
 // </copyright>
 
 using System.Collections.Specialized;
+using OpenTelemetry.Exporter;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
-using Splunk.OpenTelemetry.AutoInstrumentation.Logging.EffectiveConfig;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
@@ -32,14 +33,14 @@ public class EffectiveConfigReaderTests : IDisposable
         ClearEnvVars();
     }
 
-    // ── ResolveServiceName ─────────────────────────────────────────────────────
+    // ResolveServiceName
 
     [Fact]
     public void ResolveServiceName_ReturnsOtelServiceName_WhenSet()
     {
         Environment.SetEnvironmentVariable("OTEL_SERVICE_NAME", "my-service");
 
-        Assert.Equal("my-service", EffectiveConfigReader.ResolveServiceName(null));
+        Assert.Equal("my-service", ServiceNameResolver.Resolve(null));
     }
 
     [Fact]
@@ -47,7 +48,7 @@ public class EffectiveConfigReaderTests : IDisposable
     {
         Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "service.name=fallback-service,env=prod");
 
-        Assert.Equal("fallback-service", EffectiveConfigReader.ResolveServiceName(null));
+        Assert.Equal("fallback-service", ServiceNameResolver.Resolve(null));
     }
 
     [Fact]
@@ -56,21 +57,21 @@ public class EffectiveConfigReaderTests : IDisposable
         Environment.SetEnvironmentVariable("OTEL_SERVICE_NAME", "primary");
         Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "service.name=secondary");
 
-        Assert.Equal("primary", EffectiveConfigReader.ResolveServiceName(null));
+        Assert.Equal("primary", ServiceNameResolver.Resolve(null));
     }
 
     [Fact]
-    public void ResolveServiceName_IsCaseInsensitive_ForServiceNameKey()
+    public void ResolveServiceName_IgnoresResourceAttributesWithDifferentServiceNameCasing()
     {
         Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "Service.Name=my-svc");
 
-        Assert.Equal("my-svc", EffectiveConfigReader.ResolveServiceName(null));
+        Assert.Null(ServiceNameResolver.Resolve(null));
     }
 
     [Fact]
     public void ResolveServiceName_ReturnsNull_WhenNoEnvVarsSetAndNoInstrumentationType()
     {
-        Assert.Null(EffectiveConfigReader.ResolveServiceName(null));
+        Assert.Null(ServiceNameResolver.Resolve(null));
     }
 
     [Fact]
@@ -78,7 +79,7 @@ public class EffectiveConfigReaderTests : IDisposable
     {
         Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "service.name=,env=prod");
 
-        Assert.Null(EffectiveConfigReader.ResolveServiceName(null));
+        Assert.Null(ServiceNameResolver.Resolve(null));
     }
 
     [Fact]
@@ -86,78 +87,152 @@ public class EffectiveConfigReaderTests : IDisposable
     {
         Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "no-equals-sign,=valuewithnokey");
 
-        Assert.Null(EffectiveConfigReader.ResolveServiceName(null));
+        Assert.Null(ServiceNameResolver.Resolve(null));
     }
 
-    // ── ResolveOtlpEndpointFallback ────────────────────────────────────────────
-
     [Fact]
-    public void ResolveOtlpEndpointFallback_ReturnsSignalEnvVar_WhenSet()
+    public void ReadServiceNameFromResources_IgnoresWrongCasedServiceName()
     {
-        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://traces-collector:4318/v1/traces");
+        var resources = new[]
+        {
+            new KeyValuePair<string, object>("Service.Name", "wrong-cased-service"),
+        };
 
-        Assert.Equal("http://traces-collector:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
+        Assert.Null(ServiceNameResolver.ReadFromResources(resources));
     }
 
+    // Endpoint log entries
+
     [Fact]
-    public void ResolveOtlpEndpointFallback_ReturnsHttpDefault_WhenNoEnvVarsSet()
+    public void FormatLogEntry_AddsEffectiveConfigPrefix()
     {
-        Assert.Equal("http://localhost:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
-        Assert.Equal("http://localhost:4318/v1/metrics", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL", "/v1/metrics"));
-        Assert.Equal("http://localhost:4318/v1/logs", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL", "/v1/logs"));
+        Assert.Equal(
+            "Effective configuration: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://collector:4318/v1/traces",
+            EffectiveConfigLog.FormatEntry(
+                EffectiveConfigKeys.TracesEndpoint,
+                "http://collector:4318/v1/traces"));
     }
 
     [Fact]
-    public void ResolveOtlpEndpointFallback_AppendsSignalSuffix_WhenBaseEnvVarSet()
+    public void EffectiveConfigValueAccumulator_AppendsValuesForSameKey()
+    {
+        var accumulator = new EffectiveConfigValueAccumulator();
+
+        accumulator.Add(
+            EffectiveConfigKeys.TracesEndpoint,
+            "http://collector-1:4318/v1/traces");
+        Assert.Equal(
+            "http://collector-1:4318/v1/traces",
+            accumulator.GetValue(EffectiveConfigKeys.TracesEndpoint));
+
+        accumulator.Add(
+            EffectiveConfigKeys.TracesEndpoint,
+            "http://collector-2:4318/v1/traces");
+        Assert.Equal(
+            "http://collector-1:4318/v1/traces,http://collector-2:4318/v1/traces",
+            accumulator.GetValue(EffectiveConfigKeys.TracesEndpoint));
+
+        accumulator.Add(
+            EffectiveConfigKeys.MetricsEndpoint,
+            "http://metrics-collector:4318/v1/metrics");
+        Assert.Equal(
+            "http://metrics-collector:4318/v1/metrics",
+            accumulator.GetValue(EffectiveConfigKeys.MetricsEndpoint));
+    }
+
+    [Fact]
+    public void EffectiveConfigValueAccumulator_EscapesCommaAndPercent()
+    {
+        var accumulator = new EffectiveConfigValueAccumulator();
+
+        accumulator.Add(EffectiveConfigKeys.TracesEndpoint, "http://collector/path,with%2Ccomma");
+
+        Assert.Equal(
+            "http://collector/path%2Cwith%252Ccomma",
+            accumulator.GetValue(EffectiveConfigKeys.TracesEndpoint));
+    }
+
+    [Fact]
+    public void ResolveOtlpEndpointFromOptions_AppendsHttpSignalPath_WhenSdkWillAppendSignalPath()
     {
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318");
+        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+        var options = new OtlpExporterOptions();
 
-        Assert.Equal("http://collector:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
+        Assert.Equal(
+            "http://collector:4318/v1/traces",
+            OtlpEndpointResolver.ResolveFromOptions(options, EffectiveConfigKeys.TracesEndpoint));
     }
 
     [Fact]
-    public void ResolveOtlpEndpointFallback_TrimsTrailingSlash_WhenBaseEnvVarHasTrailingSlash()
+    public void ResolveOtlpEndpointFromOptions_DoesNotAppendHttpSignalPath_WhenPathAlreadyExistsWithDifferentCasing()
     {
-        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318/");
+        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318/V1/TRACES");
+        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+        var options = new OtlpExporterOptions();
 
-        Assert.Equal("http://collector:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
+        Assert.Equal(
+            "http://collector:4318/V1/TRACES",
+            OtlpEndpointResolver.ResolveFromOptions(options, EffectiveConfigKeys.TracesEndpoint));
     }
 
     [Fact]
-    public void ResolveOtlpEndpointFallback_ReturnsHttpDefault_WhenBaseEnvVarIsInvalidUri()
+    public void ResolveOtlpEndpointFromOptions_NormalizesTrailingSlash_WhenPathAlreadyExists()
     {
-        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "not-a-url");
+        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318/v1/traces/");
+        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+        var options = new OtlpExporterOptions();
 
-        Assert.Equal("http://localhost:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
+        Assert.Equal(
+            "http://collector:4318/v1/traces",
+            OtlpEndpointResolver.ResolveFromOptions(options, EffectiveConfigKeys.TracesEndpoint));
     }
 
     [Fact]
-    public void ResolveOtlpEndpointFallback_ReturnsGrpcDefault_WhenProtocolIsGrpc()
+    public void ResolveOtlpEndpointFromOptions_DoesNotAppendHttpSignalPath_WhenEndpointSetterWasUsed()
     {
-        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc");
+        var options = new OtlpExporterOptions
+        {
+            Protocol = OtlpExportProtocol.HttpProtobuf,
+            Endpoint = new Uri("http://collector:4318/custom-traces"),
+        };
 
-        Assert.Equal("http://localhost:4317", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
+        Assert.Equal(
+            "http://collector:4318/custom-traces",
+            OtlpEndpointResolver.ResolveFromOptions(options, EffectiveConfigKeys.TracesEndpoint));
     }
 
     [Fact]
-    public void ResolveOtlpEndpointFallback_ReturnsGrpcBaseEndpoint_WhenProtocolIsGrpcAndBaseSet()
+    public void ResolveOtlpEndpointFromOptions_AppendsGrpcSignalPath()
     {
-        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc");
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4317");
+        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc");
+        var options = new OtlpExporterOptions();
 
-        Assert.Equal("http://collector:4317", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
+        Assert.Equal(
+            "http://collector:4317/opentelemetry.proto.collector.trace.v1.TraceService/Export",
+            OtlpEndpointResolver.ResolveFromOptions(options, EffectiveConfigKeys.TracesEndpoint));
     }
 
     [Fact]
-    public void ResolveOtlpEndpointFallback_SignalProtocolOverridesBaseProtocol()
+    public void ResolveOtlpEndpointFromOptions_UsesSplunkRealmOverrideWithoutAppendingHttpSignalPath()
     {
-        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc");
-        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "http/protobuf");
+        var settings = new PluginSettings(new NameValueConfigurationSource(new NameValueCollection
+        {
+            ["SPLUNK_REALM"] = "us0",
+            ["SPLUNK_ACCESS_TOKEN"] = "token",
+        }));
+        var options = new OtlpExporterOptions
+        {
+            Protocol = OtlpExportProtocol.HttpProtobuf,
+        };
 
-        Assert.Equal("http://localhost:4318/v1/traces", EffectiveConfigReader.ResolveOtlpEndpointFallback("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "/v1/traces"));
+        new Traces(settings).ConfigureTracesOptions(options);
+
+        Assert.Equal(
+            "https://ingest.us0.observability.splunkcloud.com/v2/trace/otlp",
+            OtlpEndpointResolver.ResolveFromOptions(options, EffectiveConfigKeys.TracesEndpoint));
     }
-
-    // ── Read ───────────────────────────────────────────────────────────────────
 
     [Fact]
     public void Read_ReflectsSplunkSettingsValues()
@@ -165,6 +240,7 @@ public class EffectiveConfigReaderTests : IDisposable
         var settings = new PluginSettings(new NameValueConfigurationSource(new NameValueCollection
         {
             ["SPLUNK_PROFILER_ENABLED"] = "true",
+            ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "true",
             ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "true",
             ["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"] = "100",
         }));
@@ -172,6 +248,11 @@ public class EffectiveConfigReaderTests : IDisposable
         var config = EffectiveConfigReader.Read(settings);
 
         Assert.Equal("True", config["SPLUNK_PROFILER_ENABLED"]);
+#if NET
+        Assert.Equal("True", config["SPLUNK_PROFILER_MEMORY_ENABLED"]);
+#else
+        Assert.Equal("False", config["SPLUNK_PROFILER_MEMORY_ENABLED"]);
+#endif
         Assert.Equal("True", config["SPLUNK_SNAPSHOT_PROFILER_ENABLED"]);
         Assert.Equal("100", config["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"]);
     }
@@ -188,6 +269,8 @@ public class EffectiveConfigReaderTests : IDisposable
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", null);
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_PROTOCOL", null);
         Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_LOGS_PROTOCOL", null);
+        Environment.SetEnvironmentVariable("SPLUNK_REALM", null);
+        Environment.SetEnvironmentVariable("SPLUNK_ACCESS_TOKEN", null);
         Environment.SetEnvironmentVariable("SPLUNK_PROFILER_ENABLED", null);
         Environment.SetEnvironmentVariable("SPLUNK_PROFILER_MEMORY_ENABLED", null);
         Environment.SetEnvironmentVariable("SPLUNK_SNAPSHOT_PROFILER_ENABLED", null);

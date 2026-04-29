@@ -16,12 +16,13 @@
 
 using System.Runtime.InteropServices;
 using OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
-using Splunk.OpenTelemetry.AutoInstrumentation.Logging.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 
 #if NETFRAMEWORK
@@ -51,6 +52,7 @@ public class Plugin
     private readonly Metrics _metrics = new(Settings);
     private readonly Traces _traces = new(Settings);
     private readonly Sdk _sdk = new();
+    private readonly EffectiveConfigValueAccumulator _effectiveConfigValues = new();
 
     internal static PluginSettings Settings => SettingsFactory.Value;
 
@@ -67,7 +69,10 @@ public class Plugin
             try
             {
                 var config = EffectiveConfigReader.Read(Settings);
-                Log.Debug($"{EffectiveConfigReader.EffectiveConfigStart}\n{EffectiveConfigReader.Format(config)}{EffectiveConfigReader.EffectiveConfigEnd}");
+                foreach (var item in config)
+                {
+                    Log.Debug(EffectiveConfigLog.FormatEntry(item.Key, item.Value));
+                }
             }
             catch (Exception ex)
             {
@@ -103,6 +108,7 @@ public class Plugin
     public void ConfigureMetricsOptions(OtlpExporterOptions options)
     {
         _metrics.ConfigureMetricsOptions(options);
+        AccumulateEffectiveOtlpEndpoint(EffectiveConfigKeys.MetricsEndpoint, options, _effectiveConfigValues);
     }
 
     /// <summary>
@@ -112,6 +118,7 @@ public class Plugin
     public void ConfigureTracesOptions(OtlpExporterOptions options)
     {
         _traces.ConfigureTracesOptions(options);
+        AccumulateEffectiveOtlpEndpoint(EffectiveConfigKeys.TracesEndpoint, options, _effectiveConfigValues);
     }
 
 #if NETFRAMEWORK
@@ -195,6 +202,64 @@ public class Plugin
         }
 
         return builder;
+    }
+
+    /// <summary>
+    /// Called when the tracer provider has been initialized.
+    /// </summary>
+    /// <param name="provider">Tracer provider.</param>
+    public void TracerProviderInitialized(TracerProvider provider)
+    {
+        LogAccumulatedEffectiveConfigValue(EffectiveConfigKeys.TracesEndpoint, _effectiveConfigValues);
+    }
+
+    /// <summary>
+    /// Called when the meter provider has been initialized.
+    /// </summary>
+    /// <param name="provider">Meter provider.</param>
+    public void MeterProviderInitialized(MeterProvider provider)
+    {
+        LogAccumulatedEffectiveConfigValue(EffectiveConfigKeys.MetricsEndpoint, _effectiveConfigValues);
+    }
+
+    private static void AccumulateEffectiveOtlpEndpoint(
+        string configurationKey,
+        OtlpExporterOptions options,
+        EffectiveConfigValueAccumulator effectiveConfigValues)
+    {
+        if (!Log.IsDebugEnabled)
+        {
+            return;
+        }
+
+        try
+        {
+            var endpoint = OtlpEndpointResolver.ResolveFromOptions(options, configurationKey);
+            if (endpoint != null)
+            {
+                // File-based config can create multiple OTLP exporters for the same signal.
+                // Keep one env-var-shaped key and append every resolved endpoint value.
+                effectiveConfigValues.Add(configurationKey, endpoint);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning($"Failed to resolve {configurationKey} from OtlpExporterOptions: {ex.Message}");
+        }
+    }
+
+    private static void LogAccumulatedEffectiveConfigValue(string configurationKey, EffectiveConfigValueAccumulator effectiveConfigValues)
+    {
+        if (!Log.IsDebugEnabled)
+        {
+            return;
+        }
+
+        var value = effectiveConfigValues.GetValue(configurationKey);
+        if (value != null)
+        {
+            Log.Debug(EffectiveConfigLog.FormatEntry(configurationKey, value));
+        }
     }
 
     private static void EnableHighResTimer()

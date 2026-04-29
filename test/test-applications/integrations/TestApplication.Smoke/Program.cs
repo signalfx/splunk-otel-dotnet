@@ -38,6 +38,11 @@ public class Program
 
         var testServerPort = int.Parse(args[1], CultureInfo.InvariantCulture);
 
+        if (Environment.GetEnvironmentVariable("SKIP_TELEMETRY_EMISSION") == "true")
+        {
+            return;
+        }
+
         EmitTraces(testServerPort);
         EmitMetrics();
         EmitLogs();

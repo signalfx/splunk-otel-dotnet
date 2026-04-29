@@ -18,32 +18,34 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal static class ResourceAttributesHelper
 {
+    private const string ServiceNameAttributeName = "service.name";
+    private const char AttributeListSplitter = ',';
+    private const char AttributeKeyValueSplitter = '=';
+
     /// <summary>
     /// Parses service.name from the value of OTEL_RESOURCE_ATTRIBUTES (comma-separated key=value pairs).
     /// Returns null if not found or if the value is empty.
     /// </summary>
-    // TODO: optimize
     internal static string? ParseServiceName(string resourceAttributes)
     {
-        foreach (var pair in resourceAttributes.Split(','))
+        IDictionary<string, string> serviceNameAttribute = new Dictionary<string, string>();
+
+        foreach (var rawKeyValuePair in resourceAttributes.Split(AttributeListSplitter))
         {
-            var idx = pair.IndexOf('=');
-            if (idx <= 0)
+            var keyValuePair = rawKeyValuePair.Split(AttributeKeyValueSplitter);
+            if (keyValuePair.Length != 2)
             {
                 continue;
             }
 
-            var key = pair.Substring(0, idx).Trim();
-            if (string.Equals(key, "service.name", StringComparison.OrdinalIgnoreCase))
-            {
-                var value = pair.Substring(idx + 1).Trim();
-                if (!string.IsNullOrEmpty(value))
-                {
-                    return value;
-                }
-            }
+            serviceNameAttribute[keyValuePair[0].Trim()] = keyValuePair[1].Trim();
         }
 
-        return null;
+        if (!serviceNameAttribute.TryGetValue(ServiceNameAttributeName, out var serviceNameValue))
+        {
+            return null;
+        }
+
+        return string.IsNullOrEmpty(serviceNameValue) ? null : serviceNameValue;
     }
 }
