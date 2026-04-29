@@ -502,10 +502,10 @@ public class SmokeTests : TestHelper, IDisposable
             .Split([Environment.NewLine], StringSplitOptions.None)
             .Select(line =>
             {
-                var prefixIndex = line.IndexOf(EffectiveConfigLog.Prefix, StringComparison.Ordinal);
+                var prefixIndex = line.IndexOf(EffectiveConfigLogFormatter.Prefix, StringComparison.Ordinal);
                 return prefixIndex < 0
                     ? null
-                    : line.Substring(prefixIndex + EffectiveConfigLog.Prefix.Length).Trim();
+                    : line.Substring(prefixIndex + EffectiveConfigLogFormatter.Prefix.Length).Trim();
             })
             .Where(entry => !string.IsNullOrEmpty(entry))
             .Select(entry => entry!);

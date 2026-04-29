@@ -53,6 +53,7 @@ public class Plugin
     private readonly Traces _traces = new(Settings);
     private readonly Sdk _sdk = new();
     private readonly EffectiveConfigValueAccumulator _effectiveConfigValues = new();
+    private int _effectiveServiceNameLogged;
 
     internal static PluginSettings Settings => SettingsFactory.Value;
 
@@ -71,7 +72,7 @@ public class Plugin
                 var config = EffectiveConfigReader.Read(Settings);
                 foreach (var item in config)
                 {
-                    Log.Debug(EffectiveConfigLog.FormatEntry(item.Key, item.Value));
+                    Log.Debug(EffectiveConfigLogFormatter.FormatEntry(item.Key, item.Value));
                 }
             }
             catch (Exception ex)
@@ -97,7 +98,8 @@ public class Plugin
     /// <returns>>Returns <see cref="ResourceBuilder"/> for chaining.</returns>
     public ResourceBuilder ConfigureResource(ResourceBuilder builder)
     {
-        ResourceConfigurator.Configure(builder, Settings);
+        var resource = ResourceConfigurator.Configure(builder, Settings);
+        LogEffectiveServiceName(resource);
         return builder;
     }
 
@@ -258,7 +260,7 @@ public class Plugin
         var value = effectiveConfigValues.GetValue(configurationKey);
         if (value != null)
         {
-            Log.Debug(EffectiveConfigLog.FormatEntry(configurationKey, value));
+            Log.Debug(EffectiveConfigLogFormatter.FormatEntry(configurationKey, value));
         }
     }
 
@@ -309,5 +311,26 @@ public class Plugin
     private static PprofInOtlpLogsExporter CreatePprofInOtlpLogsExporter()
     {
         return new PprofInOtlpLogsExporter(new SampleProcessor(), new SampleExporter(new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint)), new NativeFormatParser(Settings.SnapshotsEnabled));
+    }
+
+    private void LogEffectiveServiceName(Resource resource)
+    {
+        if (!Log.IsDebugEnabled)
+        {
+            return;
+        }
+
+        var serviceName = EffectiveResourceConfigReader.ReadServiceName(resource);
+        if (serviceName == null)
+        {
+            return;
+        }
+
+        if (Interlocked.Exchange(ref _effectiveServiceNameLogged, value: 1) != 0)
+        {
+            return;
+        }
+
+        Log.Debug(EffectiveConfigLogFormatter.FormatEntry(EffectiveConfigKeys.ServiceName, serviceName));
     }
 }

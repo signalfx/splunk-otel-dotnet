@@ -16,6 +16,7 @@
 
 using System.Collections.Specialized;
 using OpenTelemetry.Exporter;
+using OpenTelemetry.Resources;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
@@ -33,72 +34,46 @@ public class EffectiveConfigReaderTests : IDisposable
         ClearEnvVars();
     }
 
-    // ResolveServiceName
+    // Resource log entries
 
     [Fact]
-    public void ResolveServiceName_ReturnsOtelServiceName_WhenSet()
+    public void ReadServiceNameFromResource_ReturnsServiceNameAttribute()
     {
-        Environment.SetEnvironmentVariable("OTEL_SERVICE_NAME", "my-service");
+        var resource = ResourceBuilder.CreateEmpty()
+            .AddAttributes([new KeyValuePair<string, object>("service.name", "configured-service")])
+            .Build();
 
-        Assert.Equal("my-service", ServiceNameResolver.Resolve(null));
+        Assert.Equal("configured-service", EffectiveResourceConfigReader.ReadServiceName(resource));
     }
 
     [Fact]
-    public void ResolveServiceName_FallsBackToResourceAttributes_WhenServiceNameNotSet()
+    public void ReadServiceNameFromResource_ReturnsNull_WhenServiceNameMissing()
     {
-        Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "service.name=fallback-service,env=prod");
+        var resource = ResourceBuilder.CreateEmpty()
+            .AddAttributes([new KeyValuePair<string, object>("service.version", "1.0.0")])
+            .Build();
 
-        Assert.Equal("fallback-service", ServiceNameResolver.Resolve(null));
+        Assert.Null(EffectiveResourceConfigReader.ReadServiceName(resource));
     }
 
     [Fact]
-    public void ResolveServiceName_PrefersOtelServiceName_OverResourceAttributes()
+    public void ReadServiceNameFromResource_ReturnsNull_WhenServiceNameEmpty()
     {
-        Environment.SetEnvironmentVariable("OTEL_SERVICE_NAME", "primary");
-        Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "service.name=secondary");
+        var resource = ResourceBuilder.CreateEmpty()
+            .AddAttributes([new KeyValuePair<string, object>("service.name", string.Empty)])
+            .Build();
 
-        Assert.Equal("primary", ServiceNameResolver.Resolve(null));
+        Assert.Null(EffectiveResourceConfigReader.ReadServiceName(resource));
     }
 
     [Fact]
-    public void ResolveServiceName_IgnoresResourceAttributesWithDifferentServiceNameCasing()
+    public void ReadServiceNameFromResource_ReturnsNull_WhenServiceNameHasWrongType()
     {
-        Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "Service.Name=my-svc");
+        var resource = ResourceBuilder.CreateEmpty()
+            .AddAttributes([new KeyValuePair<string, object>("service.name", 123L)])
+            .Build();
 
-        Assert.Null(ServiceNameResolver.Resolve(null));
-    }
-
-    [Fact]
-    public void ResolveServiceName_ReturnsNull_WhenNoEnvVarsSetAndNoInstrumentationType()
-    {
-        Assert.Null(ServiceNameResolver.Resolve(null));
-    }
-
-    [Fact]
-    public void ResolveServiceName_IgnoresEmptyServiceNameInResourceAttributes()
-    {
-        Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "service.name=,env=prod");
-
-        Assert.Null(ServiceNameResolver.Resolve(null));
-    }
-
-    [Fact]
-    public void ResolveServiceName_IgnoresMalformedResourceAttributes()
-    {
-        Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "no-equals-sign,=valuewithnokey");
-
-        Assert.Null(ServiceNameResolver.Resolve(null));
-    }
-
-    [Fact]
-    public void ReadServiceNameFromResources_IgnoresWrongCasedServiceName()
-    {
-        var resources = new[]
-        {
-            new KeyValuePair<string, object>("Service.Name", "wrong-cased-service"),
-        };
-
-        Assert.Null(ServiceNameResolver.ReadFromResources(resources));
+        Assert.Null(EffectiveResourceConfigReader.ReadServiceName(resource));
     }
 
     // Endpoint log entries
@@ -108,7 +83,7 @@ public class EffectiveConfigReaderTests : IDisposable
     {
         Assert.Equal(
             "Effective configuration: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://collector:4318/v1/traces",
-            EffectiveConfigLog.FormatEntry(
+            EffectiveConfigLogFormatter.FormatEntry(
                 EffectiveConfigKeys.TracesEndpoint,
                 "http://collector:4318/v1/traces"));
     }

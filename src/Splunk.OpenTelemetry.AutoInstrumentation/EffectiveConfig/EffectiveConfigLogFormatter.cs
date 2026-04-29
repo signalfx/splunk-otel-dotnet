@@ -1,4 +1,4 @@
-// <copyright file="EffectiveConfigLog.cs" company="Splunk Inc.">
+// <copyright file="EffectiveConfigLogFormatter.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
-internal static class EffectiveConfigLog
+internal static class EffectiveConfigLogFormatter
 {
     internal const string Prefix = "Effective configuration:";
 

@@ -14,19 +14,14 @@
 // limitations under the License.
 // </copyright>
 
-using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
-
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal static class EffectiveConfigReader
 {
-    private static readonly ILogger Log = new Logger();
-
     public static IReadOnlyDictionary<string, string> Read(PluginSettings settings)
     {
         var config = new Dictionary<string, string>();
         PopulateSplunkSettings(config, settings);
-        PopulateUpstreamSettings(config);
         return config;
     }
 
@@ -41,21 +36,5 @@ internal static class EffectiveConfigReader
         config[ConfigurationKeys.Splunk.Snapshots.Enabled] = settings.SnapshotsEnabled.ToString();
         config[ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs] = settings.SnapshotsSamplingInterval.ToString();
         config[ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = settings.CpuProfilerCallStackInterval.ToString();
-    }
-
-    private static void PopulateUpstreamSettings(Dictionary<string, string> config)
-    {
-        var instrumentationType = Type.GetType(ServiceNameResolver.InstrumentationTypeName);
-        if (instrumentationType == null)
-        {
-            Log.Warning("Upstream instrumentation type not found. OTEL_SERVICE_NAME will be omitted from effective configuration.");
-            return;
-        }
-
-        var serviceName = ServiceNameResolver.Resolve(instrumentationType);
-        if (serviceName != null)
-        {
-            config[EffectiveConfigKeys.ServiceName] = serviceName;
-        }
     }
 }
