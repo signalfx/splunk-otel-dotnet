@@ -52,8 +52,7 @@ public class Plugin
     private readonly Metrics _metrics = new(Settings);
     private readonly Traces _traces = new(Settings);
     private readonly Sdk _sdk = new();
-    private readonly EffectiveConfigValueAccumulator _effectiveConfigValues = new();
-    private int _effectiveServiceNameLogged;
+    private readonly EffectiveConfigReporter _effectiveConfigReporter = new();
 
     internal static PluginSettings Settings => SettingsFactory.Value;
 
@@ -63,23 +62,12 @@ public class Plugin
     public void Initializing()
     {
         _sdk.Initializing();
-
         if (Log.IsDebugEnabled)
         {
             Log.LogConfigurationSetup();
-            try
-            {
-                var config = EffectiveConfigReader.Read(Settings);
-                foreach (var item in config)
-                {
-                    Log.Debug(EffectiveConfigLogFormatter.FormatEntry(item.Key, item.Value));
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to read effective configuration.");
-            }
         }
+
+        _effectiveConfigReporter.ReportInitialSettings(Settings);
 
         if (
 #if NET
@@ -99,7 +87,7 @@ public class Plugin
     public ResourceBuilder ConfigureResource(ResourceBuilder builder)
     {
         var resource = ResourceConfigurator.Configure(builder, Settings);
-        LogEffectiveServiceName(resource);
+        _effectiveConfigReporter.ReportServiceName(resource);
         return builder;
     }
 
@@ -110,7 +98,7 @@ public class Plugin
     public void ConfigureMetricsOptions(OtlpExporterOptions options)
     {
         _metrics.ConfigureMetricsOptions(options);
-        AccumulateEffectiveOtlpEndpoint(EffectiveConfigKeys.MetricsEndpoint, options, _effectiveConfigValues);
+        _effectiveConfigReporter.CaptureOtlpEndpoint(EffectiveConfigKeys.MetricsEndpoint, options);
     }
 
     /// <summary>
@@ -120,7 +108,7 @@ public class Plugin
     public void ConfigureTracesOptions(OtlpExporterOptions options)
     {
         _traces.ConfigureTracesOptions(options);
-        AccumulateEffectiveOtlpEndpoint(EffectiveConfigKeys.TracesEndpoint, options, _effectiveConfigValues);
+        _effectiveConfigReporter.CaptureOtlpEndpoint(EffectiveConfigKeys.TracesEndpoint, options);
     }
 
 #if NETFRAMEWORK
@@ -212,7 +200,7 @@ public class Plugin
     /// <param name="provider">Tracer provider.</param>
     public void TracerProviderInitialized(TracerProvider provider)
     {
-        LogAccumulatedEffectiveConfigValue(EffectiveConfigKeys.TracesEndpoint, _effectiveConfigValues);
+        _effectiveConfigReporter.ReportCapturedValue(EffectiveConfigKeys.TracesEndpoint);
     }
 
     /// <summary>
@@ -221,47 +209,7 @@ public class Plugin
     /// <param name="provider">Meter provider.</param>
     public void MeterProviderInitialized(MeterProvider provider)
     {
-        LogAccumulatedEffectiveConfigValue(EffectiveConfigKeys.MetricsEndpoint, _effectiveConfigValues);
-    }
-
-    private static void AccumulateEffectiveOtlpEndpoint(
-        string configurationKey,
-        OtlpExporterOptions options,
-        EffectiveConfigValueAccumulator effectiveConfigValues)
-    {
-        if (!Log.IsDebugEnabled)
-        {
-            return;
-        }
-
-        try
-        {
-            var endpoint = OtlpEndpointResolver.ResolveFromOptions(options, configurationKey);
-            if (endpoint != null)
-            {
-                // File-based config can create multiple OTLP exporters for the same signal.
-                // Keep one env-var-shaped key and append every resolved endpoint value.
-                effectiveConfigValues.Add(configurationKey, endpoint);
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Warning($"Failed to resolve {configurationKey} from OtlpExporterOptions: {ex.Message}");
-        }
-    }
-
-    private static void LogAccumulatedEffectiveConfigValue(string configurationKey, EffectiveConfigValueAccumulator effectiveConfigValues)
-    {
-        if (!Log.IsDebugEnabled)
-        {
-            return;
-        }
-
-        var value = effectiveConfigValues.GetValue(configurationKey);
-        if (value != null)
-        {
-            Log.Debug(EffectiveConfigLogFormatter.FormatEntry(configurationKey, value));
-        }
+        _effectiveConfigReporter.ReportCapturedValue(EffectiveConfigKeys.MetricsEndpoint);
     }
 
     private static void EnableHighResTimer()
@@ -311,26 +259,5 @@ public class Plugin
     private static PprofInOtlpLogsExporter CreatePprofInOtlpLogsExporter()
     {
         return new PprofInOtlpLogsExporter(new SampleProcessor(), new SampleExporter(new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint)), new NativeFormatParser(Settings.SnapshotsEnabled));
-    }
-
-    private void LogEffectiveServiceName(Resource resource)
-    {
-        if (!Log.IsDebugEnabled)
-        {
-            return;
-        }
-
-        var serviceName = EffectiveResourceConfigReader.ReadServiceName(resource);
-        if (serviceName == null)
-        {
-            return;
-        }
-
-        if (Interlocked.Exchange(ref _effectiveServiceNameLogged, value: 1) != 0)
-        {
-            return;
-        }
-
-        Log.Debug(EffectiveConfigLogFormatter.FormatEntry(EffectiveConfigKeys.ServiceName, serviceName));
     }
 }

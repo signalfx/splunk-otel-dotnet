@@ -42,6 +42,8 @@ internal static class OtlpEndpointResolver
             return null;
         }
 
+        // Endpoint getter returns the SDK default when no endpoint was configured.
+        // File-based config resolves omitted endpoints before values are copied here.
 #pragma warning disable CS0618 // OtlpExportProtocol.Grpc is obsolete but still supported by upstream auto-instrumentation.
         if (options.Protocol == OtlpExportProtocol.Grpc)
 #pragma warning restore CS0618
