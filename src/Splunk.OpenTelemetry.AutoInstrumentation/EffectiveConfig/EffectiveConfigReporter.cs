@@ -36,11 +36,7 @@ internal sealed class EffectiveConfigReporter
 
         try
         {
-            var config = EffectiveConfigReader.Read(settings);
-            foreach (var item in config)
-            {
-                Report(item.Key, item.Value);
-            }
+            ReportSplunkSettings(settings);
         }
         catch (Exception ex)
         {
@@ -109,5 +105,18 @@ internal sealed class EffectiveConfigReporter
     private void Report(string key, string value)
     {
         Log.Debug(EffectiveConfigLogFormatter.FormatEntry(key, value));
+    }
+
+    private void ReportSplunkSettings(PluginSettings settings)
+    {
+        Report(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled, settings.CpuProfilerEnabled.ToString());
+#if NET
+        Report(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled, settings.MemoryProfilerEnabled.ToString());
+#else
+        Report(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled, false.ToString());
+#endif
+        Report(ConfigurationKeys.Splunk.Snapshots.Enabled, settings.SnapshotsEnabled.ToString());
+        Report(ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, settings.SnapshotsSamplingInterval.ToString());
+        Report(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, settings.CpuProfilerCallStackInterval.ToString());
     }
 }
