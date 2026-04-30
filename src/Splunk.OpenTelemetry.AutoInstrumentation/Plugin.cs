@@ -16,9 +16,11 @@
 
 using System.Runtime.InteropServices;
 using OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
@@ -50,6 +52,7 @@ public class Plugin
     private readonly Metrics _metrics = new(Settings);
     private readonly Traces _traces = new(Settings);
     private readonly Sdk _sdk = new();
+    private readonly EffectiveConfigReporter _effectiveConfigReporter = new();
 
     internal static PluginSettings Settings => SettingsFactory.Value;
 
@@ -59,11 +62,12 @@ public class Plugin
     public void Initializing()
     {
         _sdk.Initializing();
-
         if (Log.IsDebugEnabled)
         {
             Log.LogConfigurationSetup();
         }
+
+        _effectiveConfigReporter.ReportInitialSettings(Settings);
 
         if (
 #if NET
@@ -82,7 +86,8 @@ public class Plugin
     /// <returns>>Returns <see cref="ResourceBuilder"/> for chaining.</returns>
     public ResourceBuilder ConfigureResource(ResourceBuilder builder)
     {
-        ResourceConfigurator.Configure(builder, Settings);
+        var resource = ResourceConfigurator.Configure(builder, Settings);
+        _effectiveConfigReporter.ReportServiceName(resource);
         return builder;
     }
 
@@ -185,6 +190,24 @@ public class Plugin
         }
 
         return builder;
+    }
+
+    /// <summary>
+    /// Called when the tracer provider has been initialized.
+    /// </summary>
+    /// <param name="provider">Tracer provider.</param>
+    public void TracerProviderInitialized(TracerProvider provider)
+    {
+        _effectiveConfigReporter.ReportTraceEndpoints(provider);
+    }
+
+    /// <summary>
+    /// Called when the meter provider has been initialized.
+    /// </summary>
+    /// <param name="provider">Meter provider.</param>
+    public void MeterProviderInitialized(MeterProvider provider)
+    {
+        _effectiveConfigReporter.ReportMetricEndpoints(provider);
     }
 
     private static void EnableHighResTimer()

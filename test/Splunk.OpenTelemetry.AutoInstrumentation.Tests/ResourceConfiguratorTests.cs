@@ -35,9 +35,7 @@ public class ResourceConfiguratorTests
 
         var settings = new PluginSettings(new NameValueConfigurationSource(configuration));
 
-        ResourceConfigurator.Configure(resourceBuilder, settings);
-
-        var resource = resourceBuilder.Build();
+        var resource = ResourceConfigurator.Configure(resourceBuilder, settings);
         var version = typeof(Plugin).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0];
 
         var expected = new Dictionary<string, object>

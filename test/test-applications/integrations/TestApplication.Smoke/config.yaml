@@ -1,0 +1,45 @@
+file_format: "1.0-rc.1"
+
+plugins/development:
+  plugins:
+    - Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation
+
+resource:
+  attributes:
+    - name: service.name
+      value: ${OTEL_SERVICE_NAME:-yaml-configured-service}
+      type: string
+
+tracer_provider:
+  processors:
+    - batch:
+        exporter:
+          otlp_http:
+            endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:-http://localhost:4318/v1/traces}
+
+meter_provider:
+  readers:
+    - periodic:
+        exporter:
+          otlp_http:
+            endpoint: ${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:-http://localhost:4318/v1/metrics}
+
+logger_provider:
+  processors:
+    - batch:
+        exporter:
+          otlp_http:
+            endpoint: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-http://localhost:4318/v1/logs}
+
+distribution:
+  splunk:
+    profiling:
+      exporter:
+        otlp_log_http:
+          endpoint: http://profiler-collector:4318/v1/logs
+      always_on:
+        cpu_profiler:
+          sampling_interval: 10000
+        memory_profiler:
+      callgraphs:
+        sampling_interval: 5000
