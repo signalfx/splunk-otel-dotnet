@@ -31,17 +31,17 @@ public class Program
     {
         ConsoleHelper.WriteSplashScreen(args);
 
+        if (Environment.GetEnvironmentVariable("SKIP_TELEMETRY_EMISSION") == "true")
+        {
+            return;
+        }
+
         if (args.Length != 2)
         {
             throw new InvalidOperationException("Missing arguments. Provide server port with --test-server-port <test-server-port>.");
         }
 
         var testServerPort = int.Parse(args[1], CultureInfo.InvariantCulture);
-
-        if (Environment.GetEnvironmentVariable("SKIP_TELEMETRY_EMISSION") == "true")
-        {
-            return;
-        }
 
         EmitTraces(testServerPort);
         EmitMetrics();

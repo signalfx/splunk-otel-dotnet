@@ -241,7 +241,7 @@ public class SmokeTests : TestHelper, IDisposable
 
         try
         {
-            RunTestApplication(TestSettingsWithDefaultArgs());
+            RunTestApplication();
 
             var logContent = File.ReadAllText(tempLogsDirectory.GetFiles("otel-dotnet-auto-*-Splunk-*.log").Single().FullName);
             var effectiveConfig = ExtractEffectiveConfigEntries(logContent);
@@ -284,7 +284,7 @@ public class SmokeTests : TestHelper, IDisposable
 
         try
         {
-            RunTestApplication(TestSettingsWithDefaultArgs());
+            RunTestApplication();
 
             var logContent = File.ReadAllText(tempLogsDirectory.GetFiles("otel-dotnet-auto-*-Splunk-*.log").Single().FullName);
             var effectiveConfig = ExtractEffectiveConfigEntries(logContent);
@@ -317,7 +317,7 @@ public class SmokeTests : TestHelper, IDisposable
 
         try
         {
-            RunTestApplication(TestSettingsWithDefaultArgs());
+            RunTestApplication();
 
             var logContent = File.ReadAllText(tempLogsDirectory.GetFiles("otel-dotnet-auto-*-Splunk-*.log").Single().FullName);
             var effectiveConfig = ExtractEffectiveConfigEntries(logContent);
@@ -359,7 +359,7 @@ public class SmokeTests : TestHelper, IDisposable
 
         try
         {
-            RunTestApplication(TestSettingsWithDefaultArgs());
+            RunTestApplication();
 
             var logContent = File.ReadAllText(tempLogsDirectory.GetFiles("otel-dotnet-auto-*-Splunk-*.log").Single().FullName);
             var effectiveConfig = ExtractEffectiveConfigEntries(logContent);
@@ -397,7 +397,7 @@ public class SmokeTests : TestHelper, IDisposable
 
         try
         {
-            RunTestApplication(TestSettingsWithDefaultArgs());
+            RunTestApplication();
 
             var logContent = File.ReadAllText(tempLogsDirectory.GetFiles("otel-dotnet-auto-*-Splunk-*.log").Single().FullName);
             var effectiveConfig = ExtractEffectiveConfigEntries(logContent);
@@ -435,7 +435,7 @@ public class SmokeTests : TestHelper, IDisposable
 
         try
         {
-            RunTestApplication(TestSettingsWithDefaultArgs());
+            RunTestApplication();
 
             var logContent = File.ReadAllText(tempLogsDirectory.GetFiles("otel-dotnet-auto-*-Splunk-*.log").Single().FullName);
             var effectiveConfig = ExtractEffectiveConfigEntries(logContent);
@@ -469,7 +469,7 @@ public class SmokeTests : TestHelper, IDisposable
 
         try
         {
-            RunTestApplication(TestSettingsWithDefaultArgs());
+            RunTestApplication();
 
             var logContent = File.ReadAllText(tempLogsDirectory.GetFiles("otel-dotnet-auto-*-Splunk-*.log").Single().FullName);
             var effectiveConfig = ExtractEffectiveConfigEntries(logContent);
