@@ -1,4 +1,4 @@
-// <copyright file="EffectiveConfigValueAccumulator.cs" company="Splunk Inc.">
+// <copyright file="EffectiveConfigValueFormatter.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,39 +16,13 @@
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
-internal sealed class EffectiveConfigValueAccumulator
+internal static class EffectiveConfigValueFormatter
 {
-    private readonly object _lock = new();
-    private readonly Dictionary<string, List<string>> _values = new();
-
-    public void Add(string key, string value)
+    public static string FormatList(IReadOnlyList<string> values)
     {
-        lock (_lock)
-        {
-            if (!_values.TryGetValue(key, out var values))
-            {
-                values = [];
-                _values[key] = values;
-            }
-
-            values.Add(value);
-        }
+        return string.Join(",", values.Select(EncodeListItem));
     }
 
-    public string? GetValue(string key)
-    {
-        lock (_lock)
-        {
-            if (!_values.TryGetValue(key, out var values))
-            {
-                return null;
-            }
-
-            return string.Join(",", values.Select(EncodeListItem));
-        }
-    }
-
-    // TODO: Temporary encoding
     private static string EncodeListItem(string value)
     {
         // Consumers split on comma first, then percent-decode each endpoint once.

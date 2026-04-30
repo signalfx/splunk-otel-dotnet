@@ -98,7 +98,6 @@ public class Plugin
     public void ConfigureMetricsOptions(OtlpExporterOptions options)
     {
         _metrics.ConfigureMetricsOptions(options);
-        _effectiveConfigReporter.CaptureOtlpEndpoint(EffectiveConfigKeys.MetricsEndpoint, options);
     }
 
     /// <summary>
@@ -108,7 +107,6 @@ public class Plugin
     public void ConfigureTracesOptions(OtlpExporterOptions options)
     {
         _traces.ConfigureTracesOptions(options);
-        _effectiveConfigReporter.CaptureOtlpEndpoint(EffectiveConfigKeys.TracesEndpoint, options);
     }
 
 #if NETFRAMEWORK
@@ -200,7 +198,7 @@ public class Plugin
     /// <param name="provider">Tracer provider.</param>
     public void TracerProviderInitialized(TracerProvider provider)
     {
-        _effectiveConfigReporter.ReportCapturedValue(EffectiveConfigKeys.TracesEndpoint);
+        _effectiveConfigReporter.ReportTraceEndpoints(provider);
     }
 
     /// <summary>
@@ -209,7 +207,7 @@ public class Plugin
     /// <param name="provider">Meter provider.</param>
     public void MeterProviderInitialized(MeterProvider provider)
     {
-        _effectiveConfigReporter.ReportCapturedValue(EffectiveConfigKeys.MetricsEndpoint);
+        _effectiveConfigReporter.ReportMetricEndpoints(provider);
     }
 
     private static void EnableHighResTimer()

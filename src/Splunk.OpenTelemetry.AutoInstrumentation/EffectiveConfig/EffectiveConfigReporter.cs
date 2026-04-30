@@ -14,8 +14,9 @@
 // limitations under the License.
 // </copyright>
 
-using OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
@@ -24,7 +25,6 @@ internal sealed class EffectiveConfigReporter
 {
     private static readonly ILogger Log = new Logger();
 
-    private readonly EffectiveConfigValueAccumulator _effectiveConfigValues = new();
     private int _serviceNameLogged;
 
     public void ReportInitialSettings(PluginSettings settings)
@@ -65,7 +65,7 @@ internal sealed class EffectiveConfigReporter
         Report(EffectiveConfigKeys.ServiceName, serviceName);
     }
 
-    public void CaptureOtlpEndpoint(string configurationKey, OtlpExporterOptions options)
+    public void ReportTraceEndpoints(TracerProvider provider)
     {
         if (!Log.IsDebugEnabled)
         {
@@ -74,32 +74,39 @@ internal sealed class EffectiveConfigReporter
 
         try
         {
-            var endpoint = OtlpEndpointResolver.ResolveFromOptions(options, configurationKey);
-            if (endpoint != null)
-            {
-                // File-based config can create multiple OTLP exporters for the same signal.
-                // Keep one env-var-shaped key and append every resolved endpoint value.
-                _effectiveConfigValues.Add(configurationKey, endpoint);
-            }
+            ReportEndpoints(EffectiveConfigKeys.TracesEndpoint, OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
         }
         catch (Exception ex)
         {
-            Log.Warning($"Failed to resolve {configurationKey} from OtlpExporterOptions: {ex.Message}");
+            Log.Warning($"Failed to resolve {EffectiveConfigKeys.TracesEndpoint} from TracerProvider: {ex.Message}");
         }
     }
 
-    public void ReportCapturedValue(string configurationKey)
+    public void ReportMetricEndpoints(MeterProvider provider)
     {
         if (!Log.IsDebugEnabled)
         {
             return;
         }
 
-        var value = _effectiveConfigValues.GetValue(configurationKey);
-        if (value != null)
+        try
         {
-            Report(configurationKey, value);
+            ReportEndpoints(EffectiveConfigKeys.MetricsEndpoint, OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
         }
+        catch (Exception ex)
+        {
+            Log.Warning($"Failed to resolve {EffectiveConfigKeys.MetricsEndpoint} from MeterProvider: {ex.Message}");
+        }
+    }
+
+    private void ReportEndpoints(string key, IReadOnlyList<string> endpoints)
+    {
+        if (endpoints.Count == 0)
+        {
+            return;
+        }
+
+        Report(key, EffectiveConfigValueFormatter.FormatList(endpoints));
     }
 
     private void Report(string key, string value)
