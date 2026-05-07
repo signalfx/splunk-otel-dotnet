@@ -26,6 +26,7 @@ internal static class SettingsData
     private const string ResourceDetectorCategory = "resource detector";
     private const string ResourceAttributesCategory = "resource attributes";
     private const string DiagnosticCategory = "diagnostic logging";
+    private const string OpAmpCategory = "opamp";
     private const string ProfilingCategory = "profiling";
     private const string OTLPCategory = "otlp";
 
@@ -44,6 +45,7 @@ internal static class SettingsData
             new("OTEL_DOTNET_AUTO_FLUSH_ON_UNHANDLEDEXCEPTION", "Controls whether the telemetry data is flushed when an `AppDomain.UnhandledException` event is raised. Set to `true` when experiencing missing telemetry at the same time of unhandled exceptions.", "false", "boolean", GeneralCategory),
             new("OTEL_DOTNET_AUTO_RULE_ENGINE_ENABLED", "Activates RuleEngine. The default values is `true`. RuleEngine increases the stability of the instrumentation by validating assemblies for unsupported scenarios.", "true", "boolean", GeneralCategory),
             new("OTEL_DOTNET_AUTO_FAIL_FAST_ENABLED", "Activate to let the process fail when automatic instrumentation can't be executed. This setting is for debugging purposes, don't use it in production environments. The default value is `false`. Can't be set using the web.config or app.config files.", "false", "boolean", GeneralCategory),
+            new("OTEL_DOTNET_AUTO_APP_DOMAIN_STRATEGY", ".NET Framework-only setting that controls how OpenTelemetry .NET Automatic Instrumentation handles non-default AppDomain creation.", "LoaderOptimizationSingleDomain", "string", GeneralCategory),
 
             // exporter
             new("OTEL_LOGS_EXPORTER", "Comma-separated list of exporters. Supported options: `otlp`, `console`, `none`.", "otlp", "string", ExporterCategory),
@@ -132,7 +134,11 @@ internal static class SettingsData
             new("OTEL_LOG_LEVEL", "Sets the logging level for instrumentation log messages. Possible values are `none`, `error`, `warn`, `info`, and `debug`. Can't be set using the web.config or app.config files.", "info", "string", DiagnosticCategory),
             new("OTEL_DOTNET_AUTO_LOG_DIRECTORY", @"Directory of the .NET tracer logs. The default value is `/var/log/opentelemetry/dotnet` for Linux, and `%ProgramData%\OpenTelemetry .NET AutoInstrumentation\logs` for Windows. Can't be set using the web.config or app.config files.", string.Empty, "string", DiagnosticCategory),
             new("OTEL_DOTNET_AUTO_LOG_FILE_SIZE", "Maximum size (in bytes) of a single log file created by the Auto Instrumentation.", "10485760", "int", DiagnosticCategory),
-            new("OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED", "Deprecated. Whether the traces console exporter is activated. It can be configured by `OTEL_TRACES_EXPORTER`.", "false", "boolean", DiagnosticCategory)
+            new("OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED", "Deprecated. Whether the traces console exporter is activated. It can be configured by `OTEL_TRACES_EXPORTER`.", "false", "boolean", DiagnosticCategory),
+
+            // OpAmp
+            new("OTEL_DOTNET_AUTO_OPAMP_ENABLED", "Enables OpAMP client.", "false", "boolean", OpAmpCategory),
+            new("OTEL_DOTNET_AUTO_OPAMP_SERVER_URL", "OpAMP server url.", "https://localhost:4318/v1/opamp", "string", OpAmpCategory),
         };
 
         return settings;
