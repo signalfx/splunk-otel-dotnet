@@ -15,10 +15,16 @@
 // </copyright>
 
 using System.Runtime.InteropServices;
+using System.Threading;
 using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.OpAmp.Client;
+using OpenTelemetry.OpAmp.Client.Settings;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
@@ -47,9 +53,30 @@ public class Plugin
     private static int _highResTimerEnabled;
     private static int _highResTimerDisabled;
 
-    private readonly Metrics _metrics = new(Settings);
-    private readonly Traces _traces = new(Settings);
-    private readonly Sdk _sdk = new();
+    private readonly Metrics _metrics;
+    private readonly Traces _traces;
+    private readonly Sdk _sdk;
+    private readonly Lazy<EffectiveConfigReporter?> _effectiveConfigReporter;
+    private int _instrumentationInitialized;
+    private int _opAmpClientStarted;
+    private int _initialEffectiveConfigReportStarted;
+    private Task? _initialEffectiveConfigReportTask;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Plugin"/> class.
+    /// </summary>
+    public Plugin()
+        : this(DefaultEffectiveConfigReporterFactory)
+    {
+    }
+
+    internal Plugin(Func<EffectiveConfigReporter?> effectiveConfigReporterProvider)
+    {
+        _metrics = new Metrics(Settings);
+        _traces = new Traces(Settings);
+        _sdk = new Sdk();
+        _effectiveConfigReporter = new Lazy<EffectiveConfigReporter?>(() => TryCreateEffectiveConfigReporter(effectiveConfigReporterProvider));
+    }
 
     internal static PluginSettings Settings => SettingsFactory.Value;
 
@@ -59,11 +86,12 @@ public class Plugin
     public void Initializing()
     {
         _sdk.Initializing();
-
         if (Log.IsDebugEnabled)
         {
             Log.LogConfigurationSetup();
         }
+
+        _effectiveConfigReporter.Value?.CaptureInitialSettings(Settings);
 
         if (
 #if NET
@@ -82,7 +110,8 @@ public class Plugin
     /// <returns>>Returns <see cref="ResourceBuilder"/> for chaining.</returns>
     public ResourceBuilder ConfigureResource(ResourceBuilder builder)
     {
-        ResourceConfigurator.Configure(builder, Settings);
+        var resource = ResourceConfigurator.Configure(builder, Settings);
+        _effectiveConfigReporter.Value?.CaptureServiceName(resource);
         return builder;
     }
 
@@ -102,6 +131,62 @@ public class Plugin
     public void ConfigureTracesOptions(OtlpExporterOptions options)
     {
         _traces.ConfigureTracesOptions(options);
+    }
+
+    /// <summary>
+    /// Capture logs OTLP exporter options.
+    /// </summary>
+    /// <param name="options">OTLP exporter options.</param>
+    public void ConfigureLogsOptions(OtlpExporterOptions options)
+    {
+        _effectiveConfigReporter.Value?.CaptureLogEndpoint(options);
+    }
+
+    /// <summary>
+    /// Mark ILogger logs configuration.
+    /// </summary>
+    /// <param name="options">ILogger options.</param>
+    public void ConfigureLogsOptions(OpenTelemetryLoggerOptions options)
+    {
+        _effectiveConfigReporter.Value?.CaptureOpenTelemetryLoggerOptions();
+    }
+
+    /// <summary>
+    /// Configure OpAMP client settings.
+    /// </summary>
+    /// <param name="settings">OpAMP client settings.</param>
+    public void ConfigureOpAmpOptions(OpAmpClientSettings settings)
+    {
+        _effectiveConfigReporter.Value?.ConfigureOpAmpClientSettings(settings);
+    }
+
+    /// <summary>
+    /// Called when the OpAMP client has been initialized.
+    /// </summary>
+    /// <param name="client">OpAMP client.</param>
+    public void AfterOpAmpClientStarted(OpAmpClient client)
+    {
+        _effectiveConfigReporter.Value?.CaptureOpAmpClient(client);
+        Volatile.Write(ref _opAmpClientStarted, 1);
+        TryReportEffectiveConfig();
+    }
+
+    /// <summary>
+    /// Called before the OpAMP client is stopped.
+    /// </summary>
+    public void BeforeOpAmpClientStopped()
+    {
+        TryReportEffectiveConfig();
+        var initialReportTask = Volatile.Read(ref _initialEffectiveConfigReportTask);
+        if (initialReportTask == null)
+        {
+            return;
+        }
+
+        if (!initialReportTask.Wait(TimeSpan.FromSeconds(5)))
+        {
+            Log.Warning("Timed out waiting for effective configuration report before OpAMP client stopped.");
+        }
     }
 
 #if NETFRAMEWORK
@@ -187,6 +272,33 @@ public class Plugin
         return builder;
     }
 
+    /// <summary>
+    /// Called when the tracer provider has been initialized.
+    /// </summary>
+    /// <param name="provider">Tracer provider.</param>
+    public void TracerProviderInitialized(TracerProvider provider)
+    {
+        _effectiveConfigReporter.Value?.CaptureTraceEndpoints(provider);
+    }
+
+    /// <summary>
+    /// Called when the meter provider has been initialized.
+    /// </summary>
+    /// <param name="provider">Meter provider.</param>
+    public void MeterProviderInitialized(MeterProvider provider)
+    {
+        _effectiveConfigReporter.Value?.CaptureMetricEndpoints(provider);
+    }
+
+    /// <summary>
+    /// Called after instrumentation was initialized.
+    /// </summary>
+    public void Initialized()
+    {
+        Volatile.Write(ref _instrumentationInitialized, 1);
+        TryReportEffectiveConfig();
+    }
+
     private static void EnableHighResTimer()
     {
         if (Interlocked.Exchange(ref _highResTimerEnabled, value: 1) != 0)
@@ -234,5 +346,57 @@ public class Plugin
     private static PprofInOtlpLogsExporter CreatePprofInOtlpLogsExporter()
     {
         return new PprofInOtlpLogsExporter(new SampleProcessor(), new SampleExporter(new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint)), new NativeFormatParser(Settings.SnapshotsEnabled));
+    }
+
+    private static EffectiveConfigReporter? DefaultEffectiveConfigReporterFactory()
+    {
+        return UpstreamOpAmpEnabledResolver.IsEnabled() ? new EffectiveConfigReporter() : null;
+    }
+
+    private static EffectiveConfigReporter? TryCreateEffectiveConfigReporter(Func<EffectiveConfigReporter?> effectiveConfigReporterProvider)
+    {
+        try
+        {
+            return effectiveConfigReporterProvider();
+        }
+        catch (Exception e)
+        {
+            Log.Warning($"Could not create effective configuration reporter: {e.Message}");
+            return null;
+        }
+    }
+
+    private void TryReportEffectiveConfig()
+    {
+        if (Volatile.Read(ref _instrumentationInitialized) == 0 ||
+            Volatile.Read(ref _opAmpClientStarted) == 0)
+        {
+            return;
+        }
+
+        if (Interlocked.Exchange(ref _initialEffectiveConfigReportStarted, 1) != 0)
+        {
+            return;
+        }
+
+        Volatile.Write(ref _initialEffectiveConfigReportTask, ReportEffectiveConfigAsync());
+    }
+
+    private async Task ReportEffectiveConfigAsync()
+    {
+        try
+        {
+            var effectiveConfigReporter = _effectiveConfigReporter.Value;
+            if (effectiveConfigReporter == null)
+            {
+                return;
+            }
+
+            await effectiveConfigReporter.ReportToOpAmpAsync().ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Failed to report effective configuration to OpAMP server.");
+        }
     }
 }

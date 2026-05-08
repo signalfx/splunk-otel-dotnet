@@ -61,7 +61,6 @@ internal static class ConfigurationKeys
             /// </summary>
             public const string CpuProfilerEnabled = "SPLUNK_PROFILER_ENABLED";
 
-#if NET
             /// <summary>
             /// Configuration key for enabling memory profiler.
             /// </summary>
@@ -71,7 +70,6 @@ internal static class ConfigurationKeys
             /// Configuration key for Profiler maximum memory sample collected in a miniute. Defaults to 200, which is also the maximum.
             /// </summary>
             public const string ProfilerMaxMemorySamples = "SPLUNK_PROFILER_MAX_MEMORY_SAMPLES";
-#endif
 
             /// <summary>
             /// Configuration key for endpoint where profiling data is sent. Defaults to the value in `OTLP_EXPORTER_OTLP_ENDPOINT`.
