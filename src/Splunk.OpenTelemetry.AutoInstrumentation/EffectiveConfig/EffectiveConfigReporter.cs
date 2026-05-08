@@ -124,11 +124,6 @@ internal sealed class EffectiveConfigReporter
         }
     }
 
-    public void ConfigureOpAmpClientSettings(OpAmpClientSettings settings)
-    {
-        settings.EffectiveConfigurationReporting.EnableReporting = true;
-    }
-
     public async Task ReportToOpAmpAsync()
     {
         var client = Volatile.Read(ref _opAmpClient);

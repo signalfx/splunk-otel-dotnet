@@ -157,7 +157,7 @@ public class Plugin
     /// <param name="settings">OpAMP client settings.</param>
     public void ConfigureOpAmpOptions(OpAmpClientSettings settings)
     {
-        _effectiveConfigReporter.Value?.ConfigureOpAmpClientSettings(settings);
+        settings.EffectiveConfigurationReporting.EnableReporting = true;
     }
 
     /// <summary>

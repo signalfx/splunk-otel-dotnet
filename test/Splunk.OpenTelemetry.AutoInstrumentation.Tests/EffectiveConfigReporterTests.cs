@@ -15,23 +15,12 @@
 // </copyright>
 
 using OpenTelemetry.Exporter;
-using OpenTelemetry.OpAmp.Client.Settings;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
 public class EffectiveConfigReporterTests
 {
-    [Fact]
-    public void ConfigureOpAmpClientSettings_EnablesEffectiveConfigReporting()
-    {
-        var settings = new OpAmpClientSettings();
-
-        new EffectiveConfigReporter().ConfigureOpAmpClientSettings(settings);
-
-        Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
-    }
-
     [Fact]
     public void CaptureLogEndpoint_AddsLogsEndpointToPayload_ForILogger()
     {

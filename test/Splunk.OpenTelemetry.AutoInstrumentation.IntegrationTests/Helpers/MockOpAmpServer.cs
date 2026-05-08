@@ -171,7 +171,11 @@ internal sealed class MockOpAmpServer : IDisposable
             .ToArray();
         Assert.Empty(duplicatePayloads);
 
-        var finalPayload = files.Last().Body;
+        var finalPayload = frames
+            .OrderBy(frame => frame.SequenceNum)
+            .Last()
+            .Files[0]
+            .Body;
         Assert.True(finalPayloadPredicate(finalPayload), "The final effective config payload did not contain the expected values.");
     }
 
@@ -341,7 +345,7 @@ internal sealed class MockOpAmpServer : IDisposable
 
         lock (_effectiveConfigFramesLock)
         {
-            _effectiveConfigFrames.Add(new EffectiveConfigFrameSnapshot(files));
+            _effectiveConfigFrames.Add(new EffectiveConfigFrameSnapshot(frame.SequenceNum, files));
         }
     }
 
@@ -360,10 +364,13 @@ internal sealed class MockOpAmpServer : IDisposable
 
     private sealed class EffectiveConfigFrameSnapshot
     {
-        public EffectiveConfigFrameSnapshot(IReadOnlyList<EffectiveConfigFileSnapshot> files)
+        public EffectiveConfigFrameSnapshot(ulong sequenceNum, IReadOnlyList<EffectiveConfigFileSnapshot> files)
         {
+            SequenceNum = sequenceNum;
             Files = files;
         }
+
+        public ulong SequenceNum { get; }
 
         public IReadOnlyList<EffectiveConfigFileSnapshot> Files { get; }
     }

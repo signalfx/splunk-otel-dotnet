@@ -16,6 +16,7 @@
 
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
+using OpenTelemetry.OpAmp.Client.Settings;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
@@ -44,6 +45,17 @@ public class PluginEffectiveConfigTests
         plugin.ConfigureLogsOptions(new OpenTelemetryLoggerOptions());
 
         Assert.True(reporterCreated);
+    }
+
+    [Fact]
+    public void ConfigureOpAmpOptions_EnablesEffectiveConfigReporting()
+    {
+        var plugin = CreatePlugin(false, () => { });
+        var settings = new OpAmpClientSettings();
+
+        plugin.ConfigureOpAmpOptions(settings);
+
+        Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
     }
 
     private static Plugin CreatePlugin(bool opAmpEnabled, Action onReporterCreated)
