@@ -55,7 +55,7 @@ public class EffectiveConfigReporterTests
     }
 
     [Fact]
-    public void BuildCurrentPayload_UsesBridgeLoggerProviderEndpoints_WhenLogEndpointWasCapturedEarlier()
+    public void BuildCurrentPayload_UsesBridgeLoggerProviderEndpoints_WhenOptionsHookRanWithoutILogger()
     {
         var reporter = CreateReporter(() => ["http://bridge-collector:4318/v1/logs"]);
 
@@ -67,31 +67,35 @@ public class EffectiveConfigReporterTests
     }
 
     [Fact]
-    public void BuildCurrentPayload_RemovesEarlierLogEndpoint_WhenBridgeLoggerProviderHasNoOtlpEndpoints()
+    public void CaptureLogExporterOptions_IgnoresEndpoint_WhenILoggerWasNotConfigured()
+    {
+        var reporter = CreateReporter();
+
+        reporter.CaptureLogExporterOptions(CreateHttpLogOptions("http://options-collector:4318/v1/logs"));
+
+        Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=", reporter.BuildCurrentPayload());
+    }
+
+    [Fact]
+    public void BuildCurrentPayload_DoesNotReportLogs_WhenBridgeLoggerProviderHasNoOtlpEndpoints()
     {
         var reporter = CreateReporter(() => []);
 
-        reporter.CaptureLogExporterOptions(CreateHttpLogOptions("http://options-collector:4318/v1/logs"));
-
         Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=", reporter.BuildCurrentPayload());
     }
 
     [Fact]
-    public void BuildCurrentPayload_RemovesEarlierLogEndpoint_WhenBridgeLoggerProviderCouldNotBeResolved()
+    public void BuildCurrentPayload_DoesNotReportLogs_WhenBridgeLoggerProviderCouldNotBeResolved()
     {
         var reporter = CreateReporter(() => null);
 
-        reporter.CaptureLogExporterOptions(CreateHttpLogOptions("http://options-collector:4318/v1/logs"));
-
         Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=", reporter.BuildCurrentPayload());
     }
 
     [Fact]
-    public void BuildCurrentPayload_RemovesEarlierLogEndpoint_WhenBridgeLoggerProviderResolutionFails()
+    public void BuildCurrentPayload_DoesNotReportLogs_WhenBridgeLoggerProviderResolutionFails()
     {
         var reporter = CreateReporter(() => throw new InvalidOperationException("bridge resolver failed"));
-
-        reporter.CaptureLogExporterOptions(CreateHttpLogOptions("http://options-collector:4318/v1/logs"));
 
         Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=", reporter.BuildCurrentPayload());
     }

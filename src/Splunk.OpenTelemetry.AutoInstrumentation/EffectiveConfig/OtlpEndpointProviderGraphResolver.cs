@@ -15,6 +15,7 @@
 // </copyright>
 
 using System.Reflection;
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
@@ -29,22 +30,22 @@ internal static class OtlpEndpointProviderGraphResolver
     public static IReadOnlyList<string> ResolveTraceEndpoints(TracerProvider provider)
     {
         var processor = GetPropertyValue(provider, "Processor");
-        return ResolveEndpointsFromPipeline(processor, "OpenTelemetry.Exporter.OtlpTraceExporter");
+        return ResolveEndpointsFromPipeline(processor, typeof(OtlpTraceExporter));
     }
 
     public static IReadOnlyList<string> ResolveMetricEndpoints(MeterProvider provider)
     {
         var reader = GetPropertyValue(provider, "Reader");
-        return ResolveEndpointsFromPipeline(reader, "OpenTelemetry.Exporter.OtlpMetricExporter");
+        return ResolveEndpointsFromPipeline(reader, typeof(OtlpMetricExporter));
     }
 
     public static IReadOnlyList<string> ResolveLogEndpoints(LoggerProvider provider)
     {
         var processor = GetPropertyValue(provider, "Processor");
-        return ResolveEndpointsFromPipeline(processor, "OpenTelemetry.Exporter.OtlpLogExporter");
+        return ResolveEndpointsFromPipeline(processor, typeof(OtlpLogExporter));
     }
 
-    private static IReadOnlyList<string> ResolveEndpointsFromPipeline(object? pipeline, string exporterTypeName)
+    private static IReadOnlyList<string> ResolveEndpointsFromPipeline(object? pipeline, Type exporterType)
     {
         if (pipeline == null)
         {
@@ -55,8 +56,8 @@ internal static class OtlpEndpointProviderGraphResolver
         foreach (var pipelineItem in FlattenPipeline(pipeline))
         {
             var exporter = GetExporter(pipelineItem);
-            // Type-name filtering prevents reading endpoints from non-OTLP exporters.
-            if (exporter?.GetType().FullName != exporterTypeName)
+            // SDK type filtering prevents reading endpoints from non-OTLP exporters.
+            if (exporter == null || exporter.GetType() != exporterType)
             {
                 continue;
             }

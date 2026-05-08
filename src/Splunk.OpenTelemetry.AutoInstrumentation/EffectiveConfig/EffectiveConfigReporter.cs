@@ -109,16 +109,20 @@ internal sealed class EffectiveConfigReporter
 
     public void CaptureLogExporterOptions(OtlpExporterOptions options)
     {
-        // This hook runs for ILogger and bridge setup. Only ILogger values are final here; bridge endpoints are tentative
-        // until we can read the already-created upstream LoggerProvider at payload build time.
+        if (Volatile.Read(ref _iloggerLogsConfigured) == 0)
+        {
+            // This hook can run during bridge setup too. Without the ILogger marker, only provider-graph values are known valid.
+            return;
+        }
+
+        // Upstream's ILogger path calls the marker before configuring OTLP exporters, but SDK export clients do not exist yet.
         var endpoint = OtlpLogEndpointOptionsResolver.ResolveEndpoint(options);
         if (endpoint == null)
         {
             return;
         }
 
-        if (_state.AddEndpoint(EffectiveConfigKeys.LogsEndpoint, endpoint) &&
-            Volatile.Read(ref _iloggerLogsConfigured) != 0)
+        if (_state.AddEndpoint(EffectiveConfigKeys.LogsEndpoint, endpoint))
         {
             SendUpdatedPayloadIfOpAmpClientIsAvailable();
         }
@@ -208,7 +212,7 @@ internal sealed class EffectiveConfigReporter
 
             if (bridgeLogEndpoints == null)
             {
-                // Unknown bridge state is not known-valid, so remove any tentative option value.
+                // Without provider-graph results, bridge log endpoints are not known valid.
                 _state.ClearEndpoints(EffectiveConfigKeys.LogsEndpoint);
                 return;
             }
@@ -218,7 +222,7 @@ internal sealed class EffectiveConfigReporter
         }
         catch (Exception ex)
         {
-            // Reflection failure means we no longer know the bridge endpoint is valid.
+            // Reflection failure means bridge log endpoints are not known valid.
             _state.ClearEndpoints(EffectiveConfigKeys.LogsEndpoint);
             Log.Warning($"Failed to resolve {EffectiveConfigKeys.LogsEndpoint} from LoggerProvider: {ex.Message}");
         }
