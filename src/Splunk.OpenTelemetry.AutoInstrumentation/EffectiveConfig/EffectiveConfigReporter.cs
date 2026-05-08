@@ -49,7 +49,7 @@ internal sealed class EffectiveConfigReporter
         _bridgeLogEndpointResolver = bridgeLogEndpointResolver;
     }
 
-    public void CaptureInitialSettings(PluginSettings settings)
+    public void CaptureSplunkSettings(PluginSettings settings)
     {
         try
         {
@@ -96,7 +96,7 @@ internal sealed class EffectiveConfigReporter
         }
     }
 
-    public void CaptureOpenTelemetryLoggerOptions()
+    public void MarkOpenTelemetryLoggerConfigured()
     {
         // ILogger owns its LoggerProvider and disables bridge logging, so bridge reflection would report a different logs pipeline.
         Interlocked.Exchange(ref _iloggerLogsConfigured, 1);
@@ -107,7 +107,7 @@ internal sealed class EffectiveConfigReporter
         }
     }
 
-    public void CaptureLogEndpoint(OtlpExporterOptions options)
+    public void CaptureLogExporterOptions(OtlpExporterOptions options)
     {
         // This hook runs for ILogger and bridge setup. Only ILogger values are final here; bridge endpoints are tentative
         // until we can read the already-created upstream LoggerProvider at payload build time.
@@ -135,7 +135,7 @@ internal sealed class EffectiveConfigReporter
         await SendCurrentPayloadAsync(client).ConfigureAwait(false);
     }
 
-    public void CaptureOpAmpClient(OpAmpClient client)
+    public void SetOpAmpClient(OpAmpClient client)
     {
         Volatile.Write(ref _opAmpClient, client);
     }
