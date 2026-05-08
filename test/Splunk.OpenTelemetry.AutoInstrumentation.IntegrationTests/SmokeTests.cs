@@ -512,55 +512,6 @@ public class SmokeTests : TestHelper, IDisposable
         return (frame.Capabilities & reportsEffectiveConfigCapability) != 0;
     }
 
-    private static bool TryReadEffectiveConfigPayload(AgentToServer frame, out string payload)
-    {
-        payload = string.Empty;
-
-        var configMap = frame.EffectiveConfig?.ConfigMap?.ConfigMap;
-        if (configMap == null ||
-            configMap.Count != 1 ||
-            !configMap.TryGetValue(EffectiveConfigReporter.EffectiveConfigFileName, out var configFile) ||
-            configFile.ContentType != EffectiveConfigReporter.EffectiveConfigContentType)
-        {
-            return false;
-        }
-
-        payload = configFile.Body.ToStringUtf8();
-        return !string.IsNullOrWhiteSpace(payload);
-    }
-
-    private static void AssertEffectiveConfigFiles(MockOpAmpServer opAmpServer, int maxEffectiveConfigFiles)
-    {
-        var frames = opAmpServer.GetEffectiveConfigFrames();
-        Assert.NotEmpty(frames);
-
-        var fileCounts = frames.Select(frame => frame.Files.Count).ToArray();
-        if (fileCounts.Any(count => count != 1))
-        {
-            Assert.Fail($"Expected each effective config frame to contain exactly one file, but received file counts: {string.Join(", ", fileCounts)}.");
-        }
-
-        var files = frames.SelectMany(frame => frame.Files).ToArray();
-        if (files.Length > maxEffectiveConfigFiles)
-        {
-            Assert.Fail($"Expected at most {maxEffectiveConfigFiles} effective config files, but received {files.Length}.");
-        }
-
-        Assert.All(files, file =>
-        {
-            Assert.Equal(EffectiveConfigReporter.EffectiveConfigFileName, file.Name);
-            Assert.Equal(EffectiveConfigReporter.EffectiveConfigContentType, file.ContentType);
-            Assert.False(string.IsNullOrWhiteSpace(file.Body));
-        });
-
-        var duplicatePayloads = files
-            .GroupBy(file => file.Body, StringComparer.Ordinal)
-            .Where(group => group.Count() > 1)
-            .Select(group => group.Key)
-            .ToArray();
-        Assert.Empty(duplicatePayloads);
-    }
-
     private static ICollection<KeyValuePair<string, string>> ParseSettingsLog(string log, string marker)
     {
         var lines = log.Split([Environment.NewLine], StringSplitOptions.None);
@@ -584,15 +535,16 @@ public class SmokeTests : TestHelper, IDisposable
 
     private void RunTestApplicationAndAssertEffectiveConfig(
         MockOpAmpServer opAmpServer,
-        Func<string, bool> effectiveConfigPredicate,
-        int maxEffectiveConfigFiles = 2)
+        Func<string, bool> effectiveConfigPredicate)
     {
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_OPAMP_ENABLED", "true");
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_OPAMP_SERVER_URL", $"http://localhost:{opAmpServer.Port}/v1/opamp");
 
         opAmpServer.Expect(ReportsEffectiveConfigCapability, "Reports effective config capability");
-        opAmpServer.Expect(
-            frame => TryReadEffectiveConfigPayload(frame, out var payload) && effectiveConfigPredicate(payload),
+        opAmpServer.ExpectEffectiveConfigPayload(
+            EffectiveConfigReporter.EffectiveConfigFileName,
+            EffectiveConfigReporter.EffectiveConfigContentType,
+            effectiveConfigPredicate,
             "Has expected single-file effective config payload");
         SetEnvironmentVariable("LONG_RUNNING", "true");
 
@@ -622,6 +574,9 @@ public class SmokeTests : TestHelper, IDisposable
             }
         }
 
-        AssertEffectiveConfigFiles(opAmpServer, maxEffectiveConfigFiles);
+        opAmpServer.AssertEffectiveConfigPayloads(
+            EffectiveConfigReporter.EffectiveConfigFileName,
+            EffectiveConfigReporter.EffectiveConfigContentType,
+            effectiveConfigPredicate);
     }
 }

@@ -131,12 +131,48 @@ internal sealed class MockOpAmpServer : IDisposable
         }
     }
 
-    public IReadOnlyList<EffectiveConfigFrameSnapshot> GetEffectiveConfigFrames()
+    public void ExpectEffectiveConfigPayload(
+        string fileName,
+        string contentType,
+        Func<string, bool> payloadPredicate,
+        string? description = null)
     {
-        lock (_effectiveConfigFramesLock)
+        Expect(
+            frame => TryReadEffectiveConfigPayload(frame, fileName, contentType, out var payload) && payloadPredicate(payload),
+            description);
+    }
+
+    public void AssertEffectiveConfigPayloads(
+        string fileName,
+        string contentType,
+        Func<string, bool> finalPayloadPredicate)
+    {
+        var frames = GetEffectiveConfigFrames();
+        Assert.NotEmpty(frames);
+
+        var fileCounts = frames.Select(frame => frame.Files.Count).ToArray();
+        if (fileCounts.Any(count => count != 1))
         {
-            return _effectiveConfigFrames.ToArray();
+            Assert.Fail($"Expected each effective config frame to contain exactly one file, but received file counts: {string.Join(", ", fileCounts)}.");
         }
+
+        var files = frames.SelectMany(frame => frame.Files).ToArray();
+        Assert.All(files, file =>
+        {
+            Assert.Equal(fileName, file.Name);
+            Assert.Equal(contentType, file.ContentType);
+            Assert.False(string.IsNullOrWhiteSpace(file.Body));
+        });
+
+        var duplicatePayloads = files
+            .GroupBy(file => file.Body, StringComparer.Ordinal)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key)
+            .ToArray();
+        Assert.Empty(duplicatePayloads);
+
+        var finalPayload = files.Last().Body;
+        Assert.True(finalPayloadPredicate(finalPayload), "The final effective config payload did not contain the expected values.");
     }
 
     public void Dispose()
@@ -144,6 +180,23 @@ internal sealed class MockOpAmpServer : IDisposable
         WriteOutput("Shutting down.");
         _listener.Dispose();
         _frames.Dispose();
+    }
+
+    private static bool TryReadEffectiveConfigPayload(AgentToServer frame, string fileName, string contentType, out string payload)
+    {
+        payload = string.Empty;
+
+        var configMap = frame.EffectiveConfig?.ConfigMap?.ConfigMap;
+        if (configMap == null ||
+            configMap.Count != 1 ||
+            !configMap.TryGetValue(fileName, out var configFile) ||
+            configFile.ContentType != contentType)
+        {
+            return false;
+        }
+
+        payload = configFile.Body.ToStringUtf8();
+        return !string.IsNullOrWhiteSpace(payload);
     }
 
     private static void FailExpectations(
@@ -292,12 +345,20 @@ internal sealed class MockOpAmpServer : IDisposable
         }
     }
 
+    private IReadOnlyList<EffectiveConfigFrameSnapshot> GetEffectiveConfigFrames()
+    {
+        lock (_effectiveConfigFramesLock)
+        {
+            return _effectiveConfigFrames.ToArray();
+        }
+    }
+
     private void WriteOutput(string msg)
     {
         _output.WriteLine($"[{nameof(MockOpAmpServer)}]: {msg}");
     }
 
-    internal sealed class EffectiveConfigFrameSnapshot
+    private sealed class EffectiveConfigFrameSnapshot
     {
         public EffectiveConfigFrameSnapshot(IReadOnlyList<EffectiveConfigFileSnapshot> files)
         {
@@ -307,7 +368,7 @@ internal sealed class MockOpAmpServer : IDisposable
         public IReadOnlyList<EffectiveConfigFileSnapshot> Files { get; }
     }
 
-    internal sealed class EffectiveConfigFileSnapshot
+    private sealed class EffectiveConfigFileSnapshot
     {
         public EffectiveConfigFileSnapshot(string name, string contentType, string body)
         {
