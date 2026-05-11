@@ -1,4 +1,4 @@
-# OpAmp
+# OpAMP
 
 You can configure Splunk Distribution of OpenTelemetry .NET to report effective configuration
 using Open Agent Management Protocol (OpAMP) to a configured OpAMP server.
