@@ -67,7 +67,7 @@ internal static class ConfigurationKeys
             public const string MemoryProfilerEnabled = "SPLUNK_PROFILER_MEMORY_ENABLED";
 
             /// <summary>
-            /// Configuration key for Profiler maximum memory sample collected in a miniute. Defaults to 200, which is also the maximum.
+            /// Configuration key for Profiler maximum memory sample collected in a minute. Defaults to 200, which is also the maximum.
             /// </summary>
             public const string ProfilerMaxMemorySamples = "SPLUNK_PROFILER_MAX_MEMORY_SAMPLES";
 

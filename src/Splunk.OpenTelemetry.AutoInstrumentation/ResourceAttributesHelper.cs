@@ -28,7 +28,7 @@ internal static class ResourceAttributesHelper
     /// </summary>
     internal static string? ParseServiceName(string resourceAttributes)
     {
-        IDictionary<string, string> serviceNameAttribute = new Dictionary<string, string>();
+        IDictionary<string, string> parsedAttributes = new Dictionary<string, string>();
 
         foreach (var rawKeyValuePair in resourceAttributes.Split(AttributeListSplitter))
         {
@@ -38,10 +38,10 @@ internal static class ResourceAttributesHelper
                 continue;
             }
 
-            serviceNameAttribute[keyValuePair[0].Trim()] = keyValuePair[1].Trim();
+            parsedAttributes[keyValuePair[0].Trim()] = keyValuePair[1].Trim();
         }
 
-        if (!serviceNameAttribute.TryGetValue(ServiceNameAttributeName, out var serviceNameValue))
+        if (!parsedAttributes.TryGetValue(ServiceNameAttributeName, out var serviceNameValue))
         {
             return null;
         }

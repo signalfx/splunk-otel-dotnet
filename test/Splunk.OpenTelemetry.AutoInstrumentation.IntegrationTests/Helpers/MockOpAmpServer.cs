@@ -40,7 +40,6 @@ internal sealed class MockOpAmpServer : IDisposable
 
     private readonly List<Expectation> _expectations = new();
     private readonly BlockingCollection<AgentToServer> _frames = new(10);
-    private readonly List<NameValueCollection> _receivedHeaders = [];
     private readonly object _effectiveConfigFramesLock = new();
     private readonly List<EffectiveConfigFrameSnapshot> _effectiveConfigFrames = [];
 
@@ -255,14 +254,6 @@ internal sealed class MockOpAmpServer : IDisposable
         RecordEffectiveConfigFrame(frame);
         _frames.Add(frame);
 
-        var headersCopy = new NameValueCollection();
-        foreach (var key in ctx.Request.Headers.AllKeys)
-        {
-            headersCopy.Add(key, ctx.Request.Headers[key]);
-        }
-
-        _receivedHeaders.Add(headersCopy);
-
         var response = GenerateResponse(frame);
 
         ctx.Response.StatusCode = (int)HttpStatusCode.OK;
@@ -313,14 +304,6 @@ internal sealed class MockOpAmpServer : IDisposable
 
         RecordEffectiveConfigFrame(frame);
         _frames.Add(frame);
-
-        var headersCopy = new NameValueCollection();
-        foreach (var key in ctx.Request.Headers.Keys)
-        {
-            headersCopy.Add(key, ctx.Request.Headers[key]);
-        }
-
-        _receivedHeaders.Add(headersCopy);
 
         var response = GenerateResponse(frame);
 
