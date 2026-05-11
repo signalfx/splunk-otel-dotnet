@@ -15,12 +15,10 @@
 // </copyright>
 
 using System.Text;
-using System.Threading;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.OpAmp.Client;
 using OpenTelemetry.OpAmp.Client.Messages;
-using OpenTelemetry.OpAmp.Client.Settings;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
@@ -51,14 +49,7 @@ internal sealed class EffectiveConfigReporter
 
     public void CaptureSplunkSettings(PluginSettings settings)
     {
-        try
-        {
-            _state.SetSplunkSettings(settings);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to capture effective configuration settings.");
-        }
+        _state.SetSplunkSettings(settings);
     }
 
     public void CaptureServiceName(Resource resource)

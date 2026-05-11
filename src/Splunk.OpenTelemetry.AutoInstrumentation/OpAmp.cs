@@ -46,7 +46,7 @@ internal sealed class OpAmp
         settings.EffectiveConfigurationReporting.EnableReporting = true;
     }
 
-    public void RecordInitialEffectiveConfig(PluginSettings settings)
+    public void RecordPluginConfig(PluginSettings settings)
     {
         _effectiveConfigReporter.Value?.CaptureSplunkSettings(settings);
     }

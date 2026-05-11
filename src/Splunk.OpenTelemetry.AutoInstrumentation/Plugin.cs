@@ -80,8 +80,6 @@ public class Plugin
             Log.LogConfigurationSetup();
         }
 
-        _opAmp.RecordInitialEffectiveConfig(Settings);
-
         if (
 #if NET
             RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
@@ -272,6 +270,7 @@ public class Plugin
     /// </summary>
     public void Initialized()
     {
+        _opAmp.RecordPluginConfig(Settings);
         _opAmp.MarkInstrumentationInitialized();
     }
 
