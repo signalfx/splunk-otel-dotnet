@@ -21,6 +21,7 @@ for more details.
 ## Effective configuration contents
 
 When enabled, the OpAMP configuration includes the values for the following settings:
+
 - `SPLUNK_PROFILER_ENABLED`
 - `SPLUNK_PROFILER_MEMORY_ENABLED`
 - `SPLUNK_SNAPSHOT_PROFILER_ENABLED`
