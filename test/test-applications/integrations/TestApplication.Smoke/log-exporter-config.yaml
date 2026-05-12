@@ -11,7 +11,8 @@ plugins/development:
 
 logger_provider:
   processors:
-    - simple:
+    - batch:
+        max_export_batch_size: 1
         exporter:
           otlp_http:
             endpoint: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT}
