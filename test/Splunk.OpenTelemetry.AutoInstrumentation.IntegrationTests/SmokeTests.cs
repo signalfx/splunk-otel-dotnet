@@ -110,7 +110,7 @@ public class SmokeTests : TestHelper, IDisposable
 
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE", "true");
         EnableBytecodeInstrumentation();
-        SetEnvironmentVariable("OTEL_BLRP_MAX_EXPORT_BATCH_SIZE", "1");
+        ConfigureFastLogBatching();
         RunTestApplication(TestSettingsWithDefaultArgs());
 
         collector.AssertExpectations();
@@ -154,12 +154,12 @@ public class SmokeTests : TestHelper, IDisposable
     public void LogsResource()
     {
         using var collector = new MockLogsCollector(Output);
-        EnableFileBasedConfig("log-exporter-config.yaml");
-        SetFileBasedExporter(collector);
+        SetExporter(collector);
 
         collector.ResourceExpector.ExpectDistributionResources(ServiceName);
 
         EnableBytecodeInstrumentation();
+        ConfigureFastLogBatching();
 
         RunTestApplication(TestSettingsWithDefaultArgs());
 
@@ -241,5 +241,11 @@ public class SmokeTests : TestHelper, IDisposable
         {
             Arguments = $"--test-server-port {_testServer.Port}"
         };
+    }
+
+    private void ConfigureFastLogBatching()
+    {
+        SetEnvironmentVariable("OTEL_BLRP_MAX_EXPORT_BATCH_SIZE", "1");
+        SetEnvironmentVariable("OTEL_BLRP_SCHEDULE_DELAY", "100");
     }
 }
