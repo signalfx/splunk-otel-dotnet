@@ -30,6 +30,7 @@ public class EffectiveConfigStateTests
             { ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled, "true" },
             { ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled, "true" },
             { ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, "10000" },
+            { ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint, "http://profiler-collector:4318/v1/logs" },
             { ConfigurationKeys.Splunk.Snapshots.Enabled, "true" },
             { ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, "5000" },
             { ConfigurationKeys.Splunk.AccessToken, "secret-token" },
@@ -48,6 +49,7 @@ public class EffectiveConfigStateTests
         Assert.Contains("SPLUNK_PROFILER_MEMORY_ENABLED=false", payload);
 #endif
         Assert.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=\"10000ms\"", payload);
+        Assert.Contains("SPLUNK_PROFILER_LOGS_ENDPOINT=\"http://profiler-collector:4318/v1/logs\"", payload);
         Assert.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=true", payload);
         Assert.Contains("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=\"5000ms\"", payload);
         Assert.DoesNotContain("SPLUNK_ACCESS_TOKEN", payload);
@@ -60,14 +62,14 @@ public class EffectiveConfigStateTests
         var state = new EffectiveConfigState();
 
         state.SetEndpoints(
-            EffectiveConfigKeys.TracesEndpoint,
+            EffectiveConfigKeys.TracesEndpoints,
             [
                 "http://collector-1:4318/v1/traces",
                 "http://collector-2:4318/v1/traces"
             ]);
 
         Assert.Contains(
-            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=\"http://collector-1:4318/v1/traces\",\"http://collector-2:4318/v1/traces\"",
+            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"http://collector-1:4318/v1/traces\",\"http://collector-2:4318/v1/traces\"",
             state.BuildPayload());
     }
 
@@ -77,14 +79,14 @@ public class EffectiveConfigStateTests
         var state = new EffectiveConfigState();
 
         state.SetEndpoints(
-            EffectiveConfigKeys.TracesEndpoint,
+            EffectiveConfigKeys.TracesEndpoints,
             [
                 "http://collector/path,with%2Ccomma",
                 "http://collector/second"
             ]);
 
         Assert.Contains(
-            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=\"http://collector/path,with%2Ccomma\",\"http://collector/second\"",
+            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"http://collector/path,with%2Ccomma\",\"http://collector/second\"",
             state.BuildPayload());
     }
 
@@ -93,13 +95,13 @@ public class EffectiveConfigStateTests
     {
         var state = new EffectiveConfigState();
 
-        var firstAdd = state.AddEndpoint(EffectiveConfigKeys.LogsEndpoint, "http://collector:4318/v1/logs");
-        var secondAdd = state.AddEndpoint(EffectiveConfigKeys.LogsEndpoint, "http://collector:4318/v1/logs");
+        var firstAdd = state.AddEndpoint(EffectiveConfigKeys.LogsEndpoints, "http://collector:4318/v1/logs");
+        var secondAdd = state.AddEndpoint(EffectiveConfigKeys.LogsEndpoints, "http://collector:4318/v1/logs");
 
         Assert.True(firstAdd);
         Assert.False(secondAdd);
         Assert.Contains(
-            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=\"http://collector:4318/v1/logs\"",
+            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=\"http://collector:4318/v1/logs\"",
             state.BuildPayload());
     }
 
@@ -108,12 +110,12 @@ public class EffectiveConfigStateTests
     {
         var state = new EffectiveConfigState();
 
-        Assert.False(state.ClearEndpoints(EffectiveConfigKeys.LogsEndpoint));
+        Assert.False(state.ClearEndpoints(EffectiveConfigKeys.LogsEndpoints));
 
-        state.AddEndpoint(EffectiveConfigKeys.LogsEndpoint, "http://collector:4318/v1/logs");
+        state.AddEndpoint(EffectiveConfigKeys.LogsEndpoints, "http://collector:4318/v1/logs");
 
-        Assert.True(state.ClearEndpoints(EffectiveConfigKeys.LogsEndpoint));
-        Assert.False(state.ClearEndpoints(EffectiveConfigKeys.LogsEndpoint));
+        Assert.True(state.ClearEndpoints(EffectiveConfigKeys.LogsEndpoints));
+        Assert.False(state.ClearEndpoints(EffectiveConfigKeys.LogsEndpoints));
     }
 
     [Fact]

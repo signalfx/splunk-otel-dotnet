@@ -23,14 +23,15 @@ internal sealed class EffectiveConfigState
     private static readonly string[] KeyOrder =
     [
         EffectiveConfigKeys.ServiceName,
-        EffectiveConfigKeys.TracesEndpoint,
-        EffectiveConfigKeys.MetricsEndpoint,
-        EffectiveConfigKeys.LogsEndpoint,
-        ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled,
-        ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled,
-        ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval,
-        ConfigurationKeys.Splunk.Snapshots.Enabled,
-        ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs
+        EffectiveConfigKeys.TracesEndpoints,
+        EffectiveConfigKeys.MetricsEndpoints,
+        EffectiveConfigKeys.LogsEndpoints,
+        EffectiveConfigKeys.CpuProfilerEnabled,
+        EffectiveConfigKeys.MemoryProfilerEnabled,
+        EffectiveConfigKeys.CpuProfilerCallStackInterval,
+        EffectiveConfigKeys.ProfilerLogsEndpoint,
+        EffectiveConfigKeys.SnapshotProfilerEnabled,
+        EffectiveConfigKeys.SnapshotSamplingInterval
     ];
 
     // Provider hooks and late OpAmp updates are not guaranteed to stay on one thread.
@@ -42,15 +43,16 @@ internal sealed class EffectiveConfigState
     {
         lock (_lock)
         {
-            _values[ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.CpuProfilerEnabled);
+            _values[EffectiveConfigKeys.CpuProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.CpuProfilerEnabled);
 #if NET
-            _values[ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.MemoryProfilerEnabled);
+            _values[EffectiveConfigKeys.MemoryProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.MemoryProfilerEnabled);
 #else
-            _values[ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(false);
+            _values[EffectiveConfigKeys.MemoryProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(false);
 #endif
-            _values[ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.CpuProfilerCallStackInterval);
-            _values[ConfigurationKeys.Splunk.Snapshots.Enabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.SnapshotsEnabled);
-            _values[ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.SnapshotsSamplingInterval);
+            _values[EffectiveConfigKeys.CpuProfilerCallStackInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.CpuProfilerCallStackInterval);
+            _values[EffectiveConfigKeys.ProfilerLogsEndpoint] = EffectiveConfigValueFormatter.FormatList([settings.ProfilerLogsEndpoint.ToString()]);
+            _values[EffectiveConfigKeys.SnapshotProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.SnapshotsEnabled);
+            _values[EffectiveConfigKeys.SnapshotSamplingInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.SnapshotsSamplingInterval);
         }
     }
 

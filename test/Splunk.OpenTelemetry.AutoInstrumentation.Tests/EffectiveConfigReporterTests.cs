@@ -28,7 +28,7 @@ public class EffectiveConfigReporterTests
 
         reporter.CaptureLogExporterOptions(CreateHttpLogOptions("http://logs-collector:4318/v1/logs"));
 
-        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=\"http://logs-collector:4318/v1/logs\"", reporter.BuildCurrentPayload());
+        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=\"http://logs-collector:4318/v1/logs\"", reporter.BuildCurrentPayload());
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class EffectiveConfigReporterTests
         reporter.CaptureLogExporterOptions(CreateHttpLogOptions("http://logs-collector-2:4318/v1/logs"));
 
         Assert.Contains(
-            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=\"http://logs-collector-1:4318/v1/logs\",\"http://logs-collector-2:4318/v1/logs\"",
+            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=\"http://logs-collector-1:4318/v1/logs\",\"http://logs-collector-2:4318/v1/logs\"",
             reporter.BuildCurrentPayload());
     }
 
@@ -50,7 +50,7 @@ public class EffectiveConfigReporterTests
         var reporter = CreateReporter(() => ["http://bridge-collector:4318/v1/logs"]);
 
         Assert.Contains(
-            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=\"http://bridge-collector:4318/v1/logs\"",
+            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=\"http://bridge-collector:4318/v1/logs\"",
             reporter.BuildCurrentPayload());
     }
 
@@ -62,7 +62,7 @@ public class EffectiveConfigReporterTests
         reporter.CaptureLogExporterOptions(CreateHttpLogOptions("http://options-collector:4318/v1/logs"));
 
         var payload = reporter.BuildCurrentPayload();
-        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=\"http://bridge-collector:4318/v1/logs\"", payload);
+        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=\"http://bridge-collector:4318/v1/logs\"", payload);
         Assert.DoesNotContain("http://options-collector:4318/v1/logs", payload);
     }
 
@@ -73,7 +73,7 @@ public class EffectiveConfigReporterTests
 
         reporter.CaptureLogExporterOptions(CreateHttpLogOptions("http://options-collector:4318/v1/logs"));
 
-        Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=", reporter.BuildCurrentPayload());
+        Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=", reporter.BuildCurrentPayload());
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class EffectiveConfigReporterTests
     {
         var reporter = CreateReporter(() => []);
 
-        Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=", reporter.BuildCurrentPayload());
+        Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=", reporter.BuildCurrentPayload());
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public class EffectiveConfigReporterTests
     {
         var reporter = CreateReporter(() => null);
 
-        Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=", reporter.BuildCurrentPayload());
+        Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=", reporter.BuildCurrentPayload());
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class EffectiveConfigReporterTests
     {
         var reporter = CreateReporter(() => throw new InvalidOperationException("bridge resolver failed"));
 
-        Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=", reporter.BuildCurrentPayload());
+        Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=", reporter.BuildCurrentPayload());
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public class EffectiveConfigReporterTests
 
         reporter.MarkOpenTelemetryLoggerConfigured();
 
-        Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=", reporter.BuildCurrentPayload());
+        Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=", reporter.BuildCurrentPayload());
     }
 
     private static OtlpExporterOptions CreateHttpLogOptions(string endpoint)

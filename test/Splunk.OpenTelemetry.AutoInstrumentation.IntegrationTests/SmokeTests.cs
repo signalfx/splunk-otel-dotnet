@@ -227,8 +227,10 @@ public class SmokeTests : TestHelper, IDisposable
 
         var tracesEndpoint = "http://localhost:4318/v1/traces";
         var metricsEndpoint = "http://localhost:4319/v1/metrics";
+        var profilerLogsEndpoint = "http://profiler-collector:4318/v1/logs";
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", tracesEndpoint);
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", metricsEndpoint);
+        SetEnvironmentVariable("SPLUNK_PROFILER_LOGS_ENDPOINT", profilerLogsEndpoint);
         SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
 #if NET
         var logsEndpoint = "http://localhost:4320/v1/logs";
@@ -246,9 +248,9 @@ public class SmokeTests : TestHelper, IDisposable
 
         var requiredEntries = new List<string>
         {
-            EndpointEntry(EffectiveConfigKeys.TracesEndpoint, tracesEndpoint),
-            EndpointEntry(EffectiveConfigKeys.MetricsEndpoint, metricsEndpoint),
-            StringEntry(EffectiveConfigKeys.ServiceName, ServiceName),
+            $"OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"{tracesEndpoint}\"",
+            $"OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS=\"{metricsEndpoint}\"",
+            "OTEL_SERVICE_NAME=\"TestApplication.Smoke\"",
             "SPLUNK_PROFILER_ENABLED=true",
 #if NET
             "SPLUNK_PROFILER_MEMORY_ENABLED=true",
@@ -256,15 +258,16 @@ public class SmokeTests : TestHelper, IDisposable
             "SPLUNK_PROFILER_MEMORY_ENABLED=false",
 #endif
             "SPLUNK_PROFILER_CALL_STACK_INTERVAL=\"10000ms\"",
+            $"SPLUNK_PROFILER_LOGS_ENDPOINT=\"{profilerLogsEndpoint}\"",
             "SPLUNK_SNAPSHOT_PROFILER_ENABLED=true",
             "SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=\"5000ms\""
         };
 #if NET
-        requiredEntries.Add(EndpointEntry(EffectiveConfigKeys.LogsEndpoint, logsEndpoint));
+        requiredEntries.Add($"OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=\"{logsEndpoint}\"");
 #endif
         var forbiddenEntries = new List<string>();
 #if !NET
-        forbiddenEntries.Add($"{EffectiveConfigKeys.LogsEndpoint}=");
+        forbiddenEntries.Add("OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=");
 #endif
 
         RunTestApplicationAndAssertEffectiveConfig(
@@ -287,8 +290,8 @@ public class SmokeTests : TestHelper, IDisposable
 
         var requiredEntries = new[]
         {
-            EndpointEntry(EffectiveConfigKeys.TracesEndpoint, "https://ingest.us0.observability.splunkcloud.com/v2/trace/otlp"),
-            EndpointEntry(EffectiveConfigKeys.MetricsEndpoint, "https://ingest.us0.observability.splunkcloud.com/v2/datapoint/otlp")
+            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"https://ingest.us0.observability.splunkcloud.com/v2/trace/otlp\"",
+            "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS=\"https://ingest.us0.observability.splunkcloud.com/v2/datapoint/otlp\""
         };
 
         RunTestApplicationAndAssertEffectiveConfig(
@@ -319,8 +322,8 @@ public class SmokeTests : TestHelper, IDisposable
 
         var requiredEntries = new[]
         {
-            EndpointEntry(EffectiveConfigKeys.TracesEndpoint, expectedTracesEndpoint),
-            EndpointEntry(EffectiveConfigKeys.MetricsEndpoint, expectedMetricsEndpoint)
+            $"OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"{expectedTracesEndpoint}\"",
+            $"OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS=\"{expectedMetricsEndpoint}\""
         };
 
         RunTestApplicationAndAssertEffectiveConfig(
@@ -346,13 +349,13 @@ public class SmokeTests : TestHelper, IDisposable
 
         var requiredEntries = new[]
         {
-            StringEntry(EffectiveConfigKeys.ServiceName, ServiceName)
+            "OTEL_SERVICE_NAME=\"TestApplication.Smoke\""
         };
         var forbiddenEntries = new[]
         {
-            $"{EffectiveConfigKeys.TracesEndpoint}=",
-            $"{EffectiveConfigKeys.MetricsEndpoint}=",
-            $"{EffectiveConfigKeys.LogsEndpoint}="
+            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=",
+            "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS=",
+            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS="
         };
 
         RunTestApplicationAndAssertEffectiveConfig(
@@ -379,12 +382,13 @@ public class SmokeTests : TestHelper, IDisposable
 
         var requiredEntries = new[]
         {
-            EndpointEntry(EffectiveConfigKeys.TracesEndpoint, "http://traces-collector:4318/v1/traces"),
-            EndpointEntry(EffectiveConfigKeys.MetricsEndpoint, "http://localhost:4318/v1/metrics"),
-            StringEntry(EffectiveConfigKeys.ServiceName, "env-var-service"),
+            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"http://traces-collector:4318/v1/traces\"",
+            "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS=\"http://localhost:4318/v1/metrics\"",
+            "OTEL_SERVICE_NAME=\"env-var-service\"",
             "SPLUNK_PROFILER_ENABLED=true",
             "SPLUNK_PROFILER_MEMORY_ENABLED=true",
             "SPLUNK_PROFILER_CALL_STACK_INTERVAL=\"10000ms\"",
+            "SPLUNK_PROFILER_LOGS_ENDPOINT=\"http://profiler-collector:4318/v1/logs\"",
             "SPLUNK_SNAPSHOT_PROFILER_ENABLED=true",
             "SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=\"5000ms\""
         };
@@ -392,7 +396,7 @@ public class SmokeTests : TestHelper, IDisposable
         RunTestApplicationAndAssertEffectiveConfig(
             opAmpServer,
             payload => ContainsAll(payload, requiredEntries) &&
-                       ContainsNone(payload, [$"{EffectiveConfigKeys.LogsEndpoint}="]));
+                       ContainsNone(payload, ["OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS="]));
     }
 
     [Fact]
@@ -409,16 +413,16 @@ public class SmokeTests : TestHelper, IDisposable
 
         var requiredEntries = new[]
         {
-            EndpointEntry(EffectiveConfigKeys.TracesEndpoint, "http://localhost:4318/v1/traces"),
-            EndpointEntry(EffectiveConfigKeys.MetricsEndpoint, "http://localhost:4318/v1/metrics"),
-            StringEntry(EffectiveConfigKeys.ServiceName, "yaml-defaults-service")
+            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"http://localhost:4318/v1/traces\"",
+            "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS=\"http://localhost:4318/v1/metrics\"",
+            "OTEL_SERVICE_NAME=\"yaml-defaults-service\""
         };
 
         var forbiddenEntries = new[]
         {
-            $"{EffectiveConfigKeys.LogsEndpoint}=",
+            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=",
             "http://env-collector:4318",
-            StringEntry(EffectiveConfigKeys.ServiceName, "stale-env-service")
+            "OTEL_SERVICE_NAME=\"stale-env-service\""
         };
 
         RunTestApplicationAndAssertEffectiveConfig(
@@ -445,15 +449,15 @@ public class SmokeTests : TestHelper, IDisposable
         SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE", "true");
 
-        var expectedTracesValue = EndpointValue(tracesEndpoint1, tracesEndpoint2);
-        var expectedMetricsValue = EndpointValue(metricsEndpoint1, metricsEndpoint2);
-        var expectedLogsValue = EndpointValue(logsEndpoint1, logsEndpoint2);
+        var expectedTracesValue = $"\"{tracesEndpoint1}\",\"{tracesEndpoint2}\"";
+        var expectedMetricsValue = $"\"{metricsEndpoint1}\",\"{metricsEndpoint2}\"";
+        var expectedLogsValue = $"\"{logsEndpoint1}\",\"{logsEndpoint2}\"";
         RunTestApplicationAndAssertEffectiveConfig(
             opAmpServer,
             payload =>
-                GetEffectiveConfigValues(payload, EffectiveConfigKeys.TracesEndpoint).SequenceEqual([expectedTracesValue]) &&
-                GetEffectiveConfigValues(payload, EffectiveConfigKeys.MetricsEndpoint).SequenceEqual([expectedMetricsValue]) &&
-                GetEffectiveConfigValues(payload, EffectiveConfigKeys.LogsEndpoint).SequenceEqual([expectedLogsValue]));
+                GetEffectiveConfigValues(payload, "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS").SequenceEqual([expectedTracesValue]) &&
+                GetEffectiveConfigValues(payload, "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS").SequenceEqual([expectedMetricsValue]) &&
+                GetEffectiveConfigValues(payload, "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS").SequenceEqual([expectedLogsValue]));
     }
 
 #endif
@@ -474,26 +478,6 @@ public class SmokeTests : TestHelper, IDisposable
     private static bool ContainsNone(string payload, IEnumerable<string> forbiddenEntries)
     {
         return forbiddenEntries.All(entry => payload.IndexOf(entry, StringComparison.Ordinal) < 0);
-    }
-
-    private static string EndpointEntry(string key, string endpoint)
-    {
-        return $"{key}={EndpointValue(endpoint)}";
-    }
-
-    private static string StringEntry(string key, string value)
-    {
-        return $"{key}={QuoteValue(value)}";
-    }
-
-    private static string EndpointValue(params string[] endpoints)
-    {
-        return string.Join(",", endpoints.Select(QuoteValue));
-    }
-
-    private static string QuoteValue(string value)
-    {
-        return "\"" + value + "\"";
     }
 
     private static string[] GetEffectiveConfigValues(string effectiveConfig, string key)

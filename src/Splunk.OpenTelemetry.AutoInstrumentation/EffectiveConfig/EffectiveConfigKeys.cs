@@ -19,7 +19,13 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 internal static class EffectiveConfigKeys
 {
     internal const string ServiceName = "OTEL_SERVICE_NAME";
-    internal const string TracesEndpoint = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT";
-    internal const string MetricsEndpoint = "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT";
-    internal const string LogsEndpoint = "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT";
+    internal const string TracesEndpoints = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS";
+    internal const string MetricsEndpoints = "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS";
+    internal const string LogsEndpoints = "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS";
+    internal const string CpuProfilerEnabled = "SPLUNK_PROFILER_ENABLED";
+    internal const string MemoryProfilerEnabled = "SPLUNK_PROFILER_MEMORY_ENABLED";
+    internal const string CpuProfilerCallStackInterval = "SPLUNK_PROFILER_CALL_STACK_INTERVAL";
+    internal const string ProfilerLogsEndpoint = "SPLUNK_PROFILER_LOGS_ENDPOINT";
+    internal const string SnapshotProfilerEnabled = "SPLUNK_SNAPSHOT_PROFILER_ENABLED";
+    internal const string SnapshotSamplingInterval = "SPLUNK_SNAPSHOT_SAMPLING_INTERVAL";
 }
