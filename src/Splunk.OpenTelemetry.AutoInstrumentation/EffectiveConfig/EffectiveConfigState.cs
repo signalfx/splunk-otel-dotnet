@@ -20,18 +20,29 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal sealed class EffectiveConfigState
 {
+    private const string ServiceName = "OTEL_SERVICE_NAME";
+    private const string TracesEndpoints = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS";
+    private const string MetricsEndpoints = "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS";
+    private const string LogsEndpoints = "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS";
+    private const string CpuProfilerEnabled = "SPLUNK_PROFILER_ENABLED";
+    private const string MemoryProfilerEnabled = "SPLUNK_PROFILER_MEMORY_ENABLED";
+    private const string CpuProfilerCallStackInterval = "SPLUNK_PROFILER_CALL_STACK_INTERVAL";
+    private const string ProfilerLogsEndpoint = "SPLUNK_PROFILER_LOGS_ENDPOINT";
+    private const string SnapshotProfilerEnabled = "SPLUNK_SNAPSHOT_PROFILER_ENABLED";
+    private const string SnapshotSamplingInterval = "SPLUNK_SNAPSHOT_SAMPLING_INTERVAL";
+
     private static readonly string[] KeyOrder =
     [
-        EffectiveConfigKeys.ServiceName,
-        EffectiveConfigKeys.TracesEndpoints,
-        EffectiveConfigKeys.MetricsEndpoints,
-        EffectiveConfigKeys.LogsEndpoints,
-        EffectiveConfigKeys.CpuProfilerEnabled,
-        EffectiveConfigKeys.MemoryProfilerEnabled,
-        EffectiveConfigKeys.CpuProfilerCallStackInterval,
-        EffectiveConfigKeys.ProfilerLogsEndpoint,
-        EffectiveConfigKeys.SnapshotProfilerEnabled,
-        EffectiveConfigKeys.SnapshotSamplingInterval
+        ServiceName,
+        TracesEndpoints,
+        MetricsEndpoints,
+        LogsEndpoints,
+        CpuProfilerEnabled,
+        MemoryProfilerEnabled,
+        CpuProfilerCallStackInterval,
+        ProfilerLogsEndpoint,
+        SnapshotProfilerEnabled,
+        SnapshotSamplingInterval
     ];
 
     // Provider hooks and late OpAmp updates are not guaranteed to stay on one thread.
@@ -43,16 +54,16 @@ internal sealed class EffectiveConfigState
     {
         lock (_lock)
         {
-            _values[EffectiveConfigKeys.CpuProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.CpuProfilerEnabled);
+            _values[CpuProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.CpuProfilerEnabled);
 #if NET
-            _values[EffectiveConfigKeys.MemoryProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.MemoryProfilerEnabled);
+            _values[MemoryProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.MemoryProfilerEnabled);
 #else
-            _values[EffectiveConfigKeys.MemoryProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(false);
+            _values[MemoryProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(false);
 #endif
-            _values[EffectiveConfigKeys.CpuProfilerCallStackInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.CpuProfilerCallStackInterval);
-            _values[EffectiveConfigKeys.ProfilerLogsEndpoint] = EffectiveConfigValueFormatter.FormatList([settings.ProfilerLogsEndpoint.ToString()]);
-            _values[EffectiveConfigKeys.SnapshotProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.SnapshotsEnabled);
-            _values[EffectiveConfigKeys.SnapshotSamplingInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.SnapshotsSamplingInterval);
+            _values[CpuProfilerCallStackInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.CpuProfilerCallStackInterval);
+            _values[ProfilerLogsEndpoint] = EffectiveConfigValueFormatter.FormatList([settings.ProfilerLogsEndpoint.ToString()]);
+            _values[SnapshotProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.SnapshotsEnabled);
+            _values[SnapshotSamplingInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.SnapshotsSamplingInterval);
         }
     }
 
@@ -66,36 +77,36 @@ internal sealed class EffectiveConfigState
 
         lock (_lock)
         {
-            if (!_values.ContainsKey(EffectiveConfigKeys.ServiceName))
+            if (!_values.ContainsKey(ServiceName))
             {
-                _values[EffectiveConfigKeys.ServiceName] = formattedServiceName;
+                _values[ServiceName] = formattedServiceName;
             }
         }
     }
 
     public void SetTraceEndpoints(IReadOnlyList<string> endpoints)
     {
-        SetEndpoints(EffectiveConfigKeys.TracesEndpoints, endpoints);
+        SetEndpoints(TracesEndpoints, endpoints);
     }
 
     public void SetMetricEndpoints(IReadOnlyList<string> endpoints)
     {
-        SetEndpoints(EffectiveConfigKeys.MetricsEndpoints, endpoints);
+        SetEndpoints(MetricsEndpoints, endpoints);
     }
 
     public void SetLogEndpoints(IReadOnlyList<string> endpoints)
     {
-        SetEndpoints(EffectiveConfigKeys.LogsEndpoints, endpoints);
+        SetEndpoints(LogsEndpoints, endpoints);
     }
 
     public bool ClearLogEndpoints()
     {
-        return ClearEndpoints(EffectiveConfigKeys.LogsEndpoints);
+        return ClearEndpoints(LogsEndpoints);
     }
 
     public bool AddLogEndpoint(string endpoint)
     {
-        return AddEndpoint(EffectiveConfigKeys.LogsEndpoints, endpoint);
+        return AddEndpoint(LogsEndpoints, endpoint);
     }
 
     public string BuildPayload()
