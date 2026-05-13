@@ -106,16 +106,23 @@ internal sealed class EffectiveConfigReporter
             return;
         }
 
-        // Upstream's ILogger path calls the marker before configuring OTLP exporters, but SDK export clients do not exist yet.
-        var endpoint = OtlpLogEndpointOptionsResolver.ResolveEndpoint(options);
-        if (endpoint == null)
+        try
         {
-            return;
-        }
+            // Upstream's ILogger path calls the marker before configuring OTLP exporters, but SDK export clients do not exist yet.
+            var endpoint = OtlpLogEndpointOptionsResolver.ResolveEndpoint(options);
+            if (endpoint == null)
+            {
+                return;
+            }
 
-        if (_state.AddEndpoint(EffectiveConfigKeys.LogsEndpoint, endpoint))
+            if (_state.AddEndpoint(EffectiveConfigKeys.LogsEndpoint, endpoint))
+            {
+                SendUpdatedPayloadIfOpAmpClientIsAvailable();
+            }
+        }
+        catch (Exception ex)
         {
-            SendUpdatedPayloadIfOpAmpClientIsAvailable();
+            Log.Warning($"Failed to resolve {EffectiveConfigKeys.LogsEndpoint} from OtlpExporterOptions: {ex.Message}");
         }
     }
 
