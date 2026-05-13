@@ -73,48 +73,29 @@ internal sealed class EffectiveConfigState
         }
     }
 
-    public void SetEndpoints(string key, IReadOnlyList<string> endpoints)
+    public void SetTraceEndpoints(IReadOnlyList<string> endpoints)
     {
-        // Provider graph results replace earlier tentative values from option hooks.
-        lock (_lock)
-        {
-            if (endpoints.Count == 0)
-            {
-                _endpoints.Remove(key);
-                return;
-            }
-
-            _endpoints[key] = endpoints.ToList();
-        }
+        SetEndpoints(EffectiveConfigKeys.TracesEndpoints, endpoints);
     }
 
-    public bool ClearEndpoints(string key)
+    public void SetMetricEndpoints(IReadOnlyList<string> endpoints)
     {
-        lock (_lock)
-        {
-            return _endpoints.Remove(key);
-        }
+        SetEndpoints(EffectiveConfigKeys.MetricsEndpoints, endpoints);
     }
 
-    public bool AddEndpoint(string key, string endpoint)
+    public void SetLogEndpoints(IReadOnlyList<string> endpoints)
     {
-        // File-based config can invoke option hooks once per configured exporter.
-        lock (_lock)
-        {
-            if (!_endpoints.TryGetValue(key, out var endpoints))
-            {
-                endpoints = [];
-                _endpoints[key] = endpoints;
-            }
+        SetEndpoints(EffectiveConfigKeys.LogsEndpoints, endpoints);
+    }
 
-            if (!endpoints.Contains(endpoint, StringComparer.Ordinal))
-            {
-                endpoints.Add(endpoint);
-                return true;
-            }
+    public bool ClearLogEndpoints()
+    {
+        return ClearEndpoints(EffectiveConfigKeys.LogsEndpoints);
+    }
 
-            return false;
-        }
+    public bool AddLogEndpoint(string endpoint)
+    {
+        return AddEndpoint(EffectiveConfigKeys.LogsEndpoints, endpoint);
     }
 
     public string BuildPayload()
@@ -141,6 +122,50 @@ internal sealed class EffectiveConfigState
             }
 
             return payload.ToString();
+        }
+    }
+
+    private void SetEndpoints(string key, IReadOnlyList<string> endpoints)
+    {
+        // Provider graph results replace earlier tentative values from option hooks.
+        lock (_lock)
+        {
+            if (endpoints.Count == 0)
+            {
+                _endpoints.Remove(key);
+                return;
+            }
+
+            _endpoints[key] = endpoints.ToList();
+        }
+    }
+
+    private bool ClearEndpoints(string key)
+    {
+        lock (_lock)
+        {
+            return _endpoints.Remove(key);
+        }
+    }
+
+    private bool AddEndpoint(string key, string endpoint)
+    {
+        // File-based config can invoke option hooks once per configured exporter.
+        lock (_lock)
+        {
+            if (!_endpoints.TryGetValue(key, out var endpoints))
+            {
+                endpoints = [];
+                _endpoints[key] = endpoints;
+            }
+
+            if (!endpoints.Contains(endpoint, StringComparer.Ordinal))
+            {
+                endpoints.Add(endpoint);
+                return true;
+            }
+
+            return false;
         }
     }
 

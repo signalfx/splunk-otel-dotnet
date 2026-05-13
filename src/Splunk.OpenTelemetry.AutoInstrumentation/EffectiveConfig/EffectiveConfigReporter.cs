@@ -67,11 +67,11 @@ internal sealed class EffectiveConfigReporter
     {
         try
         {
-            _state.SetEndpoints(EffectiveConfigKeys.TracesEndpoints, OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
+            _state.SetTraceEndpoints(OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
         }
         catch (Exception ex)
         {
-            Log.Warning($"Failed to resolve {EffectiveConfigKeys.TracesEndpoints} from TracerProvider: {ex.Message}");
+            Log.Warning($"Failed to resolve traces endpoints from TracerProvider: {ex.Message}");
         }
     }
 
@@ -79,11 +79,11 @@ internal sealed class EffectiveConfigReporter
     {
         try
         {
-            _state.SetEndpoints(EffectiveConfigKeys.MetricsEndpoints, OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
+            _state.SetMetricEndpoints(OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
         }
         catch (Exception ex)
         {
-            Log.Warning($"Failed to resolve {EffectiveConfigKeys.MetricsEndpoints} from MeterProvider: {ex.Message}");
+            Log.Warning($"Failed to resolve metrics endpoints from MeterProvider: {ex.Message}");
         }
     }
 
@@ -91,7 +91,7 @@ internal sealed class EffectiveConfigReporter
     {
         // ILogger owns its LoggerProvider and disables bridge logging, so bridge reflection would report a different logs pipeline.
         Interlocked.Exchange(ref _iloggerLogsConfigured, 1);
-        var endpointsChanged = _state.ClearEndpoints(EffectiveConfigKeys.LogsEndpoints);
+        var endpointsChanged = _state.ClearLogEndpoints();
         if (endpointsChanged)
         {
             SendUpdatedPayloadIfOpAmpClientIsAvailable();
@@ -115,14 +115,14 @@ internal sealed class EffectiveConfigReporter
                 return;
             }
 
-            if (_state.AddEndpoint(EffectiveConfigKeys.LogsEndpoints, endpoint))
+            if (_state.AddLogEndpoint(endpoint))
             {
                 SendUpdatedPayloadIfOpAmpClientIsAvailable();
             }
         }
         catch (Exception ex)
         {
-            Log.Warning($"Failed to resolve {EffectiveConfigKeys.LogsEndpoints} from OtlpExporterOptions: {ex.Message}");
+            Log.Warning($"Failed to resolve logs endpoint from OtlpExporterOptions: {ex.Message}");
         }
     }
 
@@ -211,18 +211,18 @@ internal sealed class EffectiveConfigReporter
             if (bridgeLogEndpoints == null)
             {
                 // Without provider-graph results, bridge log endpoints are not known valid.
-                _state.ClearEndpoints(EffectiveConfigKeys.LogsEndpoints);
+                _state.ClearLogEndpoints();
                 return;
             }
 
             // Provider-graph values are the known-valid bridge endpoints.
-            _state.SetEndpoints(EffectiveConfigKeys.LogsEndpoints, bridgeLogEndpoints);
+            _state.SetLogEndpoints(bridgeLogEndpoints);
         }
         catch (Exception ex)
         {
             // Reflection failure means bridge log endpoints are not known valid.
-            _state.ClearEndpoints(EffectiveConfigKeys.LogsEndpoints);
-            Log.Warning($"Failed to resolve {EffectiveConfigKeys.LogsEndpoints} from LoggerProvider: {ex.Message}");
+            _state.ClearLogEndpoints();
+            Log.Warning($"Failed to resolve logs endpoints from LoggerProvider: {ex.Message}");
         }
     }
 }

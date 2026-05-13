@@ -61,8 +61,7 @@ public class EffectiveConfigStateTests
     {
         var state = new EffectiveConfigState();
 
-        state.SetEndpoints(
-            EffectiveConfigKeys.TracesEndpoints,
+        state.SetTraceEndpoints(
             [
                 "http://collector-1:4318/v1/traces",
                 "http://collector-2:4318/v1/traces"
@@ -78,8 +77,7 @@ public class EffectiveConfigStateTests
     {
         var state = new EffectiveConfigState();
 
-        state.SetEndpoints(
-            EffectiveConfigKeys.TracesEndpoints,
+        state.SetTraceEndpoints(
             [
                 "http://collector/path,with%2Ccomma",
                 "http://collector/second"
@@ -91,12 +89,12 @@ public class EffectiveConfigStateTests
     }
 
     [Fact]
-    public void AddEndpoint_ReturnsFalse_WhenEndpointAlreadyExists()
+    public void AddLogEndpoint_ReturnsFalse_WhenEndpointAlreadyExists()
     {
         var state = new EffectiveConfigState();
 
-        var firstAdd = state.AddEndpoint(EffectiveConfigKeys.LogsEndpoints, "http://collector:4318/v1/logs");
-        var secondAdd = state.AddEndpoint(EffectiveConfigKeys.LogsEndpoints, "http://collector:4318/v1/logs");
+        var firstAdd = state.AddLogEndpoint("http://collector:4318/v1/logs");
+        var secondAdd = state.AddLogEndpoint("http://collector:4318/v1/logs");
 
         Assert.True(firstAdd);
         Assert.False(secondAdd);
@@ -106,16 +104,16 @@ public class EffectiveConfigStateTests
     }
 
     [Fact]
-    public void ClearEndpoints_ReturnsFalse_WhenEndpointKeyIsMissing()
+    public void ClearLogEndpoints_ReturnsFalse_WhenEndpointKeyIsMissing()
     {
         var state = new EffectiveConfigState();
 
-        Assert.False(state.ClearEndpoints(EffectiveConfigKeys.LogsEndpoints));
+        Assert.False(state.ClearLogEndpoints());
 
-        state.AddEndpoint(EffectiveConfigKeys.LogsEndpoints, "http://collector:4318/v1/logs");
+        state.AddLogEndpoint("http://collector:4318/v1/logs");
 
-        Assert.True(state.ClearEndpoints(EffectiveConfigKeys.LogsEndpoints));
-        Assert.False(state.ClearEndpoints(EffectiveConfigKeys.LogsEndpoints));
+        Assert.True(state.ClearLogEndpoints());
+        Assert.False(state.ClearLogEndpoints());
     }
 
     [Fact]
