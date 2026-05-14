@@ -57,6 +57,21 @@ public class EffectiveConfigStateTests
     }
 
     [Fact]
+    public void BuildPayload_UsesLineFeedLineEndings()
+    {
+        var state = new EffectiveConfigState();
+
+        state.TrySetServiceName("EffectiveConfigTestServiceDotnet");
+        state.SetTraceEndpoints(["http://localhost:4318/v1/traces"]);
+
+        var expectedPayload =
+            "OTEL_SERVICE_NAME=\"EffectiveConfigTestServiceDotnet\"\n" +
+            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"http://localhost:4318/v1/traces\"";
+
+        Assert.Equal(expectedPayload, state.BuildPayload());
+    }
+
+    [Fact]
     public void BuildPayload_FormatsMultipleEndpointValues()
     {
         var state = new EffectiveConfigState();
