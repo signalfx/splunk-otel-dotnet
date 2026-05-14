@@ -14,7 +14,9 @@
 // limitations under the License.
 // </copyright>
 
+using System.Collections.Specialized;
 using OpenTelemetry.Exporter;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
@@ -52,6 +54,27 @@ public class EffectiveConfigReporterTests
         Assert.Contains(
             "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=\"http://bridge-collector:4318/v1/logs\"",
             reporter.BuildCurrentPayload());
+    }
+
+    [Fact]
+    public void BuildCurrentPayload_UsesLineFeedLineEndings()
+    {
+        var configuration = new NameValueCollection
+        {
+            { ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled, "true" },
+            { ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled, "true" },
+            { ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, "10000" },
+            { ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint, "http://profiler-collector:4318/v1/logs" },
+            { ConfigurationKeys.Splunk.Snapshots.Enabled, "true" },
+            { ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, "5000" }
+        };
+        var reporter = CreateReporter();
+
+        reporter.CaptureSplunkSettings(new PluginSettings(new NameValueConfigurationSource(configuration)));
+
+        var payload = reporter.BuildCurrentPayload();
+        Assert.Contains('\n', payload);
+        Assert.DoesNotContain("\r", payload);
     }
 
     [Fact]

@@ -145,7 +145,7 @@ internal sealed class EffectiveConfigReporter
     internal string BuildCurrentPayload()
     {
         CaptureBridgeLogEndpointsIfNeeded();
-        return _state.BuildPayload();
+        return NormalizeLineEndings(_state.BuildPayload());
     }
 
     private static IReadOnlyList<string>? ResolveBridgeLogEndpoints()
@@ -155,6 +155,11 @@ internal sealed class EffectiveConfigReporter
         return bridgeLoggerProvider == null
             ? null
             : OtlpEndpointProviderGraphResolver.ResolveLogEndpoints(bridgeLoggerProvider);
+    }
+
+    private static string NormalizeLineEndings(string payload)
+    {
+        return payload.Replace("\r\n", "\n").Replace('\r', '\n');
     }
 
     private void SendUpdatedPayloadIfOpAmpClientIsAvailable()

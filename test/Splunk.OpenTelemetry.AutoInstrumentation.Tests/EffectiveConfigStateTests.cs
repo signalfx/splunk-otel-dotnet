@@ -68,7 +68,9 @@ public class EffectiveConfigStateTests
             "OTEL_SERVICE_NAME=\"EffectiveConfigTestServiceDotnet\"\n" +
             "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"http://localhost:4318/v1/traces\"";
 
-        Assert.Equal(expectedPayload, state.BuildPayload());
+        var payload = state.BuildPayload();
+        Assert.Equal(expectedPayload, payload);
+        Assert.DoesNotContain("\r", payload);
     }
 
     [Fact]

@@ -161,6 +161,7 @@ internal sealed class MockOpAmpServer : IDisposable
             Assert.Equal(fileName, file.Name);
             Assert.Equal(contentType, file.ContentType);
             Assert.False(string.IsNullOrWhiteSpace(file.Body));
+            Assert.DoesNotContain("\r", file.Body);
         });
 
         var duplicatePayloads = files
