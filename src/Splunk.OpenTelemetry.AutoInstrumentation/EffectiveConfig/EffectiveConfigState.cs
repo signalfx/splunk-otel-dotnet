@@ -56,14 +56,39 @@ internal sealed class EffectiveConfigState
         {
             _values[CpuProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.CpuProfilerEnabled);
 #if NET
-            _values[MemoryProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.MemoryProfilerEnabled);
+            var memoryProfilerEnabled = settings.MemoryProfilerEnabled;
 #else
-            _values[MemoryProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(false);
+            var memoryProfilerEnabled = false;
 #endif
-            _values[CpuProfilerCallStackInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.CpuProfilerCallStackInterval);
-            _values[ProfilerLogsEndpoint] = EffectiveConfigValueFormatter.FormatList([settings.ProfilerLogsEndpoint.ToString()]);
+            _values[MemoryProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(memoryProfilerEnabled);
             _values[SnapshotProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.SnapshotsEnabled);
-            _values[SnapshotSamplingInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.SnapshotsSamplingInterval);
+
+            if (settings.CpuProfilerEnabled)
+            {
+                _values[CpuProfilerCallStackInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.CpuProfilerCallStackInterval);
+            }
+            else
+            {
+                _values.Remove(CpuProfilerCallStackInterval);
+            }
+
+            if (settings.CpuProfilerEnabled || memoryProfilerEnabled || settings.SnapshotsEnabled)
+            {
+                _values[ProfilerLogsEndpoint] = EffectiveConfigValueFormatter.FormatList([settings.ProfilerLogsEndpoint.ToString()]);
+            }
+            else
+            {
+                _values.Remove(ProfilerLogsEndpoint);
+            }
+
+            if (settings.SnapshotsEnabled)
+            {
+                _values[SnapshotSamplingInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.SnapshotsSamplingInterval);
+            }
+            else
+            {
+                _values.Remove(SnapshotSamplingInterval);
+            }
         }
     }
 

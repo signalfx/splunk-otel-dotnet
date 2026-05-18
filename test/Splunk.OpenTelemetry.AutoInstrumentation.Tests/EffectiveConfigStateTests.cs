@@ -57,6 +57,46 @@ public class EffectiveConfigStateTests
     }
 
     [Fact]
+    public void BuildPayload_OmitsDependentProfilingValues_WhenProfilingIsDisabled()
+    {
+        var disabledSettings = new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        var state = new EffectiveConfigState();
+
+        state.SetSplunkSettings(disabledSettings);
+
+        var payload = state.BuildPayload();
+        Assert.Contains("SPLUNK_PROFILER_ENABLED=false", payload);
+        Assert.Contains("SPLUNK_PROFILER_MEMORY_ENABLED=false", payload);
+        Assert.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=false", payload);
+        Assert.DoesNotContain("SPLUNK_PROFILER_CALL_STACK_INTERVAL=", payload);
+        Assert.DoesNotContain("SPLUNK_PROFILER_LOGS_ENDPOINT=", payload);
+        Assert.DoesNotContain("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=", payload);
+    }
+
+    [Fact]
+    public void BuildPayload_IncludesProfilerLogsEndpoint_WhenOnlySnapshotsAreEnabled()
+    {
+        var configuration = new NameValueCollection
+        {
+            { ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint, "http://profiler-collector:4318/v1/logs" },
+            { ConfigurationKeys.Splunk.Snapshots.Enabled, "true" },
+            { ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, "5000" }
+        };
+        var settings = new PluginSettings(new NameValueConfigurationSource(configuration));
+        var state = new EffectiveConfigState();
+
+        state.SetSplunkSettings(settings);
+
+        var payload = state.BuildPayload();
+        Assert.Contains("SPLUNK_PROFILER_ENABLED=false", payload);
+        Assert.Contains("SPLUNK_PROFILER_MEMORY_ENABLED=false", payload);
+        Assert.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=true", payload);
+        Assert.Contains("SPLUNK_PROFILER_LOGS_ENDPOINT=\"http://profiler-collector:4318/v1/logs\"", payload);
+        Assert.Contains("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=\"5000ms\"", payload);
+        Assert.DoesNotContain("SPLUNK_PROFILER_CALL_STACK_INTERVAL=", payload);
+    }
+
+    [Fact]
     public void BuildPayload_FormatsMultipleEndpointValues()
     {
         var state = new EffectiveConfigState();
