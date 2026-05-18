@@ -51,7 +51,7 @@ public class EffectiveConfigStateTests
         Assert.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=\"10000ms\"", payload);
         Assert.Contains("SPLUNK_PROFILER_LOGS_ENDPOINT=\"http://profiler-collector:4318/v1/logs\"", payload);
         Assert.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=true", payload);
-        Assert.Contains("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=\"5000ms\"", payload);
+        Assert.Contains("SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL=\"5000ms\"", payload);
         Assert.DoesNotContain("SPLUNK_ACCESS_TOKEN", payload);
         Assert.DoesNotContain("SPLUNK_REALM", payload);
     }
@@ -70,7 +70,7 @@ public class EffectiveConfigStateTests
         Assert.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=false", payload);
         Assert.DoesNotContain("SPLUNK_PROFILER_CALL_STACK_INTERVAL=", payload);
         Assert.DoesNotContain("SPLUNK_PROFILER_LOGS_ENDPOINT=", payload);
-        Assert.DoesNotContain("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=", payload);
+        Assert.DoesNotContain("SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL=", payload);
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class EffectiveConfigStateTests
         Assert.Contains("SPLUNK_PROFILER_MEMORY_ENABLED=false", payload);
         Assert.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=true", payload);
         Assert.Contains("SPLUNK_PROFILER_LOGS_ENDPOINT=\"http://profiler-collector:4318/v1/logs\"", payload);
-        Assert.Contains("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=\"5000ms\"", payload);
+        Assert.Contains("SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL=\"5000ms\"", payload);
         Assert.DoesNotContain("SPLUNK_PROFILER_CALL_STACK_INTERVAL=", payload);
     }
 

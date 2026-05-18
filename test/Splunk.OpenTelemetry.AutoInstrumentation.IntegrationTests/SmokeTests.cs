@@ -260,7 +260,7 @@ public class SmokeTests : TestHelper, IDisposable
             "SPLUNK_PROFILER_CALL_STACK_INTERVAL=\"10000ms\"",
             $"SPLUNK_PROFILER_LOGS_ENDPOINT=\"{profilerLogsEndpoint}\"",
             "SPLUNK_SNAPSHOT_PROFILER_ENABLED=true",
-            "SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=\"5000ms\""
+            "SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL=\"5000ms\""
         };
 #if NET
         requiredEntries.Add($"OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=\"{logsEndpoint}\"");
@@ -390,7 +390,7 @@ public class SmokeTests : TestHelper, IDisposable
             "SPLUNK_PROFILER_CALL_STACK_INTERVAL=\"10000ms\"",
             "SPLUNK_PROFILER_LOGS_ENDPOINT=\"http://profiler-collector:4318/v1/logs\"",
             "SPLUNK_SNAPSHOT_PROFILER_ENABLED=true",
-            "SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=\"5000ms\""
+            "SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL=\"5000ms\""
         };
 
         RunTestApplicationAndAssertEffectiveConfig(

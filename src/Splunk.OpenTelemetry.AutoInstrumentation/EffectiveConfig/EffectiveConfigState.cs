@@ -29,7 +29,7 @@ internal sealed class EffectiveConfigState
     private const string CpuProfilerCallStackInterval = "SPLUNK_PROFILER_CALL_STACK_INTERVAL";
     private const string ProfilerLogsEndpoint = "SPLUNK_PROFILER_LOGS_ENDPOINT";
     private const string SnapshotProfilerEnabled = "SPLUNK_SNAPSHOT_PROFILER_ENABLED";
-    private const string SnapshotSamplingInterval = "SPLUNK_SNAPSHOT_SAMPLING_INTERVAL";
+    private const string SnapshotSamplingInterval = "SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL";
 
     private static readonly string[] KeyOrder =
     [
