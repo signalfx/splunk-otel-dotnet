@@ -124,7 +124,7 @@ internal sealed class EffectiveConfigState
 
                 if (payload.Length > 0)
                 {
-                    payload.AppendLine();
+                    payload.Append('\n');
                 }
 
                 payload.Append(key);

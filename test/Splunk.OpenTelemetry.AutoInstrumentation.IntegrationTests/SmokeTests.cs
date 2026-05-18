@@ -484,7 +484,7 @@ public class SmokeTests : TestHelper, IDisposable
     {
         var prefix = key + "=";
         return effectiveConfig
-            .Split([Environment.NewLine], StringSplitOptions.None)
+            .Split(['\n'], StringSplitOptions.None)
             .Where(line => line.StartsWith(prefix, StringComparison.Ordinal))
             .Select(line => line.Substring(prefix.Length))
             .ToArray();
