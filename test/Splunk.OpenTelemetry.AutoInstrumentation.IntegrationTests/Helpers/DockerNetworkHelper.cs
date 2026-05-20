@@ -37,7 +37,7 @@ internal static class DockerNetworkHelper
     /// <returns>Docker network name</returns>
     internal static async Task<string> SetupIntegrationTestsNetworkAsync()
     {
-        var client = new DockerClientConfiguration().CreateClient();
+        var client = new DockerClientBuilder().Build();
         var networks = await client.Networks.ListNetworksAsync();
         var network = networks.FirstOrDefault(x => x.Name == IntegrationTestsNetworkName);
 
