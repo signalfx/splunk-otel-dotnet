@@ -1,0 +1,8 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  additionalBranchPrefix: "{{manager}}/",
+  labels: ["dependencies"],
+  commitMessageAction: "Bump",
+  extends: ["config:best-practices"],
+  prConcurrentLimit: 20,
+}
