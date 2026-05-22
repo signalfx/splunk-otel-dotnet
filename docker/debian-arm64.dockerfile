@@ -2,11 +2,18 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0.313-bookworm-slim@sha256:f9ddb8a31ae90f4b3
 # There is no official base image for .NET SDK 10+ on Debian, so install .NET10 via dotnet-install
 
 
+# renovate: suite=bookworm depName=cmake
+ENV CMAKE_VERSION="3.25.1-1"
+# renovate: suite=bookworm depName=clang
+ENV CLANG_VERSION="1:14.0-55.7~deb12u1"
+# renovate: suite=bookworm depName=make
+ENV MAKE_VERSION="4.3-4.1"
+
 RUN apt-get update && \
     apt-get install -y \
-        cmake \
-        clang \
-        make
+        cmake="${CMAKE_VERSION}" \
+        clang="${CLANG_VERSION}" \
+        make="${MAKE_VERSION}"
 
 # Install older sdks using the install script as there are no arm64 SDK packages.
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \

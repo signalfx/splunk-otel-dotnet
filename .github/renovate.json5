@@ -4,5 +4,16 @@
   labels: ["dependencies"],
   commitMessageAction: "Bump",
   extends: ["config:best-practices"],
+  customManagers: [
+    {
+      customType: "regex",
+      managerFilePatterns: ["/^docker\\/debian-arm64\\.dockerfile$/"],
+      matchStrings: [
+        "#\\s*renovate:\\s*?(suite=(?<suite>.*?))?\\s*depName=(?<depName>.*?)\\sENV .*?_VERSION=\"(?<currentValue>.*)\"",
+      ],
+      registryUrlTemplate: "https://deb.debian.org/debian?suite={{#if suite}}{{suite}}{{else}}bookworm{{/if}}&components=main&binaryArch=arm64",
+      datasourceTemplate: "deb",
+    },
+  ],
   prConcurrentLimit: 20,
 }
