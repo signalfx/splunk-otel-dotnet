@@ -14,13 +14,15 @@
 // limitations under the License.
 // </copyright>
 
+using System.Net;
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal static class ResourceAttributesHelper
 {
     private const string ServiceNameAttributeName = "service.name";
     private const char AttributeListSplitter = ',';
-    private const char AttributeKeyValueSplitter = '=';
+    private static readonly char[] AttributeKeyValueSplitter = ['='];
 
     /// <summary>
     /// Parses service.name from the value of OTEL_RESOURCE_ATTRIBUTES (comma-separated key=value pairs).
@@ -28,24 +30,26 @@ internal static class ResourceAttributesHelper
     /// </summary>
     internal static string? ParseServiceName(string resourceAttributes)
     {
-        IDictionary<string, string> parsedAttributes = new Dictionary<string, string>();
-
         foreach (var rawKeyValuePair in resourceAttributes.Split(AttributeListSplitter))
         {
-            var keyValuePair = rawKeyValuePair.Split(AttributeKeyValueSplitter);
+            var keyValuePair = rawKeyValuePair.Split(AttributeKeyValueSplitter, 2);
             if (keyValuePair.Length != 2)
             {
                 continue;
             }
 
-            parsedAttributes[keyValuePair[0].Trim()] = keyValuePair[1].Trim();
+            if (!string.Equals(keyValuePair[0].Trim(), ServiceNameAttributeName, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var serviceNameValue = WebUtility.UrlDecode(keyValuePair[1].Trim());
+            if (!string.IsNullOrEmpty(serviceNameValue))
+            {
+                return serviceNameValue;
+            }
         }
 
-        if (!parsedAttributes.TryGetValue(ServiceNameAttributeName, out var serviceNameValue))
-        {
-            return null;
-        }
-
-        return string.IsNullOrEmpty(serviceNameValue) ? null : serviceNameValue;
+        return null;
     }
 }
