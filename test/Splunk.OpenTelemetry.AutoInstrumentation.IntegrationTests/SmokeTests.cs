@@ -154,12 +154,12 @@ public class SmokeTests : TestHelper, IDisposable
     public void LogsResource()
     {
         using var collector = new MockLogsCollector(Output);
-        EnableFileBasedConfig("log-exporter-config.yaml");
-        SetFileBasedExporter(collector);
+        SetExporter(collector);
 
         collector.ResourceExpector.ExpectDistributionResources(ServiceName);
 
         EnableBytecodeInstrumentation();
+        SetEnvironmentVariable("OTEL_BLRP_MAX_EXPORT_BATCH_SIZE", "1");
 
         RunTestApplication(TestSettingsWithDefaultArgs());
 
