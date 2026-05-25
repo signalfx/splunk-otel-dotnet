@@ -12,7 +12,7 @@ copies Splunk plugin binaries into it, then runs unit and integration tests.
 ## Commands
 
 | Command | Purpose |
-|---|---|
+| --- | --- |
 | `.\build.cmd Workflow` | Full CI-like build: clean, restore, unpack upstream distribution, compile, test, and package |
 | `.\build.cmd NuGetWorkflow` | Build and test the NuGet package workflow |
 | `dotnet test test\Splunk.OpenTelemetry.AutoInstrumentation.Tests\Splunk.OpenTelemetry.AutoInstrumentation.Tests.csproj --framework net8.0 --no-restore -v minimal` | Focused unit test pass on `net8.0` |
