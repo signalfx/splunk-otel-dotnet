@@ -3,3 +3,4 @@ netcoreapp
 nupkg
 aspnet
 aspnetcore
+slnx
