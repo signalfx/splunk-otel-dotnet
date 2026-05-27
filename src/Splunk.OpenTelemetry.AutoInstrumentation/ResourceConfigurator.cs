@@ -48,7 +48,7 @@ internal static class ResourceConfigurator
         }
     }
 
-    public static void Configure(ResourceBuilder resourceBuilder, PluginSettings settings)
+    public static Resource Configure(ResourceBuilder resourceBuilder, PluginSettings settings)
     {
         var attributes = new List<KeyValuePair<string, object>>
         {
@@ -61,5 +61,6 @@ internal static class ResourceConfigurator
 
         var resource = resourceBuilder.Build();
         SampleExporter.SetResources(resource);
+        return resource;
     }
 }

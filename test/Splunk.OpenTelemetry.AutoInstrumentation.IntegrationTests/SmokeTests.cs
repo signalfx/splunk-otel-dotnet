@@ -30,6 +30,8 @@
 // limitations under the License.
 // </copyright>
 
+using OpAmp.Proto.V1;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 using Xunit.Abstractions;
 
@@ -38,7 +40,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests;
 public class SmokeTests : TestHelper, IDisposable
 {
     private const string ServiceName = "TestApplication.Smoke";
-    private readonly TestHttpServer _testServer;
+    private readonly Lazy<TestHttpServer> _testServer;
 
     public SmokeTests(ITestOutputHelper output)
         : base("Smoke", output)
@@ -47,7 +49,7 @@ public class SmokeTests : TestHelper, IDisposable
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS", "HttpClient");
         SetEnvironmentVariable("OTEL_EXPERIMENTAL_FILE_BASED_CONFIGURATION_ENABLED", "false");
 
-        _testServer = TestHttpServer.CreateDefaultTestServer(output);
+        _testServer = new Lazy<TestHttpServer>(() => TestHttpServer.CreateDefaultTestServer(output));
     }
 
     [Fact]
@@ -217,9 +219,281 @@ public class SmokeTests : TestHelper, IDisposable
         }
     }
 
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void EffectiveEnvVarConfigIsReportedToOpAmp()
+    {
+        using var opAmpServer = new MockOpAmpServer(Output);
+
+        var tracesEndpoint = "http://localhost:4318/v1/traces";
+        var metricsEndpoint = "http://localhost:4319/v1/metrics";
+        var profilerLogsEndpoint = "http://profiler-collector:4318/v1/logs";
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", tracesEndpoint);
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", metricsEndpoint);
+        SetEnvironmentVariable("SPLUNK_PROFILER_LOGS_ENDPOINT", profilerLogsEndpoint);
+        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+#if NET
+        var logsEndpoint = "http://localhost:4320/v1/logs";
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", logsEndpoint);
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE", "true");
+#endif
+        SetEnvironmentVariable("SPLUNK_PROFILER_ENABLED", "true");
+        SetEnvironmentVariable("SPLUNK_PROFILER_MEMORY_ENABLED", "true");
+        SetEnvironmentVariable("SPLUNK_PROFILER_CALL_STACK_INTERVAL", "10000");
+        SetEnvironmentVariable("SPLUNK_SNAPSHOT_PROFILER_ENABLED", "true");
+        SetEnvironmentVariable("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL", "5000");
+
+        EnableBytecodeInstrumentation();
+        EnableDefaultExporters();
+
+        var requiredEntries = new List<string>
+        {
+            $"OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"{tracesEndpoint}\"",
+            $"OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS=\"{metricsEndpoint}\"",
+            "OTEL_SERVICE_NAME=\"TestApplication.Smoke\"",
+            "SPLUNK_PROFILER_ENABLED=true",
+#if NET
+            "SPLUNK_PROFILER_MEMORY_ENABLED=true",
+#else
+            "SPLUNK_PROFILER_MEMORY_ENABLED=false",
+#endif
+            "SPLUNK_PROFILER_CALL_STACK_INTERVAL=\"10000ms\"",
+            $"SPLUNK_PROFILER_LOGS_ENDPOINT=\"{profilerLogsEndpoint}\"",
+            "SPLUNK_SNAPSHOT_PROFILER_ENABLED=true",
+            "SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL=\"5000ms\""
+        };
+#if NET
+        requiredEntries.Add($"OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=\"{logsEndpoint}\"");
+#endif
+        var forbiddenEntries = new List<string>();
+#if !NET
+        forbiddenEntries.Add("OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=");
+#endif
+
+        RunTestApplicationAndAssertEffectiveConfig(
+            opAmpServer,
+            payload => ContainsAll(payload, requiredEntries) && ContainsNone(payload, forbiddenEntries));
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void EffectiveEnvVarConfigUsesSplunkRealmEndpoints()
+    {
+        using var opAmpServer = new MockOpAmpServer(Output);
+
+        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+        SetEnvironmentVariable("SPLUNK_REALM", "us0");
+        SetEnvironmentVariable("SPLUNK_ACCESS_TOKEN", "token");
+
+        EnableBytecodeInstrumentation();
+        EnableDefaultExporters();
+
+        var requiredEntries = new[]
+        {
+            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"https://ingest.us0.observability.splunkcloud.com/v2/trace/otlp\"",
+            "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS=\"https://ingest.us0.observability.splunkcloud.com/v2/datapoint/otlp\""
+        };
+
+        RunTestApplicationAndAssertEffectiveConfig(
+            opAmpServer,
+            payload => ContainsAll(payload, requiredEntries));
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void EffectiveEnvVarConfigUsesResolvedOtlpProtocol()
+    {
+        using var opAmpServer = new MockOpAmpServer(Output);
+
+        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4317");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc");
+
+        EnableBytecodeInstrumentation();
+        EnableDefaultExporters();
+
+#if NETFRAMEWORK
+        var expectedTracesEndpoint = "http://collector:4317/v1/traces";
+        var expectedMetricsEndpoint = "http://collector:4317/v1/metrics";
+#else
+        var expectedTracesEndpoint = "http://collector:4317/opentelemetry.proto.collector.trace.v1.TraceService/Export";
+        var expectedMetricsEndpoint = "http://collector:4317/opentelemetry.proto.collector.metrics.v1.MetricsService/Export";
+#endif
+
+        var requiredEntries = new[]
+        {
+            $"OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"{expectedTracesEndpoint}\"",
+            $"OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS=\"{expectedMetricsEndpoint}\""
+        };
+
+        RunTestApplicationAndAssertEffectiveConfig(
+            opAmpServer,
+            payload => ContainsAll(payload, requiredEntries));
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void EffectiveEnvVarConfigOmitsOtlpEndpointsWhenOtlpExportersAreDisabled()
+    {
+        using var opAmpServer = new MockOpAmpServer(Output);
+
+        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://traces-collector:4318/v1/traces");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "http://metrics-collector:4318/v1/metrics");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "http://logs-collector:4318/v1/logs");
+
+        EnableBytecodeInstrumentation();
+        SetEnvironmentVariable("OTEL_TRACES_EXPORTER", "none");
+        SetEnvironmentVariable("OTEL_METRICS_EXPORTER", "none");
+        SetEnvironmentVariable("OTEL_LOGS_EXPORTER", "none");
+
+        var requiredEntries = new[]
+        {
+            "OTEL_SERVICE_NAME=\"TestApplication.Smoke\""
+        };
+        var forbiddenEntries = new[]
+        {
+            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=",
+            "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS=",
+            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS="
+        };
+
+        RunTestApplicationAndAssertEffectiveConfig(
+            opAmpServer,
+            payload => ContainsAll(payload, requiredEntries) && ContainsNone(payload, forbiddenEntries));
+    }
+
+#if NET // File-based configuration is not supported on .NET Framework
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void EffectiveYamlConfigIsReportedToOpAmp()
+    {
+        using var opAmpServer = new MockOpAmpServer(Output);
+
+        EnableBytecodeInstrumentation();
+        EnableFileBasedConfig("config.yaml");
+        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+
+        // Set traces and service name via env var; yaml substitutes them in.
+        // Metrics endpoint is intentionally not set; yaml fallback value is used instead.
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://traces-collector:4318/v1/traces");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "http://logs-collector:4318/v1/logs");
+        SetEnvironmentVariable("OTEL_SERVICE_NAME", "env-var-service");
+
+        var requiredEntries = new[]
+        {
+            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"http://traces-collector:4318/v1/traces\"",
+            "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS=\"http://localhost:4318/v1/metrics\"",
+            "OTEL_SERVICE_NAME=\"env-var-service\"",
+            "SPLUNK_PROFILER_ENABLED=true",
+            "SPLUNK_PROFILER_MEMORY_ENABLED=true",
+            "SPLUNK_PROFILER_CALL_STACK_INTERVAL=\"10000ms\"",
+            "SPLUNK_PROFILER_LOGS_ENDPOINT=\"http://profiler-collector:4318/v1/logs\"",
+            "SPLUNK_SNAPSHOT_PROFILER_ENABLED=true",
+            "SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL=\"5000ms\""
+        };
+
+        RunTestApplicationAndAssertEffectiveConfig(
+            opAmpServer,
+            payload => ContainsAll(payload, requiredEntries) &&
+                       ContainsNone(payload, ["OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS="]));
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void EffectiveYamlConfigUsesYamlDefaultsWhenOtlpEndpointsAreOmitted()
+    {
+        using var opAmpServer = new MockOpAmpServer(Output);
+
+        EnableBytecodeInstrumentation();
+        EnableFileBasedConfig("config-otlp-defaults.yaml");
+        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://env-collector:4318");
+        SetEnvironmentVariable("OTEL_SERVICE_NAME", "stale-env-service");
+
+        var requiredEntries = new[]
+        {
+            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"http://localhost:4318/v1/traces\"",
+            "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS=\"http://localhost:4318/v1/metrics\"",
+            "OTEL_SERVICE_NAME=\"yaml-defaults-service\""
+        };
+
+        var forbiddenEntries = new[]
+        {
+            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=",
+            "http://env-collector:4318",
+            "OTEL_SERVICE_NAME=\"stale-env-service\""
+        };
+
+        RunTestApplicationAndAssertEffectiveConfig(
+            opAmpServer,
+            payload => ContainsAll(payload, requiredEntries) && ContainsNone(payload, forbiddenEntries));
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void EffectiveYamlConfigCombinesMultipleOtlpEndpointsForSameSignal()
+    {
+        using var opAmpServer = new MockOpAmpServer(Output);
+
+        var tracesEndpoint1 = "http://localhost:4318/v1/traces";
+        var tracesEndpoint2 = "http://localhost:4319/v1/traces";
+        var metricsEndpoint1 = "http://localhost:4318/v1/metrics";
+        var metricsEndpoint2 = "http://localhost:4319/v1/metrics";
+        var logsEndpoint1 = "http://localhost:4318/v1/logs";
+        var logsEndpoint2 = "http://localhost:4319/v1/logs";
+
+        EnableBytecodeInstrumentation();
+        EnableDefaultExporters();
+        EnableFileBasedConfig("config-multiple-otlp-endpoints.yaml");
+        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE", "true");
+
+        var expectedTracesValue = $"\"{tracesEndpoint1}\",\"{tracesEndpoint2}\"";
+        var expectedMetricsValue = $"\"{metricsEndpoint1}\",\"{metricsEndpoint2}\"";
+        var expectedLogsValue = $"\"{logsEndpoint1}\",\"{logsEndpoint2}\"";
+        RunTestApplicationAndAssertEffectiveConfig(
+            opAmpServer,
+            payload =>
+                GetEffectiveConfigValues(payload, "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS").SequenceEqual([expectedTracesValue]) &&
+                GetEffectiveConfigValues(payload, "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS").SequenceEqual([expectedMetricsValue]) &&
+                GetEffectiveConfigValues(payload, "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS").SequenceEqual([expectedLogsValue]));
+    }
+
+#endif
+
     public void Dispose()
     {
-        _testServer.Dispose();
+        if (_testServer.IsValueCreated)
+        {
+            _testServer.Value.Dispose();
+        }
+    }
+
+    private static bool ContainsAll(string payload, IEnumerable<string> requiredEntries)
+    {
+        return requiredEntries.All(entry => payload.IndexOf(entry, StringComparison.Ordinal) >= 0);
+    }
+
+    private static bool ContainsNone(string payload, IEnumerable<string> forbiddenEntries)
+    {
+        return forbiddenEntries.All(entry => payload.IndexOf(entry, StringComparison.Ordinal) < 0);
+    }
+
+    private static string[] GetEffectiveConfigValues(string effectiveConfig, string key)
+    {
+        var prefix = key + "=";
+        return effectiveConfig
+            .Split(['\n'], StringSplitOptions.None)
+            .Where(line => line.StartsWith(prefix, StringComparison.Ordinal))
+            .Select(line => line.Substring(prefix.Length))
+            .ToArray();
+    }
+
+    private static bool ReportsEffectiveConfigCapability(AgentToServer frame)
+    {
+        const ulong reportsEffectiveConfigCapability = (ulong)AgentCapabilities.ReportsEffectiveConfig;
+        return (frame.Capabilities & reportsEffectiveConfigCapability) != 0;
     }
 
     private static ICollection<KeyValuePair<string, string>> ParseSettingsLog(string log, string marker)
@@ -239,7 +513,54 @@ public class SmokeTests : TestHelper, IDisposable
     {
         return new TestSettings
         {
-            Arguments = $"--test-server-port {_testServer.Port}"
+            Arguments = $"--test-server-port {_testServer.Value.Port}"
         };
+    }
+
+    private void RunTestApplicationAndAssertEffectiveConfig(
+        MockOpAmpServer opAmpServer,
+        Func<string, bool> effectiveConfigPredicate)
+    {
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_OPAMP_ENABLED", "true");
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_OPAMP_SERVER_URL", $"http://localhost:{opAmpServer.Port}/v1/opamp");
+
+        opAmpServer.Expect(ReportsEffectiveConfigCapability, "Reports effective config capability");
+        opAmpServer.ExpectEffectiveConfigPayload(
+            EffectiveConfigReporter.EffectiveConfigFileName,
+            EffectiveConfigReporter.EffectiveConfigContentType,
+            effectiveConfigPredicate,
+            "Has expected single-file effective config payload");
+        SetEnvironmentVariable("LONG_RUNNING", "true");
+
+        using var process = StartTestApplication();
+        Output.WriteLine("ProcessName: " + process?.ProcessName);
+        using var helper = new ProcessHelper(process);
+
+        Assert.NotNull(process);
+        try
+        {
+            opAmpServer.AssertExpectations();
+        }
+        finally
+        {
+            if (!process!.HasExited)
+            {
+                process.Kill();
+            }
+
+            var processExited = process.WaitForExit((int)TestTimeout.ProcessExit.TotalMilliseconds);
+            helper.Drain(TimeSpan.FromSeconds(5));
+            Output.WriteLine("ProcessId: " + process.Id);
+            Output.WriteLine(processExited ? "Exit Code: " + process.ExitCode : "Exit Code: <process still running>");
+            if (processExited)
+            {
+                Output.WriteResult(helper);
+            }
+        }
+
+        opAmpServer.AssertEffectiveConfigPayloads(
+            EffectiveConfigReporter.EffectiveConfigFileName,
+            EffectiveConfigReporter.EffectiveConfigContentType,
+            effectiveConfigPredicate);
     }
 }

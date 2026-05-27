@@ -11,6 +11,8 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.16.0
 
 ### Added
 
+- Experimental support for effective configuration reporting using OpAmp client.
+
 ### Changed
 
 ### Deprecated
