@@ -7,12 +7,23 @@
   customManagers: [
     {
       customType: "regex",
+      description: ["Update Debian arm64 package version ARGs in Dockerfiles"],
       managerFilePatterns: ["/^docker\\/debian-arm64\\.dockerfile$/"],
       matchStrings: [
         "#\\s*renovate:\\s*?(suite=(?<suite>.*?))?\\s*depName=(?<depName>.*?)\\sENV .*?_VERSION=\"(?<currentValue>.*)\"",
       ],
       registryUrlTemplate: "https://deb.debian.org/debian?suite={{#if suite}}{{suite}}{{else}}bookworm{{/if}}&components=main&binaryArch=arm64",
       datasourceTemplate: "deb",
+    },
+    {
+      customType: "regex",
+      description: ["Update Alpine package version ARGs in Dockerfiles"],
+      managerFilePatterns: ["/^docker\\/alpine-(x64|arm64)\\.dockerfile$/"],
+      matchStrings: [
+        "#\\s*renovate:\\s*depName=(?<depName>\\S+)\\sENV .*?_VERSION=\"(?<currentValue>.*)\"",
+      ],
+      packageNameTemplate: "alpine_3_23/{{{depName}}}",
+      versioningTemplate: "apk",
     },
   ],
   prConcurrentLimit: 20,

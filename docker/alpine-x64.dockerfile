@@ -1,17 +1,36 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0.203-alpine3.23@sha256:0191ff386e93923edf795d363ea0ae0669ce467ada4010b370644b670fa495c1
 
+# renovate: datasource=repology depName=cmake
+ENV CMAKE_VERSION="4.1.3-r0"
+# renovate: datasource=repology depName=clang
+ENV CLANG_VERSION="21.1.2-r2"
+# renovate: datasource=repology depName=make
+ENV MAKE_VERSION="4.4.1-r3"
+# renovate: datasource=repology depName=bash
+ENV BASH_PACKAGE_VERSION="5.3.3-r1"
+# renovate: datasource=repology depName=alpine-sdk
+ENV ALPINE_SDK_VERSION="1.1-r0"
+# renovate: datasource=repology depName=protobuf
+ENV PROTOBUF_VERSION="31.1-r1"
+# renovate: datasource=repology depName=protobuf-dev
+ENV PROTOBUF_DEV_VERSION="31.1-r1"
+# renovate: datasource=repology depName=grpc
+ENV GRPC_VERSION="1.76.0-r2"
+# renovate: datasource=repology depName=grpc-plugins
+ENV GRPC_PLUGINS_VERSION="1.76.0-r2"
+
 RUN apk update \
     && apk upgrade \
     && apk add --no-cache --update \
-        clang=21.1.2-r2 \
-        cmake=4.1.3-r0 \
-        make=4.4.1-r3 \
-        bash=5.3.3-r1 \
-        alpine-sdk=1.1-r0 \
-        protobuf=31.1-r1 \
-        protobuf-dev=31.1-r1 \
-        grpc=1.76.0-r2 \
-        grpc-plugins=1.76.0-r2
+        cmake="${CMAKE_VERSION}" \
+        clang="${CLANG_VERSION}" \
+        make="${MAKE_VERSION}" \
+        bash="${BASH_PACKAGE_VERSION}" \
+        alpine-sdk="${ALPINE_SDK_VERSION}" \
+        protobuf="${PROTOBUF_VERSION}" \
+        protobuf-dev="${PROTOBUF_DEV_VERSION}" \
+        grpc="${GRPC_VERSION}" \
+        grpc-plugins="${GRPC_PLUGINS_VERSION}"
 
 ENV IsAlpine=true
 ENV PROTOBUF_PROTOC=/usr/bin/protoc
