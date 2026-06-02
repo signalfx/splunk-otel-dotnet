@@ -31,3 +31,6 @@ When enabled, the OpAMP configuration includes the values for the following sett
 - `OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS`
 - `OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS`
 - `OTEL_SERVICE_NAME`
+
+For .NET Framework applications, `SPLUNK_PROFILER_MEMORY_ENABLED` is always
+reported as `false` because memory profiling is not supported on .NET Framework.
