@@ -29,10 +29,22 @@ internal class NativeFormatParser
     private static readonly ILogger Log = new Logger();
 
     private static readonly UnicodeEncoding UnicodeEncoding = new();
-    private readonly bool _snapshotsEnabled;
+    private readonly Func<bool> _readSnapshotSelectionFlag;
+    private readonly Func<bool> _snapshotsEnabled;
 
     public NativeFormatParser(bool snapshotsEnabled)
+        : this(() => snapshotsEnabled, () => snapshotsEnabled)
     {
+    }
+
+    public NativeFormatParser(Func<bool> snapshotsEnabled)
+        : this(snapshotsEnabled, snapshotsEnabled)
+    {
+    }
+
+    public NativeFormatParser(Func<bool> readSnapshotSelectionFlag, Func<bool> snapshotsEnabled)
+    {
+        _readSnapshotSelectionFlag = readSnapshotSelectionFlag;
         _snapshotsEnabled = snapshotsEnabled;
     }
 
@@ -84,9 +96,9 @@ internal class NativeFormatParser
 
                     var selectedForFrequentSampling = false;
 
-                    if (_snapshotsEnabled)
+                    if (_readSnapshotSelectionFlag())
                     {
-                        selectedForFrequentSampling = buffer[position++] == 1;
+                        selectedForFrequentSampling = buffer[position++] == 1 && _snapshotsEnabled();
                     }
 
                     var threadIndex = batchThreadIndex++;

@@ -68,6 +68,10 @@ internal class PluginSettings
         ProfilerExportInterval = GetFinalExportInterval(exportInterval);
 
         ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
+
+        ProfilerRuntimeConfigEndpointEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.RuntimeConfigEndpointEnabled) ?? false;
+        var runtimeConfigEndpointPort = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.RuntimeConfigEndpointPort) ?? 0;
+        ProfilerRuntimeConfigEndpointPort = runtimeConfigEndpointPort > 0 ? runtimeConfigEndpointPort : 0;
     }
 
     internal PluginSettings(YamlRoot configuration)
@@ -122,6 +126,9 @@ internal class PluginSettings
             ProfilerExportInterval = GetFinalExportInterval((int)profilingConfig.Exporter.OtlpLogHttp.ScheduleDelay);
             ProfilerLogsEndpoint = new Uri(profilingConfig.Exporter.OtlpLogHttp.Endpoint);
         }
+
+        ProfilerRuntimeConfigEndpointEnabled = false;
+        ProfilerRuntimeConfigEndpointPort = 0;
     }
 
     public uint SnapshotsSamplingInterval { get; set; }
@@ -156,6 +163,10 @@ internal class PluginSettings
 
     public uint ProfilerExportInterval { get; }
 
+    public bool ProfilerRuntimeConfigEndpointEnabled { get; }
+
+    public int ProfilerRuntimeConfigEndpointPort { get; }
+
     public static PluginSettings FromDefaultSources()
     {
         if (IsYamlConfigEnabled)
@@ -187,7 +198,7 @@ internal class PluginSettings
         return new PluginSettings(configurationSource);
     }
 
-    private static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)
+    internal static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)
     {
         var interval = callStackInterval < 0 ? Constants.DefaultSamplingInterval : (uint)callStackInterval;
         if (snapshotsEnabled)
@@ -205,7 +216,7 @@ internal class PluginSettings
     }
 
 #if NET
-    private static uint GetFinalMaxMemorySamples(int maxMemorySamplesPerMinute)
+    internal static uint GetFinalMaxMemorySamples(int maxMemorySamplesPerMinute)
     {
         if (maxMemorySamplesPerMinute < 0 || maxMemorySamplesPerMinute > 200)
         {
@@ -216,7 +227,7 @@ internal class PluginSettings
     }
 #endif
 
-    private static uint GetFinalExportInterval(int exportInterval)
+    internal static uint GetFinalExportInterval(int exportInterval)
     {
         if (exportInterval < 500)
         {
@@ -226,7 +237,7 @@ internal class PluginSettings
         return (uint)exportInterval;
     }
 
-    private static uint GetFinalSnapshotSamplingInterval(int snapshotsSamplingInterval)
+    internal static uint GetFinalSnapshotSamplingInterval(int snapshotsSamplingInterval)
     {
         if (snapshotsSamplingInterval <= 0)
         {
@@ -236,7 +247,7 @@ internal class PluginSettings
         return (uint)snapshotsSamplingInterval;
     }
 
-    private static double GetFinalSnapshotSelectionProbability(double configuredSelectionRate)
+    internal static double GetFinalSnapshotSelectionProbability(double configuredSelectionRate)
     {
         return configuredSelectionRate switch
         {

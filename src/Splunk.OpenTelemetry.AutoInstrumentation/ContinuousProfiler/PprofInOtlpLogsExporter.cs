@@ -22,12 +22,24 @@ internal class PprofInOtlpLogsExporter
 {
     private readonly ISampleExporter _sampleExporter;
     private readonly NativeFormatParser _nativeFormatParser;
+    private readonly Func<bool> _cpuProfilerEnabled;
+    private readonly Func<bool> _memoryProfilerEnabled;
+    private readonly Func<bool> _snapshotsEnabled;
 
-    public PprofInOtlpLogsExporter(SampleProcessor sampleProcessor, ISampleExporter sampleExporter, NativeFormatParser nativeFormatParser)
+    public PprofInOtlpLogsExporter(
+        SampleProcessor sampleProcessor,
+        ISampleExporter sampleExporter,
+        NativeFormatParser nativeFormatParser,
+        Func<bool>? cpuProfilerEnabled = null,
+        Func<bool>? memoryProfilerEnabled = null,
+        Func<bool>? snapshotsEnabled = null)
     {
         SampleProcessor = sampleProcessor;
         _sampleExporter = sampleExporter;
         _nativeFormatParser = nativeFormatParser;
+        _cpuProfilerEnabled = cpuProfilerEnabled ?? (() => true);
+        _memoryProfilerEnabled = memoryProfilerEnabled ?? (() => true);
+        _snapshotsEnabled = snapshotsEnabled ?? (() => true);
     }
 
     public SampleProcessor SampleProcessor { get; }
@@ -41,6 +53,11 @@ internal class PprofInOtlpLogsExporter
     public void ExportAllocationSamples(byte[] buffer, int read, CancellationToken cancellationToken)
     {
 #if NET
+        if (!_memoryProfilerEnabled())
+        {
+            return;
+        }
+
         var allocationSamples = _nativeFormatParser.ParseAllocationSamples(buffer, read);
         var logRecord = SampleProcessor.ProcessAllocationSamples(allocationSamples);
         if (logRecord != null)
@@ -52,6 +69,11 @@ internal class PprofInOtlpLogsExporter
 
     public void ExportSelectedThreadSamples(byte[] buffer, int read, CancellationToken cancellationToken)
     {
+        if (!_snapshotsEnabled())
+        {
+            return;
+        }
+
         var allocationSamples = _nativeFormatParser.ParseSelectiveSamplerSamples(buffer, read);
 
         var logRecord = SampleProcessor.ProcessSnapshots(allocationSamples);
@@ -69,18 +91,24 @@ internal class PprofInOtlpLogsExporter
     {
         if (threadSamples != null)
         {
-            var logRecord = SampleProcessor.ProcessThreadSamples(threadSamples);
-            if (logRecord != null)
+            if (_cpuProfilerEnabled())
             {
-                _sampleExporter.Export(logRecord, cancellationToken);
+                var logRecord = SampleProcessor.ProcessThreadSamples(threadSamples);
+                if (logRecord != null)
+                {
+                    _sampleExporter.Export(logRecord, cancellationToken);
+                }
             }
 
-            var snapshots = ExtractSnapshots(threadSamples);
-
-            var snapshotLogRecord = SampleProcessor.ProcessSnapshots(snapshots);
-            if (snapshotLogRecord != null)
+            if (_snapshotsEnabled())
             {
-                _sampleExporter.Export(snapshotLogRecord, cancellationToken);
+                var snapshots = ExtractSnapshots(threadSamples);
+
+                var snapshotLogRecord = SampleProcessor.ProcessSnapshots(snapshots);
+                if (snapshotLogRecord != null)
+                {
+                    _sampleExporter.Export(snapshotLogRecord, cancellationToken);
+                }
             }
         }
     }
