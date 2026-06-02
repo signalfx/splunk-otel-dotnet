@@ -363,7 +363,6 @@ public class SmokeTests : TestHelper, IDisposable
             payload => ContainsAll(payload, requiredEntries) && ContainsNone(payload, forbiddenEntries));
     }
 
-#if NET // File-based configuration is not supported on .NET Framework
     [Fact]
     [Trait("Category", "EndToEnd")]
     public void EffectiveYamlConfigIsReportedToOpAmp()
@@ -386,7 +385,11 @@ public class SmokeTests : TestHelper, IDisposable
             "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS=\"http://localhost:4318/v1/metrics\"",
             "OTEL_SERVICE_NAME=\"env-var-service\"",
             "SPLUNK_PROFILER_ENABLED=true",
+#if NET
             "SPLUNK_PROFILER_MEMORY_ENABLED=true",
+#else
+            "SPLUNK_PROFILER_MEMORY_ENABLED=false",
+#endif
             "SPLUNK_PROFILER_CALL_STACK_INTERVAL=\"10000ms\"",
             "SPLUNK_PROFILER_LOGS_ENDPOINT=\"http://profiler-collector:4318/v1/logs\"",
             "SPLUNK_SNAPSHOT_PROFILER_ENABLED=true",
@@ -457,10 +460,12 @@ public class SmokeTests : TestHelper, IDisposable
             payload =>
                 GetEffectiveConfigValues(payload, "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS").SequenceEqual([expectedTracesValue]) &&
                 GetEffectiveConfigValues(payload, "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS").SequenceEqual([expectedMetricsValue]) &&
+#if NET
                 GetEffectiveConfigValues(payload, "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS").SequenceEqual([expectedLogsValue]));
-    }
-
+#else
+                GetEffectiveConfigValues(payload, "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS").Length == 0);
 #endif
+    }
 
     public void Dispose()
     {
