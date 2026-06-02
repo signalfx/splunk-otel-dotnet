@@ -246,6 +246,10 @@ public class SmokeTests : TestHelper, IDisposable
         EnableBytecodeInstrumentation();
         EnableDefaultExporters();
 
+        // ILogger instrumentation is required to be able to capture logs endpoint.
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED", "false");
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED", "false");
+
         var requiredEntries = new List<string>
         {
             $"OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"{tracesEndpoint}\"",
@@ -287,6 +291,7 @@ public class SmokeTests : TestHelper, IDisposable
 
         EnableBytecodeInstrumentation();
         EnableDefaultExporters();
+        DisableAllInstrumentations();
 
 #if NETFRAMEWORK
         var expectedTracesEndpoint = "http://collector:4317/v1/traces";
@@ -322,6 +327,7 @@ public class SmokeTests : TestHelper, IDisposable
         SetEnvironmentVariable("OTEL_TRACES_EXPORTER", "none");
         SetEnvironmentVariable("OTEL_METRICS_EXPORTER", "none");
         SetEnvironmentVariable("OTEL_LOGS_EXPORTER", "none");
+        DisableAllInstrumentations();
 
         var requiredEntries = new[]
         {
@@ -426,7 +432,6 @@ public class SmokeTests : TestHelper, IDisposable
         EnableDefaultExporters();
         EnableFileBasedConfig("config-multiple-otlp-endpoints.yaml");
         SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
-        SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE", "true");
 
         var expectedTracesValue = $"\"{tracesEndpoint1}\",\"{tracesEndpoint2}\"";
         var expectedMetricsValue = $"\"{metricsEndpoint1}\",\"{metricsEndpoint2}\"";
@@ -543,5 +548,12 @@ public class SmokeTests : TestHelper, IDisposable
             EffectiveConfigReporter.EffectiveConfigFileName,
             EffectiveConfigReporter.EffectiveConfigContentType,
             effectiveConfigPredicate);
+    }
+
+    private void DisableAllInstrumentations()
+    {
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED", "false");
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED", "false");
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED", "false");
     }
 }
