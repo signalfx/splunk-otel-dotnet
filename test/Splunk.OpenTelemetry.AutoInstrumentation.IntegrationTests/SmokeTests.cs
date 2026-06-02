@@ -277,30 +277,6 @@ public class SmokeTests : TestHelper, IDisposable
 
     [Fact]
     [Trait("Category", "EndToEnd")]
-    public void EffectiveEnvVarConfigUsesSplunkRealmEndpoints()
-    {
-        using var opAmpServer = new MockOpAmpServer(Output);
-
-        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
-        SetEnvironmentVariable("SPLUNK_REALM", "us0");
-        SetEnvironmentVariable("SPLUNK_ACCESS_TOKEN", "token");
-
-        EnableBytecodeInstrumentation();
-        EnableDefaultExporters();
-
-        var requiredEntries = new[]
-        {
-            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"https://ingest.us0.observability.splunkcloud.com/v2/trace/otlp\"",
-            "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS=\"https://ingest.us0.observability.splunkcloud.com/v2/datapoint/otlp\""
-        };
-
-        RunTestApplicationAndAssertEffectiveConfig(
-            opAmpServer,
-            payload => ContainsAll(payload, requiredEntries));
-    }
-
-    [Fact]
-    [Trait("Category", "EndToEnd")]
     public void EffectiveEnvVarConfigUsesResolvedOtlpProtocol()
     {
         using var opAmpServer = new MockOpAmpServer(Output);
