@@ -224,13 +224,14 @@ public class SmokeTests : TestHelper, IDisposable
     public void EffectiveEnvVarConfigIsReportedToOpAmp()
     {
         using var opAmpServer = new MockOpAmpServer(Output);
+        using var profilesCollector = new MockContinuousProfilerCollector(Output);
 
         var tracesEndpoint = "http://localhost:4318/v1/traces";
         var metricsEndpoint = "http://localhost:4319/v1/metrics";
-        var profilerLogsEndpoint = "http://profiler-collector:4318/v1/logs";
+        var profilerLogsEndpoint = $"http://localhost:{profilesCollector.Port}/v1/logs";
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", tracesEndpoint);
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", metricsEndpoint);
-        SetEnvironmentVariable("SPLUNK_PROFILER_LOGS_ENDPOINT", profilerLogsEndpoint);
+        SetExporter(profilesCollector);
         SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
 #if NET
         var logsEndpoint = "http://localhost:4320/v1/logs";
@@ -350,10 +351,13 @@ public class SmokeTests : TestHelper, IDisposable
     public void EffectiveYamlConfigIsReportedToOpAmp()
     {
         using var opAmpServer = new MockOpAmpServer(Output);
+        using var profilesCollector = new MockContinuousProfilerCollector(Output);
+        var profilerLogsEndpoint = $"http://localhost:{profilesCollector.Port}/v1/logs";
 
         EnableBytecodeInstrumentation();
         EnableFileBasedConfig("config.yaml");
         SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+        SetExporter(profilesCollector);
 
         // Set traces and service name via env var; yaml substitutes them in.
         // Metrics endpoint is intentionally not set; yaml fallback value is used instead.
@@ -373,7 +377,7 @@ public class SmokeTests : TestHelper, IDisposable
             "SPLUNK_PROFILER_MEMORY_ENABLED=false",
 #endif
             "SPLUNK_PROFILER_CALL_STACK_INTERVAL=\"10000ms\"",
-            "SPLUNK_PROFILER_LOGS_ENDPOINT=\"http://profiler-collector:4318/v1/logs\"",
+            $"SPLUNK_PROFILER_LOGS_ENDPOINT=\"{profilerLogsEndpoint}\"",
             "SPLUNK_SNAPSHOT_PROFILER_ENABLED=true",
             "SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL=\"5000ms\""
         };
