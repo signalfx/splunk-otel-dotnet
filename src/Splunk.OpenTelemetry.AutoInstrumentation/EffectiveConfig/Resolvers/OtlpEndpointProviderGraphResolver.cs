@@ -115,18 +115,12 @@ internal static class OtlpEndpointProviderGraphResolver
     private static EffectiveOtlpExporterType? ResolveExporterType(object exportClient)
     {
         // The SDK's export-client implementation preserves the selected transport after options have been applied.
-        var typeName = exportClient.GetType().Name;
-        if (typeName.IndexOf("Http", StringComparison.OrdinalIgnoreCase) >= 0)
+        return exportClient.GetType().FullName switch
         {
-            return EffectiveOtlpExporterType.HttpProtobuf;
-        }
-
-        if (typeName.IndexOf("Grpc", StringComparison.OrdinalIgnoreCase) >= 0)
-        {
-            return EffectiveOtlpExporterType.Grpc;
-        }
-
-        return null;
+            "OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.ExportClient.OtlpHttpExportClient" => EffectiveOtlpExporterType.HttpProtobuf,
+            "OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.ExportClient.OtlpGrpcExportClient" => EffectiveOtlpExporterType.Grpc,
+            _ => null
+        };
     }
 
     private static object? GetPropertyValue(object source, string name)
