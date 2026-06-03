@@ -6,7 +6,7 @@ on:
 
 jobs:
   powershell-script:
-    runs-on: windows-2022
+    runs-on: windows-2025
     steps:
       - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
         with:
