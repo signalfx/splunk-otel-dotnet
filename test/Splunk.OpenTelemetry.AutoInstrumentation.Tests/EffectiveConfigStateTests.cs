@@ -16,69 +16,22 @@
 
 using System.Collections.Specialized;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
 public class EffectiveConfigStateTests
 {
     [Fact]
-    public void BuildPayload_IncludesSelectedSplunkSettings()
+    public void CreateSnapshot_CapturesSplunkSettings()
     {
         var configuration = new NameValueCollection
         {
             { ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled, "true" },
             { ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled, "true" },
             { ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, "10000" },
-            { ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint, "http://profiler-collector:4318/v1/logs" },
-            { ConfigurationKeys.Splunk.Snapshots.Enabled, "true" },
-            { ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, "5000" },
-            { ConfigurationKeys.Splunk.AccessToken, "secret-token" },
-            { ConfigurationKeys.Splunk.Realm, "us0" }
-        };
-        var settings = new PluginSettings(new NameValueConfigurationSource(configuration));
-        var state = new EffectiveConfigState();
-
-        state.SetSplunkSettings(settings);
-
-        var payload = state.BuildPayload();
-        Assert.Contains("SPLUNK_PROFILER_ENABLED=true", payload);
-#if NET
-        Assert.Contains("SPLUNK_PROFILER_MEMORY_ENABLED=true", payload);
-#else
-        Assert.Contains("SPLUNK_PROFILER_MEMORY_ENABLED=false", payload);
-#endif
-        Assert.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=\"10000ms\"", payload);
-        Assert.Contains("SPLUNK_PROFILER_LOGS_ENDPOINT=\"http://profiler-collector:4318/v1/logs\"", payload);
-        Assert.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=true", payload);
-        Assert.Contains("SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL=\"5000ms\"", payload);
-        Assert.DoesNotContain("SPLUNK_ACCESS_TOKEN", payload);
-        Assert.DoesNotContain("SPLUNK_REALM", payload);
-    }
-
-    [Fact]
-    public void BuildPayload_OmitsDependentProfilingValues_WhenProfilingIsDisabled()
-    {
-        var disabledSettings = new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()));
-        var state = new EffectiveConfigState();
-
-        state.SetSplunkSettings(disabledSettings);
-
-        var payload = state.BuildPayload();
-        Assert.Contains("SPLUNK_PROFILER_ENABLED=false", payload);
-        Assert.Contains("SPLUNK_PROFILER_MEMORY_ENABLED=false", payload);
-        Assert.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=false", payload);
-        Assert.DoesNotContain("SPLUNK_PROFILER_CALL_STACK_INTERVAL=", payload);
-        Assert.DoesNotContain("SPLUNK_PROFILER_LOGS_ENDPOINT=", payload);
-        Assert.DoesNotContain("SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL=", payload);
-    }
-
-    [Fact]
-    public void BuildPayload_IncludesProfilerLogsEndpoint_WhenOnlySnapshotsAreEnabled()
-    {
-        var configuration = new NameValueCollection
-        {
-            { ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint, "http://profiler-collector:4318/v1/logs" },
             { ConfigurationKeys.Splunk.Snapshots.Enabled, "true" },
             { ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, "5000" }
         };
@@ -87,45 +40,65 @@ public class EffectiveConfigStateTests
 
         state.SetSplunkSettings(settings);
 
-        var payload = state.BuildPayload();
-        Assert.Contains("SPLUNK_PROFILER_ENABLED=false", payload);
-        Assert.Contains("SPLUNK_PROFILER_MEMORY_ENABLED=false", payload);
-        Assert.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=true", payload);
-        Assert.Contains("SPLUNK_PROFILER_LOGS_ENDPOINT=\"http://profiler-collector:4318/v1/logs\"", payload);
-        Assert.Contains("SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL=\"5000ms\"", payload);
-        Assert.DoesNotContain("SPLUNK_PROFILER_CALL_STACK_INTERVAL=", payload);
+        var snapshot = state.CreateSnapshot();
+        Assert.False(snapshot.IsFileBasedConfig);
+        Assert.Equal("config.yaml", snapshot.FileBasedConfigFileName);
+        Assert.True(snapshot.CpuProfilerEnabled);
+#if NET
+        Assert.True(snapshot.MemoryProfilerEnabled);
+#else
+        Assert.False(snapshot.MemoryProfilerEnabled);
+#endif
+        Assert.True(snapshot.SnapshotProfilerEnabled);
+        Assert.Equal(10000U, snapshot.CpuProfilerCallStackInterval);
+        Assert.Equal(5000U, snapshot.SnapshotSamplingInterval);
     }
 
     [Fact]
-    public void BuildPayload_FormatsMultipleEndpointValues()
+    public void CreateSnapshot_CapturesFileBasedConfigFileMetadata()
     {
+        var settings = new PluginSettings(new YamlRoot(), "stable.yaml", "experimental.yaml");
         var state = new EffectiveConfigState();
 
-        state.SetTraceEndpoints(
-            [
-                "http://collector-1:4318/v1/traces",
-                "http://collector-2:4318/v1/traces"
-            ]);
+        state.SetSplunkSettings(settings);
 
-        Assert.Contains(
-            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"http://collector-1:4318/v1/traces\",\"http://collector-2:4318/v1/traces\"",
-            state.BuildPayload());
+        var snapshot = state.CreateSnapshot();
+        Assert.True(snapshot.IsFileBasedConfig);
+        Assert.Equal("stable.yaml", snapshot.FileBasedConfigFileName);
+        Assert.Equal("stable.yaml", snapshot.OtelConfigFile);
+        Assert.Equal("experimental.yaml", snapshot.OtelExperimentalConfigFile);
     }
 
     [Fact]
-    public void BuildPayload_QuotesEndpointValuesContainingCommas()
+    public void CreateSnapshot_CapturesTraceEndpoints()
     {
         var state = new EffectiveConfigState();
 
-        state.SetTraceEndpoints(
-            [
-                "http://collector/path,with%2Ccomma",
-                "http://collector/second"
-            ]);
+        state.SetTraceEndpoints([EffectiveOtlpEndpoint.Http("http://collector:4318/v1/traces")]);
 
-        Assert.Contains(
-            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"http://collector/path,with%2Ccomma\",\"http://collector/second\"",
-            state.BuildPayload());
+        Assert.Equal([EffectiveOtlpEndpoint.Http("http://collector:4318/v1/traces")], state.CreateSnapshot().TraceEndpoints);
+    }
+
+    [Fact]
+    public void CreateSnapshot_CapturesMetricEndpoints()
+    {
+        var state = new EffectiveConfigState();
+
+        state.SetMetricEndpoints([EffectiveOtlpEndpoint.Http("http://collector:4318/v1/metrics")]);
+
+        Assert.Equal([EffectiveOtlpEndpoint.Http("http://collector:4318/v1/metrics")], state.CreateSnapshot().MetricEndpoints);
+    }
+
+    [Fact]
+    public void CreateSnapshot_CapturesLogEndpoints()
+    {
+        var state = new EffectiveConfigState();
+
+        state.SetLogEndpoints([EffectiveOtlpEndpoint.Grpc("http://collector:4317/opentelemetry.proto.collector.logs.v1.LogsService/Export")]);
+
+        Assert.Equal(
+            [EffectiveOtlpEndpoint.Grpc("http://collector:4317/opentelemetry.proto.collector.logs.v1.LogsService/Export")],
+            state.CreateSnapshot().LogEndpoints);
     }
 
     [Fact]
@@ -133,14 +106,30 @@ public class EffectiveConfigStateTests
     {
         var state = new EffectiveConfigState();
 
-        var firstAdd = state.AddLogEndpoint("http://collector:4318/v1/logs");
-        var secondAdd = state.AddLogEndpoint("http://collector:4318/v1/logs");
+        var firstAdd = state.AddLogEndpoint(EffectiveOtlpEndpoint.Http("http://collector:4318/v1/logs"));
+        var secondAdd = state.AddLogEndpoint(EffectiveOtlpEndpoint.Http("http://collector:4318/v1/logs"));
 
         Assert.True(firstAdd);
         Assert.False(secondAdd);
-        Assert.Contains(
-            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=\"http://collector:4318/v1/logs\"",
-            state.BuildPayload());
+        Assert.Equal([EffectiveOtlpEndpoint.Http("http://collector:4318/v1/logs")], state.CreateSnapshot().LogEndpoints);
+    }
+
+    [Fact]
+    public void AddLogEndpoint_ReturnsTrue_WhenEndpointExistsWithDifferentExporterType()
+    {
+        var state = new EffectiveConfigState();
+
+        var firstAdd = state.AddLogEndpoint(EffectiveOtlpEndpoint.Http("http://collector:4318/v1/logs"));
+        var secondAdd = state.AddLogEndpoint(EffectiveOtlpEndpoint.Grpc("http://collector:4318/v1/logs"));
+
+        Assert.True(firstAdd);
+        Assert.True(secondAdd);
+        Assert.Equal(
+            [
+                EffectiveOtlpEndpoint.Http("http://collector:4318/v1/logs"),
+                EffectiveOtlpEndpoint.Grpc("http://collector:4318/v1/logs")
+            ],
+            state.CreateSnapshot().LogEndpoints);
     }
 
     [Fact]
@@ -150,32 +139,10 @@ public class EffectiveConfigStateTests
 
         Assert.False(state.ClearLogEndpoints());
 
-        state.AddLogEndpoint("http://collector:4318/v1/logs");
+        state.AddLogEndpoint(EffectiveOtlpEndpoint.Http("http://collector:4318/v1/logs"));
 
         Assert.True(state.ClearLogEndpoints());
+        Assert.Empty(state.CreateSnapshot().LogEndpoints);
         Assert.False(state.ClearLogEndpoints());
-    }
-
-    [Fact]
-    public void TrySetServiceName_KeepsFirstValue()
-    {
-        var state = new EffectiveConfigState();
-
-        state.TrySetServiceName("first-service");
-        state.TrySetServiceName("second-service");
-
-        var payload = state.BuildPayload();
-        Assert.Contains("OTEL_SERVICE_NAME=\"first-service\"", payload);
-        Assert.DoesNotContain("OTEL_SERVICE_NAME=second-service", payload);
-    }
-
-    [Fact]
-    public void TrySetServiceName_OmitsValue_WhenValueCannotBeRepresented()
-    {
-        var state = new EffectiveConfigState();
-
-        state.TrySetServiceName("service\"name");
-
-        Assert.DoesNotContain("OTEL_SERVICE_NAME=", state.BuildPayload());
     }
 }

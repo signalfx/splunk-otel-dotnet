@@ -19,9 +19,9 @@ using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.OpAmp.Client;
 using OpenTelemetry.OpAmp.Client.Settings;
-using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
@@ -30,16 +30,11 @@ internal sealed class OpAmp
 {
     private static readonly ILogger Log = new Logger();
 
-    private readonly Lazy<EffectiveConfigReporter?> _effectiveConfigReporter;
+    private readonly Lazy<EffectiveConfigReporter?> _effectiveConfigReporter = new(TryCreateEffectiveConfigReporter);
     private int _instrumentationInitialized;
     private int _opAmpClientStarted;
     private int _initialEffectiveConfigReportStarted;
     private Task? _initialEffectiveConfigReportTask;
-
-    public OpAmp()
-    {
-        _effectiveConfigReporter = new Lazy<EffectiveConfigReporter?>(TryCreateEffectiveConfigReporter);
-    }
 
     public static void EnableEffectiveConfigReporting(OpAmpClientSettings settings)
     {
@@ -49,11 +44,6 @@ internal sealed class OpAmp
     public void RecordPluginConfig(PluginSettings settings)
     {
         _effectiveConfigReporter.Value?.CaptureSplunkSettings(settings);
-    }
-
-    public void RecordServiceName(Resource resource)
-    {
-        _effectiveConfigReporter.Value?.CaptureServiceName(resource);
     }
 
     public void RecordLogExporterOptions(OtlpExporterOptions options)

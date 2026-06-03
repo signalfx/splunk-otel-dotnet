@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 
 internal static class UpstreamInstrumentationResolver
 {

@@ -16,8 +16,9 @@
 
 using System.Reflection;
 using OpenTelemetry.Exporter;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 
 internal static class OtlpLogEndpointOptionsResolver
 {
@@ -27,7 +28,7 @@ internal static class OtlpLogEndpointOptionsResolver
     private static readonly PropertyInfo? AppendSignalPathToEndpointProperty =
         typeof(OtlpExporterOptions).GetProperty("AppendSignalPathToEndpoint", BindingFlags.Instance | BindingFlags.NonPublic);
 
-    public static string? ResolveEndpoint(OtlpExporterOptions options)
+    public static EffectiveOtlpEndpoint? ResolveEndpoint(OtlpExporterOptions options)
     {
         // ILogger options are captured before SDK export clients add signal-specific paths.
 #pragma warning disable CS0618 // OtlpExportProtocol.Grpc is obsolete but still used by the SDK and specification.
@@ -35,7 +36,7 @@ internal static class OtlpLogEndpointOptionsResolver
 #pragma warning restore CS0618
         {
             // Mirror the SDK's final gRPC logs endpoint path.
-            return Format(AppendPathIfNotPresent(options.Endpoint, LogsGrpcSignalPath));
+            return EffectiveOtlpEndpoint.Grpc(Format(AppendPathIfNotPresent(options.Endpoint, LogsGrpcSignalPath)));
         }
 
         if (options.Protocol != OtlpExportProtocol.HttpProtobuf)
@@ -54,7 +55,7 @@ internal static class OtlpLogEndpointOptionsResolver
             ? AppendPathIfNotPresent(options.Endpoint, LogsHttpSignalPath)
             : options.Endpoint;
 
-        return Format(endpoint);
+        return EffectiveOtlpEndpoint.Http(Format(endpoint));
     }
 
     private static bool? TryGetAppendSignalPathToEndpoint(OtlpExporterOptions options)

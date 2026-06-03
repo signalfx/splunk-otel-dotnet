@@ -14,8 +14,11 @@
 // limitations under the License.
 // </copyright>
 
+using System.Text;
 using OpenTelemetry.Exporter;
+using OpenTelemetry.OpAmp.Client.Messages;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
@@ -28,41 +31,32 @@ public class EffectiveConfigReporterTests
 
         reporter.CaptureLogExporterOptions(CreateHttpLogOptions("http://logs-collector:4318/v1/logs"));
 
-        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=\"http://logs-collector:4318/v1/logs\"", reporter.BuildCurrentPayload());
-    }
-
-    [Fact]
-    public void CaptureLogExporterOptions_AccumulatesMultipleConfiguredOtlpLogExporters_ForILogger()
-    {
-        var reporter = CreateILoggerReporter();
-
-        reporter.CaptureLogExporterOptions(CreateHttpLogOptions("http://logs-collector-1:4318/v1/logs"));
-        reporter.CaptureLogExporterOptions(CreateHttpLogOptions("http://logs-collector-2:4318/v1/logs"));
-
-        Assert.Contains(
-            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=\"http://logs-collector-1:4318/v1/logs\",\"http://logs-collector-2:4318/v1/logs\"",
-            reporter.BuildCurrentPayload());
+        var payload = reporter.BuildCurrentPayload();
+        var body = GetBody(payload);
+        Assert.Equal("environment", payload.FileName);
+        Assert.Equal("text/plain; format=properties; vendor=splunk; v=1.0.0", payload.ContentType);
+        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://logs-collector:4318/v1/logs", body);
     }
 
     [Fact]
     public void BuildCurrentPayload_UsesBridgeLoggerProviderEndpoints_WhenILoggerWasNotConfigured()
     {
-        var reporter = CreateReporter(() => ["http://bridge-collector:4318/v1/logs"]);
+        var reporter = CreateReporter(() => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
 
         Assert.Contains(
-            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=\"http://bridge-collector:4318/v1/logs\"",
-            reporter.BuildCurrentPayload());
+            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://bridge-collector:4318/v1/logs",
+            GetBody(reporter.BuildCurrentPayload()));
     }
 
     [Fact]
     public void BuildCurrentPayload_UsesBridgeLoggerProviderEndpoints_WhenOptionsHookRanWithoutILogger()
     {
-        var reporter = CreateReporter(() => ["http://bridge-collector:4318/v1/logs"]);
+        var reporter = CreateReporter(() => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
 
         reporter.CaptureLogExporterOptions(CreateHttpLogOptions("http://options-collector:4318/v1/logs"));
 
-        var payload = reporter.BuildCurrentPayload();
-        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=\"http://bridge-collector:4318/v1/logs\"", payload);
+        var payload = GetBody(reporter.BuildCurrentPayload());
+        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://bridge-collector:4318/v1/logs", payload);
         Assert.DoesNotContain("http://options-collector:4318/v1/logs", payload);
     }
 
@@ -73,41 +67,51 @@ public class EffectiveConfigReporterTests
 
         reporter.CaptureLogExporterOptions(CreateHttpLogOptions("http://options-collector:4318/v1/logs"));
 
-        Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=", reporter.BuildCurrentPayload());
+        var payload = GetBody(reporter.BuildCurrentPayload());
+        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=none", payload);
+        Assert.DoesNotContain("http://options-collector:4318/v1/logs", payload);
     }
 
     [Fact]
-    public void BuildCurrentPayload_DoesNotReportLogs_WhenBridgeLoggerProviderHasNoOtlpEndpoints()
+    public void BuildCurrentPayload_UsesDefaultLogsEndpoint_WhenBridgeLoggerProviderHasNoOtlpEndpoints()
     {
         var reporter = CreateReporter(() => []);
 
-        Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=", reporter.BuildCurrentPayload());
+        Assert.Contains(
+            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=none",
+            GetBody(reporter.BuildCurrentPayload()));
     }
 
     [Fact]
-    public void BuildCurrentPayload_DoesNotReportLogs_WhenBridgeLoggerProviderCouldNotBeResolved()
+    public void BuildCurrentPayload_UsesDefaultLogsEndpoint_WhenBridgeLoggerProviderCouldNotBeResolved()
     {
         var reporter = CreateReporter(() => null);
 
-        Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=", reporter.BuildCurrentPayload());
+        Assert.Contains(
+            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=none",
+            GetBody(reporter.BuildCurrentPayload()));
     }
 
     [Fact]
-    public void BuildCurrentPayload_DoesNotReportLogs_WhenBridgeLoggerProviderResolutionFails()
+    public void BuildCurrentPayload_UsesDefaultLogsEndpoint_WhenBridgeLoggerProviderResolutionFails()
     {
         var reporter = CreateReporter(() => throw new InvalidOperationException("bridge resolver failed"));
 
-        Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=", reporter.BuildCurrentPayload());
+        Assert.Contains(
+            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=none",
+            GetBody(reporter.BuildCurrentPayload()));
     }
 
     [Fact]
     public void MarkOpenTelemetryLoggerConfigured_PreventsBridgeLoggerProviderEndpointReporting()
     {
-        var reporter = CreateReporter(() => ["http://bridge-collector:4318/v1/logs"]);
+        var reporter = CreateReporter(() => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
 
         reporter.MarkOpenTelemetryLoggerConfigured();
 
-        Assert.DoesNotContain("OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS=", reporter.BuildCurrentPayload());
+        var payload = GetBody(reporter.BuildCurrentPayload());
+        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=none", payload);
+        Assert.DoesNotContain("http://bridge-collector:4318/v1/logs", payload);
     }
 
     private static OtlpExporterOptions CreateHttpLogOptions(string endpoint)
@@ -127,8 +131,13 @@ public class EffectiveConfigReporterTests
     }
 
     private static EffectiveConfigReporter CreateReporter(
-        Func<IReadOnlyList<string>?>? bridgeLogEndpointResolver = null)
+        Func<IReadOnlyList<EffectiveOtlpEndpoint>?>? bridgeLogEndpointResolver = null)
     {
         return new EffectiveConfigReporter(bridgeLogEndpointResolver ?? (() => null));
+    }
+
+    private static string GetBody(EffectiveConfigFile file)
+    {
+        return Encoding.UTF8.GetString(file.Content.ToArray());
     }
 }

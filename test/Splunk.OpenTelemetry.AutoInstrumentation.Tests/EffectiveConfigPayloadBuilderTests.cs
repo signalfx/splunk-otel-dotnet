@@ -1,0 +1,160 @@
+// <copyright file="EffectiveConfigPayloadBuilderTests.cs" company="Splunk Inc.">
+// Copyright Splunk Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// </copyright>
+
+using System.Text;
+using OpenTelemetry.OpAmp.Client.Messages;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
+
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
+
+public class EffectiveConfigPayloadBuilderTests
+{
+    [Fact]
+    public void Build_EnvironmentConfig_UsesDataModelProperties()
+    {
+        var snapshot = CreateEnvironmentSnapshot(
+            traceEndpoints: [EffectiveOtlpEndpoint.Http("http://collector:4318/v1/traces")],
+            metricEndpoints: [EffectiveOtlpEndpoint.Http("http://collector:4318/v1/metrics")],
+            logEndpoints: [EffectiveOtlpEndpoint.Http("http://collector:4318/v1/logs")],
+            cpuProfilerEnabled: true,
+#if NET
+            memoryProfilerEnabled: true,
+#else
+            memoryProfilerEnabled: false,
+#endif
+            snapshotProfilerEnabled: true,
+            cpuProfilerCallStackInterval: 10000,
+            snapshotSamplingInterval: 5000);
+
+        var payload = EffectiveConfigPayloadBuilder.Build(snapshot);
+
+        Assert.Equal("environment", payload.FileName);
+        Assert.Equal("text/plain; format=properties; vendor=splunk; v=1.0.0", payload.ContentType);
+        AssertEnvironmentConfigPayload(
+            payload,
+            CreateExpectedEnvironmentConfig(
+                traceEndpoint: "http://collector:4318/v1/traces",
+                metricEndpoint: "http://collector:4318/v1/metrics",
+                logEndpoint: "http://collector:4318/v1/logs",
+                cpuProfilerEnabled: "true",
+#if NET
+                memoryProfilerEnabled: "true",
+#else
+                memoryProfilerEnabled: "false",
+#endif
+                snapshotProfilerEnabled: "true",
+                snapshotSamplingInterval: "5000"));
+    }
+
+    [Fact]
+    public void Build_EnvironmentConfig_IncludesDefaultValues()
+    {
+        var payload = EffectiveConfigPayloadBuilder.Build(CreateEnvironmentSnapshot());
+
+        AssertEnvironmentConfigPayload(payload, CreateExpectedEnvironmentConfig());
+    }
+
+    private static EffectiveConfigSnapshot CreateEnvironmentSnapshot(
+        IReadOnlyList<EffectiveOtlpEndpoint>? traceEndpoints = null,
+        IReadOnlyList<EffectiveOtlpEndpoint>? metricEndpoints = null,
+        IReadOnlyList<EffectiveOtlpEndpoint>? logEndpoints = null,
+        bool cpuProfilerEnabled = false,
+        bool memoryProfilerEnabled = false,
+        bool snapshotProfilerEnabled = false,
+        uint cpuProfilerCallStackInterval = 10000,
+        uint snapshotSamplingInterval = 40)
+    {
+        return new EffectiveConfigSnapshot(
+            isFileBasedConfig: false,
+            fileBasedConfigFileName: "config.yaml",
+            traceEndpoints: traceEndpoints ?? [],
+            metricEndpoints: metricEndpoints ?? [],
+            logEndpoints: logEndpoints ?? [],
+            cpuProfilerEnabled: cpuProfilerEnabled,
+            memoryProfilerEnabled: memoryProfilerEnabled,
+            snapshotProfilerEnabled: snapshotProfilerEnabled,
+            cpuProfilerCallStackInterval: cpuProfilerCallStackInterval,
+            snapshotSamplingInterval: snapshotSamplingInterval);
+    }
+
+    private static string GetBody(EffectiveConfigFile file)
+    {
+        return Encoding.UTF8.GetString(file.Content.ToArray());
+    }
+
+    private static Dictionary<string, string> CreateExpectedEnvironmentConfig(
+        string traceEndpoint = "none",
+        string metricEndpoint = "none",
+        string logEndpoint = "none",
+        string cpuProfilerEnabled = "false",
+        string memoryProfilerEnabled = "false",
+        string snapshotProfilerEnabled = "false",
+        string snapshotSamplingInterval = "40",
+        string cpuProfilerCallStackInterval = "10000")
+    {
+        return new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = traceEndpoint,
+            ["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"] = metricEndpoint,
+            ["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"] = logEndpoint,
+            ["SPLUNK_PROFILER_ENABLED"] = cpuProfilerEnabled,
+            ["SPLUNK_PROFILER_MEMORY_ENABLED"] = memoryProfilerEnabled,
+            ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = snapshotProfilerEnabled,
+            ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = snapshotSamplingInterval,
+            ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = cpuProfilerCallStackInterval,
+            ["OTEL_CONFIG_FILE"] = "null",
+            ["OTEL_EXPERIMENTAL_CONFIG_FILE"] = "null"
+        };
+    }
+
+    private static void AssertEnvironmentConfigPayload(
+        EffectiveConfigFile file,
+        IReadOnlyDictionary<string, string> expected)
+    {
+        var actual = ParseEnvironmentConfigPayload(GetBody(file));
+
+        Assert.Equal(expected.Keys.OrderBy(key => key, StringComparer.Ordinal), actual.Keys.OrderBy(key => key, StringComparer.Ordinal));
+        foreach (var entry in expected)
+        {
+            Assert.Equal(entry.Value, actual[entry.Key]);
+        }
+    }
+
+    private static IReadOnlyDictionary<string, string> ParseEnvironmentConfigPayload(string body)
+    {
+        if (body.EndsWith("\n", StringComparison.Ordinal))
+        {
+            body = body.Substring(0, body.Length - 1);
+        }
+
+        var entries = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var line in body.Split('\n'))
+        {
+            Assert.False(string.IsNullOrEmpty(line), "Environment effective config payload must not contain blank lines.");
+
+            var separatorIndex = line.IndexOf('=');
+            Assert.True(separatorIndex > 0, $"Environment effective config line must be in key=value form: '{line}'.");
+
+            var key = line.Substring(0, separatorIndex);
+            var value = line.Substring(separatorIndex + 1);
+            Assert.False(entries.ContainsKey(key), $"Environment effective config contains duplicate key '{key}'.");
+            entries.Add(key, value);
+        }
+
+        return entries;
+    }
+}

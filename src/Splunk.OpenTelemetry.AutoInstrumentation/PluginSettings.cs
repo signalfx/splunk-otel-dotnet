@@ -1,4 +1,4 @@
-﻿// <copyright file="PluginSettings.cs" company="Splunk Inc.">
+// <copyright file="PluginSettings.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,8 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class PluginSettings
 {
+    private const string DefaultFileBasedConfigFileName = "config.yaml";
+
     private static readonly ILogger Log = new Logger();
 
     private static readonly bool IsYamlConfigEnabled = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.Enabled) == "true";
@@ -70,13 +72,17 @@ internal class PluginSettings
         ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
     }
 
-    internal PluginSettings(YamlRoot configuration)
+    internal PluginSettings(YamlRoot configuration, string? fileName = null, string? experimentalFileName = null)
     {
         if (configuration == null)
         {
             throw new ArgumentNullException(nameof(configuration));
         }
 
+        IsFileBasedConfig = true;
+        FileBasedConfigFileName = fileName ?? DefaultFileBasedConfigFileName;
+        OtelConfigFile = FileBasedConfigFileName;
+        OtelExperimentalConfigFile = experimentalFileName;
         Realm = Constants.None;
         AccessToken = null;
         IsOtlpEndpointSet = false;
@@ -140,6 +146,14 @@ internal class PluginSettings
 
     public bool IsOtlpEndpointSet { get; }
 
+    public bool IsFileBasedConfig { get; }
+
+    public string? FileBasedConfigFileName { get; }
+
+    public string? OtelConfigFile { get; }
+
+    public string? OtelExperimentalConfigFile { get; }
+
     public bool CpuProfilerEnabled { get; }
 
     public uint CpuProfilerCallStackInterval { get; }
@@ -160,16 +174,19 @@ internal class PluginSettings
     {
         if (IsYamlConfigEnabled)
         {
-            var fileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName) ?? "config.yaml";
+            var fileNames = ResolveFileBasedConfigFileNames();
 
-            var splunkConfiguration = LoadSplunkConfig(fileName);
+            var splunkConfiguration = LoadSplunkConfig(fileNames.FileName);
             if (splunkConfiguration != null)
             {
-                return new PluginSettings(splunkConfiguration);
+                return new PluginSettings(
+                    splunkConfiguration,
+                    fileNames.FileName,
+                    fileNames.ExperimentalFileName);
             }
             else
             {
-                Log.Error($"Failed to load Splunk configuration from file '{fileName}'. Falling back to environment variables.");
+                Log.Error($"Failed to load Splunk configuration from file '{fileNames.FileName}'. Falling back to environment variables.");
             }
         }
 
@@ -185,6 +202,13 @@ internal class PluginSettings
         };
 
         return new PluginSettings(configurationSource);
+    }
+
+    internal static (string FileName, string? ExperimentalFileName) ResolveFileBasedConfigFileNames()
+    {
+        var fileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName);
+        var experimentalFileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.ExperimentalFileName);
+        return (fileName ?? experimentalFileName ?? DefaultFileBasedConfigFileName, experimentalFileName);
     }
 
     private static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)

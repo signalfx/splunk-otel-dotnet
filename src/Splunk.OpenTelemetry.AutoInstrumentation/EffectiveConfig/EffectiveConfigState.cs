@@ -14,204 +14,126 @@
 // limitations under the License.
 // </copyright>
 
-using System.Text;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal sealed class EffectiveConfigState
 {
-    private const string ServiceName = "OTEL_SERVICE_NAME";
-    private const string TracesEndpoints = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS";
-    private const string MetricsEndpoints = "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS";
-    private const string LogsEndpoints = "OTEL_EXPORTER_OTLP_LOGS_ENDPOINTS";
-    private const string CpuProfilerEnabled = "SPLUNK_PROFILER_ENABLED";
-    private const string MemoryProfilerEnabled = "SPLUNK_PROFILER_MEMORY_ENABLED";
-    private const string CpuProfilerCallStackInterval = "SPLUNK_PROFILER_CALL_STACK_INTERVAL";
-    private const string ProfilerLogsEndpoint = "SPLUNK_PROFILER_LOGS_ENDPOINT";
-    private const string SnapshotProfilerEnabled = "SPLUNK_SNAPSHOT_PROFILER_ENABLED";
-    private const string SnapshotSamplingInterval = "SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL";
+    private const string DefaultFileBasedConfigFileName = "config.yaml";
 
-    private static readonly string[] KeyOrder =
-    [
-        ServiceName,
-        TracesEndpoints,
-        MetricsEndpoints,
-        LogsEndpoints,
-        CpuProfilerEnabled,
-        MemoryProfilerEnabled,
-        CpuProfilerCallStackInterval,
-        ProfilerLogsEndpoint,
-        SnapshotProfilerEnabled,
-        SnapshotSamplingInterval
-    ];
-
-    // Provider hooks and late OpAmp updates are not guaranteed to stay on one thread.
     private readonly object _lock = new();
-    private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, List<string>> _endpoints = new(StringComparer.Ordinal);
+    private readonly List<EffectiveOtlpEndpoint> _traceEndpoints = [];
+    private readonly List<EffectiveOtlpEndpoint> _metricEndpoints = [];
+    private readonly List<EffectiveOtlpEndpoint> _logEndpoints = [];
+
+    private bool _isFileBasedConfig;
+    private string _fileBasedConfigFileName = DefaultFileBasedConfigFileName;
+    private string? _otelConfigFile;
+    private string? _otelExperimentalConfigFile;
+    private bool _cpuProfilerEnabled;
+    private bool _memoryProfilerEnabled;
+    private bool _snapshotProfilerEnabled;
+    private uint _cpuProfilerCallStackInterval = Constants.DefaultSamplingInterval;
+    private uint _snapshotSamplingInterval = Constants.DefaultSnapshotSamplingIntervalMs;
 
     public void SetSplunkSettings(PluginSettings settings)
     {
         lock (_lock)
         {
-            _values[CpuProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.CpuProfilerEnabled);
+            _isFileBasedConfig = settings.IsFileBasedConfig;
+            _fileBasedConfigFileName = settings.FileBasedConfigFileName ?? DefaultFileBasedConfigFileName;
+            _otelConfigFile = settings.OtelConfigFile;
+            _otelExperimentalConfigFile = settings.OtelExperimentalConfigFile;
+            _cpuProfilerEnabled = settings.CpuProfilerEnabled;
 #if NET
-            var memoryProfilerEnabled = settings.MemoryProfilerEnabled;
+            _memoryProfilerEnabled = settings.MemoryProfilerEnabled;
 #else
-            var memoryProfilerEnabled = false;
+            _memoryProfilerEnabled = false;
 #endif
-            _values[MemoryProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(memoryProfilerEnabled);
-            _values[SnapshotProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.SnapshotsEnabled);
-
-            if (settings.CpuProfilerEnabled)
-            {
-                _values[CpuProfilerCallStackInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.CpuProfilerCallStackInterval);
-            }
-            else
-            {
-                _values.Remove(CpuProfilerCallStackInterval);
-            }
-
-            if (settings.CpuProfilerEnabled || memoryProfilerEnabled || settings.SnapshotsEnabled)
-            {
-                _values[ProfilerLogsEndpoint] = EffectiveConfigValueFormatter.FormatList([settings.ProfilerLogsEndpoint.ToString()]);
-            }
-            else
-            {
-                _values.Remove(ProfilerLogsEndpoint);
-            }
-
-            if (settings.SnapshotsEnabled)
-            {
-                _values[SnapshotSamplingInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.SnapshotsSamplingInterval);
-            }
-            else
-            {
-                _values.Remove(SnapshotSamplingInterval);
-            }
+            _snapshotProfilerEnabled = settings.SnapshotsEnabled;
+            _cpuProfilerCallStackInterval = settings.CpuProfilerCallStackInterval;
+            _snapshotSamplingInterval = settings.SnapshotsSamplingInterval;
         }
     }
 
-    public void TrySetServiceName(string serviceName)
+    public void SetTraceEndpoints(IReadOnlyList<EffectiveOtlpEndpoint> endpoints)
     {
-        var formattedServiceName = EffectiveConfigValueFormatter.TryFormatString(serviceName);
-        if (formattedServiceName == null)
-        {
-            return;
-        }
-
-        lock (_lock)
-        {
-            if (!_values.ContainsKey(ServiceName))
-            {
-                _values[ServiceName] = formattedServiceName;
-            }
-        }
+        SetEndpoints(_traceEndpoints, endpoints);
     }
 
-    public void SetTraceEndpoints(IReadOnlyList<string> endpoints)
+    public void SetMetricEndpoints(IReadOnlyList<EffectiveOtlpEndpoint> endpoints)
     {
-        SetEndpoints(TracesEndpoints, endpoints);
+        SetEndpoints(_metricEndpoints, endpoints);
     }
 
-    public void SetMetricEndpoints(IReadOnlyList<string> endpoints)
+    public void SetLogEndpoints(IReadOnlyList<EffectiveOtlpEndpoint> endpoints)
     {
-        SetEndpoints(MetricsEndpoints, endpoints);
-    }
-
-    public void SetLogEndpoints(IReadOnlyList<string> endpoints)
-    {
-        SetEndpoints(LogsEndpoints, endpoints);
+        SetEndpoints(_logEndpoints, endpoints);
     }
 
     public bool ClearLogEndpoints()
     {
-        return ClearEndpoints(LogsEndpoints);
+        return ClearEndpoints(_logEndpoints);
     }
 
-    public bool AddLogEndpoint(string endpoint)
+    public bool AddLogEndpoint(EffectiveOtlpEndpoint endpoint)
     {
-        return AddEndpoint(LogsEndpoints, endpoint);
+        return AddEndpoint(_logEndpoints, endpoint);
     }
 
-    public string BuildPayload()
+    public EffectiveConfigSnapshot CreateSnapshot()
     {
         lock (_lock)
         {
-            var payload = new StringBuilder();
-            foreach (var key in KeyOrder)
-            {
-                var value = TryGetValue(key);
-                if (value == null)
-                {
-                    continue;
-                }
-
-                if (payload.Length > 0)
-                {
-                    payload.Append('\n');
-                }
-
-                payload.Append(key);
-                payload.Append('=');
-                payload.Append(value);
-            }
-
-            return payload.ToString();
+            return new EffectiveConfigSnapshot(
+                isFileBasedConfig: _isFileBasedConfig,
+                fileBasedConfigFileName: _fileBasedConfigFileName,
+                traceEndpoints: _traceEndpoints,
+                metricEndpoints: _metricEndpoints,
+                logEndpoints: _logEndpoints,
+                cpuProfilerEnabled: _cpuProfilerEnabled,
+                memoryProfilerEnabled: _memoryProfilerEnabled,
+                snapshotProfilerEnabled: _snapshotProfilerEnabled,
+                cpuProfilerCallStackInterval: _cpuProfilerCallStackInterval,
+                snapshotSamplingInterval: _snapshotSamplingInterval,
+                otelConfigFile: _otelConfigFile,
+                otelExperimentalConfigFile: _otelExperimentalConfigFile);
         }
     }
 
-    private void SetEndpoints(string key, IReadOnlyList<string> endpoints)
+    private void SetEndpoints(List<EffectiveOtlpEndpoint> target, IReadOnlyList<EffectiveOtlpEndpoint> endpoints)
     {
         // Provider graph results replace earlier tentative values from option hooks.
         lock (_lock)
         {
-            if (endpoints.Count == 0)
-            {
-                _endpoints.Remove(key);
-                return;
-            }
-
-            _endpoints[key] = endpoints.ToList();
+            target.Clear();
+            target.AddRange(endpoints);
         }
     }
 
-    private bool ClearEndpoints(string key)
+    private bool ClearEndpoints(List<EffectiveOtlpEndpoint> target)
     {
         lock (_lock)
         {
-            return _endpoints.Remove(key);
+            var hadEndpoints = target.Count > 0;
+            target.Clear();
+            return hadEndpoints;
         }
     }
 
-    private bool AddEndpoint(string key, string endpoint)
+    private bool AddEndpoint(List<EffectiveOtlpEndpoint> target, EffectiveOtlpEndpoint endpoint)
     {
         // File-based config can invoke option hooks once per configured exporter.
         lock (_lock)
         {
-            if (!_endpoints.TryGetValue(key, out var endpoints))
+            if (!target.Contains(endpoint))
             {
-                endpoints = [];
-                _endpoints[key] = endpoints;
-            }
-
-            if (!endpoints.Contains(endpoint, StringComparer.Ordinal))
-            {
-                endpoints.Add(endpoint);
+                target.Add(endpoint);
                 return true;
             }
 
             return false;
         }
-    }
-
-    private string? TryGetValue(string key)
-    {
-        if (_endpoints.TryGetValue(key, out var endpoints))
-        {
-            return EffectiveConfigValueFormatter.FormatList(endpoints);
-        }
-
-        return _values.TryGetValue(key, out var value) ? value : null;
     }
 }

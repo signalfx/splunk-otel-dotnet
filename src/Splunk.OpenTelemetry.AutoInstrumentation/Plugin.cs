@@ -98,7 +98,6 @@ public class Plugin
     public ResourceBuilder ConfigureResource(ResourceBuilder builder)
     {
         var resource = ResourceConfigurator.Configure(builder, Settings);
-        _opAmp.RecordServiceName(resource);
         return builder;
     }
 

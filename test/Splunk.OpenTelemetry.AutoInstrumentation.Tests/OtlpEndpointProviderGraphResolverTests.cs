@@ -20,6 +20,8 @@ using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
@@ -33,7 +35,7 @@ public class OtlpEndpointProviderGraphResolverTests
             .Build();
 
         Assert.Equal(
-            new[] { "http://collector:4318/custom-traces" },
+            [EffectiveOtlpEndpoint.Http("http://collector:4318/custom-traces")],
             OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
     }
 
@@ -45,7 +47,7 @@ public class OtlpEndpointProviderGraphResolverTests
             .Build();
 
         Assert.Equal(
-            new[] { "http://collector:4318/custom-traces/" },
+            [EffectiveOtlpEndpoint.Http("http://collector:4318/custom-traces/")],
             OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
     }
 
@@ -58,7 +60,10 @@ public class OtlpEndpointProviderGraphResolverTests
             .Build();
 
         Assert.Equal(
-            new[] { "http://collector:4318/traces-a", "http://collector:4319/traces-b" },
+            [
+                EffectiveOtlpEndpoint.Http("http://collector:4318/traces-a"),
+                EffectiveOtlpEndpoint.Http("http://collector:4319/traces-b")
+            ],
             OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
     }
 
@@ -79,7 +84,7 @@ public class OtlpEndpointProviderGraphResolverTests
             .Build();
 
         Assert.Equal(
-            new[] { "http://collector:4318/custom-metrics" },
+            [EffectiveOtlpEndpoint.Http("http://collector:4318/custom-metrics")],
             OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
     }
 
@@ -93,7 +98,10 @@ public class OtlpEndpointProviderGraphResolverTests
             .Build();
 
         Assert.Equal(
-            new[] { "http://collector:4318/metrics-a", "http://collector:4319/metrics-b" },
+            [
+                EffectiveOtlpEndpoint.Http("http://collector:4318/metrics-a"),
+                EffectiveOtlpEndpoint.Http("http://collector:4319/metrics-b")
+            ],
             OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
     }
 
@@ -114,15 +122,67 @@ public class OtlpEndpointProviderGraphResolverTests
             .Build();
 
         Assert.Equal(
-            new[] { "http://collector:4318/logs-a", "http://collector:4319/logs-b" },
+            [
+                EffectiveOtlpEndpoint.Http("http://collector:4318/logs-a"),
+                EffectiveOtlpEndpoint.Http("http://collector:4319/logs-b")
+            ],
             OtlpEndpointProviderGraphResolver.ResolveLogEndpoints(provider));
     }
+
+#if NET
+    [Fact]
+    public void ResolveTraceEndpoints_ReturnsGrpcOtlpExporterEndpoint()
+    {
+        using var provider = global::OpenTelemetry.Sdk.CreateTracerProviderBuilder()
+            .AddOtlpExporter(options => ConfigureGrpcEndpoint(options, "http://collector:4317"))
+            .Build();
+
+        Assert.Equal(
+            [EffectiveOtlpEndpoint.Grpc("http://collector:4317/opentelemetry.proto.collector.trace.v1.TraceService/Export")],
+            OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
+    }
+
+    [Fact]
+    public void ResolveMetricEndpoints_ReturnsGrpcOtlpExporterEndpoint()
+    {
+        using var provider = global::OpenTelemetry.Sdk.CreateMeterProviderBuilder()
+            .AddMeter("test-meter")
+            .AddOtlpExporter(options => ConfigureGrpcEndpoint(options, "http://collector:4317"))
+            .Build();
+
+        Assert.Equal(
+            [EffectiveOtlpEndpoint.Grpc("http://collector:4317/opentelemetry.proto.collector.metrics.v1.MetricsService/Export")],
+            OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
+    }
+
+    [Fact]
+    public void ResolveLogEndpoints_ReturnsGrpcOtlpExporterEndpoint()
+    {
+        using var provider = CreateLoggerProviderBuilder()
+            .AddOtlpExporter(options => ConfigureGrpcEndpoint(options, "http://collector:4317"))
+            .Build();
+
+        Assert.Equal(
+            [EffectiveOtlpEndpoint.Grpc("http://collector:4317/opentelemetry.proto.collector.logs.v1.LogsService/Export")],
+            OtlpEndpointProviderGraphResolver.ResolveLogEndpoints(provider));
+    }
+#endif
 
     private static void ConfigureHttpEndpoint(OtlpExporterOptions options, string endpoint)
     {
         options.Protocol = OtlpExportProtocol.HttpProtobuf;
         options.Endpoint = new Uri(endpoint);
     }
+
+#if NET
+    private static void ConfigureGrpcEndpoint(OtlpExporterOptions options, string endpoint)
+    {
+#pragma warning disable CS0618 // OtlpExportProtocol.Grpc is obsolete but still supported by the SDK.
+        options.Protocol = OtlpExportProtocol.Grpc;
+#pragma warning restore CS0618
+        options.Endpoint = new Uri(endpoint);
+    }
+#endif
 
     private static LoggerProviderBuilder CreateLoggerProviderBuilder()
     {

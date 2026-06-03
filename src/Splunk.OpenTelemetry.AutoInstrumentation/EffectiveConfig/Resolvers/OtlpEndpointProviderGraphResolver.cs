@@ -19,40 +19,41 @@ using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 
 // Built SDK providers hold final OTLP endpoints after defaults and signal paths are applied.
 internal static class OtlpEndpointProviderGraphResolver
 {
     private const BindingFlags InstanceFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-    public static IReadOnlyList<string> ResolveTraceEndpoints(TracerProvider provider)
+    public static IReadOnlyList<EffectiveOtlpEndpoint> ResolveTraceEndpoints(TracerProvider provider)
     {
         var processor = GetPropertyValue(provider, "Processor");
         return ResolveEndpointsFromPipeline(processor, typeof(OtlpTraceExporter));
     }
 
-    public static IReadOnlyList<string> ResolveMetricEndpoints(MeterProvider provider)
+    public static IReadOnlyList<EffectiveOtlpEndpoint> ResolveMetricEndpoints(MeterProvider provider)
     {
         var reader = GetPropertyValue(provider, "Reader");
         return ResolveEndpointsFromPipeline(reader, typeof(OtlpMetricExporter));
     }
 
-    public static IReadOnlyList<string> ResolveLogEndpoints(LoggerProvider provider)
+    public static IReadOnlyList<EffectiveOtlpEndpoint> ResolveLogEndpoints(LoggerProvider provider)
     {
         var processor = GetPropertyValue(provider, "Processor");
         return ResolveEndpointsFromPipeline(processor, typeof(OtlpLogExporter));
     }
 
-    private static IReadOnlyList<string> ResolveEndpointsFromPipeline(object? pipeline, Type exporterType)
+    private static IReadOnlyList<EffectiveOtlpEndpoint> ResolveEndpointsFromPipeline(object? pipeline, Type exporterType)
     {
         if (pipeline == null)
         {
             return [];
         }
 
-        var endpoints = new List<string>();
+        var endpoints = new List<EffectiveOtlpEndpoint>();
         foreach (var pipelineItem in FlattenPipeline(pipeline))
         {
             var exporter = GetExporter(pipelineItem);
@@ -62,7 +63,11 @@ internal static class OtlpEndpointProviderGraphResolver
                 continue;
             }
 
-            endpoints.Add(ResolveEndpoint(exporter));
+            var endpoint = ResolveEndpoint(exporter);
+            if (endpoint != null)
+            {
+                endpoints.Add(endpoint.Value);
+            }
         }
 
         return endpoints;
@@ -93,7 +98,7 @@ internal static class OtlpEndpointProviderGraphResolver
         return GetFieldValue(pipelineItem, "exporter");
     }
 
-    private static string ResolveEndpoint(object exporter)
+    private static EffectiveOtlpEndpoint? ResolveEndpoint(object exporter)
     {
         // ExportClient.Endpoint is the final endpoint used by the SDK exporter.
         var transmissionHandler = GetRequiredFieldValue(exporter, "transmissionHandler");
@@ -101,7 +106,27 @@ internal static class OtlpEndpointProviderGraphResolver
         var endpoint = GetRequiredPropertyValue(exportClient, "Endpoint") as Uri
             ?? throw new InvalidOperationException($"Failed to read OTLP exporter endpoint from {exportClient.GetType().FullName}.");
 
-        return endpoint.AbsoluteUri;
+        var exporterType = ResolveExporterType(exportClient);
+        return exporterType == null
+            ? null
+            : new EffectiveOtlpEndpoint(endpoint.AbsoluteUri, exporterType.Value);
+    }
+
+    private static EffectiveOtlpExporterType? ResolveExporterType(object exportClient)
+    {
+        // The SDK's export-client implementation preserves the selected transport after options have been applied.
+        var typeName = exportClient.GetType().Name;
+        if (typeName.IndexOf("Http", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return EffectiveOtlpExporterType.HttpProtobuf;
+        }
+
+        if (typeName.IndexOf("Grpc", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return EffectiveOtlpExporterType.Grpc;
+        }
+
+        return null;
     }
 
     private static object? GetPropertyValue(object source, string name)

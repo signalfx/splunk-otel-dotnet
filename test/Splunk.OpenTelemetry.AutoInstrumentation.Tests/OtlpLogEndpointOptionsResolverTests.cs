@@ -16,6 +16,8 @@
 
 using OpenTelemetry.Exporter;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
@@ -32,7 +34,10 @@ public class OtlpLogEndpointOptionsResolverTests
             Protocol = OtlpExportProtocol.HttpProtobuf
         };
 
-        Assert.Equal("http://localhost:4318/v1/logs", OtlpLogEndpointOptionsResolver.ResolveEndpoint(options));
+        AssertEndpoint(
+            OtlpLogEndpointOptionsResolver.ResolveEndpoint(options),
+            "http://localhost:4318/v1/logs",
+            EffectiveOtlpExporterType.HttpProtobuf);
     }
 
     [Fact]
@@ -44,7 +49,10 @@ public class OtlpLogEndpointOptionsResolverTests
             Endpoint = new Uri("http://collector:4318/v1/logs")
         };
 
-        Assert.Equal("http://collector:4318/v1/logs", OtlpLogEndpointOptionsResolver.ResolveEndpoint(options));
+        AssertEndpoint(
+            OtlpLogEndpointOptionsResolver.ResolveEndpoint(options),
+            "http://collector:4318/v1/logs",
+            EffectiveOtlpExporterType.HttpProtobuf);
     }
 
     [Fact]
@@ -56,7 +64,10 @@ public class OtlpLogEndpointOptionsResolverTests
             Endpoint = new Uri("http://collector:4318/v1/logs/")
         };
 
-        Assert.Equal("http://collector:4318/v1/logs/", OtlpLogEndpointOptionsResolver.ResolveEndpoint(options));
+        AssertEndpoint(
+            OtlpLogEndpointOptionsResolver.ResolveEndpoint(options),
+            "http://collector:4318/v1/logs/",
+            EffectiveOtlpExporterType.HttpProtobuf);
     }
 
     [Fact]
@@ -72,9 +83,10 @@ public class OtlpLogEndpointOptionsResolverTests
 #pragma warning restore CS0618
         };
 
-        Assert.Equal(
+        AssertEndpoint(
+            OtlpLogEndpointOptionsResolver.ResolveEndpoint(options),
             "http://localhost:4317/opentelemetry.proto.collector.logs.v1.LogsService/Export",
-            OtlpLogEndpointOptionsResolver.ResolveEndpoint(options));
+            EffectiveOtlpExporterType.Grpc);
     }
 
     [Fact]
@@ -88,9 +100,20 @@ public class OtlpLogEndpointOptionsResolverTests
             Endpoint = new Uri("http://collector:4317/opentelemetry.proto.collector.logs.v1.LogsService/Export")
         };
 
-        Assert.Equal(
+        AssertEndpoint(
+            OtlpLogEndpointOptionsResolver.ResolveEndpoint(options),
             "http://collector:4317/opentelemetry.proto.collector.logs.v1.LogsService/Export",
-            OtlpLogEndpointOptionsResolver.ResolveEndpoint(options));
+            EffectiveOtlpExporterType.Grpc);
+    }
+
+    private static void AssertEndpoint(
+        EffectiveOtlpEndpoint? endpoint,
+        string expectedEndpoint,
+        EffectiveOtlpExporterType expectedExporterType)
+    {
+        Assert.NotNull(endpoint);
+        Assert.Equal(expectedEndpoint, endpoint.Value.Endpoint);
+        Assert.Equal(expectedExporterType, endpoint.Value.ExporterType);
     }
 
     private sealed class EnvironmentVariableScope : IDisposable

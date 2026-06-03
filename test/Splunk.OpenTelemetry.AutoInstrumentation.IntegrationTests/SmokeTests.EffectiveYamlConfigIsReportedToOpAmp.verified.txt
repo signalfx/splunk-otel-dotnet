@@ -1,0 +1,23 @@
+otel_config_file: "{configFile}"
+otel_experimental_config_file: null
+tracer_provider:
+  processors:
+    - batch:
+        exporter:
+          otlp_http:
+            endpoint: "http://traces-collector:4318/v1/traces"
+meter_provider:
+  readers:
+    - periodic:
+        exporter:
+          otlp_http:
+            endpoint: "http://localhost:4318/v1/metrics"
+distribution:
+  splunk:
+    profiling:
+      always_on:
+        cpu_profiler:
+          sampling_interval: 10000
+        memory_profiler: {}
+      callgraphs:
+        sampling_interval: 5000

@@ -17,7 +17,7 @@
 using System.Reflection;
 using OpenTelemetry.Logs;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 
 internal static class UpstreamLoggerProviderResolver
 {

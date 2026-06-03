@@ -14,26 +14,23 @@
 // limitations under the License.
 // </copyright>
 
-using System.Text;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.OpAmp.Client;
 using OpenTelemetry.OpAmp.Client.Messages;
-using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal sealed class EffectiveConfigReporter
 {
-    internal const string EffectiveConfigFileName = "config";
-    internal const string EffectiveConfigContentType = "text/plain+properties";
-
     private static readonly ILogger Log = new Logger();
 
     private readonly EffectiveConfigState _state = new();
-    private readonly Func<IReadOnlyList<string>?> _bridgeLogEndpointResolver;
+    private readonly Func<IReadOnlyList<EffectiveOtlpEndpoint>?> _bridgeLogEndpointResolver;
     private OpAmpClient? _opAmpClient;
     private int _iloggerLogsConfigured;
 
@@ -42,7 +39,7 @@ internal sealed class EffectiveConfigReporter
     {
     }
 
-    internal EffectiveConfigReporter(Func<IReadOnlyList<string>?> bridgeLogEndpointResolver)
+    internal EffectiveConfigReporter(Func<IReadOnlyList<EffectiveOtlpEndpoint>?> bridgeLogEndpointResolver)
     {
         _bridgeLogEndpointResolver = bridgeLogEndpointResolver;
     }
@@ -50,17 +47,6 @@ internal sealed class EffectiveConfigReporter
     public void CaptureSplunkSettings(PluginSettings settings)
     {
         _state.SetSplunkSettings(settings);
-    }
-
-    public void CaptureServiceName(Resource resource)
-    {
-        var serviceName = EffectiveResourceConfigReader.ReadServiceName(resource);
-        if (serviceName == null)
-        {
-            return;
-        }
-
-        _state.TrySetServiceName(serviceName);
     }
 
     public void CaptureTraceEndpoints(TracerProvider provider)
@@ -115,7 +101,7 @@ internal sealed class EffectiveConfigReporter
                 return;
             }
 
-            if (_state.AddLogEndpoint(endpoint))
+            if (_state.AddLogEndpoint(endpoint.Value))
             {
                 SendUpdatedPayloadIfOpAmpClientIsAvailable();
             }
@@ -142,13 +128,13 @@ internal sealed class EffectiveConfigReporter
         Volatile.Write(ref _opAmpClient, client);
     }
 
-    internal string BuildCurrentPayload()
+    internal EffectiveConfigFile BuildCurrentPayload()
     {
         CaptureBridgeLogEndpointsIfNeeded();
-        return _state.BuildPayload();
+        return EffectiveConfigPayloadBuilder.Build(_state.CreateSnapshot());
     }
 
-    private static IReadOnlyList<string>? ResolveBridgeLogEndpoints()
+    private static IReadOnlyList<EffectiveOtlpEndpoint>? ResolveBridgeLogEndpoints()
     {
         // NLog/log4net bridges use upstream's LoggerProvider; do not force Lazy.Value here.
         var bridgeLoggerProvider = UpstreamLoggerProviderResolver.TryGetAlreadyCreatedLoggerProvider();
@@ -182,14 +168,12 @@ internal sealed class EffectiveConfigReporter
 
     private async Task SendCurrentPayloadAsync(OpAmpClient client)
     {
-        var payload = BuildCurrentPayload();
-        if (string.IsNullOrWhiteSpace(payload))
+        var effectiveConfigFile = BuildCurrentPayload();
+        if (effectiveConfigFile.Content.Length == 0)
         {
             return;
         }
 
-        var bytes = Encoding.UTF8.GetBytes(payload);
-        var effectiveConfigFile = new EffectiveConfigFile(new ReadOnlyMemory<byte>(bytes), EffectiveConfigContentType, EffectiveConfigFileName);
         await client.SendEffectiveConfigAsync([effectiveConfigFile]).ConfigureAwait(false);
     }
 
