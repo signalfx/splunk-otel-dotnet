@@ -179,7 +179,7 @@ jobs:
   create-release:
     if: github.ref_type == 'tag'
     name: Create GitHub release
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [ build, container-build, build-nuget-package, test-nuget-package ]
     permissions:
       contents: write
