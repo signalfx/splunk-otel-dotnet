@@ -233,6 +233,15 @@ public class Plugin
     }
 
     /// <summary>
+    /// Returns optional extensions for the continuous profiler configuration.
+    /// Newer consumers can discover this method (and the methods on the returned object)
+    /// via reflection. Older consumers that don't know about it will simply use their
+    /// own defaults, preserving backward compatibility.
+    /// </summary>
+    /// <returns>An opaque object exposing additional profiler configuration knobs.</returns>
+    public object GetContinuousProfilerConfigurationExtensions() => new ProfilerExtensions(Settings);
+
+    /// <summary>
     /// Modify SDK config.
     /// </summary>
     /// <param name="builder">TracerProviderBuilder instance to customize.</param>
@@ -321,5 +330,19 @@ public class Plugin
     private static PprofInOtlpLogsExporter CreatePprofInOtlpLogsExporter()
     {
         return new PprofInOtlpLogsExporter(new SampleProcessor(), new SampleExporter(new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint)), new NativeFormatParser(Settings.SnapshotsEnabled));
+    }
+
+    private sealed class ProfilerExtensions
+    {
+        private readonly PluginSettings _settings;
+
+        public ProfilerExtensions(PluginSettings settings)
+        {
+            _settings = settings;
+        }
+
+        // Opt-in by default. Consumers that don't find this method via reflection
+        // will fall back to their own default (also true), so behavior is preserved.
+        public bool GetNativeExportResolutionEnabled() => _settings.NativeExportsResolutionEnabled;
     }
 }

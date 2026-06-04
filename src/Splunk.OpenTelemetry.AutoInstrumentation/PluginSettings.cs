@@ -68,6 +68,8 @@ internal class PluginSettings
         ProfilerExportInterval = GetFinalExportInterval(exportInterval);
 
         ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
+
+        NativeExportsResolutionEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.NativeExportsResolutionEnabled) ?? true;
     }
 
     internal PluginSettings(YamlRoot configuration)
@@ -121,6 +123,8 @@ internal class PluginSettings
             ProfilerHttpClientTimeout = profilingConfig.Exporter.OtlpLogHttp.ExportTimeout;
             ProfilerExportInterval = GetFinalExportInterval((int)profilingConfig.Exporter.OtlpLogHttp.ScheduleDelay);
             ProfilerLogsEndpoint = new Uri(profilingConfig.Exporter.OtlpLogHttp.Endpoint);
+
+            NativeExportsResolutionEnabled = profilingConfig.NativeExportsResolutionEnabled;
         }
     }
 
@@ -155,6 +159,8 @@ internal class PluginSettings
     public uint ProfilerHttpClientTimeout { get; }
 
     public uint ProfilerExportInterval { get; }
+
+    public bool NativeExportsResolutionEnabled { get; }
 
     public static PluginSettings FromDefaultSources()
     {
