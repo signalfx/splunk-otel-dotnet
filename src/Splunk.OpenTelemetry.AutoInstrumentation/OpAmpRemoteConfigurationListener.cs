@@ -79,7 +79,7 @@ internal sealed class OpAmpRemoteConfigurationListener : IOpAmpListener<RemoteCo
             return false;
         }
 
-        var mediaType = contentType.Split(';')[0].Trim();
+        var mediaType = contentType!.Split(';')[0].Trim();
         return mediaType.Equals(ProfilerRuntimeRemoteConfiguration.RemoteConfigContentType, StringComparison.OrdinalIgnoreCase);
     }
 
