@@ -31,7 +31,7 @@ an OpAMP `AgentRemoteConfig.AgentConfigMap` entry named `splunk.remote.config`
 with content type `application/yaml`.
 
 Remote configuration values are applied in memory only. The agent does not
-write remote configuration payloads to disk.
+persist remote configuration payloads.
 
 ## Effective configuration contents
 

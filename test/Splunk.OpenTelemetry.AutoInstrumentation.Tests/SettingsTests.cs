@@ -16,6 +16,7 @@
 
 using System.Collections.Specialized;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 {
@@ -123,25 +124,36 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
         }
 
         [Fact]
-        internal void TryLoadOpAmpRemoteConfigFeature_ReadsFileBasedSetting()
+        internal void PluginSettings_ReadsOpAmpRemoteConfigFromYaml()
         {
-            const string yaml = """
-                                opamp/development:
-                                  endpoint: http://some.opamp-host.com:3420/v1/opamp
-                                  features:
-                                    remote_config:
-                                """;
-            var fileName = Path.GetTempFileName();
-            try
-            {
-                File.WriteAllText(fileName, yaml);
+            var settings = new PluginSettings(
+                new YamlRoot
+                {
+                    OpAmpDevelopment = new OpampDevelopment
+                    {
+                        Features = new Features
+                        {
+                            RemoteConfig = new object()
+                        }
+                    }
+                });
 
-                Assert.True(PluginSettings.TryLoadOpAmpRemoteConfigFeature(fileName));
-            }
-            finally
-            {
-                File.Delete(fileName);
-            }
+            Assert.True(settings.OpAmpRemoteConfigEnabled);
+        }
+
+        [Fact]
+        internal void PluginSettings_DisablesOpAmpRemoteConfigWhenYamlFeatureIsOmitted()
+        {
+            var settings = new PluginSettings(
+                new YamlRoot
+                {
+                    OpAmpDevelopment = new OpampDevelopment
+                    {
+                        Features = new Features()
+                    }
+                });
+
+            Assert.False(settings.OpAmpRemoteConfigEnabled);
         }
 
         private static void ClearEnvVars()

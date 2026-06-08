@@ -16,6 +16,7 @@
 
 using System.Collections.Specialized;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
@@ -23,27 +24,37 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 public class ProfilerRuntimeRemoteConfigurationTests
 {
     [Fact]
-    public void ParseValues_MapsSupportedRemoteYamlToRuntimeConfiguration()
+    public void ParseValues_MapsSupportedRemoteConfigurationToRuntimeConfiguration()
     {
-        const string yaml = """
-                            distribution:
-                              splunk:
-                                profiling:
-                                  exporter:
-                                    otlp_log_http:
-                                      endpoint: http://ignored:4318/v1/logs
-                                  always_on:
-                                    cpu_profiler:
-                                      sampling_interval: 1234
-                                    memory_profiler:
-                                      max_memory_samples: 123
-                                  callgraphs:
-                                    sampling_interval: 300
-                                    selection_probability: 0.5
-                                    high_resolution_timer_enabled: true
-                            """;
-
-        var values = ProfilerRuntimeRemoteConfiguration.ParseValues(yaml);
+        var values = ProfilerRuntimeRemoteConfiguration.ParseValues(
+            CreateConfiguration(
+                new ProfilerConfiguration
+                {
+                    Exporter = new ExporterConfig
+                    {
+                        OtlpLogHttp = new OtlpLogHttpConfig
+                        {
+                            Endpoint = "http://ignored:4318/v1/logs"
+                        }
+                    },
+                    AlwaysOn = new AlwaysOn
+                    {
+                        CpuProfiler = new CpuProfiler
+                        {
+                            SamplingInterval = 1234
+                        },
+                        MemoryProfiler = new MemoryProfiler
+                        {
+                            MaxMemorySamples = 123
+                        }
+                    },
+                    Callgraphs = new CallGraphsConfiguration
+                    {
+                        SamplingInterval = 300,
+                        SelectionProbability = 0.5,
+                        HighResolutionTimerEnabled = true
+                    }
+                }));
 
         Assert.Equal("true", values[ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled]);
         Assert.Equal("1234", values[ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval]);
@@ -59,17 +70,17 @@ public class ProfilerRuntimeRemoteConfigurationTests
     [Fact]
     public void ParseValues_UsesDefaultsForPresentEmptyProfilerSections()
     {
-        const string yaml = """
-                            distribution:
-                              splunk:
-                                profiling:
-                                  always_on:
-                                    cpu_profiler:
-                                    memory_profiler: {}
-                                  callgraphs: null
-                            """;
-
-        var values = ProfilerRuntimeRemoteConfiguration.ParseValues(yaml);
+        var values = ProfilerRuntimeRemoteConfiguration.ParseValues(
+            CreateConfiguration(
+                new ProfilerConfiguration
+                {
+                    AlwaysOn = new AlwaysOn
+                    {
+                        CpuProfiler = new CpuProfiler(),
+                        MemoryProfiler = new MemoryProfiler()
+                    },
+                    Callgraphs = new CallGraphsConfiguration()
+                }));
 
         Assert.Equal("true", values[ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled]);
         Assert.Equal(Constants.DefaultSamplingInterval.ToString(), values[ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval]);
@@ -83,15 +94,15 @@ public class ProfilerRuntimeRemoteConfigurationTests
     [Fact]
     public void ParseValues_DisablesProfilerSectionsOmittedFromProfilingConfig()
     {
-        const string yaml = """
-                            distribution:
-                              splunk:
-                                profiling:
-                                  always_on:
-                                    cpu_profiler:
-                            """;
-
-        var values = ProfilerRuntimeRemoteConfiguration.ParseValues(yaml);
+        var values = ProfilerRuntimeRemoteConfiguration.ParseValues(
+            CreateConfiguration(
+                new ProfilerConfiguration
+                {
+                    AlwaysOn = new AlwaysOn
+                    {
+                        CpuProfiler = new CpuProfiler()
+                    }
+                }));
 
         Assert.Equal("true", values[ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled]);
         Assert.Equal("false", values[ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled]);
@@ -101,14 +112,7 @@ public class ProfilerRuntimeRemoteConfigurationTests
     [Fact]
     public void ParseValues_IgnoresPayloadWithoutProfilingConfig()
     {
-        const string yaml = """
-                            distribution:
-                              splunk:
-                                unrelated:
-                                  enabled: true
-                            """;
-
-        var values = ProfilerRuntimeRemoteConfiguration.ParseValues(yaml);
+        var values = ProfilerRuntimeRemoteConfiguration.ParseValues(new YamlRoot());
 
         Assert.Empty(values);
     }
@@ -131,4 +135,18 @@ public class ProfilerRuntimeRemoteConfigurationTests
         Assert.Equal(123u, ProfilerRuntimeConfiguration.Current.MemoryProfilerMaxMemorySamplesPerMinute);
     }
 #endif
+
+    private static YamlRoot CreateConfiguration(ProfilerConfiguration profiling)
+    {
+        return new YamlRoot
+        {
+            Distribution = new Distribution
+            {
+                Splunk = new SplunkConfiguration
+                {
+                    Profiling = profiling
+                }
+            }
+        };
+    }
 }

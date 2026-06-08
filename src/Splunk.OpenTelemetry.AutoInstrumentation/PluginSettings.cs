@@ -251,24 +251,7 @@ internal class PluginSettings
         };
     }
 
-    private static Uri GetProfilerLogsEndpoints(IConfigurationSource source, Uri? otlpFallback)
-    {
-        var profilerLogsEndpoint = source.GetString(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint);
-
-        if (string.IsNullOrEmpty(profilerLogsEndpoint))
-        {
-            if (otlpFallback == null)
-            {
-                return new Uri(Constants.DefaultProfilerLogsEndpoint);
-            }
-
-            return otlpFallback.ToString().EndsWith("v1/logs") ? otlpFallback : new Uri(otlpFallback, "v1/logs");
-        }
-
-        return new Uri(profilerLogsEndpoint);
-    }
-
-    private static YamlRoot? LoadSplunkConfig(string fileName)
+    internal static YamlRoot? LoadSplunkConfig(string fileName)
     {
         var parserType = Type.GetType("OpenTelemetry.AutoInstrumentation.Configurations.FileBasedConfiguration.Parser.Parser, OpenTelemetry.AutoInstrumentation");
         if (parserType == null)
@@ -301,5 +284,22 @@ internal class PluginSettings
         {
             return (YamlRoot)yamlRoot;
         }
+    }
+
+    private static Uri GetProfilerLogsEndpoints(IConfigurationSource source, Uri? otlpFallback)
+    {
+        var profilerLogsEndpoint = source.GetString(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint);
+
+        if (string.IsNullOrEmpty(profilerLogsEndpoint))
+        {
+            if (otlpFallback == null)
+            {
+                return new Uri(Constants.DefaultProfilerLogsEndpoint);
+            }
+
+            return otlpFallback.ToString().EndsWith("v1/logs") ? otlpFallback : new Uri(otlpFallback, "v1/logs");
+        }
+
+        return new Uri(profilerLogsEndpoint);
     }
 }
