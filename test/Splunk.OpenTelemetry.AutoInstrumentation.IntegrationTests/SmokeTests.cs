@@ -467,6 +467,56 @@ public class SmokeTests : TestHelper, IDisposable
 #endif
     }
 
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void RemoteYamlConfigIsAppliedFromOpAmp()
+    {
+        using var opAmpServer = new MockOpAmpServer(Output);
+
+        opAmpServer.OfferRemoteConfig(
+            """
+            distribution:
+              splunk:
+                profiling:
+                  always_on:
+                    cpu_profiler:
+                      sampling_interval: 1200
+                    memory_profiler:
+                      max_memory_samples: 123
+                  callgraphs:
+                    sampling_interval: 300
+                    selection_probability: 1.0
+                    high_resolution_timer_enabled: true
+            """);
+
+        EnableBytecodeInstrumentation();
+        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+        SetEnvironmentVariable("SPLUNK_OPAMP_REMOTE_CONFIG", "true");
+        SetEnvironmentVariable("SPLUNK_PROFILER_ENABLED", "false");
+        SetEnvironmentVariable("SPLUNK_PROFILER_MEMORY_ENABLED", "false");
+        SetEnvironmentVariable("SPLUNK_SNAPSHOT_PROFILER_ENABLED", "false");
+
+        var requiredEntries = new[]
+        {
+            "SPLUNK_PROFILER_ENABLED=true",
+#if NET
+            "SPLUNK_PROFILER_MEMORY_ENABLED=true",
+#else
+            "SPLUNK_PROFILER_MEMORY_ENABLED=false",
+#endif
+            "SPLUNK_PROFILER_CALL_STACK_INTERVAL=\"1200ms\"",
+            "SPLUNK_PROFILER_LOGS_ENDPOINT=\"http://localhost:4318/v1/logs\"",
+            "SPLUNK_SNAPSHOT_PROFILER_ENABLED=true",
+            "SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL=\"300ms\""
+        };
+
+        RunTestApplicationAndAssertEffectiveConfig(
+            opAmpServer,
+            payload => ContainsAll(payload, requiredEntries),
+            frame => ReportsEffectiveConfigCapability(frame) && AcceptsRemoteConfigCapability(frame),
+            "Reports effective config and accepts remote config capability");
+    }
+
     public void Dispose()
     {
         if (_testServer.IsValueCreated)
@@ -501,6 +551,12 @@ public class SmokeTests : TestHelper, IDisposable
         return (frame.Capabilities & reportsEffectiveConfigCapability) != 0;
     }
 
+    private static bool AcceptsRemoteConfigCapability(AgentToServer frame)
+    {
+        const ulong acceptsRemoteConfigCapability = (ulong)AgentCapabilities.AcceptsRemoteConfig;
+        return (frame.Capabilities & acceptsRemoteConfigCapability) != 0;
+    }
+
     private static ICollection<KeyValuePair<string, string>> ParseSettingsLog(string log, string marker)
     {
         var lines = log.Split([Environment.NewLine], StringSplitOptions.None);
@@ -524,12 +580,14 @@ public class SmokeTests : TestHelper, IDisposable
 
     private void RunTestApplicationAndAssertEffectiveConfig(
         MockOpAmpServer opAmpServer,
-        Func<string, bool> effectiveConfigPredicate)
+        Func<string, bool> effectiveConfigPredicate,
+        Func<AgentToServer, bool>? capabilityPredicate = null,
+        string capabilityDescription = "Reports effective config capability")
     {
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_OPAMP_ENABLED", "true");
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_OPAMP_SERVER_URL", $"http://localhost:{opAmpServer.Port}/v1/opamp");
 
-        opAmpServer.Expect(ReportsEffectiveConfigCapability, "Reports effective config capability");
+        opAmpServer.Expect(capabilityPredicate ?? ReportsEffectiveConfigCapability, capabilityDescription);
         opAmpServer.ExpectEffectiveConfigPayload(
             EffectiveConfigReporter.EffectiveConfigFileName,
             EffectiveConfigReporter.EffectiveConfigContentType,

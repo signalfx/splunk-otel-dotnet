@@ -68,10 +68,7 @@ internal class PluginSettings
         ProfilerExportInterval = GetFinalExportInterval(exportInterval);
 
         ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
-
-        ProfilerRuntimeConfigEndpointEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.RuntimeConfigEndpointEnabled) ?? false;
-        var runtimeConfigEndpointPort = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.RuntimeConfigEndpointPort) ?? 0;
-        ProfilerRuntimeConfigEndpointPort = runtimeConfigEndpointPort > 0 ? runtimeConfigEndpointPort : 0;
+        OpAmpRemoteConfigEnabled = source.GetBool(ConfigurationKeys.Splunk.OpAmp.RemoteConfig) ?? false;
     }
 
     internal PluginSettings(YamlRoot configuration)
@@ -91,6 +88,8 @@ internal class PluginSettings
 #else
         TraceResponseHeaderEnabled = traceConfig?.Aspnetcore?.ResponseHeaderEnabled ?? Constants.DefaultTraceResponseHeaderEnabled;
 #endif
+
+        OpAmpRemoteConfigEnabled = configuration.OpAmpDevelopment?.Features?.RemoteConfig != null;
 
         var profilingConfig = configuration.Distribution?.Splunk?.Profiling;
         if (profilingConfig != null)
@@ -126,9 +125,6 @@ internal class PluginSettings
             ProfilerExportInterval = GetFinalExportInterval((int)profilingConfig.Exporter.OtlpLogHttp.ScheduleDelay);
             ProfilerLogsEndpoint = new Uri(profilingConfig.Exporter.OtlpLogHttp.Endpoint);
         }
-
-        ProfilerRuntimeConfigEndpointEnabled = false;
-        ProfilerRuntimeConfigEndpointPort = 0;
     }
 
     public uint SnapshotsSamplingInterval { get; set; }
@@ -163,9 +159,7 @@ internal class PluginSettings
 
     public uint ProfilerExportInterval { get; }
 
-    public bool ProfilerRuntimeConfigEndpointEnabled { get; }
-
-    public int ProfilerRuntimeConfigEndpointPort { get; }
+    public bool OpAmpRemoteConfigEnabled { get; }
 
     public static PluginSettings FromDefaultSources()
     {

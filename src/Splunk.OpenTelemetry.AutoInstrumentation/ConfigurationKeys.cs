@@ -49,6 +49,14 @@ internal static class ConfigurationKeys
         /// </summary>
         public const string TraceResponseHeaderEnabled = "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED";
 
+        public static class OpAmp
+        {
+            /// <summary>
+            /// Configuration key for enabling OpAMP remote configuration.
+            /// </summary>
+            public const string RemoteConfig = "SPLUNK_OPAMP_REMOTE_CONFIG";
+        }
+
         public static class AlwaysOnProfiler
         {
             /// <summary>
@@ -85,16 +93,6 @@ internal static class ConfigurationKeys
             /// Configuration key for Profiler exporter export interval (in ms). Defaults to 500 ms, which is also the minimum.
             /// </summary>
             public const string ProfilerExportInterval = "SPLUNK_PROFILER_EXPORT_INTERVAL";
-
-            /// <summary>
-            /// Configuration key for enabling local runtime profiler reconfiguration endpoint.
-            /// </summary>
-            public const string RuntimeConfigEndpointEnabled = "SPLUNK_PROFILER_RUNTIME_CONFIG_ENDPOINT_ENABLED";
-
-            /// <summary>
-            /// Configuration key for the local runtime profiler reconfiguration endpoint port.
-            /// </summary>
-            public const string RuntimeConfigEndpointPort = "SPLUNK_PROFILER_RUNTIME_CONFIG_ENDPOINT_PORT";
         }
 
         public static class Snapshots

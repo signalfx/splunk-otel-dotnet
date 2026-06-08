@@ -21,6 +21,8 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal static class UpstreamOpAmpEnabledResolver
 {
+    private const string OpAmpEnabledEnvironmentVariable = "OTEL_DOTNET_AUTO_OPAMP_ENABLED";
+
     private static readonly ILogger Log = new Logger();
     private static readonly Lazy<bool> IsEnabledCache = new(ResolveDefault);
 
@@ -36,7 +38,7 @@ internal static class UpstreamOpAmpEnabledResolver
             var instrumentationType = UpstreamInstrumentationResolver.TryGetInstrumentationType();
             if (instrumentationType == null)
             {
-                return WarnAndReturnFalse("Instrumentation type was not found.");
+                return WarnAndResolveFromEnvironment("Instrumentation type was not found.");
             }
 
             var opAmpSettingsLazy = instrumentationType
@@ -44,7 +46,7 @@ internal static class UpstreamOpAmpEnabledResolver
                 ?.GetValue(null);
             if (opAmpSettingsLazy == null)
             {
-                return WarnAndReturnFalse("OpAmpSettings property was not found.");
+                return WarnAndResolveFromEnvironment("OpAmpSettings property was not found.");
             }
 
             var opAmpSettings = opAmpSettingsLazy
@@ -53,7 +55,7 @@ internal static class UpstreamOpAmpEnabledResolver
                 ?.GetValue(opAmpSettingsLazy);
             if (opAmpSettings == null)
             {
-                return WarnAndReturnFalse("OpAmpSettings value was not found.");
+                return WarnAndResolveFromEnvironment("OpAmpSettings value was not found.");
             }
 
             var enabledValue = opAmpSettings
@@ -66,16 +68,23 @@ internal static class UpstreamOpAmpEnabledResolver
                 return enabled;
             }
 
-            return WarnAndReturnFalse("OpAmpClientEnabled property was not found.");
+            return WarnAndResolveFromEnvironment("OpAmpClientEnabled property was not found.");
         }
         catch (Exception ex)
         {
-            return WarnAndReturnFalse(ex.Message);
+            return WarnAndResolveFromEnvironment(ex.Message);
         }
     }
 
-    private static bool WarnAndReturnFalse(string reason)
+    private static bool WarnAndResolveFromEnvironment(string reason)
     {
+        var configuredValue = Environment.GetEnvironmentVariable(OpAmpEnabledEnvironmentVariable);
+        if (bool.TryParse(configuredValue, out var enabled))
+        {
+            Log.Warning($"Could not resolve upstream OpAMP enabled setting: {reason} Falling back to {OpAmpEnabledEnvironmentVariable}={configuredValue}.");
+            return enabled;
+        }
+
         Log.Warning($"Could not resolve upstream OpAMP enabled setting: {reason}");
         return false;
     }

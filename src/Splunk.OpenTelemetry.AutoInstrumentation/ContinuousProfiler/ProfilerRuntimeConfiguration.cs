@@ -23,15 +23,15 @@ internal static class ProfilerRuntimeConfiguration
     private static readonly object Sync = new();
 
     private static ProfilerRuntimeSettings? _settings;
-    private static bool _runtimeConfigEndpointEnabled;
+    private static bool _opAmpRemoteConfigurationEnabled;
 
-    public static bool RuntimeConfigEndpointEnabled
+    public static bool RuntimeConfigurationEnabled
     {
         get
         {
             lock (Sync)
             {
-                return _runtimeConfigEndpointEnabled;
+                return _opAmpRemoteConfigurationEnabled;
             }
         }
     }
@@ -57,7 +57,15 @@ internal static class ProfilerRuntimeConfiguration
         lock (Sync)
         {
             _settings = ProfilerRuntimeSettings.FromPluginSettings(settings);
-            _runtimeConfigEndpointEnabled = settings.ProfilerRuntimeConfigEndpointEnabled;
+            _opAmpRemoteConfigurationEnabled = false;
+        }
+    }
+
+    public static void EnableOpAmpRemoteConfiguration()
+    {
+        lock (Sync)
+        {
+            _opAmpRemoteConfigurationEnabled = true;
         }
     }
 
@@ -117,6 +125,23 @@ internal static class ProfilerRuntimeConfiguration
                         {
 #if NET
                             memoryProfilerEnabled = parsedBool;
+                            result.Applied.Add(value.Key);
+#else
+                            result.Unsupported.Add(value.Key);
+#endif
+                        }
+                        else
+                        {
+                            result.Invalid.Add(value.Key);
+                        }
+
+                        break;
+
+                    case ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples:
+                        if (TryParseInt32(value.Value, out parsedInt))
+                        {
+#if NET
+                            memoryProfilerMaxMemorySamplesPerMinute = PluginSettings.GetFinalMaxMemorySamples(parsedInt);
                             result.Applied.Add(value.Key);
 #else
                             result.Unsupported.Add(value.Key);

@@ -103,10 +103,45 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             Assert.Equal(10000u, settings.CpuProfilerCallStackInterval);
             Assert.Equal(3000u, settings.ProfilerHttpClientTimeout);
             Assert.Equal(500u, settings.ProfilerExportInterval);
+            Assert.False(settings.OpAmpRemoteConfigEnabled);
 #if NET
             Assert.False(settings.MemoryProfilerEnabled);
             Assert.Equal(200u, settings.MemoryProfilerMaxMemorySamplesPerMinute);
 #endif
+        }
+
+        [Fact]
+        internal void PluginSettings_ReadsOpAmpRemoteConfigFromEnvironment()
+        {
+            var settings = new PluginSettings(new NameValueConfigurationSource(
+                new NameValueCollection
+                {
+                    [ConfigurationKeys.Splunk.OpAmp.RemoteConfig] = "true"
+                }));
+
+            Assert.True(settings.OpAmpRemoteConfigEnabled);
+        }
+
+        [Fact]
+        internal void TryLoadOpAmpRemoteConfigFeature_ReadsFileBasedSetting()
+        {
+            const string yaml = """
+                                opamp/development:
+                                  endpoint: http://some.opamp-host.com:3420/v1/opamp
+                                  features:
+                                    remote_config:
+                                """;
+            var fileName = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllText(fileName, yaml);
+
+                Assert.True(PluginSettings.TryLoadOpAmpRemoteConfigFeature(fileName));
+            }
+            finally
+            {
+                File.Delete(fileName);
+            }
         }
 
         private static void ClearEnvVars()
@@ -116,6 +151,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Realm, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AccessToken, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.OpAmp.RemoteConfig, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint, null);

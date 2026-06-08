@@ -15,6 +15,7 @@
 // </copyright>
 
 using System.Text;
+using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
@@ -49,17 +50,20 @@ internal sealed class EffectiveConfigState
     private readonly object _lock = new();
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
     private readonly Dictionary<string, List<string>> _endpoints = new(StringComparer.Ordinal);
+    private Uri? _profilerLogsEndpoint;
 
     public void SetSplunkSettings(PluginSettings settings)
+    {
+        _profilerLogsEndpoint = settings.ProfilerLogsEndpoint;
+        SetProfilerRuntimeSettings(ProfilerRuntimeSettings.FromPluginSettings(settings));
+    }
+
+    public void SetProfilerRuntimeSettings(ProfilerRuntimeSettings settings)
     {
         lock (_lock)
         {
             _values[CpuProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.CpuProfilerEnabled);
-#if NET
             var memoryProfilerEnabled = settings.MemoryProfilerEnabled;
-#else
-            var memoryProfilerEnabled = false;
-#endif
             _values[MemoryProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(memoryProfilerEnabled);
             _values[SnapshotProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.SnapshotsEnabled);
 
@@ -72,9 +76,9 @@ internal sealed class EffectiveConfigState
                 _values.Remove(CpuProfilerCallStackInterval);
             }
 
-            if (settings.CpuProfilerEnabled || memoryProfilerEnabled || settings.SnapshotsEnabled)
+            if (_profilerLogsEndpoint != null && (settings.CpuProfilerEnabled || memoryProfilerEnabled || settings.SnapshotsEnabled))
             {
-                _values[ProfilerLogsEndpoint] = EffectiveConfigValueFormatter.FormatList([settings.ProfilerLogsEndpoint.ToString()]);
+                _values[ProfilerLogsEndpoint] = EffectiveConfigValueFormatter.FormatList([_profilerLogsEndpoint.ToString()]);
             }
             else
             {
