@@ -162,9 +162,28 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
             }
         });
 
+    Target CreateSplunkVersionFile => _ => _
+        .Unlisted()
+        .After(UnpackAutoInstrumentationDistribution)
+        .Executes(() =>
+        {
+            var version = VersionHelper.GetVersion();
+            var refName = "local-dev";
+            var gitSha = VersionHelper.GetCommitId();
+
+            if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") is "true")
+            {
+                refName = Environment.GetEnvironmentVariable("GITHUB_REF_NAME");
+            }
+
+            var dest = OpenTelemetryDistributionFolder / "SPLUNK_VERSION";
+            dest.WriteAllLines([version, $"{refName}@{gitSha}"]);
+        });
+
     Target PackSplunkDistribution => _ => _
         .After(CopyInstrumentScripts)
         .After(ExtendLicenseFile)
+        .After(CreateSplunkVersionFile)
         .Executes(() =>
         {
             var fileName = GetOTelAutoInstrumentationFileName();
@@ -222,6 +241,7 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
         .DependsOn(AddSplunkPlugins)
         .DependsOn(CopyInstrumentScripts)
         .DependsOn(ExtendLicenseFile)
+        .DependsOn(CreateSplunkVersionFile)
         .DependsOn(RunUnitTests)
         .DependsOn(RunIntegrationTests)
         .DependsOn(PackSplunkDistribution);
