@@ -218,6 +218,7 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
 
     Target RunIntegrationTests => _ => _
         .After(Compile)
+        .After(CreateSplunkVersionFile)
         .After(AddSplunkPlugins)
         .Executes(() =>
         {
