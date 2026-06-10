@@ -42,10 +42,11 @@ internal static class NativeContinuousProfilerConfigurator
                     settings.CpuProfilerCallStackInterval,
 #if NET
                     settings.MemoryProfilerEnabled,
+                    settings.MemoryProfilerMaxMemorySamplesPerMinute,
 #else
                     false,
+                    0u,
 #endif
-                    settings.MemoryProfilerMaxMemorySamplesPerMinute,
                     settings.SnapshotsEnabled ? settings.SnapshotsSamplingInterval : 0u
                 ]);
         }

@@ -20,5 +20,7 @@ internal class AlwaysOn
 {
     public CpuProfiler? CpuProfiler { get; set; }
 
+#if NET
     public MemoryProfiler? MemoryProfiler { get; set; }
+#endif
 }

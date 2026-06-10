@@ -21,8 +21,10 @@ internal sealed class ProfilerRuntimeSettings
     public ProfilerRuntimeSettings(
         bool cpuProfilerEnabled,
         uint cpuProfilerCallStackInterval,
+#if NET
         bool memoryProfilerEnabled,
         uint memoryProfilerMaxMemorySamplesPerMinute,
+#endif
         bool snapshotsEnabled,
         uint snapshotsSamplingInterval,
         double snapshotsSelectionRate,
@@ -30,8 +32,10 @@ internal sealed class ProfilerRuntimeSettings
     {
         CpuProfilerEnabled = cpuProfilerEnabled;
         CpuProfilerCallStackInterval = cpuProfilerCallStackInterval;
+#if NET
         MemoryProfilerEnabled = memoryProfilerEnabled;
         MemoryProfilerMaxMemorySamplesPerMinute = memoryProfilerMaxMemorySamplesPerMinute;
+#endif
         SnapshotsEnabled = snapshotsEnabled;
         SnapshotsSamplingInterval = snapshotsSamplingInterval;
         SnapshotsSelectionRate = snapshotsSelectionRate;
@@ -42,9 +46,11 @@ internal sealed class ProfilerRuntimeSettings
 
     public uint CpuProfilerCallStackInterval { get; }
 
+#if NET
     public bool MemoryProfilerEnabled { get; }
 
     public uint MemoryProfilerMaxMemorySamplesPerMinute { get; }
+#endif
 
     public bool SnapshotsEnabled { get; }
 
@@ -62,9 +68,6 @@ internal sealed class ProfilerRuntimeSettings
 #if NET
             settings.MemoryProfilerEnabled,
             settings.MemoryProfilerMaxMemorySamplesPerMinute,
-#else
-            false,
-            0,
 #endif
             settings.SnapshotsEnabled,
             settings.SnapshotsSamplingInterval,

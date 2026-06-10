@@ -23,7 +23,9 @@ internal class PprofInOtlpLogsExporter
     private readonly ISampleExporter _sampleExporter;
     private readonly NativeFormatParser _nativeFormatParser;
     private readonly Func<bool> _cpuProfilerEnabled;
+#if NET
     private readonly Func<bool> _memoryProfilerEnabled;
+#endif
     private readonly Func<bool> _snapshotsEnabled;
 
     public PprofInOtlpLogsExporter(
@@ -31,14 +33,18 @@ internal class PprofInOtlpLogsExporter
         ISampleExporter sampleExporter,
         NativeFormatParser nativeFormatParser,
         Func<bool>? cpuProfilerEnabled = null,
+#if NET
         Func<bool>? memoryProfilerEnabled = null,
+#endif
         Func<bool>? snapshotsEnabled = null)
     {
         SampleProcessor = sampleProcessor;
         _sampleExporter = sampleExporter;
         _nativeFormatParser = nativeFormatParser;
         _cpuProfilerEnabled = cpuProfilerEnabled ?? (() => true);
+#if NET
         _memoryProfilerEnabled = memoryProfilerEnabled ?? (() => true);
+#endif
         _snapshotsEnabled = snapshotsEnabled ?? (() => true);
     }
 

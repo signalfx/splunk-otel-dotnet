@@ -63,7 +63,11 @@ internal sealed class EffectiveConfigState
         lock (_lock)
         {
             _values[CpuProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.CpuProfilerEnabled);
+#if NET
             var memoryProfilerEnabled = settings.MemoryProfilerEnabled;
+#else
+            var memoryProfilerEnabled = false;
+#endif
             _values[MemoryProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(memoryProfilerEnabled);
             _values[SnapshotProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.SnapshotsEnabled);
 

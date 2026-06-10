@@ -341,7 +341,9 @@ public class Plugin
                 () => Settings.SnapshotsEnabled || ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled,
                 () => ProfilerRuntimeConfiguration.Current.SnapshotsEnabled),
             () => ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled,
+#if NET
             () => ProfilerRuntimeConfiguration.Current.MemoryProfilerEnabled,
+#endif
             () => ProfilerRuntimeConfiguration.Current.SnapshotsEnabled);
     }
 }

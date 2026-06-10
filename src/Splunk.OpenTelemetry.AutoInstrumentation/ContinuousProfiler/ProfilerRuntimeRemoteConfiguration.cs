@@ -54,7 +54,9 @@ internal static class ProfilerRuntimeRemoteConfiguration
         }
 
         AddCpuProfilerValues(profilingConfig, values);
+#if NET
         AddMemoryProfilerValues(profilingConfig, values);
+#endif
         AddCallgraphsValues(profilingConfig, values);
 
         return values;
@@ -76,6 +78,7 @@ internal static class ProfilerRuntimeRemoteConfiguration
             cpuProfiler!.SamplingInterval.ToString(CultureInfo.InvariantCulture);
     }
 
+#if NET
     private static void AddMemoryProfilerValues(
         ProfilerConfiguration profilingConfig,
         IDictionary<string, string?> values)
@@ -91,6 +94,8 @@ internal static class ProfilerRuntimeRemoteConfiguration
         values[ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples] =
             memoryProfiler!.MaxMemorySamples.ToString(CultureInfo.InvariantCulture);
     }
+
+#endif
 
     private static void AddCallgraphsValues(
         ProfilerConfiguration profilingConfig,

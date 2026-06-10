@@ -83,8 +83,10 @@ internal static class ProfilerRuntimeConfiguration
 
             var cpuProfilerEnabled = _settings.CpuProfilerEnabled;
             var cpuProfilerCallStackInterval = _settings.CpuProfilerCallStackInterval;
+#if NET
             var memoryProfilerEnabled = _settings.MemoryProfilerEnabled;
             var memoryProfilerMaxMemorySamplesPerMinute = _settings.MemoryProfilerMaxMemorySamplesPerMinute;
+#endif
             var snapshotsEnabled = _settings.SnapshotsEnabled;
             var snapshotsSamplingInterval = _settings.SnapshotsSamplingInterval;
             var snapshotsSelectionRate = _settings.SnapshotsSelectionRate;
@@ -120,15 +122,12 @@ internal static class ProfilerRuntimeConfiguration
 
                         break;
 
+#if NET
                     case ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled:
                         if (TryParseBool(value.Value, out parsedBool))
                         {
-#if NET
                             memoryProfilerEnabled = parsedBool;
                             result.Applied.Add(value.Key);
-#else
-                            result.Unsupported.Add(value.Key);
-#endif
                         }
                         else
                         {
@@ -140,12 +139,8 @@ internal static class ProfilerRuntimeConfiguration
                     case ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples:
                         if (TryParseInt32(value.Value, out parsedInt))
                         {
-#if NET
                             memoryProfilerMaxMemorySamplesPerMinute = PluginSettings.GetFinalMaxMemorySamples(parsedInt);
                             result.Applied.Add(value.Key);
-#else
-                            result.Unsupported.Add(value.Key);
-#endif
                         }
                         else
                         {
@@ -153,6 +148,7 @@ internal static class ProfilerRuntimeConfiguration
                         }
 
                         break;
+#endif
 
                     case ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportInterval:
                         result.Unsupported.Add(value.Key);
@@ -211,8 +207,10 @@ internal static class ProfilerRuntimeConfiguration
             next = new ProfilerRuntimeSettings(
                 cpuProfilerEnabled,
                 cpuProfilerEnabled ? cpuProfilerCallStackInterval : Constants.DefaultSamplingInterval,
+#if NET
                 memoryProfilerEnabled,
                 memoryProfilerMaxMemorySamplesPerMinute,
+#endif
                 snapshotsEnabled,
                 snapshotsSamplingInterval,
                 snapshotsSelectionRate,

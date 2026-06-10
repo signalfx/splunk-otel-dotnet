@@ -43,10 +43,12 @@ public class ProfilerRuntimeRemoteConfigurationTests
                         {
                             SamplingInterval = 1234
                         },
+#if NET
                         MemoryProfiler = new MemoryProfiler
                         {
                             MaxMemorySamples = 123
                         }
+#endif
                     },
                     Callgraphs = new CallGraphsConfiguration
                     {
@@ -58,8 +60,13 @@ public class ProfilerRuntimeRemoteConfigurationTests
 
         Assert.Equal("true", values[ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled]);
         Assert.Equal("1234", values[ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval]);
+#if NET
         Assert.Equal("true", values[ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled]);
         Assert.Equal("123", values[ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples]);
+#else
+        Assert.DoesNotContain(values, value => value.Key == ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled);
+        Assert.DoesNotContain(values, value => value.Key == ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples);
+#endif
         Assert.Equal("true", values[ConfigurationKeys.Splunk.Snapshots.Enabled]);
         Assert.Equal("300", values[ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs]);
         Assert.Equal("0.5", values[ConfigurationKeys.Splunk.Snapshots.SelectionRate]);
@@ -77,15 +84,22 @@ public class ProfilerRuntimeRemoteConfigurationTests
                     AlwaysOn = new AlwaysOn
                     {
                         CpuProfiler = new CpuProfiler(),
+#if NET
                         MemoryProfiler = new MemoryProfiler()
+#endif
                     },
                     Callgraphs = new CallGraphsConfiguration()
                 }));
 
         Assert.Equal("true", values[ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled]);
         Assert.Equal(Constants.DefaultSamplingInterval.ToString(), values[ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval]);
+#if NET
         Assert.Equal("true", values[ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled]);
         Assert.Equal(Constants.DefaultMaxMemorySamples.ToString(), values[ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples]);
+#else
+        Assert.DoesNotContain(values, value => value.Key == ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled);
+        Assert.DoesNotContain(values, value => value.Key == ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples);
+#endif
         Assert.Equal("true", values[ConfigurationKeys.Splunk.Snapshots.Enabled]);
         Assert.Equal(Constants.DefaultSnapshotSamplingIntervalMs.ToString(), values[ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs]);
         Assert.Equal(Constants.DefaultSnapshotSelectionRate.ToString(System.Globalization.CultureInfo.InvariantCulture), values[ConfigurationKeys.Splunk.Snapshots.SelectionRate]);
@@ -105,7 +119,11 @@ public class ProfilerRuntimeRemoteConfigurationTests
                 }));
 
         Assert.Equal("true", values[ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled]);
+#if NET
         Assert.Equal("false", values[ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled]);
+#else
+        Assert.DoesNotContain(values, value => value.Key == ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled);
+#endif
         Assert.Equal("false", values[ConfigurationKeys.Splunk.Snapshots.Enabled]);
     }
 
