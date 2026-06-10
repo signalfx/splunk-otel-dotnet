@@ -1,4 +1,4 @@
-﻿// <copyright file="YamlRoot.cs" company="Splunk Inc.">
+// <copyright file="ProfilerRuntimeUpdateResult.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,13 +14,15 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 
-internal class YamlRoot
+internal sealed class ProfilerRuntimeUpdateResult
 {
-    public Distribution? Distribution { get; set; }
+    public List<string> Applied { get; } = [];
 
-    public InstrumentationDevelopment? InstrumentationDevelopment { get; set; }
+    public List<string> Unsupported { get; } = [];
 
-    public OpampDevelopment? OpAmpDevelopment { get; set; }
+    public List<string> Unknown { get; } = [];
+
+    public List<string> Invalid { get; } = [];
 }

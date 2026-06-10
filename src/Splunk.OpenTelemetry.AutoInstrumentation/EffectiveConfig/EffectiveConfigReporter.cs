@@ -21,6 +21,7 @@ using OpenTelemetry.OpAmp.Client;
 using OpenTelemetry.OpAmp.Client.Messages;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
@@ -145,6 +146,7 @@ internal sealed class EffectiveConfigReporter
     internal string BuildCurrentPayload()
     {
         CaptureBridgeLogEndpointsIfNeeded();
+        CaptureRuntimeProfilerSettingsIfAvailable();
         return _state.BuildPayload();
     }
 
@@ -223,6 +225,18 @@ internal sealed class EffectiveConfigReporter
             // Reflection failure means bridge log endpoints are not known valid.
             _state.ClearLogEndpoints();
             Log.Warning($"Failed to resolve logs endpoints from LoggerProvider: {ex.Message}");
+        }
+    }
+
+    private void CaptureRuntimeProfilerSettingsIfAvailable()
+    {
+        try
+        {
+            _state.SetProfilerRuntimeSettings(ProfilerRuntimeConfiguration.Current);
+        }
+        catch (InvalidOperationException)
+        {
+            // Some tests build effective config without full plugin runtime initialization.
         }
     }
 }

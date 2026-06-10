@@ -61,6 +61,7 @@ public class Plugin
     /// </summary>
     public Plugin()
     {
+        ProfilerRuntimeConfiguration.Initialize(Settings);
         _metrics = new Metrics(Settings);
         _traces = new Traces(Settings);
         _sdk = new Sdk();
@@ -75,6 +76,7 @@ public class Plugin
     public void Initializing()
     {
         _sdk.Initializing();
+
         if (Log.IsDebugEnabled)
         {
             Log.LogConfigurationSetup();
@@ -144,7 +146,7 @@ public class Plugin
     /// <param name="settings">OpAMP client settings.</param>
     public void ConfigureOpAmpOptions(OpAmpClientSettings settings)
     {
-        OpAmp.EnableEffectiveConfigReporting(settings);
+        _opAmp.ConfigureOptions(settings, Settings);
     }
 
     /// <summary>
@@ -194,11 +196,13 @@ public class Plugin
     /// <returns>(threadSamplingEnabled, threadSamplingInterval, allocationSamplingEnabled, maxMemorySamplesPerMinute, exportInterval, continuousProfilerExporter)</returns>
     public Tuple<bool, uint, bool, uint, TimeSpan, TimeSpan, object> GetContinuousProfilerConfiguration()
     {
-        var threadSamplingEnabled = Settings.CpuProfilerEnabled;
-        var threadSamplingInterval = Settings.CpuProfilerCallStackInterval;
+        var runtimeSettings = ProfilerRuntimeConfiguration.Current;
+        var primeRuntimeReconfiguration = ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled;
+        var threadSamplingEnabled = primeRuntimeReconfiguration || runtimeSettings.CpuProfilerEnabled;
+        var threadSamplingInterval = runtimeSettings.CpuProfilerCallStackInterval;
 #if NET
-        var allocationSamplingEnabled = Settings.MemoryProfilerEnabled;
-        var maxMemorySamplesPerMinute = Settings.MemoryProfilerMaxMemorySamplesPerMinute;
+        var allocationSamplingEnabled = primeRuntimeReconfiguration || runtimeSettings.MemoryProfilerEnabled;
+        var maxMemorySamplesPerMinute = runtimeSettings.MemoryProfilerMaxMemorySamplesPerMinute;
 #else
         // Allocation sampling is not supported on .NET Framework
         var allocationSamplingEnabled = false;
@@ -208,7 +212,7 @@ public class Plugin
         var exportTimeout = TimeSpan.FromMilliseconds(Settings.ProfilerHttpClientTimeout);
 
         var pprofInOtlpLogsExporter = GetPprofInOtlpLogsExporter();
-        pprofInOtlpLogsExporter.SampleProcessor.ContinuousSamplingPeriod = threadSamplingInterval;
+        ProfilerRuntimeConfiguration.ApplyToExporter(pprofInOtlpLogsExporter);
 
         return Tuple.Create(threadSamplingEnabled, threadSamplingInterval, allocationSamplingEnabled, maxMemorySamplesPerMinute, exportInterval, exportTimeout, (object)pprofInOtlpLogsExporter);
     }
@@ -219,11 +223,11 @@ public class Plugin
     /// <returns>(frequentSamplingInterval, exportInterval, exportTimeout, pprofInOtlpLogsExporter) or null.</returns>
     public Tuple<uint, TimeSpan, TimeSpan, object?>? GetSelectiveSamplingConfiguration()
     {
-        if (Settings.SnapshotsEnabled)
+        if (Settings.SnapshotsEnabled || ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled)
         {
-            var frequentSamplingInterval = Settings.SnapshotsSamplingInterval;
+            var frequentSamplingInterval = ProfilerRuntimeConfiguration.Current.SnapshotsSamplingInterval;
             var pprofInOtlpLogsExporter = GetPprofInOtlpLogsExporter();
-            pprofInOtlpLogsExporter.SampleProcessor.SelectedSamplingPeriod = frequentSamplingInterval;
+            ProfilerRuntimeConfiguration.ApplyToExporter(pprofInOtlpLogsExporter);
             var exportInterval = GetSampleExportInterval();
             var exportTimeout = GetSampleExportTimeout();
             return Tuple.Create(frequentSamplingInterval, exportInterval, exportTimeout, (object)pprofInOtlpLogsExporter)!;
@@ -239,7 +243,11 @@ public class Plugin
     /// <returns>TracerProviderBuilder instance for chaining.</returns>
     public TracerProviderBuilder BeforeConfigureTracerProvider(TracerProviderBuilder builder)
     {
-        if (Settings.SnapshotsEnabled)
+        if (ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled)
+        {
+            builder.AddProcessor(new SnapshotSelectingProcessor(SnapshotFilter.Instance, new RuntimeConfigurableSnapshotSelector()));
+        }
+        else if (Settings.SnapshotsEnabled)
         {
             builder.AddProcessor(new SnapshotSelectingProcessor(SnapshotFilter.Instance, new TraceIdBasedSnapshotSelector(Settings.SnapshotsSelectionRate)));
         }
@@ -270,8 +278,14 @@ public class Plugin
     /// </summary>
     public void Initialized()
     {
+        ProfilerRuntimeConfiguration.ApplyCurrentToNative();
         _opAmp.RecordPluginConfig(Settings);
         _opAmp.MarkInstrumentationInitialized();
+    }
+
+    internal static PprofInOtlpLogsExporter? TryGetPprofInOtlpLogsExporter()
+    {
+        return _pprofInOtlpLogsExporter;
     }
 
     private static void EnableHighResTimer()
@@ -320,6 +334,16 @@ public class Plugin
 
     private static PprofInOtlpLogsExporter CreatePprofInOtlpLogsExporter()
     {
-        return new PprofInOtlpLogsExporter(new SampleProcessor(), new SampleExporter(new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint)), new NativeFormatParser(Settings.SnapshotsEnabled));
+        return new PprofInOtlpLogsExporter(
+            new SampleProcessor(),
+            new SampleExporter(new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint)),
+            new NativeFormatParser(
+                () => Settings.SnapshotsEnabled || ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled,
+                () => ProfilerRuntimeConfiguration.Current.SnapshotsEnabled),
+            () => ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled,
+#if NET
+            () => ProfilerRuntimeConfiguration.Current.MemoryProfilerEnabled,
+#endif
+            () => ProfilerRuntimeConfiguration.Current.SnapshotsEnabled);
     }
 }

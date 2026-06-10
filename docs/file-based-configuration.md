@@ -53,6 +53,15 @@ instrumentation/development:
         response_header_enabled: true
 ```
 
+## OpAMP Remote Configuration
+
+```yaml
+opamp/development:
+  endpoint: http://some.opamp-host.com:3420/v1/opamp
+  features:
+    remote_config:
+```
+
 ## Profiling configuration
 
 > ⚠️ **Important:**  

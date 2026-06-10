@@ -18,8 +18,10 @@ using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfigurat
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 
+#if NET
 [EmptyObjectOnEmptyYaml]
 internal class MemoryProfiler
 {
     public uint MaxMemorySamples { get; set; } = Constants.DefaultMaxMemorySamples;
 }
+#endif

@@ -14,8 +14,10 @@
 // limitations under the License.
 // </copyright>
 
+using System.Diagnostics;
 using System.IO.Compression;
 using OpenTelemetry.Proto.Collector.Logs.V1;
+using OpenTelemetry.Proto.Logs.V1;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Pprof.Proto.Profile;
 using Xunit.Abstractions;
@@ -150,6 +152,187 @@ public class ContinuousProfilerTests : TestHelper
 
         return stackTrace;
     }
+
+#if NET
+    private static async Task<string> ConfigureRuntime(HttpClient client, string url, Dictionary<string, string?> configuration)
+    {
+        using var content = new FormUrlEncodedContent(
+            configuration.Select(setting => new KeyValuePair<string, string>(setting.Key, setting.Value ?? string.Empty)));
+        using var response = await client.PostAsync($"{url}/configure", content);
+        Assert.True(response.IsSuccessStatusCode, $"Runtime configuration endpoint returned {(int)response.StatusCode}.");
+        return await response.Content.ReadAsStringAsync();
+    }
+
+    private static async Task RunProfilerWork(HttpClient client, string url)
+    {
+        using var response = await client.GetAsync($"{url}/work");
+        Assert.True(response.IsSuccessStatusCode, $"Profiler work endpoint returned {(int)response.StatusCode}.");
+    }
+
+    private static async Task<ExportLogsServiceRequest[]> WaitForLogs(
+        MockContinuousProfilerCollector collector,
+        Func<ExportLogsServiceRequest[], bool> predicate,
+        string expectation,
+        TimeSpan? timeout = null)
+    {
+        var deadline = DateTime.UtcNow + (timeout ?? TestTimeout.Expectation);
+        ExportLogsServiceRequest[] logs;
+        do
+        {
+            logs = collector.GetAllLogs();
+            if (predicate(logs))
+            {
+                return logs;
+            }
+
+            await Task.Delay(250);
+        }
+        while (DateTime.UtcNow < deadline);
+
+        logs = collector.GetAllLogs();
+        Assert.True(predicate(logs), $"Expected {expectation}. Received {logs.Length} profiler export requests.");
+        return logs;
+    }
+
+    private static async Task<int> WaitForSettledLogCount(MockContinuousProfilerCollector collector)
+    {
+        var previousCount = -1;
+        for (var i = 0; i < 6; i++)
+        {
+            await Task.Delay(500);
+            var count = collector.GetAllLogs().Length;
+            if (count == previousCount)
+            {
+                return count;
+            }
+
+            previousCount = count;
+        }
+
+        return collector.GetAllLogs().Length;
+    }
+
+    private static bool ContainsContinuousCpuRecord(ExportLogsServiceRequest[] logs)
+    {
+        return GetContinuousCpuRecords(logs).Any();
+    }
+
+    private static bool ContainsAllocationRecord(ExportLogsServiceRequest[] logs)
+    {
+        return GetAllocationRecords(logs).Any();
+    }
+
+    private static bool ContainsSnapshotRecord(ExportLogsServiceRequest[] logs)
+    {
+        return GetSnapshotRecords(logs).Any();
+    }
+
+    private static List<LogRecord> GetContinuousCpuRecords(ExportLogsServiceRequest[] logs)
+    {
+        return GetLogRecords(logs)
+            .Where(record => HasStringAttribute(record, "profiling.data.type", "cpu") &&
+                             !HasAttribute(record, "profiling.instrumentation.source"))
+            .ToList();
+    }
+
+    private static List<LogRecord> GetAllocationRecords(ExportLogsServiceRequest[] logs)
+    {
+        return GetLogRecords(logs)
+            .Where(record => HasStringAttribute(record, "profiling.data.type", "allocation"))
+            .ToList();
+    }
+
+    private static List<LogRecord> GetSnapshotRecords(ExportLogsServiceRequest[] logs)
+    {
+        return GetLogRecords(logs)
+            .Where(record => HasStringAttribute(record, "profiling.data.type", "cpu") &&
+                             HasStringAttribute(record, "profiling.instrumentation.source", "snapshot"))
+            .ToList();
+    }
+
+    private static IEnumerable<LogRecord> GetLogRecords(IEnumerable<ExportLogsServiceRequest> logs)
+    {
+        return logs
+            .SelectMany(data => data.ResourceLogs)
+            .SelectMany(resourceLogs => resourceLogs.ScopeLogs)
+            .SelectMany(scopeLogs => scopeLogs.LogRecords);
+    }
+
+    private static bool HasAttribute(LogRecord record, string key)
+    {
+        return record.Attributes.Any(attribute => attribute.Key == key);
+    }
+
+    private static bool HasStringAttribute(LogRecord record, string key, string value)
+    {
+        return record.Attributes.Any(attribute => attribute.Key == key && attribute.Value.StringValue == value);
+    }
+
+    private static void AssertProfilePeriods(IEnumerable<LogRecord> records, long expectedPeriod)
+    {
+        var periods = records
+            .Select(DecodeProfile)
+            .SelectMany(GetSourceEventPeriods)
+            .ToList();
+
+        Assert.NotEmpty(periods);
+        Assert.All(periods, period => Assert.Equal(expectedPeriod, period));
+    }
+
+    private static Profile DecodeProfile(LogRecord record)
+    {
+        var gzip = Convert.FromBase64String(record.Body.StringValue);
+        using var memoryStream = new MemoryStream(gzip);
+        using var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
+        return Vendors.ProtoBuf.Serializer.Deserialize<Profile>(gzipStream);
+    }
+
+    private static IEnumerable<long> GetSourceEventPeriods(Profile profile)
+    {
+        foreach (var sample in profile.Samples)
+        {
+            foreach (var label in sample.Labels)
+            {
+                var key = profile.StringTables[(int)label.Key];
+                if (key == "source.event.period")
+                {
+                    yield return label.Num;
+                }
+            }
+        }
+    }
+
+    private async Task StopRuntimeConfigServer(HttpClient client, string url, Process process, ProcessHelper helper)
+    {
+        if (!process.HasExited)
+        {
+            try
+            {
+                using var response = await client.GetAsync($"{url}/shutdown");
+                Output.WriteLine($"Runtime config server shutdown returned {(int)response.StatusCode}.");
+            }
+            catch (HttpRequestException ex)
+            {
+                Output.WriteLine($"Runtime config server shutdown request failed: {ex.Message}");
+            }
+        }
+
+        var processTimeout = !process.WaitForExit((int)TestTimeout.ProcessExit.TotalMilliseconds);
+        if (processTimeout)
+        {
+            process.Kill();
+            process.WaitForExit((int)TestTimeout.ProcessExit.TotalMilliseconds);
+        }
+
+        helper.Drain(TimeSpan.FromSeconds(5));
+        Output.WriteLine("ProcessId: " + process.Id);
+        Output.WriteLine(process.HasExited ? "Exit Code: " + process.ExitCode : "Exit Code: <process still running>");
+        if (process.HasExited)
+        {
+            Output.WriteResult(helper);
+        }
+    }
+#endif
 
     private async Task DumpLogRecords(ExportLogsServiceRequest[] logsData)
     {

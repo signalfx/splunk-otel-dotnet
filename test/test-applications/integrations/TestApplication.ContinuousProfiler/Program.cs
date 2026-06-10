@@ -15,9 +15,44 @@
 // </copyright>
 
 using System.Diagnostics;
+#if NET
+using Microsoft.AspNetCore.Builder;
+#endif
 using My.Custom.Test.Namespace;
 
 ActivitySource activitySource = new("TestApplication.ContinuousProfiler", "1.0.0");
 
+#if NET
+if (args.Contains("--runtime-config-server", StringComparer.Ordinal))
+{
+    await RunRuntimeConfigServer(args, activitySource);
+    return;
+}
+#endif
+
 using var activity = activitySource.StartActivity();
 ClassA.MethodA();
+
+#if NET
+static async Task RunRuntimeConfigServer(string[] args, ActivitySource activitySource)
+{
+    var builderArgs = args.Where(arg => !string.Equals(arg, "--runtime-config-server", StringComparison.Ordinal)).ToArray();
+    var builder = WebApplication.CreateBuilder(builderArgs);
+    var app = builder.Build();
+
+    app.UseWelcomePage("/alive-check");
+    app.MapGet("/work", () =>
+    {
+        using var activity = activitySource.StartActivity("runtime-config-profiler-work");
+        ClassA.MethodA();
+        return "Work complete";
+    });
+    app.MapGet("/shutdown", () =>
+    {
+        app.Lifetime.StopApplication();
+        return "Stopping";
+    });
+
+    await app.RunAsync();
+}
+#endif

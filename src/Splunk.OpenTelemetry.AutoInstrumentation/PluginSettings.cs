@@ -68,6 +68,7 @@ internal class PluginSettings
         ProfilerExportInterval = GetFinalExportInterval(exportInterval);
 
         ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
+        OpAmpRemoteConfigEnabled = source.GetBool(ConfigurationKeys.Splunk.OpAmp.RemoteConfig) ?? false;
     }
 
     internal PluginSettings(YamlRoot configuration)
@@ -87,6 +88,8 @@ internal class PluginSettings
 #else
         TraceResponseHeaderEnabled = traceConfig?.Aspnetcore?.ResponseHeaderEnabled ?? Constants.DefaultTraceResponseHeaderEnabled;
 #endif
+
+        OpAmpRemoteConfigEnabled = configuration.OpAmpDevelopment?.Features?.RemoteConfig != null;
 
         var profilingConfig = configuration.Distribution?.Splunk?.Profiling;
         if (profilingConfig != null)
@@ -156,6 +159,8 @@ internal class PluginSettings
 
     public uint ProfilerExportInterval { get; }
 
+    public bool OpAmpRemoteConfigEnabled { get; }
+
     public static PluginSettings FromDefaultSources()
     {
         if (IsYamlConfigEnabled)
@@ -187,7 +192,7 @@ internal class PluginSettings
         return new PluginSettings(configurationSource);
     }
 
-    private static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)
+    internal static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)
     {
         var interval = callStackInterval < 0 ? Constants.DefaultSamplingInterval : (uint)callStackInterval;
         if (snapshotsEnabled)
@@ -205,7 +210,7 @@ internal class PluginSettings
     }
 
 #if NET
-    private static uint GetFinalMaxMemorySamples(int maxMemorySamplesPerMinute)
+    internal static uint GetFinalMaxMemorySamples(int maxMemorySamplesPerMinute)
     {
         if (maxMemorySamplesPerMinute < 0 || maxMemorySamplesPerMinute > 200)
         {
@@ -216,7 +221,7 @@ internal class PluginSettings
     }
 #endif
 
-    private static uint GetFinalExportInterval(int exportInterval)
+    internal static uint GetFinalExportInterval(int exportInterval)
     {
         if (exportInterval < 500)
         {
@@ -226,7 +231,7 @@ internal class PluginSettings
         return (uint)exportInterval;
     }
 
-    private static uint GetFinalSnapshotSamplingInterval(int snapshotsSamplingInterval)
+    internal static uint GetFinalSnapshotSamplingInterval(int snapshotsSamplingInterval)
     {
         if (snapshotsSamplingInterval <= 0)
         {
@@ -236,7 +241,7 @@ internal class PluginSettings
         return (uint)snapshotsSamplingInterval;
     }
 
-    private static double GetFinalSnapshotSelectionProbability(double configuredSelectionRate)
+    internal static double GetFinalSnapshotSelectionProbability(double configuredSelectionRate)
     {
         return configuredSelectionRate switch
         {
@@ -246,24 +251,7 @@ internal class PluginSettings
         };
     }
 
-    private static Uri GetProfilerLogsEndpoints(IConfigurationSource source, Uri? otlpFallback)
-    {
-        var profilerLogsEndpoint = source.GetString(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint);
-
-        if (string.IsNullOrEmpty(profilerLogsEndpoint))
-        {
-            if (otlpFallback == null)
-            {
-                return new Uri(Constants.DefaultProfilerLogsEndpoint);
-            }
-
-            return otlpFallback.ToString().EndsWith("v1/logs") ? otlpFallback : new Uri(otlpFallback, "v1/logs");
-        }
-
-        return new Uri(profilerLogsEndpoint);
-    }
-
-    private static YamlRoot? LoadSplunkConfig(string fileName)
+    internal static YamlRoot? LoadSplunkConfig(string fileName)
     {
         var parserType = Type.GetType("OpenTelemetry.AutoInstrumentation.Configurations.FileBasedConfiguration.Parser.Parser, OpenTelemetry.AutoInstrumentation");
         if (parserType == null)
@@ -296,5 +284,22 @@ internal class PluginSettings
         {
             return (YamlRoot)yamlRoot;
         }
+    }
+
+    private static Uri GetProfilerLogsEndpoints(IConfigurationSource source, Uri? otlpFallback)
+    {
+        var profilerLogsEndpoint = source.GetString(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint);
+
+        if (string.IsNullOrEmpty(profilerLogsEndpoint))
+        {
+            if (otlpFallback == null)
+            {
+                return new Uri(Constants.DefaultProfilerLogsEndpoint);
+            }
+
+            return otlpFallback.ToString().EndsWith("v1/logs") ? otlpFallback : new Uri(otlpFallback, "v1/logs");
+        }
+
+        return new Uri(profilerLogsEndpoint);
     }
 }

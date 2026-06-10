@@ -1,4 +1,4 @@
-﻿// <copyright file="YamlRoot.cs" company="Splunk Inc.">
+// <copyright file="RuntimeConfigurableSnapshotSelector.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,13 +14,17 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
+using System.Diagnostics;
+using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 
-internal class YamlRoot
+namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
+
+internal class RuntimeConfigurableSnapshotSelector : ISnapshotSelector
 {
-    public Distribution? Distribution { get; set; }
-
-    public InstrumentationDevelopment? InstrumentationDevelopment { get; set; }
-
-    public OpampDevelopment? OpAmpDevelopment { get; set; }
+    public bool Select(ActivityContext context)
+    {
+        var settings = ProfilerRuntimeConfiguration.Current;
+        return settings.SnapshotsEnabled &&
+               new TraceIdBasedSnapshotSelector(settings.SnapshotsSelectionRate).Select(context);
+    }
 }

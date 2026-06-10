@@ -42,6 +42,7 @@ internal sealed class MockOpAmpServer : IDisposable
     private readonly BlockingCollection<AgentToServer> _frames = new(10);
     private readonly object _effectiveConfigFramesLock = new();
     private readonly List<EffectiveConfigFrameSnapshot> _effectiveConfigFrames = [];
+    private RemoteConfigResponse? _remoteConfigResponse;
 
     public MockOpAmpServer(ITestOutputHelper output, string host = "localhost")
     {
@@ -128,6 +129,15 @@ internal sealed class MockOpAmpServer : IDisposable
         {
             Assert.Fail($"Expected nothing, but got: {frame}");
         }
+    }
+
+    public void OfferRemoteConfig(
+        string body,
+        string contentType = "application/yaml",
+        string fileName = "splunk.remote.config",
+        string configHash = "splunk.remote.config")
+    {
+        _remoteConfigResponse = new RemoteConfigResponse(body, contentType, fileName, configHash);
     }
 
     public void ExpectEffectiveConfigPayload(
@@ -231,18 +241,39 @@ internal sealed class MockOpAmpServer : IDisposable
         Assert.Fail(message.ToString());
     }
 
-    private static byte[] GenerateResponse(AgentToServer frame)
+    private byte[] GenerateResponse(AgentToServer frame)
     {
         var content = "This is a mock server frame for testing purposes.";
         var responseFrame = new ServerToAgent
         {
             InstanceUid = frame.InstanceUid,
+            Capabilities = (ulong)ServerCapabilities.AcceptsEffectiveConfig,
             CustomMessage = new CustomMessage
             {
                 Data = ByteString.CopyFromUtf8(content),
                 Type = "Utf8String",
             },
         };
+
+        if (_remoteConfigResponse != null)
+        {
+            responseFrame.Capabilities |= (ulong)ServerCapabilities.OffersRemoteConfig;
+            responseFrame.RemoteConfig = new AgentRemoteConfig
+            {
+                Config = new AgentConfigMap
+                {
+                    ConfigMap =
+                    {
+                        [_remoteConfigResponse.FileName] = new AgentConfigFile
+                        {
+                            Body = ByteString.CopyFromUtf8(_remoteConfigResponse.Body),
+                            ContentType = _remoteConfigResponse.ContentType,
+                        }
+                    }
+                },
+                ConfigHash = ByteString.CopyFromUtf8(_remoteConfigResponse.ConfigHash)
+            };
+        }
 
         return responseFrame.ToByteArray();
     }
@@ -262,7 +293,7 @@ internal sealed class MockOpAmpServer : IDisposable
         ctx.Response.OutputStream.Close();
     }
 #else
-    private static async Task<AgentToServer?> ProcessReceiveAsync(HttpRequest request)
+    private async Task<AgentToServer?> ProcessReceiveAsync(HttpRequest request)
     {
         var reader = request.BodyReader;
         var messageBuffer = new ArrayBufferWriter<byte>();
@@ -372,6 +403,25 @@ internal sealed class MockOpAmpServer : IDisposable
         public string ContentType { get; }
 
         public string Body { get; }
+    }
+
+    private sealed class RemoteConfigResponse
+    {
+        public RemoteConfigResponse(string body, string contentType, string fileName, string configHash)
+        {
+            Body = body;
+            ContentType = contentType;
+            FileName = fileName;
+            ConfigHash = configHash;
+        }
+
+        public string Body { get; }
+
+        public string ContentType { get; }
+
+        public string FileName { get; }
+
+        public string ConfigHash { get; }
     }
 
     private sealed class Expectation
