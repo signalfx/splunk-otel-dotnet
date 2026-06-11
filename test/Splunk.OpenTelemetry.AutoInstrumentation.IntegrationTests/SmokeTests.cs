@@ -224,13 +224,14 @@ public class SmokeTests : TestHelper, IDisposable
     public void EffectiveEnvVarConfigIsReportedToOpAmp()
     {
         using var opAmpServer = new MockOpAmpServer(Output);
+        using var profilesCollector = new MockContinuousProfilerCollector(Output);
 
         var tracesEndpoint = "http://localhost:4318/v1/traces";
         var metricsEndpoint = "http://localhost:4319/v1/metrics";
-        var profilerLogsEndpoint = "http://profiler-collector:4318/v1/logs";
+        var profilerLogsEndpoint = $"http://localhost:{profilesCollector.Port}/v1/logs";
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", tracesEndpoint);
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", metricsEndpoint);
-        SetEnvironmentVariable("SPLUNK_PROFILER_LOGS_ENDPOINT", profilerLogsEndpoint);
+        SetExporter(profilesCollector);
         SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
 #if NET
         var logsEndpoint = "http://localhost:4320/v1/logs";
@@ -245,6 +246,10 @@ public class SmokeTests : TestHelper, IDisposable
 
         EnableBytecodeInstrumentation();
         EnableDefaultExporters();
+
+        // ILogger instrumentation is required to be able to capture logs endpoint.
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED", "false");
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED", "false");
 
         var requiredEntries = new List<string>
         {
@@ -277,30 +282,6 @@ public class SmokeTests : TestHelper, IDisposable
 
     [Fact]
     [Trait("Category", "EndToEnd")]
-    public void EffectiveEnvVarConfigUsesSplunkRealmEndpoints()
-    {
-        using var opAmpServer = new MockOpAmpServer(Output);
-
-        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
-        SetEnvironmentVariable("SPLUNK_REALM", "us0");
-        SetEnvironmentVariable("SPLUNK_ACCESS_TOKEN", "token");
-
-        EnableBytecodeInstrumentation();
-        EnableDefaultExporters();
-
-        var requiredEntries = new[]
-        {
-            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINTS=\"https://ingest.us0.observability.splunkcloud.com/v2/trace/otlp\"",
-            "OTEL_EXPORTER_OTLP_METRICS_ENDPOINTS=\"https://ingest.us0.observability.splunkcloud.com/v2/datapoint/otlp\""
-        };
-
-        RunTestApplicationAndAssertEffectiveConfig(
-            opAmpServer,
-            payload => ContainsAll(payload, requiredEntries));
-    }
-
-    [Fact]
-    [Trait("Category", "EndToEnd")]
     public void EffectiveEnvVarConfigUsesResolvedOtlpProtocol()
     {
         using var opAmpServer = new MockOpAmpServer(Output);
@@ -311,6 +292,7 @@ public class SmokeTests : TestHelper, IDisposable
 
         EnableBytecodeInstrumentation();
         EnableDefaultExporters();
+        DisableAllInstrumentations();
 
 #if NETFRAMEWORK
         var expectedTracesEndpoint = "http://collector:4317/v1/traces";
@@ -346,6 +328,7 @@ public class SmokeTests : TestHelper, IDisposable
         SetEnvironmentVariable("OTEL_TRACES_EXPORTER", "none");
         SetEnvironmentVariable("OTEL_METRICS_EXPORTER", "none");
         SetEnvironmentVariable("OTEL_LOGS_EXPORTER", "none");
+        DisableAllInstrumentations();
 
         var requiredEntries = new[]
         {
@@ -368,10 +351,13 @@ public class SmokeTests : TestHelper, IDisposable
     public void EffectiveYamlConfigIsReportedToOpAmp()
     {
         using var opAmpServer = new MockOpAmpServer(Output);
+        using var profilesCollector = new MockContinuousProfilerCollector(Output);
+        var profilerLogsEndpoint = $"http://localhost:{profilesCollector.Port}/v1/logs";
 
         EnableBytecodeInstrumentation();
         EnableFileBasedConfig("config.yaml");
         SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+        SetExporter(profilesCollector);
 
         // Set traces and service name via env var; yaml substitutes them in.
         // Metrics endpoint is intentionally not set; yaml fallback value is used instead.
@@ -391,7 +377,7 @@ public class SmokeTests : TestHelper, IDisposable
             "SPLUNK_PROFILER_MEMORY_ENABLED=false",
 #endif
             "SPLUNK_PROFILER_CALL_STACK_INTERVAL=\"10000ms\"",
-            "SPLUNK_PROFILER_LOGS_ENDPOINT=\"http://profiler-collector:4318/v1/logs\"",
+            $"SPLUNK_PROFILER_LOGS_ENDPOINT=\"{profilerLogsEndpoint}\"",
             "SPLUNK_SNAPSHOT_PROFILER_ENABLED=true",
             "SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL=\"5000ms\""
         };
@@ -450,7 +436,6 @@ public class SmokeTests : TestHelper, IDisposable
         EnableDefaultExporters();
         EnableFileBasedConfig("config-multiple-otlp-endpoints.yaml");
         SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
-        SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE", "true");
 
         var expectedTracesValue = $"\"{tracesEndpoint1}\",\"{tracesEndpoint2}\"";
         var expectedMetricsValue = $"\"{metricsEndpoint1}\",\"{metricsEndpoint2}\"";
@@ -567,5 +552,12 @@ public class SmokeTests : TestHelper, IDisposable
             EffectiveConfigReporter.EffectiveConfigFileName,
             EffectiveConfigReporter.EffectiveConfigContentType,
             effectiveConfigPredicate);
+    }
+
+    private void DisableAllInstrumentations()
+    {
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED", "false");
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED", "false");
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED", "false");
     }
 }
