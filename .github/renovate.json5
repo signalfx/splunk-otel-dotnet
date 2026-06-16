@@ -17,8 +17,7 @@
     },
     {
       customType: "regex",
-      description: "Update Alpine package version ARGs in Dockerfiles",
-      managerFilePatterns: ["/^docker\\/alpine-(x64|arm64)\\.dockerfile$/"],
+      description: "Update Alpine package version ENVs in Dockerfiles",
       matchStrings: [
         "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s*\\n\\s*ENV\\s+.*?_VERSION=\"(?<currentValue>[^\"]+)\"",
       ],
