@@ -10,7 +10,7 @@
       description: "Update Debian arm64 package version ENVs in Dockerfiles",
       managerFilePatterns: ["/^docker\\/debian-arm64\\.dockerfile$/"],
       matchStrings: [
-        "#\\s*renovate:\\s*?(suite=(?<suite>.*?))?\\s*depName=(?<depName>.*?)\\sENV .*?_VERSION=\"(?<currentValue>.*)\"",
+        "#\\s*renovate:\\s*(?:suite=(?<suite>\\S+)\\s+)?depName=(?<depName>\\S+)\\s*\\n\\s*ENV\\s+.*?_VERSION=\"(?<currentValue>[^\"]+)\"",
       ],
       registryUrlTemplate: "https://deb.debian.org/debian?suite={{#if suite}}{{suite}}{{else}}bookworm{{/if}}&components=main&binaryArch=arm64",
       datasourceTemplate: "deb",
