@@ -10,10 +10,11 @@ ENV CLANG_VERSION="1:14.0-55.7~deb12u1"
 ENV MAKE_VERSION="4.3-4.1"
 
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
         cmake="${CMAKE_VERSION}" \
         clang="${CLANG_VERSION}" \
-        make="${MAKE_VERSION}"
+        make="${MAKE_VERSION}" && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install older sdks using the install script as there are no arm64 SDK packages.
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
