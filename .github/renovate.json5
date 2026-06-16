@@ -7,7 +7,7 @@
   customManagers: [
     {
       customType: "regex",
-      description: "Update Debian arm64 package version ARGs in Dockerfiles",
+      description: "Update Debian arm64 package version ENVs in Dockerfiles",
       managerFilePatterns: ["/^docker\\/debian-arm64\\.dockerfile$/"],
       matchStrings: [
         "#\\s*renovate:\\s*?(suite=(?<suite>.*?))?\\s*depName=(?<depName>.*?)\\sENV .*?_VERSION=\"(?<currentValue>.*)\"",
