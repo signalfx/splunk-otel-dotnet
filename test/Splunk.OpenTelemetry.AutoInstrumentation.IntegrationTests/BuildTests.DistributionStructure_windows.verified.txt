@@ -1,5 +1,6 @@
 ﻿[
   \LICENSE,
+  \SPLUNK_VERSION,
   \VERSION,
   \instrument.sh,
   \net\Google.Protobuf.dll,

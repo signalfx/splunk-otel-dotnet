@@ -16,6 +16,10 @@
 
 using System.Runtime.InteropServices;
 using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.OpAmp.Client;
+using OpenTelemetry.OpAmp.Client.Settings;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
@@ -47,9 +51,21 @@ public class Plugin
     private static int _highResTimerEnabled;
     private static int _highResTimerDisabled;
 
-    private readonly Metrics _metrics = new(Settings);
-    private readonly Traces _traces = new(Settings);
-    private readonly Sdk _sdk = new();
+    private readonly Metrics _metrics;
+    private readonly Traces _traces;
+    private readonly Sdk _sdk;
+    private readonly OpAmp _opAmp;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Plugin"/> class.
+    /// </summary>
+    public Plugin()
+    {
+        _metrics = new Metrics(Settings);
+        _traces = new Traces(Settings);
+        _sdk = new Sdk();
+        _opAmp = new OpAmp();
+    }
 
     internal static PluginSettings Settings => SettingsFactory.Value;
 
@@ -59,7 +75,6 @@ public class Plugin
     public void Initializing()
     {
         _sdk.Initializing();
-
         if (Log.IsDebugEnabled)
         {
             Log.LogConfigurationSetup();
@@ -82,7 +97,8 @@ public class Plugin
     /// <returns>>Returns <see cref="ResourceBuilder"/> for chaining.</returns>
     public ResourceBuilder ConfigureResource(ResourceBuilder builder)
     {
-        ResourceConfigurator.Configure(builder, Settings);
+        var resource = ResourceConfigurator.Configure(builder, Settings);
+        _opAmp.RecordServiceName(resource);
         return builder;
     }
 
@@ -102,6 +118,50 @@ public class Plugin
     public void ConfigureTracesOptions(OtlpExporterOptions options)
     {
         _traces.ConfigureTracesOptions(options);
+    }
+
+    /// <summary>
+    /// Capture logs OTLP exporter options.
+    /// </summary>
+    /// <param name="options">OTLP exporter options.</param>
+    public void ConfigureLogsOptions(OtlpExporterOptions options)
+    {
+        _opAmp.RecordLogExporterOptions(options);
+    }
+
+    /// <summary>
+    /// Mark ILogger logs configuration.
+    /// </summary>
+    /// <param name="options">ILogger options.</param>
+    public void ConfigureLogsOptions(OpenTelemetryLoggerOptions options)
+    {
+        _opAmp.MarkOpenTelemetryLoggerConfigured();
+    }
+
+    /// <summary>
+    /// Configure OpAMP client settings.
+    /// </summary>
+    /// <param name="settings">OpAMP client settings.</param>
+    public void ConfigureOpAmpOptions(OpAmpClientSettings settings)
+    {
+        OpAmp.EnableEffectiveConfigReporting(settings);
+    }
+
+    /// <summary>
+    /// Called when the OpAMP client has been initialized.
+    /// </summary>
+    /// <param name="client">OpAMP client.</param>
+    public void AfterOpAmpClientStarted(OpAmpClient client)
+    {
+        _opAmp.OnClientStarted(client);
+    }
+
+    /// <summary>
+    /// Called before the OpAMP client is stopped.
+    /// </summary>
+    public void BeforeOpAmpClientStopped()
+    {
+        _opAmp.FlushBeforeClientStops();
     }
 
 #if NETFRAMEWORK
@@ -185,6 +245,33 @@ public class Plugin
         }
 
         return builder;
+    }
+
+    /// <summary>
+    /// Called when the tracer provider has been initialized.
+    /// </summary>
+    /// <param name="provider">Tracer provider.</param>
+    public void TracerProviderInitialized(TracerProvider provider)
+    {
+        _opAmp.RecordTraceProviderEndpoints(provider);
+    }
+
+    /// <summary>
+    /// Called when the meter provider has been initialized.
+    /// </summary>
+    /// <param name="provider">Meter provider.</param>
+    public void MeterProviderInitialized(MeterProvider provider)
+    {
+        _opAmp.RecordMetricProviderEndpoints(provider);
+    }
+
+    /// <summary>
+    /// Called after instrumentation was initialized.
+    /// </summary>
+    public void Initialized()
+    {
+        _opAmp.RecordPluginConfig(Settings);
+        _opAmp.MarkInstrumentationInitialized();
     }
 
     private static void EnableHighResTimer()

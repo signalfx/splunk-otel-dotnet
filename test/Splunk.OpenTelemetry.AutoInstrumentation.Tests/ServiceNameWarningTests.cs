@@ -77,9 +77,45 @@ public class ServiceNameWarningTests : IDisposable
     }
 
     [Fact]
-    public void InvalidResourceName()
+    public void ServiceNameWithOnlyEqualsSignSet()
     {
         Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "something=2,service.name==,b=3,");
+        var serviceNameWarning = new ServiceNameWarning();
+        serviceNameWarning.SendOnMissingServiceName(_logger);
+        _logger.DidNotReceive().Warning(Arg.Any<string>());
+    }
+
+    [Fact]
+    public void ResourceNameWithEqualsSignSet()
+    {
+        Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "something=2,service.name=my=service");
+        var serviceNameWarning = new ServiceNameWarning();
+        serviceNameWarning.SendOnMissingServiceName(_logger);
+        _logger.DidNotReceive().Warning(Arg.Any<string>());
+    }
+
+    [Fact]
+    public void ResourceNameWithUrlEncodedEqualsSignSet()
+    {
+        Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "something=2,service.name=my%3Dservice");
+        var serviceNameWarning = new ServiceNameWarning();
+        serviceNameWarning.SendOnMissingServiceName(_logger);
+        _logger.DidNotReceive().Warning(Arg.Any<string>());
+    }
+
+    [Fact]
+    public void EmptyResourceNameBeforeValidResourceName()
+    {
+        Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "something=2,service.name=,service.name=nameset");
+        var serviceNameWarning = new ServiceNameWarning();
+        serviceNameWarning.SendOnMissingServiceName(_logger);
+        _logger.DidNotReceive().Warning(Arg.Any<string>());
+    }
+
+    [Fact]
+    public void MalformedResourceAttributeWithoutEqualsSign()
+    {
+        Environment.SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "something=2,service.name");
         var serviceNameWarning = new ServiceNameWarning();
         serviceNameWarning.SendOnMissingServiceName(_logger);
         _logger.Received(1).Warning(Arg.Any<string>());
