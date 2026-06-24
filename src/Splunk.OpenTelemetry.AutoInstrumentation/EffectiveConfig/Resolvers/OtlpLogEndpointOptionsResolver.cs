@@ -16,7 +16,6 @@
 
 using System.Reflection;
 using OpenTelemetry.Exporter;
-using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 

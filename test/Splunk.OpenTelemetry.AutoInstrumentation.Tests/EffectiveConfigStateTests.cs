@@ -18,7 +18,6 @@ using System.Collections.Specialized;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
-using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 

@@ -19,7 +19,6 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.OpAmp.Client;
 using OpenTelemetry.OpAmp.Client.Messages;
 using OpenTelemetry.Trace;
-using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 

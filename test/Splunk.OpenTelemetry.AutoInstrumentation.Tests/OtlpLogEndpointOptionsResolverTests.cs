@@ -16,7 +16,6 @@
 
 using OpenTelemetry.Exporter;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
-using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;

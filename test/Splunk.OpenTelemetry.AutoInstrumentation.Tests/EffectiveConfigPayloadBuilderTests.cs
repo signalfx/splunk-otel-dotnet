@@ -17,7 +17,6 @@
 using System.Text;
 using OpenTelemetry.OpAmp.Client.Messages;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
-using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
@@ -46,18 +45,19 @@ public class EffectiveConfigPayloadBuilderTests
         Assert.Equal("text/plain; format=properties; vendor=splunk; v=1.0.0", payload.ContentType);
         AssertEnvironmentConfigPayload(
             payload,
-            CreateExpectedEnvironmentConfig(
-                traceEndpoint: "http://collector:4318/v1/traces",
-                metricEndpoint: "http://collector:4318/v1/metrics",
-                logEndpoint: "http://collector:4318/v1/logs",
-                cpuProfilerEnabled: "true",
-#if NET
-                memoryProfilerEnabled: "true",
-#else
-                memoryProfilerEnabled: "false",
-#endif
-                snapshotProfilerEnabled: "true",
-                snapshotSamplingInterval: "5000"));
+            new Dictionary<string, string>
+            {
+                ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = "http://collector:4318/v1/traces",
+                ["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"] = "http://collector:4318/v1/metrics",
+                ["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"] = "http://collector:4318/v1/logs",
+                ["SPLUNK_PROFILER_ENABLED"] = "true",
+                ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "true",
+                ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "true",
+                ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "5000",
+                ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
+                ["OTEL_CONFIG_FILE"] = "null",
+                ["OTEL_EXPERIMENTAL_CONFIG_FILE"] = "null"
+            });
     }
 
     [Fact]
@@ -65,7 +65,19 @@ public class EffectiveConfigPayloadBuilderTests
     {
         var payload = EffectiveConfigPayloadBuilder.Build(CreateEnvironmentSnapshot());
 
-        AssertEnvironmentConfigPayload(payload, CreateExpectedEnvironmentConfig());
+        AssertEnvironmentConfigPayload(payload, new Dictionary<string, string>
+        {
+            ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = "none",
+            ["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"] = "none",
+            ["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"] = "none",
+            ["SPLUNK_PROFILER_ENABLED"] = "false",
+            ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
+            ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
+            ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "40",
+            ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
+            ["OTEL_CONFIG_FILE"] = "null",
+            ["OTEL_EXPERIMENTAL_CONFIG_FILE"] = "null"
+        });
     }
 
     private static EffectiveConfigSnapshot CreateEnvironmentSnapshot(
@@ -94,31 +106,6 @@ public class EffectiveConfigPayloadBuilderTests
     private static string GetBody(EffectiveConfigFile file)
     {
         return Encoding.UTF8.GetString(file.Content.ToArray());
-    }
-
-    private static Dictionary<string, string> CreateExpectedEnvironmentConfig(
-        string traceEndpoint = "none",
-        string metricEndpoint = "none",
-        string logEndpoint = "none",
-        string cpuProfilerEnabled = "false",
-        string memoryProfilerEnabled = "false",
-        string snapshotProfilerEnabled = "false",
-        string snapshotSamplingInterval = "40",
-        string cpuProfilerCallStackInterval = "10000")
-    {
-        return new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = traceEndpoint,
-            ["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"] = metricEndpoint,
-            ["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"] = logEndpoint,
-            ["SPLUNK_PROFILER_ENABLED"] = cpuProfilerEnabled,
-            ["SPLUNK_PROFILER_MEMORY_ENABLED"] = memoryProfilerEnabled,
-            ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = snapshotProfilerEnabled,
-            ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = snapshotSamplingInterval,
-            ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = cpuProfilerCallStackInterval,
-            ["OTEL_CONFIG_FILE"] = "null",
-            ["OTEL_EXPERIMENTAL_CONFIG_FILE"] = "null"
-        };
     }
 
     private static void AssertEnvironmentConfigPayload(

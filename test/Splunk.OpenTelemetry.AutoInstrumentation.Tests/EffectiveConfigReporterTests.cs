@@ -18,7 +18,6 @@ using System.Text;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.OpAmp.Client.Messages;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
-using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 

@@ -14,8 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
-
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal sealed class EffectiveConfigState

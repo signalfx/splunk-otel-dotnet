@@ -17,7 +17,6 @@
 using System.Globalization;
 using System.Text;
 using OpenTelemetry.OpAmp.Client.Messages;
-using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Serialization;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;

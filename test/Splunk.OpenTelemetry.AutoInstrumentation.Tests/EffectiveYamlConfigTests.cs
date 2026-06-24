@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Serialization;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;

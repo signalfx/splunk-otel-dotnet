@@ -14,7 +14,7 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Model;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal enum EffectiveOtlpExporterType
 {
