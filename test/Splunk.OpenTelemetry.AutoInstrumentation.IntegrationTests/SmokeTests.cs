@@ -34,6 +34,7 @@ using OpAmp.Proto.V1;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 using Xunit.Abstractions;
+using YamlDotNet.RepresentationModel;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests;
 
@@ -429,7 +430,7 @@ public class SmokeTests : TestHelper, IDisposable
 
         var payload = RunTestApplicationAndAssertEffectiveConfig(
             opAmpServer,
-            HasEffectiveConfigPayload,
+            HasReceivedFinalEffectiveConfig,
             configFile,
             ExpectedYamlConfigContentType);
 
@@ -470,6 +471,54 @@ public class SmokeTests : TestHelper, IDisposable
     private static bool HasEffectiveConfigPayload(string payload)
     {
         return !string.IsNullOrWhiteSpace(payload);
+    }
+
+    private static bool HasReceivedFinalEffectiveConfig(string payload)
+    {
+        // On .NET, ILogger endpoint capture can happen after the initial OpAmp
+        // effective config report is sent, so logger_provider may arrive in a
+        // subsequent effective config message.
+#if NET
+        return HasYamlSequenceItemCount(payload, "logger_provider", "processors", 2);
+#else
+        return HasEffectiveConfigPayload(payload);
+#endif
+    }
+
+    private static bool HasYamlSequenceItemCount(string payload, string sectionName, string sequenceName, int expectedItemCount)
+    {
+        if (string.IsNullOrWhiteSpace(payload))
+        {
+            return false;
+        }
+
+        try
+        {
+            var yaml = new YamlStream();
+            using var reader = new StringReader(payload);
+            yaml.Load(reader);
+
+            if (yaml.Documents.Count == 0 ||
+                yaml.Documents[0].RootNode is not YamlMappingNode root ||
+                !TryGetMappingChild(root, sectionName, out var sectionNode) ||
+                sectionNode is not YamlMappingNode section ||
+                !TryGetMappingChild(section, sequenceName, out var sequenceNode) ||
+                sequenceNode is not YamlSequenceNode sequence)
+            {
+                return false;
+            }
+
+            return sequence.Children.Count >= expectedItemCount;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool TryGetMappingChild(YamlMappingNode mapping, string key, out YamlNode value)
+    {
+        return mapping.Children.TryGetValue(new YamlScalarNode(key), out value!);
     }
 
     private static bool EnvironmentConfigPayloadMatches(
