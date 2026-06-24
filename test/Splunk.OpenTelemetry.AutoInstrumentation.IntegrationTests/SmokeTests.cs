@@ -226,13 +226,13 @@ public class SmokeTests : TestHelper, IDisposable
     public void EffectiveEnvVarConfigIsReportedToOpAmp()
     {
         using var opAmpServer = new MockOpAmpServer(Output);
-        using var profilerCollector = new MockContinuousProfilerCollector(Output);
+        using var profilesCollector = new MockContinuousProfilerCollector(Output);
 
         var tracesEndpoint = "http://localhost:4318/v1/traces";
         var metricsEndpoint = "http://localhost:4319/v1/metrics";
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", tracesEndpoint);
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", metricsEndpoint);
-        SetExporter(profilerCollector);
+        SetExporter(profilesCollector);
         SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
 #if NET
         var logsEndpoint = "http://localhost:4320/v1/logs";
@@ -372,13 +372,13 @@ public class SmokeTests : TestHelper, IDisposable
     public Task EffectiveYamlConfigIsReportedToOpAmp()
     {
         using var opAmpServer = new MockOpAmpServer(Output);
-        using var profilerCollector = new MockContinuousProfilerCollector(Output);
+        using var profilesCollector = new MockContinuousProfilerCollector(Output);
 
         var configFile = GetFileBasedConfigPath("config.yaml");
         EnableBytecodeInstrumentation();
         EnableFileBasedConfig("config.yaml");
-        SetExporter(profilerCollector);
         SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+        SetExporter(profilesCollector);
 
         // Set traces and service name via env var; yaml substitutes them in.
         // Metrics endpoint is intentionally not set; yaml fallback value is used instead.

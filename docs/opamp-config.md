@@ -35,6 +35,9 @@ The properties body contains the final values for:
 - `SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL`
 - `SPLUNK_PROFILER_CALL_STACK_INTERVAL`
 
+For .NET Framework applications, `SPLUNK_PROFILER_MEMORY_ENABLED` is always
+reported as `false` because memory profiling is not supported on .NET Framework.
+
 When instrumentation is configured with file-based configuration, the OpAMP
 effective configuration contains one file named after the configured YAML file
 path with content type `application/yaml; vendor=splunk; v=1.0.0`.
