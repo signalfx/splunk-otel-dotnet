@@ -15,6 +15,7 @@
 // </copyright>
 
 using System.Text;
+using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
@@ -49,46 +50,40 @@ internal sealed class EffectiveConfigState
     private readonly object _lock = new();
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
     private readonly Dictionary<string, List<string>> _endpoints = new(StringComparer.Ordinal);
+    private Uri? _profilerLogsEndpoint;
+    private bool _cpuProfilerEnabled;
+    private bool _memoryProfilerEnabled;
+    private bool _snapshotsEnabled;
+    private uint _snapshotsSamplingInterval;
 
     public void SetSplunkSettings(PluginSettings settings)
     {
         lock (_lock)
         {
-            _values[CpuProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.CpuProfilerEnabled);
+            _profilerLogsEndpoint = settings.ProfilerLogsEndpoint;
 #if NET
-            var memoryProfilerEnabled = settings.MemoryProfilerEnabled;
+            _memoryProfilerEnabled = settings.MemoryProfilerEnabled;
 #else
-            var memoryProfilerEnabled = false;
+            _memoryProfilerEnabled = false;
 #endif
-            _values[MemoryProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(memoryProfilerEnabled);
-            _values[SnapshotProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(settings.SnapshotsEnabled);
+            _snapshotsEnabled = settings.SnapshotsEnabled;
+            _snapshotsSamplingInterval = settings.SnapshotsSamplingInterval;
 
-            if (settings.CpuProfilerEnabled)
-            {
-                _values[CpuProfilerCallStackInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.CpuProfilerCallStackInterval);
-            }
-            else
-            {
-                _values.Remove(CpuProfilerCallStackInterval);
-            }
+            _values[MemoryProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(_memoryProfilerEnabled);
+            _values[SnapshotProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(_snapshotsEnabled);
 
-            if (settings.CpuProfilerEnabled || memoryProfilerEnabled || settings.SnapshotsEnabled)
-            {
-                _values[ProfilerLogsEndpoint] = EffectiveConfigValueFormatter.FormatList([settings.ProfilerLogsEndpoint.ToString()]);
-            }
-            else
-            {
-                _values.Remove(ProfilerLogsEndpoint);
-            }
+            SetProfilerRuntimeSettingsNoLock(ProfilerRuntimeSettings.FromPluginSettings(settings));
+            UpdateProfilerLogsEndpoint();
+            UpdateSnapshotSamplingInterval();
+        }
+    }
 
-            if (settings.SnapshotsEnabled)
-            {
-                _values[SnapshotSamplingInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.SnapshotsSamplingInterval);
-            }
-            else
-            {
-                _values.Remove(SnapshotSamplingInterval);
-            }
+    public void SetProfilerRuntimeSettings(ProfilerRuntimeSettings settings)
+    {
+        lock (_lock)
+        {
+            SetProfilerRuntimeSettingsNoLock(settings);
+            UpdateProfilerLogsEndpoint();
         }
     }
 
@@ -202,6 +197,45 @@ internal sealed class EffectiveConfigState
             }
 
             return false;
+        }
+    }
+
+    private void SetProfilerRuntimeSettingsNoLock(ProfilerRuntimeSettings settings)
+    {
+        _cpuProfilerEnabled = settings.CpuProfilerEnabled;
+        _values[CpuProfilerEnabled] = EffectiveConfigValueFormatter.FormatBoolean(_cpuProfilerEnabled);
+
+        if (_cpuProfilerEnabled)
+        {
+            _values[CpuProfilerCallStackInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(settings.CpuProfilerCallStackInterval);
+        }
+        else
+        {
+            _values.Remove(CpuProfilerCallStackInterval);
+        }
+    }
+
+    private void UpdateProfilerLogsEndpoint()
+    {
+        if (_profilerLogsEndpoint != null && (_cpuProfilerEnabled || _memoryProfilerEnabled || _snapshotsEnabled))
+        {
+            _values[ProfilerLogsEndpoint] = EffectiveConfigValueFormatter.FormatList([_profilerLogsEndpoint.ToString()]);
+        }
+        else
+        {
+            _values.Remove(ProfilerLogsEndpoint);
+        }
+    }
+
+    private void UpdateSnapshotSamplingInterval()
+    {
+        if (_snapshotsEnabled)
+        {
+            _values[SnapshotSamplingInterval] = EffectiveConfigValueFormatter.FormatMilliseconds(_snapshotsSamplingInterval);
+        }
+        else
+        {
+            _values.Remove(SnapshotSamplingInterval);
         }
     }
 
