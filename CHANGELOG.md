@@ -16,6 +16,7 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.16.0
   and source reference of Splunk Distribution of OpenTelemetry .NET Automatic
   Instrumentation. `VERSION` file keeps the data for the upstream OpenTelemetry
   .NET Auto Instrumentation distribution.
+- Experimental support for OpAMP remote configuration for CPU profiling.
 
 ### Changed
 
