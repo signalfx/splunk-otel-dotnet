@@ -139,6 +139,7 @@ internal static class SettingsData
             // OpAmp
             new("OTEL_DOTNET_AUTO_OPAMP_ENABLED", "Enables OpAMP client.", "false", "boolean", OpAmpCategory),
             new("OTEL_DOTNET_AUTO_OPAMP_SERVER_URL", "OpAMP server url.", "https://localhost:4318/v1/opamp", "string", OpAmpCategory),
+            new("SPLUNK_OPAMP_REMOTE_CONFIG", "Enables OpAMP remote configuration for CPU profiler enablement and sampling interval. Requires OpAMP to be enabled.", "false", "boolean", OpAmpCategory),
         };
 
         return settings;

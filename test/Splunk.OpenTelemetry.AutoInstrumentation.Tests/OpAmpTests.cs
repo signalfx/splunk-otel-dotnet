@@ -14,7 +14,10 @@
 // limitations under the License.
 // </copyright>
 
+using System.Collections.Specialized;
 using OpenTelemetry.OpAmp.Client.Settings;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
+using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
@@ -28,5 +31,47 @@ public class OpAmpTests
         OpAmp.EnableEffectiveConfigReporting(settings);
 
         Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
+    }
+
+    [Fact]
+    public void EnableRemoteConfiguration_AcceptsRemoteConfiguration()
+    {
+        var settings = new OpAmpClientSettings();
+
+        OpAmp.EnableRemoteConfiguration(settings);
+
+        Assert.True(settings.RemoteConfiguration.AcceptsRemoteConfig);
+    }
+
+    [Fact]
+    public void ConfigureOptions_EnablesRemoteConfigurationRuntimeMode()
+    {
+        var pluginSettings = new PluginSettings(new NameValueConfigurationSource(
+            new NameValueCollection
+            {
+                [ConfigurationKeys.Splunk.OpAmp.RemoteConfig] = "true"
+            }));
+        ProfilerRuntimeConfiguration.Initialize(pluginSettings);
+        var settings = new OpAmpClientSettings();
+
+        new OpAmp().ConfigureOptions(settings, pluginSettings);
+
+        Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
+        Assert.True(settings.RemoteConfiguration.AcceptsRemoteConfig);
+        Assert.True(ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled);
+    }
+
+    [Fact]
+    public void ConfigureOptions_RemoteConfigurationIsDisabledByDefault()
+    {
+        var pluginSettings = new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        ProfilerRuntimeConfiguration.Initialize(pluginSettings);
+        var settings = new OpAmpClientSettings();
+
+        new OpAmp().ConfigureOptions(settings, pluginSettings);
+
+        Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
+        Assert.False(settings.RemoteConfiguration.AcceptsRemoteConfig);
+        Assert.False(ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled);
     }
 }

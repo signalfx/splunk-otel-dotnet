@@ -23,6 +23,7 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
+using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
@@ -31,19 +32,42 @@ internal sealed class OpAmp
     private static readonly ILogger Log = new Logger();
 
     private readonly Lazy<EffectiveConfigReporter?> _effectiveConfigReporter;
+    private readonly OpAmpRemoteConfigurationListener _remoteConfigurationListener;
     private int _instrumentationInitialized;
     private int _opAmpClientStarted;
     private int _initialEffectiveConfigReportStarted;
+    private bool _remoteConfigurationEnabled;
     private Task? _initialEffectiveConfigReportTask;
+    private OpAmpClient? _opAmpClient;
 
     public OpAmp()
     {
         _effectiveConfigReporter = new Lazy<EffectiveConfigReporter?>(TryCreateEffectiveConfigReporter);
+        _remoteConfigurationListener = new OpAmpRemoteConfigurationListener(SendEffectiveConfigAfterRemoteConfiguration);
     }
 
     public static void EnableEffectiveConfigReporting(OpAmpClientSettings settings)
     {
         settings.EffectiveConfigurationReporting.EnableReporting = true;
+    }
+
+    public static void EnableRemoteConfiguration(OpAmpClientSettings settings)
+    {
+        settings.RemoteConfiguration.AcceptsRemoteConfig = true;
+    }
+
+    public void ConfigureOptions(OpAmpClientSettings settings, PluginSettings pluginSettings)
+    {
+        EnableEffectiveConfigReporting(settings);
+
+        if (!pluginSettings.OpAmpRemoteConfigEnabled)
+        {
+            return;
+        }
+
+        _remoteConfigurationEnabled = true;
+        EnableRemoteConfiguration(settings);
+        ProfilerRuntimeConfiguration.EnableOpAmpRemoteConfiguration();
     }
 
     public void RecordPluginConfig(PluginSettings settings)
@@ -78,6 +102,12 @@ internal sealed class OpAmp
 
     public void OnClientStarted(OpAmpClient client)
     {
+        Volatile.Write(ref _opAmpClient, client);
+        if (_remoteConfigurationEnabled)
+        {
+            client.Subscribe(_remoteConfigurationListener);
+        }
+
         _effectiveConfigReporter.Value?.SetOpAmpClient(client);
         Volatile.Write(ref _opAmpClientStarted, 1);
         TryReportEffectiveConfig();
@@ -85,6 +115,12 @@ internal sealed class OpAmp
 
     public void FlushBeforeClientStops()
     {
+        var client = Volatile.Read(ref _opAmpClient);
+        if (_remoteConfigurationEnabled)
+        {
+            client?.Unsubscribe(_remoteConfigurationListener);
+        }
+
         TryReportEffectiveConfig();
         var initialReportTask = Volatile.Read(ref _initialEffectiveConfigReportTask);
         if (initialReportTask == null)
@@ -115,6 +151,11 @@ internal sealed class OpAmp
             Log.Warning($"Could not create effective configuration reporter: {e.Message}");
             return null;
         }
+    }
+
+    private void SendEffectiveConfigAfterRemoteConfiguration()
+    {
+        _ = ReportEffectiveConfigAsync();
     }
 
     private void TryReportEffectiveConfig()
