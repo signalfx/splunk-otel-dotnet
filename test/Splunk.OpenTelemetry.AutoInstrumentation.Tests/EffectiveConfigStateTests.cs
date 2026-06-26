@@ -64,7 +64,6 @@ public class EffectiveConfigStateTests
         var snapshot = state.CreateSnapshot();
         Assert.True(snapshot.IsFileBasedConfig);
         Assert.Equal("stable.yaml", snapshot.FileBasedConfigFileName);
-        Assert.Equal("stable.yaml", snapshot.OtelConfigFile);
         Assert.Equal("experimental.yaml", snapshot.OtelExperimentalConfigFile);
     }
 

@@ -79,9 +79,7 @@ internal class PluginSettings
             throw new ArgumentNullException(nameof(configuration));
         }
 
-        IsFileBasedConfig = true;
         FileBasedConfigFileName = fileName ?? DefaultFileBasedConfigFileName;
-        OtelConfigFile = FileBasedConfigFileName;
         OtelExperimentalConfigFile = experimentalFileName;
         Realm = Constants.None;
         AccessToken = null;
@@ -146,11 +144,9 @@ internal class PluginSettings
 
     public bool IsOtlpEndpointSet { get; }
 
-    public bool IsFileBasedConfig { get; }
+    public bool IsFileBasedConfig => FileBasedConfigFileName != null;
 
     public string? FileBasedConfigFileName { get; }
-
-    public string? OtelConfigFile { get; }
 
     public string? OtelExperimentalConfigFile { get; }
 

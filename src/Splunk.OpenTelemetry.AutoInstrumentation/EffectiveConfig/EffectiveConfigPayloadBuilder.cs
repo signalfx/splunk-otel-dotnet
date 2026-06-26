@@ -57,7 +57,7 @@ internal static class EffectiveConfigPayloadBuilder
     private static EffectiveConfigFile BuildYamlPayload(EffectiveConfigSnapshot snapshot)
     {
         var yamlConfig = EffectiveYamlConfig.Create(
-            snapshot.OtelConfigFile ?? snapshot.FileBasedConfigFileName,
+            snapshot.FileBasedConfigFileName,
             snapshot.OtelExperimentalConfigFile,
             snapshot.TraceEndpoints,
             snapshot.MetricEndpoints,

@@ -27,7 +27,6 @@ internal sealed class EffectiveConfigState
 
     private bool _isFileBasedConfig;
     private string _fileBasedConfigFileName = DefaultFileBasedConfigFileName;
-    private string? _otelConfigFile;
     private string? _otelExperimentalConfigFile;
     private bool _cpuProfilerEnabled;
     private bool _memoryProfilerEnabled;
@@ -41,7 +40,6 @@ internal sealed class EffectiveConfigState
         {
             _isFileBasedConfig = settings.IsFileBasedConfig;
             _fileBasedConfigFileName = settings.FileBasedConfigFileName ?? DefaultFileBasedConfigFileName;
-            _otelConfigFile = settings.OtelConfigFile;
             _otelExperimentalConfigFile = settings.OtelExperimentalConfigFile;
             _cpuProfilerEnabled = settings.CpuProfilerEnabled;
 #if NET
@@ -95,7 +93,6 @@ internal sealed class EffectiveConfigState
                 snapshotProfilerEnabled: _snapshotProfilerEnabled,
                 cpuProfilerCallStackInterval: _cpuProfilerCallStackInterval,
                 snapshotSamplingInterval: _snapshotSamplingInterval,
-                otelConfigFile: _otelConfigFile,
                 otelExperimentalConfigFile: _otelExperimentalConfigFile);
         }
     }

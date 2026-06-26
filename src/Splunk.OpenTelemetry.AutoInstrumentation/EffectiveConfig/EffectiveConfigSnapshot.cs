@@ -29,12 +29,10 @@ internal sealed class EffectiveConfigSnapshot
         bool snapshotProfilerEnabled,
         uint cpuProfilerCallStackInterval,
         uint snapshotSamplingInterval,
-        string? otelConfigFile = null,
         string? otelExperimentalConfigFile = null)
     {
         IsFileBasedConfig = isFileBasedConfig;
         FileBasedConfigFileName = fileBasedConfigFileName ?? throw new ArgumentNullException(nameof(fileBasedConfigFileName));
-        OtelConfigFile = otelConfigFile;
         OtelExperimentalConfigFile = otelExperimentalConfigFile;
         TraceEndpoints = CopyEndpoints(traceEndpoints);
         MetricEndpoints = CopyEndpoints(metricEndpoints);
@@ -49,8 +47,6 @@ internal sealed class EffectiveConfigSnapshot
     public bool IsFileBasedConfig { get; }
 
     public string FileBasedConfigFileName { get; }
-
-    public string? OtelConfigFile { get; }
 
     public string? OtelExperimentalConfigFile { get; }
 
