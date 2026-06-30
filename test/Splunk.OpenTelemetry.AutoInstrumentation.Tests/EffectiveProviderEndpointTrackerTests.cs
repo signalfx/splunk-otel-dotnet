@@ -27,12 +27,13 @@ public class EffectiveProviderEndpointTrackerTests
             [EffectiveOtlpEndpoint.Http("http://first-collector:4318/v1/traces")];
         var tracker = CreateTracker(_ => resolvedEndpoints);
 
-        Assert.True(tracker.Capture(new object()));
-        Assert.False(tracker.Capture(new object()));
+        var provider = new object();
+        Assert.True(tracker.Capture(provider));
+        Assert.False(tracker.Capture(provider));
 
         resolvedEndpoints = [EffectiveOtlpEndpoint.Http("http://second-collector:4318/v1/traces")];
 
-        Assert.True(tracker.Capture(new object()));
+        Assert.True(tracker.Capture(provider));
         Assert.Equal(resolvedEndpoints, tracker.GetCurrentEndpoints());
     }
 
@@ -45,13 +46,14 @@ public class EffectiveProviderEndpointTrackerTests
                 ? throw new InvalidOperationException("resolution failed")
                 : [EffectiveOtlpEndpoint.Http("http://collector:4318/v1/traces")]);
 
-        Assert.True(tracker.Capture(new object()));
+        var provider = new object();
+        Assert.True(tracker.Capture(provider));
 
         resolutionFails = true;
 
-        Assert.True(tracker.Capture(new object()));
+        Assert.True(tracker.Capture(provider));
         Assert.Empty(tracker.GetCurrentEndpoints());
-        Assert.False(tracker.Capture(new object()));
+        Assert.False(tracker.Capture(provider));
     }
 
     [Fact]
@@ -60,11 +62,12 @@ public class EffectiveProviderEndpointTrackerTests
         IReadOnlyList<EffectiveOtlpEndpoint> resolvedEndpoints =
             [EffectiveOtlpEndpoint.Http("http://first-collector:4318/v1/traces")];
         var tracker = CreateTracker(_ => resolvedEndpoints);
-        tracker.Capture(new object());
+        var provider = new object();
+        tracker.Capture(provider);
         var snapshot = tracker.GetCurrentEndpoints();
 
         resolvedEndpoints = [EffectiveOtlpEndpoint.Http("http://second-collector:4318/v1/traces")];
-        tracker.Capture(new object());
+        tracker.Capture(provider);
 
         Assert.Equal(
             [EffectiveOtlpEndpoint.Http("http://first-collector:4318/v1/traces")],
