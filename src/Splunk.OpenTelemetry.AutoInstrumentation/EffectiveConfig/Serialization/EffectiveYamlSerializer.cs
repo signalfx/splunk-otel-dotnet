@@ -28,10 +28,15 @@ internal static class EffectiveYamlSerializer
     private static readonly Lazy<MethodInfo> SerializeMethod = new(() =>
         GetInstanceMethod(Serializer.Value.GetType(), "Serialize", [typeof(object)]));
 
-    public static string Serialize(object value)
+    public static string Serialize(EffectiveYamlConfig value)
     {
         var result = SerializeMethod.Value.Invoke(Serializer.Value, [value]);
-        return ((string?)result ?? string.Empty).TrimEnd();
+        if (result is not string serialized)
+        {
+            throw new InvalidOperationException("The upstream YAML serializer returned a non-string result.");
+        }
+
+        return serialized.TrimEnd('\r', '\n');
     }
 
     private static object CreateSerializer()
@@ -41,9 +46,9 @@ internal static class EffectiveYamlSerializer
 
         ConfigureDefaultValueHandling(builder);
         ConfigureYamlPropertyOverrides(builder);
-        Invoke(builder, "WithIndentedSequences", []);
+        InvokeRequired(builder, "WithIndentedSequences", []);
 
-        return Invoke(builder, "Build", []);
+        return InvokeRequired(builder, "Build", []);
     }
 
     private static void ConfigureDefaultValueHandling(object builder)
@@ -52,15 +57,17 @@ internal static class EffectiveYamlSerializer
         // Absence is meaningful in effective-config YAML; null/empty inactive branches should not be reported as configured.
         var defaultValuesHandling = CreateEnumFlags(defaultValuesHandlingType, "OmitNull", "OmitEmptyCollections");
 
-        Invoke(builder, "ConfigureDefaultValuesHandling", [defaultValuesHandlingType], defaultValuesHandling);
+        InvokeRequired(builder, "ConfigureDefaultValuesHandling", [defaultValuesHandlingType], defaultValuesHandling);
     }
 
     private static void ConfigureYamlPropertyOverrides(object builder)
     {
         var yamlMemberAttributeType = GetUpstreamType("Vendors.YamlDotNet.Serialization.YamlMemberAttribute");
         var scalarStyleType = GetUpstreamType("Vendors.YamlDotNet.Core.ScalarStyle");
+        var defaultValuesHandlingType = GetUpstreamType("Vendors.YamlDotNet.Serialization.DefaultValuesHandling");
         var doubleQuotedStyle = Enum.Parse(scalarStyleType, "DoubleQuoted");
         var plainStyle = Enum.Parse(scalarStyleType, "Plain");
+        var preserveDefaultValues = Enum.Parse(defaultValuesHandlingType, "Preserve");
 
         foreach (var property in GetYamlProperties())
         {
@@ -70,6 +77,11 @@ internal static class EffectiveYamlSerializer
             SetProperty(yamlMemberAttribute, "Alias", effectiveYamlProperty.Name);
             SetProperty(yamlMemberAttribute, "Order", effectiveYamlProperty.Order);
             SetProperty(yamlMemberAttribute, "ApplyNamingConventions", false);
+            if (effectiveYamlProperty.PreserveNull)
+            {
+                SetProperty(yamlMemberAttribute, "DefaultValuesHandling", preserveDefaultValues);
+            }
+
             if (property.PropertyType == typeof(string))
             {
                 SetProperty(
@@ -78,7 +90,7 @@ internal static class EffectiveYamlSerializer
                     effectiveYamlProperty.PlainStyle ? plainStyle : doubleQuotedStyle);
             }
 
-            Invoke(
+            InvokeRequired(
                 builder,
                 "WithAttributeOverride",
                 [typeof(Type), typeof(string), typeof(Attribute)],
@@ -90,10 +102,23 @@ internal static class EffectiveYamlSerializer
 
     private static IEnumerable<PropertyInfo> GetYamlProperties()
     {
-        return new[] { typeof(EffectiveYamlConfig) }
+        var properties = new[] { typeof(EffectiveYamlConfig) }
             .Concat(typeof(EffectiveYamlConfig).GetNestedTypes(BindingFlags.NonPublic | BindingFlags.Public))
-            .SelectMany(type => type.GetProperties(BindingFlags.Instance | BindingFlags.Public))
-            .Where(property => property.GetCustomAttribute<EffectiveYamlPropertyAttribute>() != null);
+            .SelectMany(type => type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
+            .ToArray();
+
+        var unconfiguredProperties = properties
+            .Where(property => property.GetCustomAttribute<EffectiveYamlPropertyAttribute>() == null)
+            .Select(property => $"{property.DeclaringType!.FullName}.{property.Name}")
+            .ToArray();
+        if (unconfiguredProperties.Length != 0)
+        {
+            throw new InvalidOperationException(
+                $"Effective YAML properties must declare {nameof(EffectiveYamlPropertyAttribute)}: " +
+                string.Join(", ", unconfiguredProperties));
+        }
+
+        return properties;
     }
 
     private static object CreateEnumFlags(Type enumType, params string[] names)
@@ -106,10 +131,11 @@ internal static class EffectiveYamlSerializer
         return Enum.ToObject(enumType, value);
     }
 
-    private static object Invoke(object target, string methodName, Type[] parameterTypes, params object?[] arguments)
+    private static object InvokeRequired(object target, string methodName, Type[] parameterTypes, params object?[] arguments)
     {
         var method = GetInstanceMethod(target.GetType(), methodName, parameterTypes);
-        return method.Invoke(target, arguments) ?? target;
+        return method.Invoke(target, arguments)
+            ?? throw new InvalidOperationException($"Method {target.GetType().FullName}.{methodName} returned null.");
     }
 
     private static MethodInfo GetInstanceMethod(Type type, string methodName, Type[] parameterTypes)

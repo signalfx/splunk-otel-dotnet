@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 
+using OpenTelemetry;
 using OpenTelemetry.Exporter;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
@@ -24,124 +25,154 @@ public class EffectiveLogEndpointTrackerTests
     [Fact]
     public void CaptureLogExporterOptions_AddsLogsEndpoint_ForILogger()
     {
-        var state = new EffectiveConfigState();
-        var tracker = CreateILoggerTracker(state);
+        var tracker = CreateILoggerTracker();
 
         Assert.True(tracker.CaptureLogExporterOptions(CreateHttpLogOptions("http://logs-collector:4318/v1/logs")));
         Assert.Equal(
             [EffectiveOtlpEndpoint.Http("http://logs-collector:4318/v1/logs")],
-            state.CreateSnapshot().LogEndpoints);
+            tracker.GetCurrentEndpoints());
     }
 
     [Fact]
-    public void CaptureBridgeLogEndpointsIfNeeded_SetsBridgeLoggerProviderEndpoints_WhenILoggerWasNotConfigured()
+    public void CaptureLogExporterOptions_ReturnsFalse_WhenEndpointAlreadyExists()
     {
-        var state = new EffectiveConfigState();
-        var tracker = CreateTracker(state, () => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
+        var tracker = CreateILoggerTracker();
+        var options = CreateHttpLogOptions("http://logs-collector:4318/v1/logs");
 
-        tracker.CaptureBridgeLogEndpointsIfNeeded();
+        Assert.True(tracker.CaptureLogExporterOptions(options));
+        Assert.False(tracker.CaptureLogExporterOptions(options));
+        Assert.Single(tracker.GetCurrentEndpoints());
+    }
+
+    [Fact]
+    public void CaptureLogExporterOptions_PreservesEndpointsWithDifferentExporterTypes()
+    {
+        var tracker = CreateILoggerTracker();
+
+        Assert.True(tracker.CaptureLogExporterOptions(CreateHttpLogOptions("http://logs-collector:4318/v1/logs")));
+        Assert.True(tracker.CaptureLogExporterOptions(CreateGrpcLogOptions("http://logs-collector:4318")));
+
+        Assert.Collection(
+            tracker.GetCurrentEndpoints(),
+            endpoint => Assert.Equal(EffectiveOtlpExporterType.HttpProtobuf, endpoint.ExporterType),
+            endpoint => Assert.Equal(EffectiveOtlpExporterType.Grpc, endpoint.ExporterType));
+    }
+
+    [Fact]
+    public void CaptureLogExporterOptions_ReportsBatchWhenSdkIgnoresSimpleProcessorType()
+    {
+        var tracker = CreateILoggerTracker();
+
+        Assert.True(tracker.CaptureLogExporterOptions(
+            CreateHttpLogOptions("http://logs-collector:4318/v1/logs", ExportProcessorType.Simple)));
+
+        Assert.Equal(
+            [EffectiveOtlpEndpoint.Http("http://logs-collector:4318/v1/logs", EffectiveOtlpPipelineType.Batch)],
+            tracker.GetCurrentEndpoints());
+    }
+
+    [Fact]
+    public void GetCurrentEndpoints_SetsBridgeLoggerProviderEndpoints_WhenILoggerWasNotConfigured()
+    {
+        var tracker = CreateTracker(() => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
 
         Assert.Equal(
             [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")],
-            state.CreateSnapshot().LogEndpoints);
+            tracker.GetCurrentEndpoints());
     }
 
     [Fact]
-    public void CaptureBridgeLogEndpointsIfNeeded_SetsBridgeLoggerProviderEndpoints_WhenOptionsHookRanWithoutILogger()
+    public void GetCurrentEndpoints_SetsBridgeLoggerProviderEndpoints_WhenOptionsHookRanWithoutILogger()
     {
-        var state = new EffectiveConfigState();
-        var tracker = CreateTracker(state, () => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
+        var tracker = CreateTracker(() => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
 
         Assert.False(tracker.CaptureLogExporterOptions(CreateHttpLogOptions("http://options-collector:4318/v1/logs")));
-        tracker.CaptureBridgeLogEndpointsIfNeeded();
-
         Assert.Equal(
             [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")],
-            state.CreateSnapshot().LogEndpoints);
+            tracker.GetCurrentEndpoints());
     }
 
     [Fact]
     public void CaptureLogExporterOptions_IgnoresEndpoint_WhenILoggerWasNotConfigured()
     {
-        var state = new EffectiveConfigState();
-        var tracker = CreateTracker(state);
+        var tracker = CreateTracker();
 
         Assert.False(tracker.CaptureLogExporterOptions(CreateHttpLogOptions("http://options-collector:4318/v1/logs")));
-        tracker.CaptureBridgeLogEndpointsIfNeeded();
-
-        Assert.Empty(state.CreateSnapshot().LogEndpoints);
+        Assert.Empty(tracker.GetCurrentEndpoints());
     }
 
     [Fact]
-    public void CaptureBridgeLogEndpointsIfNeeded_LeavesLogEndpointsEmpty_WhenBridgeLoggerProviderHasNoOtlpEndpoints()
+    public void GetCurrentEndpoints_ReturnsEmpty_WhenBridgeLoggerProviderHasNoOtlpEndpoints()
     {
-        var state = new EffectiveConfigState();
-        var tracker = CreateTracker(state, () => []);
+        var tracker = CreateTracker(() => []);
 
-        tracker.CaptureBridgeLogEndpointsIfNeeded();
-
-        Assert.Empty(state.CreateSnapshot().LogEndpoints);
+        Assert.Empty(tracker.GetCurrentEndpoints());
     }
 
     [Fact]
-    public void CaptureBridgeLogEndpointsIfNeeded_LeavesLogEndpointsEmpty_WhenBridgeLoggerProviderCouldNotBeResolved()
+    public void GetCurrentEndpoints_ReturnsEmpty_WhenBridgeLoggerProviderCouldNotBeResolved()
     {
-        var state = new EffectiveConfigState();
-        var tracker = CreateTracker(state, () => null);
+        var tracker = CreateTracker(() => null);
 
-        tracker.CaptureBridgeLogEndpointsIfNeeded();
-
-        Assert.Empty(state.CreateSnapshot().LogEndpoints);
+        Assert.Empty(tracker.GetCurrentEndpoints());
     }
 
     [Fact]
-    public void CaptureBridgeLogEndpointsIfNeeded_LeavesLogEndpointsEmpty_WhenBridgeLoggerProviderResolutionFails()
+    public void GetCurrentEndpoints_ReturnsEmpty_WhenBridgeLoggerProviderResolutionFails()
     {
-        var state = new EffectiveConfigState();
-        var tracker = CreateTracker(state, () => throw new InvalidOperationException("bridge resolver failed"));
+        var tracker = CreateTracker(() => throw new InvalidOperationException("bridge resolver failed"));
 
-        tracker.CaptureBridgeLogEndpointsIfNeeded();
-
-        Assert.Empty(state.CreateSnapshot().LogEndpoints);
+        Assert.Empty(tracker.GetCurrentEndpoints());
     }
 
     [Fact]
     public void MarkOpenTelemetryLoggerConfigured_ClearsBridgeEndpointsAndPreventsBridgeLoggerProviderEndpointReporting()
     {
-        var state = new EffectiveConfigState();
-        var tracker = CreateTracker(state, () => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
+        var tracker = CreateTracker(() => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
 
-        tracker.CaptureBridgeLogEndpointsIfNeeded();
         Assert.Equal(
             [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")],
-            state.CreateSnapshot().LogEndpoints);
+            tracker.GetCurrentEndpoints());
 
         Assert.True(tracker.MarkOpenTelemetryLoggerConfigured());
-        tracker.CaptureBridgeLogEndpointsIfNeeded();
 
-        Assert.Empty(state.CreateSnapshot().LogEndpoints);
+        Assert.Empty(tracker.GetCurrentEndpoints());
+        Assert.False(tracker.MarkOpenTelemetryLoggerConfigured());
     }
 
-    private static OtlpExporterOptions CreateHttpLogOptions(string endpoint)
+    private static OtlpExporterOptions CreateHttpLogOptions(
+        string endpoint,
+        ExportProcessorType processorType = ExportProcessorType.Batch)
     {
         return new OtlpExporterOptions
         {
             Protocol = OtlpExportProtocol.HttpProtobuf,
+            Endpoint = new Uri(endpoint),
+            ExportProcessorType = processorType
+        };
+    }
+
+    private static OtlpExporterOptions CreateGrpcLogOptions(string endpoint)
+    {
+        return new OtlpExporterOptions
+        {
+#pragma warning disable CS0618 // OtlpExportProtocol.Grpc is obsolete but still supported by the SDK.
+            Protocol = OtlpExportProtocol.Grpc,
+#pragma warning restore CS0618
             Endpoint = new Uri(endpoint)
         };
     }
 
-    private static EffectiveLogEndpointTracker CreateILoggerTracker(EffectiveConfigState state)
+    private static EffectiveLogEndpointTracker CreateILoggerTracker()
     {
-        var tracker = CreateTracker(state);
+        var tracker = CreateTracker();
         tracker.MarkOpenTelemetryLoggerConfigured();
         return tracker;
     }
 
     private static EffectiveLogEndpointTracker CreateTracker(
-        EffectiveConfigState state,
         Func<IReadOnlyList<EffectiveOtlpEndpoint>?>? bridgeLogEndpointResolver = null)
     {
-        return new EffectiveLogEndpointTracker(state, bridgeLogEndpointResolver ?? (() => null));
+        return new EffectiveLogEndpointTracker(bridgeLogEndpointResolver ?? (() => null));
     }
 }

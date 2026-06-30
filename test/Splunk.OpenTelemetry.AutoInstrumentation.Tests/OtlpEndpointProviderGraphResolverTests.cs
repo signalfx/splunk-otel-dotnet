@@ -15,6 +15,7 @@
 // </copyright>
 
 using System.Reflection;
+using OpenTelemetry;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -55,13 +56,16 @@ public class OtlpEndpointProviderGraphResolverTests
     {
         using var provider = global::OpenTelemetry.Sdk.CreateTracerProviderBuilder()
             .AddOtlpExporter(options => ConfigureHttpEndpoint(options, "http://collector:4318/traces-a"))
-            .AddOtlpExporter(options => ConfigureHttpEndpoint(options, "http://collector:4319/traces-b"))
+            .AddOtlpExporter(options => ConfigureHttpEndpoint(
+                options,
+                "http://collector:4319/traces-b",
+                ExportProcessorType.Simple))
             .Build();
 
         Assert.Equal(
             [
                 EffectiveOtlpEndpoint.Http("http://collector:4318/traces-a"),
-                EffectiveOtlpEndpoint.Http("http://collector:4319/traces-b")
+                EffectiveOtlpEndpoint.Http("http://collector:4319/traces-b", EffectiveOtlpPipelineType.Simple)
             ],
             OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
     }
@@ -83,7 +87,7 @@ public class OtlpEndpointProviderGraphResolverTests
             .Build();
 
         Assert.Equal(
-            [EffectiveOtlpEndpoint.Http("http://collector:4318/custom-metrics")],
+            [EffectiveOtlpEndpoint.Http("http://collector:4318/custom-metrics", EffectiveOtlpPipelineType.Periodic)],
             OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
     }
 
@@ -98,8 +102,8 @@ public class OtlpEndpointProviderGraphResolverTests
 
         Assert.Equal(
             [
-                EffectiveOtlpEndpoint.Http("http://collector:4318/metrics-a"),
-                EffectiveOtlpEndpoint.Http("http://collector:4319/metrics-b")
+                EffectiveOtlpEndpoint.Http("http://collector:4318/metrics-a", EffectiveOtlpPipelineType.Periodic),
+                EffectiveOtlpEndpoint.Http("http://collector:4319/metrics-b", EffectiveOtlpPipelineType.Periodic)
             ],
             OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
     }
@@ -113,17 +117,32 @@ public class OtlpEndpointProviderGraphResolverTests
     }
 
     [Fact]
+    public void ResolveMetricEndpoints_ReturnsEmpty_WhenOtlpExporterUsesUnknownReaderType()
+    {
+        using var provider = global::OpenTelemetry.Sdk.CreateMeterProviderBuilder()
+            .AddMeter("test-meter")
+            .AddReader(new UnknownExportingMetricReader(
+                new OtlpMetricExporter(CreateHttpOptions("http://collector:4318/custom-metrics"))))
+            .Build();
+
+        Assert.Empty(OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
+    }
+
+    [Fact]
     public void ResolveLogEndpoints_ReturnsMultipleOtlpExporterEndpoints()
     {
         using var provider = CreateLoggerProviderBuilder()
             .AddOtlpExporter(options => ConfigureHttpEndpoint(options, "http://collector:4318/logs-a"))
-            .AddOtlpExporter(options => ConfigureHttpEndpoint(options, "http://collector:4319/logs-b"))
+            .AddProcessor(new SimpleLogRecordExportProcessor(
+                new OtlpLogExporter(CreateHttpOptions(
+                    "http://collector:4319/logs-b",
+                    ExportProcessorType.Simple))))
             .Build();
 
         Assert.Equal(
             [
                 EffectiveOtlpEndpoint.Http("http://collector:4318/logs-a"),
-                EffectiveOtlpEndpoint.Http("http://collector:4319/logs-b")
+                EffectiveOtlpEndpoint.Http("http://collector:4319/logs-b", EffectiveOtlpPipelineType.Simple)
             ],
             OtlpEndpointProviderGraphResolver.ResolveLogEndpoints(provider));
     }
@@ -150,7 +169,9 @@ public class OtlpEndpointProviderGraphResolverTests
             .Build();
 
         Assert.Equal(
-            [EffectiveOtlpEndpoint.Grpc("http://collector:4317/opentelemetry.proto.collector.metrics.v1.MetricsService/Export")],
+            [EffectiveOtlpEndpoint.Grpc(
+                "http://collector:4317/opentelemetry.proto.collector.metrics.v1.MetricsService/Export",
+                EffectiveOtlpPipelineType.Periodic)],
             OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
     }
 
@@ -167,10 +188,23 @@ public class OtlpEndpointProviderGraphResolverTests
     }
 #endif
 
-    private static void ConfigureHttpEndpoint(OtlpExporterOptions options, string endpoint)
+    private static void ConfigureHttpEndpoint(
+        OtlpExporterOptions options,
+        string endpoint,
+        ExportProcessorType processorType = ExportProcessorType.Batch)
     {
         options.Protocol = OtlpExportProtocol.HttpProtobuf;
         options.Endpoint = new Uri(endpoint);
+        options.ExportProcessorType = processorType;
+    }
+
+    private static OtlpExporterOptions CreateHttpOptions(
+        string endpoint,
+        ExportProcessorType processorType = ExportProcessorType.Batch)
+    {
+        var options = new OtlpExporterOptions();
+        ConfigureHttpEndpoint(options, endpoint, processorType);
+        return options;
     }
 
 #if NET
@@ -188,5 +222,13 @@ public class OtlpEndpointProviderGraphResolverTests
         return (LoggerProviderBuilder)typeof(global::OpenTelemetry.Sdk)
             .GetMethod("CreateLoggerProviderBuilder", BindingFlags.Static | BindingFlags.NonPublic)!
             .Invoke(null, null)!;
+    }
+
+    private sealed class UnknownExportingMetricReader : BaseExportingMetricReader
+    {
+        public UnknownExportingMetricReader(BaseExporter<Metric> exporter)
+            : base(exporter)
+        {
+        }
     }
 }

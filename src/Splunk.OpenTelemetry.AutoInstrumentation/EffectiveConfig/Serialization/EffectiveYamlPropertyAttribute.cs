@@ -19,11 +19,16 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Serialization
 [AttributeUsage(AttributeTargets.Property)]
 internal sealed class EffectiveYamlPropertyAttribute : Attribute
 {
-    public EffectiveYamlPropertyAttribute(string name, int order, bool plainStyle = false)
+    public EffectiveYamlPropertyAttribute(
+        string name,
+        int order,
+        bool plainStyle = false,
+        bool preserveNull = false)
     {
         Name = name;
         Order = order;
         PlainStyle = plainStyle;
+        PreserveNull = preserveNull;
     }
 
     public string Name { get; }
@@ -31,4 +36,6 @@ internal sealed class EffectiveYamlPropertyAttribute : Attribute
     public int Order { get; }
 
     public bool PlainStyle { get; }
+
+    public bool PreserveNull { get; }
 }

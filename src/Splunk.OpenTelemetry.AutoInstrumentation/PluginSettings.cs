@@ -144,8 +144,6 @@ internal class PluginSettings
 
     public bool IsOtlpEndpointSet { get; }
 
-    public bool IsFileBasedConfig => FileBasedConfigFileName != null;
-
     public string? FileBasedConfigFileName { get; }
 
     public string? OtelExperimentalConfigFile { get; }

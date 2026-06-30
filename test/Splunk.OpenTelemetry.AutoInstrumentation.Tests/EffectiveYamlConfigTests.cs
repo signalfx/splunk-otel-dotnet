@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 
+using System.Reflection;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Serialization;
 
@@ -22,19 +23,35 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 public class EffectiveYamlConfigTests
 {
     [Fact]
+    public void YamlModel_AnnotatesEveryPublicProperty()
+    {
+        var properties = new[] { typeof(EffectiveYamlConfig) }
+            .Concat(typeof(EffectiveYamlConfig).GetNestedTypes(BindingFlags.NonPublic | BindingFlags.Public))
+            .SelectMany(type => type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly));
+
+        Assert.All(
+            properties,
+            property => Assert.NotNull(property.GetCustomAttribute<EffectiveYamlPropertyAttribute>()));
+    }
+
+    [Fact]
+    public void YamlModel_PreservesOnlyMemoryProfilerNull()
+    {
+        var properties = new[] { typeof(EffectiveYamlConfig) }
+            .Concat(typeof(EffectiveYamlConfig).GetNestedTypes(BindingFlags.NonPublic | BindingFlags.Public))
+            .SelectMany(type => type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly));
+
+        var property = Assert.Single(
+            properties,
+            property => property.GetCustomAttribute<EffectiveYamlPropertyAttribute>()?.PreserveNull == true);
+
+        Assert.Equal(nameof(EffectiveYamlConfig.EffectiveAlwaysOnProfilingWithMemoryConfig.MemoryProfiler), property.Name);
+    }
+
+    [Fact]
     public void Create_CapturesConfigFileMetadata()
     {
-        var config = EffectiveYamlConfig.Create(
-            otelConfigFile: "stable.yaml",
-            otelExperimentalConfigFile: "experimental.yaml",
-            traceEndpoints: [],
-            metricEndpoints: [],
-            logEndpoints: [],
-            cpuProfilerEnabled: false,
-            memoryProfilerEnabled: false,
-            snapshotProfilerEnabled: false,
-            cpuProfilerCallStackInterval: 10000,
-            snapshotSamplingInterval: 40);
+        var config = EffectiveYamlConfig.Create(CreateSnapshot(otelExperimentalConfigFile: "experimental.yaml"));
 
         Assert.Equal("stable.yaml", config.OtelConfigFile);
         Assert.Equal("experimental.yaml", config.OtelExperimentalConfigFile);
@@ -43,17 +60,7 @@ public class EffectiveYamlConfigTests
     [Fact]
     public void Create_UsesYamlNullForMissingExperimentalConfigFile()
     {
-        var config = EffectiveYamlConfig.Create(
-            otelConfigFile: "stable.yaml",
-            otelExperimentalConfigFile: null,
-            traceEndpoints: [],
-            metricEndpoints: [],
-            logEndpoints: [],
-            cpuProfilerEnabled: false,
-            memoryProfilerEnabled: false,
-            snapshotProfilerEnabled: false,
-            cpuProfilerCallStackInterval: 10000,
-            snapshotSamplingInterval: 40);
+        var config = EffectiveYamlConfig.Create(CreateSnapshot());
 
         Assert.Equal("null", config.OtelExperimentalConfigFile);
     }
@@ -61,42 +68,88 @@ public class EffectiveYamlConfigTests
     [Fact]
     public void Create_SerializesHttpEndpointAsOtlpHttp()
     {
-        var config = EffectiveYamlConfig.Create(
-            otelConfigFile: "stable.yaml",
-            otelExperimentalConfigFile: null,
-            traceEndpoints: [EffectiveOtlpEndpoint.Http("http://collector:4318/v1/traces")],
-            metricEndpoints: [],
-            logEndpoints: [],
-            cpuProfilerEnabled: false,
-            memoryProfilerEnabled: false,
-            snapshotProfilerEnabled: false,
-            cpuProfilerCallStackInterval: 10000,
-            snapshotSamplingInterval: 40);
+        var config = EffectiveYamlConfig.Create(CreateSnapshot(
+            traceEndpoints: [EffectiveOtlpEndpoint.Http("http://collector:4318/v1/traces")]));
 
-        var exporter = config.TracerProvider!.Processors.Single().Batch.Exporter;
+        var processor = config.TracerProvider!.Processors.Single();
+        var exporter = processor.Batch!.Exporter;
+        Assert.Null(processor.Simple);
         Assert.Equal("http://collector:4318/v1/traces", exporter.OtlpHttp!.Endpoint);
         Assert.Null(exporter.OtlpGrpc);
     }
 
     [Fact]
+    public void Create_PreservesSimpleProcessorType()
+    {
+        var config = EffectiveYamlConfig.Create(CreateSnapshot(
+            traceEndpoints:
+            [
+                EffectiveOtlpEndpoint.Http(
+                    "http://collector:4318/v1/traces",
+                    EffectiveOtlpPipelineType.Simple)
+            ]));
+
+        var processor = config.TracerProvider!.Processors.Single();
+        Assert.Null(processor.Batch);
+        Assert.Equal(
+            "http://collector:4318/v1/traces",
+            processor.Simple!.Exporter.OtlpHttp!.Endpoint);
+    }
+
+    [Fact]
     public void Create_SerializesGrpcEndpointAsOtlpGrpc()
     {
-        var config = EffectiveYamlConfig.Create(
-            otelConfigFile: "stable.yaml",
-            otelExperimentalConfigFile: null,
-            traceEndpoints: [],
-            metricEndpoints: [EffectiveOtlpEndpoint.Grpc("http://collector:4317/opentelemetry.proto.collector.metrics.v1.MetricsService/Export")],
-            logEndpoints: [],
-            cpuProfilerEnabled: false,
-            memoryProfilerEnabled: false,
-            snapshotProfilerEnabled: false,
-            cpuProfilerCallStackInterval: 10000,
-            snapshotSamplingInterval: 40);
+        var config = EffectiveYamlConfig.Create(CreateSnapshot(
+            metricEndpoints:
+            [
+                EffectiveOtlpEndpoint.Grpc(
+                    "http://collector:4317/opentelemetry.proto.collector.metrics.v1.MetricsService/Export",
+                    EffectiveOtlpPipelineType.Periodic)
+            ]));
 
         var exporter = config.MeterProvider!.Readers.Single().Periodic.Exporter;
         Assert.Null(exporter.OtlpHttp);
         Assert.Equal(
             "http://collector:4317/opentelemetry.proto.collector.metrics.v1.MetricsService/Export",
             exporter.OtlpGrpc!.Endpoint);
+    }
+
+    [Fact]
+    public void Create_UsesNullMemoryProfilerMarkerWhenEnabled()
+    {
+        var config = EffectiveYamlConfig.Create(CreateSnapshot(memoryProfilerEnabled: true));
+
+        var alwaysOn = Assert.IsType<EffectiveYamlConfig.EffectiveAlwaysOnProfilingWithMemoryConfig>(
+            config.Distribution!.Splunk!.Profiling!.AlwaysOn);
+        Assert.Null(alwaysOn.MemoryProfiler);
+    }
+
+    [Fact]
+    public void Create_OmitsMemoryProfilerMarkerWhenDisabled()
+    {
+        var config = EffectiveYamlConfig.Create(CreateSnapshot(cpuProfilerEnabled: true));
+
+        Assert.IsType<EffectiveYamlConfig.EffectiveAlwaysOnProfilingConfig>(
+            config.Distribution!.Splunk!.Profiling!.AlwaysOn);
+    }
+
+    private static EffectiveConfigSnapshot CreateSnapshot(
+        string? otelExperimentalConfigFile = null,
+        IReadOnlyList<EffectiveOtlpEndpoint>? traceEndpoints = null,
+        IReadOnlyList<EffectiveOtlpEndpoint>? metricEndpoints = null,
+        bool cpuProfilerEnabled = false,
+        bool memoryProfilerEnabled = false)
+    {
+        return new EffectiveConfigSnapshot(
+            fileBasedConfigFileName: "stable.yaml",
+            traceEndpoints: traceEndpoints ?? [],
+            metricEndpoints: metricEndpoints ?? [],
+            logEndpoints: [],
+            cpuProfilerEnabled: cpuProfilerEnabled,
+            memoryProfilerEnabled: memoryProfilerEnabled,
+            snapshotProfilerEnabled: false,
+            cpuProfilerCallStackInterval: 10000,
+            snapshotSamplingInterval: 40,
+            otelExperimentalConfigFile: otelExperimentalConfigFile);
     }
 }

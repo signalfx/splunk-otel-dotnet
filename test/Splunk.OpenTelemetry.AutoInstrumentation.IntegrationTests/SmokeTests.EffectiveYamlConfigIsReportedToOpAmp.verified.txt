@@ -18,6 +18,6 @@ distribution:
       always_on:
         cpu_profiler:
           sampling_interval: 10000
-        memory_profiler: {}
+        memory_profiler: 
       callgraphs:
         sampling_interval: 5000

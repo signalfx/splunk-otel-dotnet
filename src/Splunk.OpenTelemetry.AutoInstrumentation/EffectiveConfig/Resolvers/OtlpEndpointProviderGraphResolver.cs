@@ -15,6 +15,7 @@
 // </copyright>
 
 using System.Reflection;
+using OpenTelemetry;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -30,22 +31,28 @@ internal static class OtlpEndpointProviderGraphResolver
     public static IReadOnlyList<EffectiveOtlpEndpoint> ResolveTraceEndpoints(TracerProvider provider)
     {
         var processor = GetPropertyValue(provider, "Processor");
-        return ResolveEndpointsFromPipeline(processor, typeof(OtlpTraceExporter));
+        return ResolveEndpointsFromPipeline(processor, typeof(OtlpTraceExporter), ResolveTracePipelineType);
     }
 
     public static IReadOnlyList<EffectiveOtlpEndpoint> ResolveMetricEndpoints(MeterProvider provider)
     {
         var reader = GetPropertyValue(provider, "Reader");
-        return ResolveEndpointsFromPipeline(reader, typeof(OtlpMetricExporter));
+        return ResolveEndpointsFromPipeline(
+            reader,
+            typeof(OtlpMetricExporter),
+            ResolveMetricPipelineType);
     }
 
     public static IReadOnlyList<EffectiveOtlpEndpoint> ResolveLogEndpoints(LoggerProvider provider)
     {
         var processor = GetPropertyValue(provider, "Processor");
-        return ResolveEndpointsFromPipeline(processor, typeof(OtlpLogExporter));
+        return ResolveEndpointsFromPipeline(processor, typeof(OtlpLogExporter), ResolveLogPipelineType);
     }
 
-    private static IReadOnlyList<EffectiveOtlpEndpoint> ResolveEndpointsFromPipeline(object? pipeline, Type exporterType)
+    private static IReadOnlyList<EffectiveOtlpEndpoint> ResolveEndpointsFromPipeline(
+        object? pipeline,
+        Type exporterType,
+        Func<object, EffectiveOtlpPipelineType?> pipelineTypeResolver)
     {
         if (pipeline == null)
         {
@@ -55,6 +62,12 @@ internal static class OtlpEndpointProviderGraphResolver
         var endpoints = new List<EffectiveOtlpEndpoint>();
         foreach (var pipelineItem in FlattenPipeline(pipeline))
         {
+            var pipelineType = pipelineTypeResolver(pipelineItem);
+            if (pipelineType == null)
+            {
+                continue;
+            }
+
             var exporter = GetExporter(pipelineItem);
             // SDK type filtering prevents reading endpoints from non-OTLP exporters.
             if (exporter == null || exporter.GetType() != exporterType)
@@ -62,7 +75,7 @@ internal static class OtlpEndpointProviderGraphResolver
                 continue;
             }
 
-            var endpoint = ResolveEndpoint(exporter);
+            var endpoint = ResolveEndpoint(exporter, pipelineType.Value);
             if (endpoint != null)
             {
                 endpoints.Add(endpoint.Value);
@@ -97,7 +110,9 @@ internal static class OtlpEndpointProviderGraphResolver
         return GetFieldValue(pipelineItem, "exporter");
     }
 
-    private static EffectiveOtlpEndpoint? ResolveEndpoint(object exporter)
+    private static EffectiveOtlpEndpoint? ResolveEndpoint(
+        object exporter,
+        EffectiveOtlpPipelineType pipelineType)
     {
         // ExportClient.Endpoint is the final endpoint used by the SDK exporter.
         var transmissionHandler = GetRequiredFieldValue(exporter, "transmissionHandler");
@@ -108,7 +123,34 @@ internal static class OtlpEndpointProviderGraphResolver
         var exporterType = ResolveExporterType(exportClient);
         return exporterType == null
             ? null
-            : new EffectiveOtlpEndpoint(endpoint.AbsoluteUri, exporterType.Value);
+            : new EffectiveOtlpEndpoint(endpoint.AbsoluteUri, exporterType.Value, pipelineType);
+    }
+
+    private static EffectiveOtlpPipelineType? ResolveTracePipelineType(object pipelineItem)
+    {
+        return pipelineItem switch
+        {
+            BatchActivityExportProcessor => EffectiveOtlpPipelineType.Batch,
+            SimpleActivityExportProcessor => EffectiveOtlpPipelineType.Simple,
+            _ => null
+        };
+    }
+
+    private static EffectiveOtlpPipelineType? ResolveLogPipelineType(object pipelineItem)
+    {
+        return pipelineItem switch
+        {
+            BatchLogRecordExportProcessor => EffectiveOtlpPipelineType.Batch,
+            SimpleLogRecordExportProcessor => EffectiveOtlpPipelineType.Simple,
+            _ => null
+        };
+    }
+
+    private static EffectiveOtlpPipelineType? ResolveMetricPipelineType(object pipelineItem)
+    {
+        return pipelineItem is PeriodicExportingMetricReader
+            ? EffectiveOtlpPipelineType.Periodic
+            : null;
     }
 
     private static EffectiveOtlpExporterType? ResolveExporterType(object exportClient)

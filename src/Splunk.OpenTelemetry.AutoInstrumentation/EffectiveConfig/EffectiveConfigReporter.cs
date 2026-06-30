@@ -29,17 +29,28 @@ internal sealed class EffectiveConfigReporter
     private static readonly ILogger Log = new Logger();
 
     private readonly EffectiveConfigState _state = new();
+    private readonly EffectiveProviderEndpointTracker<TracerProvider> _traceEndpointTracker;
+    private readonly EffectiveProviderEndpointTracker<MeterProvider> _metricEndpointTracker;
     private readonly EffectiveLogEndpointTracker _logEndpointTracker;
     private OpAmpClient? _opAmpClient;
 
     public EffectiveConfigReporter()
+        : this(new EffectiveLogEndpointTracker())
     {
-        _logEndpointTracker = new EffectiveLogEndpointTracker(_state);
     }
 
     internal EffectiveConfigReporter(Func<IReadOnlyList<EffectiveOtlpEndpoint>?> bridgeLogEndpointResolver)
+        : this(new EffectiveLogEndpointTracker(bridgeLogEndpointResolver))
     {
-        _logEndpointTracker = new EffectiveLogEndpointTracker(_state, bridgeLogEndpointResolver);
+    }
+
+    private EffectiveConfigReporter(EffectiveLogEndpointTracker logEndpointTracker)
+    {
+        _traceEndpointTracker = new EffectiveProviderEndpointTracker<TracerProvider>(
+            OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints);
+        _metricEndpointTracker = new EffectiveProviderEndpointTracker<MeterProvider>(
+            OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints);
+        _logEndpointTracker = logEndpointTracker;
     }
 
     public void CaptureSplunkSettings(PluginSettings settings)
@@ -49,25 +60,17 @@ internal sealed class EffectiveConfigReporter
 
     public void CaptureTraceEndpoints(TracerProvider provider)
     {
-        try
+        if (_traceEndpointTracker.Capture(provider))
         {
-            _state.SetTraceEndpoints(OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
-        }
-        catch (Exception ex)
-        {
-            Log.Warning($"Failed to resolve traces endpoints from TracerProvider: {ex.Message}");
+            SendUpdatedPayloadIfOpAmpClientIsAvailable();
         }
     }
 
     public void CaptureMetricEndpoints(MeterProvider provider)
     {
-        try
+        if (_metricEndpointTracker.Capture(provider))
         {
-            _state.SetMetricEndpoints(OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
-        }
-        catch (Exception ex)
-        {
-            Log.Warning($"Failed to resolve metrics endpoints from MeterProvider: {ex.Message}");
+            SendUpdatedPayloadIfOpAmpClientIsAvailable();
         }
     }
 
@@ -105,8 +108,10 @@ internal sealed class EffectiveConfigReporter
 
     internal EffectiveConfigFile BuildCurrentPayload()
     {
-        _logEndpointTracker.CaptureBridgeLogEndpointsIfNeeded();
-        return EffectiveConfigPayloadBuilder.Build(_state.CreateSnapshot());
+        var traceEndpoints = _traceEndpointTracker.GetCurrentEndpoints();
+        var metricEndpoints = _metricEndpointTracker.GetCurrentEndpoints();
+        var logEndpoints = _logEndpointTracker.GetCurrentEndpoints();
+        return EffectiveConfigPayloadBuilder.Build(_state.CreateSnapshot(traceEndpoints, metricEndpoints, logEndpoints));
     }
 
     private void SendUpdatedPayloadIfOpAmpClientIsAvailable()
@@ -135,11 +140,6 @@ internal sealed class EffectiveConfigReporter
     private async Task SendCurrentPayloadAsync(OpAmpClient client)
     {
         var effectiveConfigFile = BuildCurrentPayload();
-        if (effectiveConfigFile.Content.Length == 0)
-        {
-            return;
-        }
-
         await client.SendEffectiveConfigAsync([effectiveConfigFile]).ConfigureAwait(false);
     }
 }

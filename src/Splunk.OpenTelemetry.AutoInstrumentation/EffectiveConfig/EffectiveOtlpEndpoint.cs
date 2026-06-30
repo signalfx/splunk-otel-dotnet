@@ -18,30 +18,41 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal readonly struct EffectiveOtlpEndpoint : IEquatable<EffectiveOtlpEndpoint>
 {
-    public EffectiveOtlpEndpoint(string endpoint, EffectiveOtlpExporterType exporterType)
+    public EffectiveOtlpEndpoint(
+        string endpoint,
+        EffectiveOtlpExporterType exporterType,
+        EffectiveOtlpPipelineType pipelineType)
     {
         Endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
         ExporterType = exporterType;
+        PipelineType = pipelineType;
     }
 
     public string Endpoint { get; }
 
     public EffectiveOtlpExporterType ExporterType { get; }
 
-    public static EffectiveOtlpEndpoint Http(string endpoint)
+    public EffectiveOtlpPipelineType PipelineType { get; }
+
+    public static EffectiveOtlpEndpoint Http(
+        string endpoint,
+        EffectiveOtlpPipelineType pipelineType = EffectiveOtlpPipelineType.Batch)
     {
-        return new EffectiveOtlpEndpoint(endpoint, EffectiveOtlpExporterType.HttpProtobuf);
+        return new EffectiveOtlpEndpoint(endpoint, EffectiveOtlpExporterType.HttpProtobuf, pipelineType);
     }
 
-    public static EffectiveOtlpEndpoint Grpc(string endpoint)
+    public static EffectiveOtlpEndpoint Grpc(
+        string endpoint,
+        EffectiveOtlpPipelineType pipelineType = EffectiveOtlpPipelineType.Batch)
     {
-        return new EffectiveOtlpEndpoint(endpoint, EffectiveOtlpExporterType.Grpc);
+        return new EffectiveOtlpEndpoint(endpoint, EffectiveOtlpExporterType.Grpc, pipelineType);
     }
 
     public bool Equals(EffectiveOtlpEndpoint other)
     {
         return string.Equals(Endpoint, other.Endpoint, StringComparison.Ordinal)
-            && ExporterType == other.ExporterType;
+            && ExporterType == other.ExporterType
+            && PipelineType == other.PipelineType;
     }
 
     public override bool Equals(object? obj)
@@ -53,12 +64,14 @@ internal readonly struct EffectiveOtlpEndpoint : IEquatable<EffectiveOtlpEndpoin
     {
         unchecked
         {
-            return ((Endpoint == null ? 0 : StringComparer.Ordinal.GetHashCode(Endpoint)) * 397) ^ (int)ExporterType;
+            var hashCode = Endpoint == null ? 0 : StringComparer.Ordinal.GetHashCode(Endpoint);
+            hashCode = (hashCode * 397) ^ (int)ExporterType;
+            return (hashCode * 397) ^ (int)PipelineType;
         }
     }
 
     public override string ToString()
     {
-        return $"{ExporterType}:{Endpoint}";
+        return $"{PipelineType}:{ExporterType}:{Endpoint}";
     }
 }

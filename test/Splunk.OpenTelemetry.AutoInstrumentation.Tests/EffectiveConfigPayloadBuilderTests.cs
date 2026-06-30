@@ -95,8 +95,7 @@ public class EffectiveConfigPayloadBuilderTests
         uint snapshotSamplingInterval = 40)
     {
         return new EffectiveConfigSnapshot(
-            isFileBasedConfig: false,
-            fileBasedConfigFileName: "config.yaml",
+            fileBasedConfigFileName: null,
             traceEndpoints: traceEndpoints ?? [],
             metricEndpoints: metricEndpoints ?? [],
             logEndpoints: logEndpoints ?? [],

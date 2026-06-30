@@ -56,20 +56,10 @@ internal static class EffectiveConfigPayloadBuilder
 
     private static EffectiveConfigFile BuildYamlPayload(EffectiveConfigSnapshot snapshot)
     {
-        var yamlConfig = EffectiveYamlConfig.Create(
-            snapshot.FileBasedConfigFileName,
-            snapshot.OtelExperimentalConfigFile,
-            snapshot.TraceEndpoints,
-            snapshot.MetricEndpoints,
-            snapshot.LogEndpoints,
-            snapshot.CpuProfilerEnabled,
-            snapshot.MemoryProfilerEnabled,
-            snapshot.SnapshotProfilerEnabled,
-            snapshot.CpuProfilerCallStackInterval,
-            snapshot.SnapshotSamplingInterval);
+        var yamlConfig = EffectiveYamlConfig.Create(snapshot);
 
         return CreateFile(
-            snapshot.FileBasedConfigFileName,
+            snapshot.FileBasedConfigFileName!,
             YamlContentType,
             EffectiveYamlSerializer.Serialize(yamlConfig));
     }

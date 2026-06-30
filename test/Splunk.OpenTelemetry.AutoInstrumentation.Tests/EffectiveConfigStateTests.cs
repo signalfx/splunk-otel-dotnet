@@ -39,9 +39,9 @@ public class EffectiveConfigStateTests
 
         state.SetSplunkSettings(settings);
 
-        var snapshot = state.CreateSnapshot();
+        var snapshot = state.CreateSnapshot([], [], []);
         Assert.False(snapshot.IsFileBasedConfig);
-        Assert.Equal("config.yaml", snapshot.FileBasedConfigFileName);
+        Assert.Null(snapshot.FileBasedConfigFileName);
         Assert.True(snapshot.CpuProfilerEnabled);
 #if NET
         Assert.True(snapshot.MemoryProfilerEnabled);
@@ -61,86 +61,24 @@ public class EffectiveConfigStateTests
 
         state.SetSplunkSettings(settings);
 
-        var snapshot = state.CreateSnapshot();
+        var snapshot = state.CreateSnapshot([], [], []);
         Assert.True(snapshot.IsFileBasedConfig);
         Assert.Equal("stable.yaml", snapshot.FileBasedConfigFileName);
         Assert.Equal("experimental.yaml", snapshot.OtelExperimentalConfigFile);
     }
 
     [Fact]
-    public void CreateSnapshot_CapturesTraceEndpoints()
+    public void CreateSnapshot_UsesProvidedEndpoints()
     {
         var state = new EffectiveConfigState();
+        var traceEndpoints = new[] { EffectiveOtlpEndpoint.Http("http://collector:4318/v1/traces") };
+        var metricEndpoints = new[] { EffectiveOtlpEndpoint.Http("http://collector:4318/v1/metrics", EffectiveOtlpPipelineType.Periodic) };
+        var logEndpoints =
+            new[] { EffectiveOtlpEndpoint.Grpc("http://collector:4317/opentelemetry.proto.collector.logs.v1.LogsService/Export") };
+        var snapshot = state.CreateSnapshot(traceEndpoints, metricEndpoints, logEndpoints);
 
-        state.SetTraceEndpoints([EffectiveOtlpEndpoint.Http("http://collector:4318/v1/traces")]);
-
-        Assert.Equal([EffectiveOtlpEndpoint.Http("http://collector:4318/v1/traces")], state.CreateSnapshot().TraceEndpoints);
-    }
-
-    [Fact]
-    public void CreateSnapshot_CapturesMetricEndpoints()
-    {
-        var state = new EffectiveConfigState();
-
-        state.SetMetricEndpoints([EffectiveOtlpEndpoint.Http("http://collector:4318/v1/metrics")]);
-
-        Assert.Equal([EffectiveOtlpEndpoint.Http("http://collector:4318/v1/metrics")], state.CreateSnapshot().MetricEndpoints);
-    }
-
-    [Fact]
-    public void CreateSnapshot_CapturesLogEndpoints()
-    {
-        var state = new EffectiveConfigState();
-
-        state.SetLogEndpoints([EffectiveOtlpEndpoint.Grpc("http://collector:4317/opentelemetry.proto.collector.logs.v1.LogsService/Export")]);
-
-        Assert.Equal(
-            [EffectiveOtlpEndpoint.Grpc("http://collector:4317/opentelemetry.proto.collector.logs.v1.LogsService/Export")],
-            state.CreateSnapshot().LogEndpoints);
-    }
-
-    [Fact]
-    public void AddLogEndpoint_ReturnsFalse_WhenEndpointAlreadyExists()
-    {
-        var state = new EffectiveConfigState();
-
-        var firstAdd = state.AddLogEndpoint(EffectiveOtlpEndpoint.Http("http://collector:4318/v1/logs"));
-        var secondAdd = state.AddLogEndpoint(EffectiveOtlpEndpoint.Http("http://collector:4318/v1/logs"));
-
-        Assert.True(firstAdd);
-        Assert.False(secondAdd);
-        Assert.Equal([EffectiveOtlpEndpoint.Http("http://collector:4318/v1/logs")], state.CreateSnapshot().LogEndpoints);
-    }
-
-    [Fact]
-    public void AddLogEndpoint_ReturnsTrue_WhenEndpointExistsWithDifferentExporterType()
-    {
-        var state = new EffectiveConfigState();
-
-        var firstAdd = state.AddLogEndpoint(EffectiveOtlpEndpoint.Http("http://collector:4318/v1/logs"));
-        var secondAdd = state.AddLogEndpoint(EffectiveOtlpEndpoint.Grpc("http://collector:4318/v1/logs"));
-
-        Assert.True(firstAdd);
-        Assert.True(secondAdd);
-        Assert.Equal(
-            [
-                EffectiveOtlpEndpoint.Http("http://collector:4318/v1/logs"),
-                EffectiveOtlpEndpoint.Grpc("http://collector:4318/v1/logs")
-            ],
-            state.CreateSnapshot().LogEndpoints);
-    }
-
-    [Fact]
-    public void ClearLogEndpoints_ReturnsFalse_WhenEndpointKeyIsMissing()
-    {
-        var state = new EffectiveConfigState();
-
-        Assert.False(state.ClearLogEndpoints());
-
-        state.AddLogEndpoint(EffectiveOtlpEndpoint.Http("http://collector:4318/v1/logs"));
-
-        Assert.True(state.ClearLogEndpoints());
-        Assert.Empty(state.CreateSnapshot().LogEndpoints);
-        Assert.False(state.ClearLogEndpoints());
+        Assert.Equal(traceEndpoints, snapshot.TraceEndpoints);
+        Assert.Equal(metricEndpoints, snapshot.MetricEndpoints);
+        Assert.Equal(logEndpoints, snapshot.LogEndpoints);
     }
 }

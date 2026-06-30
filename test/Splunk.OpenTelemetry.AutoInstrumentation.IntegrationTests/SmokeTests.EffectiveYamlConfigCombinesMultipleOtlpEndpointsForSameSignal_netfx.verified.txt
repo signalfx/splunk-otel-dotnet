@@ -6,7 +6,7 @@ tracer_provider:
         exporter:
           otlp_http:
             endpoint: "http://localhost:4318/v1/traces"
-    - batch:
+    - simple:
         exporter:
           otlp_http:
             endpoint: "http://localhost:4319/v1/traces"

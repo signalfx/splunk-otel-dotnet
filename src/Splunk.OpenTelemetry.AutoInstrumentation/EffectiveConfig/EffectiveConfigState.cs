@@ -18,15 +18,9 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal sealed class EffectiveConfigState
 {
-    private const string DefaultFileBasedConfigFileName = "config.yaml";
-
     private readonly object _lock = new();
-    private readonly List<EffectiveOtlpEndpoint> _traceEndpoints = [];
-    private readonly List<EffectiveOtlpEndpoint> _metricEndpoints = [];
-    private readonly List<EffectiveOtlpEndpoint> _logEndpoints = [];
 
-    private bool _isFileBasedConfig;
-    private string _fileBasedConfigFileName = DefaultFileBasedConfigFileName;
+    private string? _fileBasedConfigFileName;
     private string? _otelExperimentalConfigFile;
     private bool _cpuProfilerEnabled;
     private bool _memoryProfilerEnabled;
@@ -38,8 +32,7 @@ internal sealed class EffectiveConfigState
     {
         lock (_lock)
         {
-            _isFileBasedConfig = settings.IsFileBasedConfig;
-            _fileBasedConfigFileName = settings.FileBasedConfigFileName ?? DefaultFileBasedConfigFileName;
+            _fileBasedConfigFileName = settings.FileBasedConfigFileName;
             _otelExperimentalConfigFile = settings.OtelExperimentalConfigFile;
             _cpuProfilerEnabled = settings.CpuProfilerEnabled;
 #if NET
@@ -53,82 +46,24 @@ internal sealed class EffectiveConfigState
         }
     }
 
-    public void SetTraceEndpoints(IReadOnlyList<EffectiveOtlpEndpoint> endpoints)
-    {
-        SetEndpoints(_traceEndpoints, endpoints);
-    }
-
-    public void SetMetricEndpoints(IReadOnlyList<EffectiveOtlpEndpoint> endpoints)
-    {
-        SetEndpoints(_metricEndpoints, endpoints);
-    }
-
-    public void SetLogEndpoints(IReadOnlyList<EffectiveOtlpEndpoint> endpoints)
-    {
-        SetEndpoints(_logEndpoints, endpoints);
-    }
-
-    public bool ClearLogEndpoints()
-    {
-        return ClearEndpoints(_logEndpoints);
-    }
-
-    public bool AddLogEndpoint(EffectiveOtlpEndpoint endpoint)
-    {
-        return AddEndpoint(_logEndpoints, endpoint);
-    }
-
-    public EffectiveConfigSnapshot CreateSnapshot()
+    public EffectiveConfigSnapshot CreateSnapshot(
+        IReadOnlyList<EffectiveOtlpEndpoint> traceEndpoints,
+        IReadOnlyList<EffectiveOtlpEndpoint> metricEndpoints,
+        IReadOnlyList<EffectiveOtlpEndpoint> logEndpoints)
     {
         lock (_lock)
         {
             return new EffectiveConfigSnapshot(
-                isFileBasedConfig: _isFileBasedConfig,
                 fileBasedConfigFileName: _fileBasedConfigFileName,
-                traceEndpoints: _traceEndpoints,
-                metricEndpoints: _metricEndpoints,
-                logEndpoints: _logEndpoints,
+                traceEndpoints: traceEndpoints,
+                metricEndpoints: metricEndpoints,
+                logEndpoints: logEndpoints,
                 cpuProfilerEnabled: _cpuProfilerEnabled,
                 memoryProfilerEnabled: _memoryProfilerEnabled,
                 snapshotProfilerEnabled: _snapshotProfilerEnabled,
                 cpuProfilerCallStackInterval: _cpuProfilerCallStackInterval,
                 snapshotSamplingInterval: _snapshotSamplingInterval,
                 otelExperimentalConfigFile: _otelExperimentalConfigFile);
-        }
-    }
-
-    private void SetEndpoints(List<EffectiveOtlpEndpoint> target, IReadOnlyList<EffectiveOtlpEndpoint> endpoints)
-    {
-        // Provider graph results replace earlier tentative values from option hooks.
-        lock (_lock)
-        {
-            target.Clear();
-            target.AddRange(endpoints);
-        }
-    }
-
-    private bool ClearEndpoints(List<EffectiveOtlpEndpoint> target)
-    {
-        lock (_lock)
-        {
-            var hadEndpoints = target.Count > 0;
-            target.Clear();
-            return hadEndpoints;
-        }
-    }
-
-    private bool AddEndpoint(List<EffectiveOtlpEndpoint> target, EffectiveOtlpEndpoint endpoint)
-    {
-        // File-based config can invoke option hooks once per configured exporter.
-        lock (_lock)
-        {
-            if (!target.Contains(endpoint))
-            {
-                target.Add(endpoint);
-                return true;
-            }
-
-            return false;
         }
     }
 }

@@ -19,8 +19,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 internal sealed class EffectiveConfigSnapshot
 {
     public EffectiveConfigSnapshot(
-        bool isFileBasedConfig,
-        string fileBasedConfigFileName,
+        string? fileBasedConfigFileName,
         IReadOnlyList<EffectiveOtlpEndpoint> traceEndpoints,
         IReadOnlyList<EffectiveOtlpEndpoint> metricEndpoints,
         IReadOnlyList<EffectiveOtlpEndpoint> logEndpoints,
@@ -31,8 +30,7 @@ internal sealed class EffectiveConfigSnapshot
         uint snapshotSamplingInterval,
         string? otelExperimentalConfigFile = null)
     {
-        IsFileBasedConfig = isFileBasedConfig;
-        FileBasedConfigFileName = fileBasedConfigFileName ?? throw new ArgumentNullException(nameof(fileBasedConfigFileName));
+        FileBasedConfigFileName = fileBasedConfigFileName;
         OtelExperimentalConfigFile = otelExperimentalConfigFile;
         TraceEndpoints = CopyEndpoints(traceEndpoints);
         MetricEndpoints = CopyEndpoints(metricEndpoints);
@@ -44,9 +42,9 @@ internal sealed class EffectiveConfigSnapshot
         SnapshotSamplingInterval = snapshotSamplingInterval;
     }
 
-    public bool IsFileBasedConfig { get; }
+    public bool IsFileBasedConfig => FileBasedConfigFileName != null;
 
-    public string FileBasedConfigFileName { get; }
+    public string? FileBasedConfigFileName { get; }
 
     public string? OtelExperimentalConfigFile { get; }
 

@@ -25,62 +25,47 @@ internal sealed class EffectiveYamlConfig
     public string? OtelExperimentalConfigFile { get; set; }
 
     [EffectiveYamlProperty("tracer_provider", 2)]
-    public EffectiveTracerProviderConfig? TracerProvider { get; set; }
+    public EffectiveProcessorProviderConfig? TracerProvider { get; set; }
 
     [EffectiveYamlProperty("meter_provider", 3)]
     public EffectiveMeterProviderConfig? MeterProvider { get; set; }
 
     [EffectiveYamlProperty("logger_provider", 4)]
-    public EffectiveLoggerProviderConfig? LoggerProvider { get; set; }
+    public EffectiveProcessorProviderConfig? LoggerProvider { get; set; }
 
     [EffectiveYamlProperty("distribution", 5)]
     public EffectiveDistributionConfig? Distribution { get; set; }
 
-    public static EffectiveYamlConfig Create(
-        string otelConfigFile,
-        string? otelExperimentalConfigFile,
-        IReadOnlyList<EffectiveOtlpEndpoint> traceEndpoints,
-        IReadOnlyList<EffectiveOtlpEndpoint> metricEndpoints,
-        IReadOnlyList<EffectiveOtlpEndpoint> logEndpoints,
-        bool cpuProfilerEnabled,
-        bool memoryProfilerEnabled,
-        bool snapshotProfilerEnabled,
-        uint cpuProfilerCallStackInterval,
-        uint snapshotSamplingInterval)
+    public static EffectiveYamlConfig Create(EffectiveConfigSnapshot snapshot)
     {
-        var profiling = EffectiveProfilingConfig.Create(
-            cpuProfilerEnabled,
-            memoryProfilerEnabled,
-            snapshotProfilerEnabled,
-            cpuProfilerCallStackInterval,
-            snapshotSamplingInterval);
+        var profiling = EffectiveProfilingConfig.Create(snapshot);
 
         return new EffectiveYamlConfig
         {
-            OtelConfigFile = otelConfigFile,
-            OtelExperimentalConfigFile = otelExperimentalConfigFile ?? "null",
-            TracerProvider = traceEndpoints.Count == 0
+            OtelConfigFile = snapshot.FileBasedConfigFileName,
+            OtelExperimentalConfigFile = snapshot.OtelExperimentalConfigFile ?? "null",
+            TracerProvider = snapshot.TraceEndpoints.Count == 0
                 ? null
-                : new EffectiveTracerProviderConfig
+                : new EffectiveProcessorProviderConfig
                 {
-                    Processors = traceEndpoints
-                        .Select(endpoint => new EffectiveBatchProcessorConfig(endpoint))
+                    Processors = snapshot.TraceEndpoints
+                        .Select(endpoint => new EffectiveProcessorConfig(endpoint))
                         .ToArray()
                 },
-            MeterProvider = metricEndpoints.Count == 0
+            MeterProvider = snapshot.MetricEndpoints.Count == 0
                 ? null
                 : new EffectiveMeterProviderConfig
                 {
-                    Readers = metricEndpoints
+                    Readers = snapshot.MetricEndpoints
                         .Select(endpoint => new EffectivePeriodicReaderConfig(endpoint))
                         .ToArray()
                 },
-            LoggerProvider = logEndpoints.Count == 0
+            LoggerProvider = snapshot.LogEndpoints.Count == 0
                 ? null
-                : new EffectiveLoggerProviderConfig
+                : new EffectiveProcessorProviderConfig
                 {
-                    Processors = logEndpoints
-                        .Select(endpoint => new EffectiveBatchProcessorConfig(endpoint))
+                    Processors = snapshot.LogEndpoints
+                        .Select(endpoint => new EffectiveProcessorConfig(endpoint))
                         .ToArray()
                 },
             Distribution = profiling == null
@@ -95,10 +80,10 @@ internal sealed class EffectiveYamlConfig
         };
     }
 
-    internal sealed class EffectiveTracerProviderConfig
+    internal sealed class EffectiveProcessorProviderConfig
     {
         [EffectiveYamlProperty("processors", 0)]
-        public IReadOnlyList<EffectiveBatchProcessorConfig> Processors { get; set; } = [];
+        public IReadOnlyList<EffectiveProcessorConfig> Processors { get; set; } = [];
     }
 
     internal sealed class EffectiveMeterProviderConfig
@@ -107,48 +92,49 @@ internal sealed class EffectiveYamlConfig
         public IReadOnlyList<EffectivePeriodicReaderConfig> Readers { get; set; } = [];
     }
 
-    internal sealed class EffectiveLoggerProviderConfig
+    internal sealed class EffectiveProcessorConfig
     {
-        [EffectiveYamlProperty("processors", 0)]
-        public IReadOnlyList<EffectiveBatchProcessorConfig> Processors { get; set; } = [];
-    }
-
-    internal sealed class EffectiveBatchProcessorConfig
-    {
-        public EffectiveBatchProcessorConfig(EffectiveOtlpEndpoint endpoint)
+        public EffectiveProcessorConfig(EffectiveOtlpEndpoint endpoint)
         {
-            Batch = new EffectiveBatchConfig(endpoint);
+            switch (endpoint.PipelineType)
+            {
+                case EffectiveOtlpPipelineType.Batch:
+                    Batch = new EffectiveExporterPipelineConfig(endpoint);
+                    break;
+                case EffectiveOtlpPipelineType.Simple:
+                    Simple = new EffectiveExporterPipelineConfig(endpoint);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(endpoint), endpoint.PipelineType, "Unknown processor type.");
+            }
         }
 
         [EffectiveYamlProperty("batch", 0)]
-        public EffectiveBatchConfig Batch { get; }
+        public EffectiveExporterPipelineConfig? Batch { get; }
+
+        [EffectiveYamlProperty("simple", 1)]
+        public EffectiveExporterPipelineConfig? Simple { get; }
     }
 
     internal sealed class EffectivePeriodicReaderConfig
     {
         public EffectivePeriodicReaderConfig(EffectiveOtlpEndpoint endpoint)
         {
-            Periodic = new EffectivePeriodicConfig(endpoint);
+            if (endpoint.PipelineType != EffectiveOtlpPipelineType.Periodic)
+            {
+                throw new ArgumentOutOfRangeException(nameof(endpoint), endpoint.PipelineType, "Unknown metric reader type.");
+            }
+
+            Periodic = new EffectiveExporterPipelineConfig(endpoint);
         }
 
         [EffectiveYamlProperty("periodic", 0)]
-        public EffectivePeriodicConfig Periodic { get; }
+        public EffectiveExporterPipelineConfig Periodic { get; }
     }
 
-    internal sealed class EffectiveBatchConfig
+    internal sealed class EffectiveExporterPipelineConfig
     {
-        public EffectiveBatchConfig(EffectiveOtlpEndpoint endpoint)
-        {
-            Exporter = new EffectiveExporterConfig(endpoint);
-        }
-
-        [EffectiveYamlProperty("exporter", 0)]
-        public EffectiveExporterConfig Exporter { get; }
-    }
-
-    internal sealed class EffectivePeriodicConfig
-    {
-        public EffectivePeriodicConfig(EffectiveOtlpEndpoint endpoint)
+        public EffectiveExporterPipelineConfig(EffectiveOtlpEndpoint endpoint)
         {
             Exporter = new EffectiveExporterConfig(endpoint);
         }
@@ -210,48 +196,51 @@ internal sealed class EffectiveYamlConfig
         public EffectiveAlwaysOnProfilingConfig? AlwaysOn { get; set; }
 
         [EffectiveYamlProperty("callgraphs", 1)]
-        public EffectiveCallGraphsConfig? Callgraphs { get; set; }
+        public EffectiveSamplingIntervalConfig? Callgraphs { get; set; }
 
-        public static EffectiveProfilingConfig? Create(
-            bool cpuProfilerEnabled,
-            bool memoryProfilerEnabled,
-            bool snapshotProfilerEnabled,
-            uint cpuProfilerCallStackInterval,
-            uint snapshotSamplingInterval)
+        public static EffectiveProfilingConfig? Create(EffectiveConfigSnapshot snapshot)
         {
-            if (!cpuProfilerEnabled && !memoryProfilerEnabled && !snapshotProfilerEnabled)
+            if (!snapshot.CpuProfilerEnabled &&
+                !snapshot.MemoryProfilerEnabled &&
+                !snapshot.SnapshotProfilerEnabled)
             {
                 return null;
             }
 
+            EffectiveAlwaysOnProfilingConfig? alwaysOn = null;
+            if (snapshot.CpuProfilerEnabled || snapshot.MemoryProfilerEnabled)
+            {
+                alwaysOn = snapshot.MemoryProfilerEnabled
+                    ? new EffectiveAlwaysOnProfilingWithMemoryConfig()
+                    : new EffectiveAlwaysOnProfilingConfig();
+                alwaysOn.CpuProfiler = snapshot.CpuProfilerEnabled
+                    ? new EffectiveSamplingIntervalConfig { SamplingInterval = snapshot.CpuProfilerCallStackInterval }
+                    : null;
+            }
+
             return new EffectiveProfilingConfig
             {
-                AlwaysOn = !cpuProfilerEnabled && !memoryProfilerEnabled
-                    ? null
-                    : new EffectiveAlwaysOnProfilingConfig
-                    {
-                        CpuProfiler = cpuProfilerEnabled
-                            ? new EffectiveCpuProfilerConfig { SamplingInterval = cpuProfilerCallStackInterval }
-                            : null,
-                        MemoryProfiler = memoryProfilerEnabled ? new EffectiveMemoryProfilerConfig() : null
-                    },
-                Callgraphs = snapshotProfilerEnabled
-                    ? new EffectiveCallGraphsConfig { SamplingInterval = snapshotSamplingInterval }
+                AlwaysOn = alwaysOn,
+                Callgraphs = snapshot.SnapshotProfilerEnabled
+                    ? new EffectiveSamplingIntervalConfig { SamplingInterval = snapshot.SnapshotSamplingInterval }
                     : null
             };
         }
     }
 
-    internal sealed class EffectiveAlwaysOnProfilingConfig
+    internal class EffectiveAlwaysOnProfilingConfig
     {
         [EffectiveYamlProperty("cpu_profiler", 0)]
-        public EffectiveCpuProfilerConfig? CpuProfiler { get; set; }
-
-        [EffectiveYamlProperty("memory_profiler", 1)]
-        public EffectiveMemoryProfilerConfig? MemoryProfiler { get; set; }
+        public EffectiveSamplingIntervalConfig? CpuProfiler { get; set; }
     }
 
-    internal sealed class EffectiveCpuProfilerConfig
+    internal sealed class EffectiveAlwaysOnProfilingWithMemoryConfig : EffectiveAlwaysOnProfilingConfig
+    {
+        [EffectiveYamlProperty("memory_profiler", 1, preserveNull: true)]
+        public EffectiveMemoryProfilerConfig? MemoryProfiler => null;
+    }
+
+    internal sealed class EffectiveSamplingIntervalConfig
     {
         [EffectiveYamlProperty("sampling_interval", 0)]
         public uint SamplingInterval { get; set; }
@@ -259,11 +248,5 @@ internal sealed class EffectiveYamlConfig
 
     internal sealed class EffectiveMemoryProfilerConfig
     {
-    }
-
-    internal sealed class EffectiveCallGraphsConfig
-    {
-        [EffectiveYamlProperty("sampling_interval", 0)]
-        public uint SamplingInterval { get; set; }
     }
 }

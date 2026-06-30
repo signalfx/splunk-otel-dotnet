@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 
+using OpenTelemetry;
 using OpenTelemetry.Exporter;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
@@ -70,6 +71,22 @@ public class OtlpLogEndpointOptionsResolverTests
     }
 
     [Fact]
+    public void ResolveEndpoint_ReportsBatchWhenSdkIgnoresSimpleProcessorType()
+    {
+        var options = new OtlpExporterOptions
+        {
+            Protocol = OtlpExportProtocol.HttpProtobuf,
+            Endpoint = new Uri("http://collector:4318/v1/logs"),
+            ExportProcessorType = ExportProcessorType.Simple
+        };
+
+        AssertEndpoint(
+            OtlpLogEndpointOptionsResolver.ResolveEndpoint(options),
+            "http://collector:4318/v1/logs",
+            EffectiveOtlpExporterType.HttpProtobuf);
+    }
+
+    [Fact]
     public void ResolveEndpoint_AppendsGrpcLogsPathForDefaultEndpoint()
     {
         using var defaultEndpointScope = new EnvironmentVariableScope("OTEL_EXPORTER_OTLP_ENDPOINT", null);
@@ -108,11 +125,13 @@ public class OtlpLogEndpointOptionsResolverTests
     private static void AssertEndpoint(
         EffectiveOtlpEndpoint? endpoint,
         string expectedEndpoint,
-        EffectiveOtlpExporterType expectedExporterType)
+        EffectiveOtlpExporterType expectedExporterType,
+        EffectiveOtlpPipelineType expectedPipelineType = EffectiveOtlpPipelineType.Batch)
     {
         Assert.NotNull(endpoint);
         Assert.Equal(expectedEndpoint, endpoint.Value.Endpoint);
         Assert.Equal(expectedExporterType, endpoint.Value.ExporterType);
+        Assert.Equal(expectedPipelineType, endpoint.Value.PipelineType);
     }
 
     private sealed class EnvironmentVariableScope : IDisposable

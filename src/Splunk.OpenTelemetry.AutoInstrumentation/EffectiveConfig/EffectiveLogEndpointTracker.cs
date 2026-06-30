@@ -24,86 +24,79 @@ internal sealed class EffectiveLogEndpointTracker
 {
     private static readonly ILogger Log = new Logger();
 
-    private readonly EffectiveConfigState _state;
+    private readonly object _lock = new();
+    private readonly List<EffectiveOtlpEndpoint> _endpoints = [];
     private readonly Func<IReadOnlyList<EffectiveOtlpEndpoint>?> _bridgeLogEndpointResolver;
-    private int _iloggerLogsConfigured;
+    private bool _iloggerLogsConfigured;
 
-    public EffectiveLogEndpointTracker(EffectiveConfigState state)
-        : this(state, ResolveBridgeLogEndpoints)
+    public EffectiveLogEndpointTracker()
+        : this(ResolveBridgeLogEndpoints)
     {
     }
 
     internal EffectiveLogEndpointTracker(
-        EffectiveConfigState state,
         Func<IReadOnlyList<EffectiveOtlpEndpoint>?> bridgeLogEndpointResolver)
     {
-        _state = state;
         _bridgeLogEndpointResolver = bridgeLogEndpointResolver;
     }
 
     public bool MarkOpenTelemetryLoggerConfigured()
     {
-        // ILogger owns its LoggerProvider and disables bridge logging, so bridge reflection would report a different logs pipeline.
-        Interlocked.Exchange(ref _iloggerLogsConfigured, 1);
-        return _state.ClearLogEndpoints();
+        lock (_lock)
+        {
+            // ILogger owns its LoggerProvider and disables bridge logging, so bridge reflection would report a different logs pipeline.
+            _iloggerLogsConfigured = true;
+            var hadEndpoints = _endpoints.Count > 0;
+            _endpoints.Clear();
+            return hadEndpoints;
+        }
     }
 
     public bool CaptureLogExporterOptions(OtlpExporterOptions options)
     {
-        if (Volatile.Read(ref _iloggerLogsConfigured) == 0)
+        lock (_lock)
         {
-            // This hook can run during bridge setup too. Without the ILogger marker, only provider-graph values are known valid.
-            return false;
-        }
-
-        try
-        {
-            // Upstream's ILogger path calls the marker before configuring OTLP exporters, but SDK export clients do not exist yet.
-            var endpoint = OtlpLogEndpointOptionsResolver.ResolveEndpoint(options);
-            if (endpoint == null)
+            if (!_iloggerLogsConfigured)
             {
+                // This hook can run during bridge setup too. Without the ILogger marker, only provider-graph values are known valid.
                 return false;
             }
 
-            return _state.AddLogEndpoint(endpoint.Value);
-        }
-        catch (Exception ex)
-        {
-            Log.Warning($"Failed to resolve logs endpoint from OtlpExporterOptions: {ex.Message}");
-            return false;
+            try
+            {
+                // Upstream's ILogger path calls the marker before configuring OTLP exporters, but SDK export clients do not exist yet.
+                var endpoint = OtlpLogEndpointOptionsResolver.ResolveEndpoint(options);
+                if (endpoint == null)
+                {
+                    return false;
+                }
+
+                if (_endpoints.Contains(endpoint.Value))
+                {
+                    return false;
+                }
+
+                _endpoints.Add(endpoint.Value);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning($"Failed to resolve logs endpoint from OtlpExporterOptions: {ex.Message}");
+                return false;
+            }
         }
     }
 
-    public void CaptureBridgeLogEndpointsIfNeeded()
+    public IReadOnlyList<EffectiveOtlpEndpoint> GetCurrentEndpoints()
     {
-        if (Volatile.Read(ref _iloggerLogsConfigured) != 0)
+        lock (_lock)
         {
-            return;
-        }
-
-        try
-        {
-            var bridgeLogEndpoints = _bridgeLogEndpointResolver();
-            if (Volatile.Read(ref _iloggerLogsConfigured) != 0)
+            if (!_iloggerLogsConfigured)
             {
-                return;
+                CaptureBridgeLogEndpoints();
             }
 
-            if (bridgeLogEndpoints == null)
-            {
-                // Without provider-graph results, bridge log endpoints are not known valid.
-                _state.ClearLogEndpoints();
-                return;
-            }
-
-            // Provider-graph values are the known-valid bridge endpoints.
-            _state.SetLogEndpoints(bridgeLogEndpoints);
-        }
-        catch (Exception ex)
-        {
-            // Reflection failure means bridge log endpoints are not known valid.
-            _state.ClearLogEndpoints();
-            Log.Warning($"Failed to resolve logs endpoints from LoggerProvider: {ex.Message}");
+            return _endpoints.ToArray();
         }
     }
 
@@ -114,5 +107,37 @@ internal sealed class EffectiveLogEndpointTracker
         return bridgeLoggerProvider == null
             ? null
             : OtlpEndpointProviderGraphResolver.ResolveLogEndpoints(bridgeLoggerProvider);
+    }
+
+    private void CaptureBridgeLogEndpoints()
+    {
+        try
+        {
+            var bridgeLogEndpoints = _bridgeLogEndpointResolver();
+            if (_iloggerLogsConfigured)
+            {
+                return;
+            }
+
+            _endpoints.Clear();
+            if (bridgeLogEndpoints == null)
+            {
+                // Without provider-graph results, bridge log endpoints are not known valid.
+                return;
+            }
+
+            // Provider-graph values are the known-valid bridge endpoints.
+            _endpoints.AddRange(bridgeLogEndpoints);
+        }
+        catch (Exception ex)
+        {
+            // Reflection failure means bridge log endpoints are not known valid.
+            if (!_iloggerLogsConfigured)
+            {
+                _endpoints.Clear();
+            }
+
+            Log.Warning($"Failed to resolve logs endpoints from LoggerProvider: {ex.Message}");
+        }
     }
 }
