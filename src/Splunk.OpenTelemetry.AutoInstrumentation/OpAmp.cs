@@ -14,14 +14,13 @@
 // limitations under the License.
 // </copyright>
 
-using System.Threading;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.OpAmp.Client;
 using OpenTelemetry.OpAmp.Client.Settings;
-using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
@@ -36,24 +35,14 @@ internal sealed class OpAmp
     private int _initialEffectiveConfigReportStarted;
     private Task? _initialEffectiveConfigReportTask;
 
-    public OpAmp()
+    public OpAmp(EffectiveConfigStaticSettings staticSettings)
     {
-        _effectiveConfigReporter = new Lazy<EffectiveConfigReporter?>(TryCreateEffectiveConfigReporter);
+        _effectiveConfigReporter = new(() => TryCreateEffectiveConfigReporter(staticSettings));
     }
 
     public static void EnableEffectiveConfigReporting(OpAmpClientSettings settings)
     {
         settings.EffectiveConfigurationReporting.EnableReporting = true;
-    }
-
-    public void RecordPluginConfig(PluginSettings settings)
-    {
-        _effectiveConfigReporter.Value?.CaptureSplunkSettings(settings);
-    }
-
-    public void RecordServiceName(Resource resource)
-    {
-        _effectiveConfigReporter.Value?.CaptureServiceName(resource);
     }
 
     public void RecordLogExporterOptions(OtlpExporterOptions options)
@@ -104,11 +93,11 @@ internal sealed class OpAmp
         TryReportEffectiveConfig();
     }
 
-    private static EffectiveConfigReporter? TryCreateEffectiveConfigReporter()
+    private static EffectiveConfigReporter? TryCreateEffectiveConfigReporter(EffectiveConfigStaticSettings staticSettings)
     {
         try
         {
-            return UpstreamOpAmpEnabledResolver.IsEnabled() ? new EffectiveConfigReporter() : null;
+            return UpstreamOpAmpEnabledResolver.IsEnabled() ? new EffectiveConfigReporter(staticSettings) : null;
         }
         catch (Exception e)
         {

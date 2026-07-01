@@ -141,7 +141,7 @@ internal sealed class MockOpAmpServer : IDisposable
             description);
     }
 
-    public void AssertEffectiveConfigPayloads(
+    public string AssertEffectiveConfigPayloads(
         string fileName,
         string contentType,
         Func<string, bool> finalPayloadPredicate)
@@ -176,6 +176,7 @@ internal sealed class MockOpAmpServer : IDisposable
             .Files[0]
             .Body;
         Assert.True(finalPayloadPredicate(finalPayload), "The final effective config payload did not contain the expected values.");
+        return finalPayload;
     }
 
     public void Dispose()

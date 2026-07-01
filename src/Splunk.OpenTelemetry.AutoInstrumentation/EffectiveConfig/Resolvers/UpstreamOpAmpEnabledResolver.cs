@@ -17,7 +17,7 @@
 using System.Reflection;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 
 internal static class UpstreamOpAmpEnabledResolver
 {

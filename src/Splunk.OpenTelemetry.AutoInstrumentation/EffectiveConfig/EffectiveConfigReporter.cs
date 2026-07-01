@@ -14,85 +14,67 @@
 // limitations under the License.
 // </copyright>
 
-using System.Text;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.OpAmp.Client;
 using OpenTelemetry.OpAmp.Client.Messages;
-using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal sealed class EffectiveConfigReporter
 {
-    internal const string EffectiveConfigFileName = "config";
-    internal const string EffectiveConfigContentType = "text/plain+properties";
-
     private static readonly ILogger Log = new Logger();
 
-    private readonly EffectiveConfigState _state = new();
-    private readonly Func<IReadOnlyList<string>?> _bridgeLogEndpointResolver;
+    private readonly EffectiveConfigStaticSettings _staticSettings;
+    private readonly EffectiveProviderEndpointTracker<TracerProvider> _traceEndpointTracker;
+    private readonly EffectiveProviderEndpointTracker<MeterProvider> _metricEndpointTracker;
+    private readonly EffectiveLogEndpointTracker _logEndpointTracker;
     private OpAmpClient? _opAmpClient;
-    private int _iloggerLogsConfigured;
 
-    public EffectiveConfigReporter()
-        : this(ResolveBridgeLogEndpoints)
+    public EffectiveConfigReporter(EffectiveConfigStaticSettings staticSettings)
+        : this(staticSettings, new EffectiveLogEndpointTracker())
     {
     }
 
-    internal EffectiveConfigReporter(Func<IReadOnlyList<string>?> bridgeLogEndpointResolver)
+    internal EffectiveConfigReporter(
+        EffectiveConfigStaticSettings staticSettings,
+        Func<IReadOnlyList<EffectiveOtlpEndpoint>?> bridgeLogEndpointResolver)
+        : this(staticSettings, new EffectiveLogEndpointTracker(bridgeLogEndpointResolver))
     {
-        _bridgeLogEndpointResolver = bridgeLogEndpointResolver;
     }
 
-    public void CaptureSplunkSettings(PluginSettings settings)
+    private EffectiveConfigReporter(EffectiveConfigStaticSettings staticSettings, EffectiveLogEndpointTracker logEndpointTracker)
     {
-        _state.SetSplunkSettings(settings);
-    }
-
-    public void CaptureServiceName(Resource resource)
-    {
-        var serviceName = EffectiveResourceConfigReader.ReadServiceName(resource);
-        if (serviceName == null)
-        {
-            return;
-        }
-
-        _state.TrySetServiceName(serviceName);
+        _staticSettings = staticSettings;
+        _traceEndpointTracker = new EffectiveProviderEndpointTracker<TracerProvider>(
+            OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints);
+        _metricEndpointTracker = new EffectiveProviderEndpointTracker<MeterProvider>(
+            OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints);
+        _logEndpointTracker = logEndpointTracker;
     }
 
     public void CaptureTraceEndpoints(TracerProvider provider)
     {
-        try
+        if (_traceEndpointTracker.Capture(provider))
         {
-            _state.SetTraceEndpoints(OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
-        }
-        catch (Exception ex)
-        {
-            Log.Warning($"Failed to resolve traces endpoints from TracerProvider: {ex.Message}");
+            SendUpdatedPayloadIfOpAmpClientIsAvailable();
         }
     }
 
     public void CaptureMetricEndpoints(MeterProvider provider)
     {
-        try
+        if (_metricEndpointTracker.Capture(provider))
         {
-            _state.SetMetricEndpoints(OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
-        }
-        catch (Exception ex)
-        {
-            Log.Warning($"Failed to resolve metrics endpoints from MeterProvider: {ex.Message}");
+            SendUpdatedPayloadIfOpAmpClientIsAvailable();
         }
     }
 
     public void MarkOpenTelemetryLoggerConfigured()
     {
-        // ILogger owns its LoggerProvider and disables bridge logging, so bridge reflection would report a different logs pipeline.
-        Interlocked.Exchange(ref _iloggerLogsConfigured, 1);
-        var endpointsChanged = _state.ClearLogEndpoints();
-        if (endpointsChanged)
+        if (_logEndpointTracker.MarkOpenTelemetryLoggerConfigured())
         {
             SendUpdatedPayloadIfOpAmpClientIsAvailable();
         }
@@ -100,29 +82,9 @@ internal sealed class EffectiveConfigReporter
 
     public void CaptureLogExporterOptions(OtlpExporterOptions options)
     {
-        if (Volatile.Read(ref _iloggerLogsConfigured) == 0)
+        if (_logEndpointTracker.CaptureLogExporterOptions(options))
         {
-            // This hook can run during bridge setup too. Without the ILogger marker, only provider-graph values are known valid.
-            return;
-        }
-
-        try
-        {
-            // Upstream's ILogger path calls the marker before configuring OTLP exporters, but SDK export clients do not exist yet.
-            var endpoint = OtlpLogEndpointOptionsResolver.ResolveEndpoint(options);
-            if (endpoint == null)
-            {
-                return;
-            }
-
-            if (_state.AddLogEndpoint(endpoint))
-            {
-                SendUpdatedPayloadIfOpAmpClientIsAvailable();
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Warning($"Failed to resolve logs endpoint from OtlpExporterOptions: {ex.Message}");
+            SendUpdatedPayloadIfOpAmpClientIsAvailable();
         }
     }
 
@@ -142,19 +104,17 @@ internal sealed class EffectiveConfigReporter
         Volatile.Write(ref _opAmpClient, client);
     }
 
-    internal string BuildCurrentPayload()
+    internal EffectiveConfigFile BuildCurrentPayload()
     {
-        CaptureBridgeLogEndpointsIfNeeded();
-        return _state.BuildPayload();
-    }
-
-    private static IReadOnlyList<string>? ResolveBridgeLogEndpoints()
-    {
-        // NLog/log4net bridges use upstream's LoggerProvider; do not force Lazy.Value here.
-        var bridgeLoggerProvider = UpstreamLoggerProviderResolver.TryGetAlreadyCreatedLoggerProvider();
-        return bridgeLoggerProvider == null
-            ? null
-            : OtlpEndpointProviderGraphResolver.ResolveLogEndpoints(bridgeLoggerProvider);
+        var traceEndpoints = _traceEndpointTracker.GetCurrentEndpoints();
+        var metricEndpoints = _metricEndpointTracker.GetCurrentEndpoints();
+        var logEndpoints = _logEndpointTracker.GetCurrentEndpoints();
+        var snapshot = EffectiveConfigSnapshot.Create(
+            _staticSettings,
+            traceEndpoints,
+            metricEndpoints,
+            logEndpoints);
+        return EffectiveConfigPayloadBuilder.Build(snapshot);
     }
 
     private void SendUpdatedPayloadIfOpAmpClientIsAvailable()
@@ -182,47 +142,7 @@ internal sealed class EffectiveConfigReporter
 
     private async Task SendCurrentPayloadAsync(OpAmpClient client)
     {
-        var payload = BuildCurrentPayload();
-        if (string.IsNullOrWhiteSpace(payload))
-        {
-            return;
-        }
-
-        var bytes = Encoding.UTF8.GetBytes(payload);
-        var effectiveConfigFile = new EffectiveConfigFile(new ReadOnlyMemory<byte>(bytes), EffectiveConfigContentType, EffectiveConfigFileName);
+        var effectiveConfigFile = BuildCurrentPayload();
         await client.SendEffectiveConfigAsync([effectiveConfigFile]).ConfigureAwait(false);
-    }
-
-    private void CaptureBridgeLogEndpointsIfNeeded()
-    {
-        if (Volatile.Read(ref _iloggerLogsConfigured) != 0)
-        {
-            return;
-        }
-
-        try
-        {
-            var bridgeLogEndpoints = _bridgeLogEndpointResolver();
-            if (Volatile.Read(ref _iloggerLogsConfigured) != 0)
-            {
-                return;
-            }
-
-            if (bridgeLogEndpoints == null)
-            {
-                // Without provider-graph results, bridge log endpoints are not known valid.
-                _state.ClearLogEndpoints();
-                return;
-            }
-
-            // Provider-graph values are the known-valid bridge endpoints.
-            _state.SetLogEndpoints(bridgeLogEndpoints);
-        }
-        catch (Exception ex)
-        {
-            // Reflection failure means bridge log endpoints are not known valid.
-            _state.ClearLogEndpoints();
-            Log.Warning($"Failed to resolve logs endpoints from LoggerProvider: {ex.Message}");
-        }
     }
 }

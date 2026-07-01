@@ -109,10 +109,30 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 #endif
         }
 
+        [Theory]
+        [InlineData("stable.yaml", "experimental.yaml", "stable.yaml", "experimental.yaml")]
+        [InlineData(null, "experimental.yaml", "experimental.yaml", "experimental.yaml")]
+        [InlineData(null, null, "config.yaml", null)]
+        internal void ResolveFileBasedConfigFileNames_PrefersStableThenExperimentalThenDefault(
+            string? stableFileName,
+            string? experimentalFileName,
+            string expectedFileName,
+            string? expectedExperimentalFileName)
+        {
+            Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName, stableFileName);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.ExperimentalFileName, experimentalFileName);
+
+            var fileNames = PluginSettings.ResolveFileBasedConfigFileNames();
+
+            Assert.Equal(expectedFileName, fileNames.FileName);
+            Assert.Equal(expectedExperimentalFileName, fileNames.ExperimentalFileName);
+        }
+
         private static void ClearEnvVars()
         {
             Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.Enabled, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.ExperimentalFileName, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Realm, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AccessToken, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled, null);

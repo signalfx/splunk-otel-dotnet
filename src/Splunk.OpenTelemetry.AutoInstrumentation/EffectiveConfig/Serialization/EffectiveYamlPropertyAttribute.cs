@@ -1,4 +1,4 @@
-// <copyright file="UpstreamInstrumentationResolver.cs" company="Splunk Inc.">
+// <copyright file="EffectiveYamlPropertyAttribute.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,14 +14,24 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Serialization;
 
-internal static class UpstreamInstrumentationResolver
+[AttributeUsage(AttributeTargets.Property)]
+internal sealed class EffectiveYamlPropertyAttribute : Attribute
 {
-    private const string InstrumentationTypeName = "OpenTelemetry.AutoInstrumentation.Instrumentation, OpenTelemetry.AutoInstrumentation";
-
-    public static Type? TryGetInstrumentationType()
+    public EffectiveYamlPropertyAttribute(
+        string name,
+        int order,
+        bool preserveNull = false)
     {
-        return Type.GetType(InstrumentationTypeName, throwOnError: false);
+        Name = name;
+        Order = order;
+        PreserveNull = preserveNull;
     }
+
+    public string Name { get; }
+
+    public int Order { get; }
+
+    public bool PreserveNull { get; }
 }
