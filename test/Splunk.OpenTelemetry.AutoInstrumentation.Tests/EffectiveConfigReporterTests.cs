@@ -14,7 +14,9 @@
 // limitations under the License.
 // </copyright>
 
+using System.Collections.Specialized;
 using System.Text;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
@@ -25,6 +27,8 @@ public class EffectiveConfigReporterTests
     public void BuildCurrentPayload_CapturesBridgeLoggerProviderEndpoints()
     {
         var reporter = new EffectiveConfigReporter(
+            new EffectiveConfigStaticSettings(
+                new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()))),
             () => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
 
         var payload = reporter.BuildCurrentPayload();

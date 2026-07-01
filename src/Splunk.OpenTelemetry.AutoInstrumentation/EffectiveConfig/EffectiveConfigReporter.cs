@@ -28,34 +28,32 @@ internal sealed class EffectiveConfigReporter
 {
     private static readonly ILogger Log = new Logger();
 
-    private readonly EffectiveConfigState _state = new();
+    private readonly EffectiveConfigStaticSettings _staticSettings;
     private readonly EffectiveProviderEndpointTracker<TracerProvider> _traceEndpointTracker;
     private readonly EffectiveProviderEndpointTracker<MeterProvider> _metricEndpointTracker;
     private readonly EffectiveLogEndpointTracker _logEndpointTracker;
     private OpAmpClient? _opAmpClient;
 
-    public EffectiveConfigReporter()
-        : this(new EffectiveLogEndpointTracker())
+    public EffectiveConfigReporter(EffectiveConfigStaticSettings staticSettings)
+        : this(staticSettings, new EffectiveLogEndpointTracker())
     {
     }
 
-    internal EffectiveConfigReporter(Func<IReadOnlyList<EffectiveOtlpEndpoint>?> bridgeLogEndpointResolver)
-        : this(new EffectiveLogEndpointTracker(bridgeLogEndpointResolver))
+    internal EffectiveConfigReporter(
+        EffectiveConfigStaticSettings staticSettings,
+        Func<IReadOnlyList<EffectiveOtlpEndpoint>?> bridgeLogEndpointResolver)
+        : this(staticSettings, new EffectiveLogEndpointTracker(bridgeLogEndpointResolver))
     {
     }
 
-    private EffectiveConfigReporter(EffectiveLogEndpointTracker logEndpointTracker)
+    private EffectiveConfigReporter(EffectiveConfigStaticSettings staticSettings, EffectiveLogEndpointTracker logEndpointTracker)
     {
+        _staticSettings = staticSettings;
         _traceEndpointTracker = new EffectiveProviderEndpointTracker<TracerProvider>(
             OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints);
         _metricEndpointTracker = new EffectiveProviderEndpointTracker<MeterProvider>(
             OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints);
         _logEndpointTracker = logEndpointTracker;
-    }
-
-    public void CaptureSplunkSettings(PluginSettings settings)
-    {
-        _state.SetSplunkSettings(settings);
     }
 
     public void CaptureTraceEndpoints(TracerProvider provider)
@@ -111,7 +109,12 @@ internal sealed class EffectiveConfigReporter
         var traceEndpoints = _traceEndpointTracker.GetCurrentEndpoints();
         var metricEndpoints = _metricEndpointTracker.GetCurrentEndpoints();
         var logEndpoints = _logEndpointTracker.GetCurrentEndpoints();
-        return EffectiveConfigPayloadBuilder.Build(_state.CreateSnapshot(traceEndpoints, metricEndpoints, logEndpoints));
+        var snapshot = EffectiveConfigSnapshot.Create(
+            _staticSettings,
+            traceEndpoints,
+            metricEndpoints,
+            logEndpoints);
+        return EffectiveConfigPayloadBuilder.Build(snapshot);
     }
 
     private void SendUpdatedPayloadIfOpAmpClientIsAvailable()

@@ -18,7 +18,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal sealed class EffectiveConfigSnapshot
 {
-    public EffectiveConfigSnapshot(
+    internal EffectiveConfigSnapshot(
         string? fileBasedConfigFileName,
         IReadOnlyList<EffectiveOtlpEndpoint> traceEndpoints,
         IReadOnlyList<EffectiveOtlpEndpoint> metricEndpoints,
@@ -63,6 +63,25 @@ internal sealed class EffectiveConfigSnapshot
     public uint CpuProfilerCallStackInterval { get; }
 
     public uint SnapshotSamplingInterval { get; }
+
+    public static EffectiveConfigSnapshot Create(
+        EffectiveConfigStaticSettings staticSettings,
+        IReadOnlyList<EffectiveOtlpEndpoint> traceEndpoints,
+        IReadOnlyList<EffectiveOtlpEndpoint> metricEndpoints,
+        IReadOnlyList<EffectiveOtlpEndpoint> logEndpoints)
+    {
+        return new EffectiveConfigSnapshot(
+            fileBasedConfigFileName: staticSettings.FileBasedConfigFileName,
+            traceEndpoints: traceEndpoints,
+            metricEndpoints: metricEndpoints,
+            logEndpoints: logEndpoints,
+            cpuProfilerEnabled: staticSettings.CpuProfilerEnabled,
+            memoryProfilerEnabled: staticSettings.MemoryProfilerEnabled,
+            snapshotProfilerEnabled: staticSettings.SnapshotProfilerEnabled,
+            cpuProfilerCallStackInterval: staticSettings.CpuProfilerCallStackInterval,
+            snapshotSamplingInterval: staticSettings.SnapshotSamplingInterval,
+            otelExperimentalConfigFile: staticSettings.OtelExperimentalConfigFile);
+    }
 
     private static IReadOnlyList<EffectiveOtlpEndpoint> CopyEndpoints(IReadOnlyList<EffectiveOtlpEndpoint> endpoints)
     {

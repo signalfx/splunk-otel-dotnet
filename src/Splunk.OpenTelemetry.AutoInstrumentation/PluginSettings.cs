@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-using System.Diagnostics;
 using System.Reflection;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
@@ -24,8 +23,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal class PluginSettings
 {
-    private const string DefaultFileBasedConfigFileName = "config.yaml";
-
     private static readonly ILogger Log = new Logger();
 
     private static readonly bool IsYamlConfigEnabled = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.Enabled) == "true";
@@ -79,7 +76,7 @@ internal class PluginSettings
             throw new ArgumentNullException(nameof(configuration));
         }
 
-        FileBasedConfigFileName = fileName ?? DefaultFileBasedConfigFileName;
+        FileBasedConfigFileName = fileName ?? Constants.DefaultFileBasedConfigFileName;
         OtelExperimentalConfigFile = experimentalFileName;
         Realm = Constants.None;
         AccessToken = null;
@@ -202,7 +199,7 @@ internal class PluginSettings
     {
         var fileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName);
         var experimentalFileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.ExperimentalFileName);
-        return (fileName ?? experimentalFileName ?? DefaultFileBasedConfigFileName, experimentalFileName);
+        return (fileName ?? experimentalFileName ?? Constants.DefaultFileBasedConfigFileName, experimentalFileName);
     }
 
     private static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)

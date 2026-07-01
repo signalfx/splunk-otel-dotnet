@@ -23,6 +23,7 @@ using OpenTelemetry.OpAmp.Client.Settings;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
@@ -64,7 +65,7 @@ public class Plugin
         _metrics = new Metrics(Settings);
         _traces = new Traces(Settings);
         _sdk = new Sdk();
-        _opAmp = new OpAmp();
+        _opAmp = new OpAmp(new EffectiveConfigStaticSettings(Settings));
     }
 
     internal static PluginSettings Settings => SettingsFactory.Value;
@@ -269,7 +270,6 @@ public class Plugin
     /// </summary>
     public void Initialized()
     {
-        _opAmp.RecordPluginConfig(Settings);
         _opAmp.MarkInstrumentationInitialized();
     }
 

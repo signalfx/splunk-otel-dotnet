@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-using System.Threading;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.OpAmp.Client;
@@ -30,20 +29,20 @@ internal sealed class OpAmp
 {
     private static readonly ILogger Log = new Logger();
 
-    private readonly Lazy<EffectiveConfigReporter?> _effectiveConfigReporter = new(TryCreateEffectiveConfigReporter);
+    private readonly Lazy<EffectiveConfigReporter?> _effectiveConfigReporter;
     private int _instrumentationInitialized;
     private int _opAmpClientStarted;
     private int _initialEffectiveConfigReportStarted;
     private Task? _initialEffectiveConfigReportTask;
 
+    public OpAmp(EffectiveConfigStaticSettings staticSettings)
+    {
+        _effectiveConfigReporter = new(() => TryCreateEffectiveConfigReporter(staticSettings));
+    }
+
     public static void EnableEffectiveConfigReporting(OpAmpClientSettings settings)
     {
         settings.EffectiveConfigurationReporting.EnableReporting = true;
-    }
-
-    public void RecordPluginConfig(PluginSettings settings)
-    {
-        _effectiveConfigReporter.Value?.CaptureSplunkSettings(settings);
     }
 
     public void RecordLogExporterOptions(OtlpExporterOptions options)
@@ -94,11 +93,11 @@ internal sealed class OpAmp
         TryReportEffectiveConfig();
     }
 
-    private static EffectiveConfigReporter? TryCreateEffectiveConfigReporter()
+    private static EffectiveConfigReporter? TryCreateEffectiveConfigReporter(EffectiveConfigStaticSettings staticSettings)
     {
         try
         {
-            return UpstreamOpAmpEnabledResolver.IsEnabled() ? new EffectiveConfigReporter() : null;
+            return UpstreamOpAmpEnabledResolver.IsEnabled() ? new EffectiveConfigReporter(staticSettings) : null;
         }
         catch (Exception e)
         {
