@@ -45,6 +45,7 @@ internal static class EffectiveYamlSerializer
         var builder = CreateInstance(serializerBuilderType);
 
         ConfigureDefaultValueHandling(builder);
+        ConfigureDefaultScalarStyle(builder);
         ConfigureYamlPropertyOverrides(builder);
         InvokeRequired(builder, "WithIndentedSequences", []);
 
@@ -60,13 +61,18 @@ internal static class EffectiveYamlSerializer
         InvokeRequired(builder, "ConfigureDefaultValuesHandling", [defaultValuesHandlingType], defaultValuesHandling);
     }
 
+    private static void ConfigureDefaultScalarStyle(object builder)
+    {
+        var scalarStyleType = GetUpstreamType("Vendors.YamlDotNet.Core.ScalarStyle");
+        var doubleQuotedStyle = Enum.Parse(scalarStyleType, "DoubleQuoted");
+
+        InvokeRequired(builder, "WithDefaultScalarStyle", [scalarStyleType], doubleQuotedStyle);
+    }
+
     private static void ConfigureYamlPropertyOverrides(object builder)
     {
         var yamlMemberAttributeType = GetUpstreamType("Vendors.YamlDotNet.Serialization.YamlMemberAttribute");
-        var scalarStyleType = GetUpstreamType("Vendors.YamlDotNet.Core.ScalarStyle");
         var defaultValuesHandlingType = GetUpstreamType("Vendors.YamlDotNet.Serialization.DefaultValuesHandling");
-        var doubleQuotedStyle = Enum.Parse(scalarStyleType, "DoubleQuoted");
-        var plainStyle = Enum.Parse(scalarStyleType, "Plain");
         var preserveDefaultValues = Enum.Parse(defaultValuesHandlingType, "Preserve");
 
         foreach (var property in GetYamlProperties())
@@ -80,14 +86,6 @@ internal static class EffectiveYamlSerializer
             if (effectiveYamlProperty.PreserveNull)
             {
                 SetProperty(yamlMemberAttribute, "DefaultValuesHandling", preserveDefaultValues);
-            }
-
-            if (property.PropertyType == typeof(string))
-            {
-                SetProperty(
-                    yamlMemberAttribute,
-                    "ScalarStyle",
-                    effectiveYamlProperty.PlainStyle ? plainStyle : doubleQuotedStyle);
             }
 
             InvokeRequired(

@@ -1,5 +1,5 @@
 otel_config_file: "{configFile}"
-otel_experimental_config_file: null
+otel_experimental_config_file: 
 meter_provider:
   readers:
     - periodic:

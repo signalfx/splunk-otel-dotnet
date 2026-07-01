@@ -286,6 +286,36 @@ public class SmokeTests : TestHelper, IDisposable
 
     [Fact]
     [Trait("Category", "EndToEnd")]
+    public void EffectiveEnvVarConfigReportsBridgeLoggerProviderEndpoint()
+    {
+        // Upstream evaluates LoggerProviderFactory while aggregating resources for
+        // OpAMP initialization. Enabling the NLog bridge therefore creates the
+        // LoggerProvider even when the application does not reference NLog or emit
+        // any NLog events. This test verifies that we resolve that already-created
+        // provider through the upstream private static field.
+
+        using var opAmpServer = new MockOpAmpServer(Output);
+
+        const string logsEndpoint = "http://logs-collector:4318/v1/logs";
+
+        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+        SetEnvironmentVariable("OTEL_LOGS_EXPORTER", "otlp");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", logsEndpoint);
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_ENABLE_NLOG_BRIDGE", "true");
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_ILOGGER_INSTRUMENTATION_ENABLED", "false");
+
+        EnableBytecodeInstrumentation();
+
+        RunTestApplicationAndAssertEffectiveConfig(
+            opAmpServer,
+            payload => payload.IndexOf(
+                $"OTEL_EXPORTER_OTLP_LOGS_ENDPOINT={logsEndpoint}", StringComparison.Ordinal) >= 0,
+            "environment",
+            ExpectedEnvVarConfigContentType);
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
     public void EffectiveEnvVarConfigUsesResolvedOtlpProtocol()
     {
         using var opAmpServer = new MockOpAmpServer(Output);

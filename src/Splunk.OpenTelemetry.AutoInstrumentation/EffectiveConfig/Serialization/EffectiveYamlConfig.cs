@@ -21,7 +21,7 @@ internal sealed class EffectiveYamlConfig
     [EffectiveYamlProperty("otel_config_file", 0)]
     public string? OtelConfigFile { get; set; }
 
-    [EffectiveYamlProperty("otel_experimental_config_file", 1, plainStyle: true)]
+    [EffectiveYamlProperty("otel_experimental_config_file", 1, preserveNull: true)]
     public string? OtelExperimentalConfigFile { get; set; }
 
     [EffectiveYamlProperty("tracer_provider", 2)]
@@ -43,7 +43,7 @@ internal sealed class EffectiveYamlConfig
         return new EffectiveYamlConfig
         {
             OtelConfigFile = snapshot.FileBasedConfigFileName,
-            OtelExperimentalConfigFile = snapshot.OtelExperimentalConfigFile ?? "null",
+            OtelExperimentalConfigFile = snapshot.OtelExperimentalConfigFile,
             TracerProvider = snapshot.TraceEndpoints.Count == 0
                 ? null
                 : new EffectiveProcessorProviderConfig

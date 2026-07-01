@@ -27,7 +27,7 @@ internal static class UpstreamLoggerProviderResolver
     {
         var instrumentationType = UpstreamInstrumentationResolver.TryGetInstrumentationType();
         var loggerProviderFactory = instrumentationType
-            ?.GetProperty("LoggerProviderFactory", StaticNonPublicFlags)
+            ?.GetField("LoggerProviderFactory", StaticNonPublicFlags)
             ?.GetValue(null);
 
         if (loggerProviderFactory is not Lazy<LoggerProvider?> lazyLoggerProvider || !lazyLoggerProvider.IsValueCreated)

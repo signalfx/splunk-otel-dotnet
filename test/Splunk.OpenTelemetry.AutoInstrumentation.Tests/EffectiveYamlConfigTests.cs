@@ -35,17 +35,24 @@ public class EffectiveYamlConfigTests
     }
 
     [Fact]
-    public void YamlModel_PreservesOnlyMemoryProfilerNull()
+    public void YamlModel_PreservesRequiredNulls()
     {
-        var properties = new[] { typeof(EffectiveYamlConfig) }
-            .Concat(typeof(EffectiveYamlConfig).GetNestedTypes(BindingFlags.NonPublic | BindingFlags.Public))
-            .SelectMany(type => type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly));
+        AssertPreservesNull(
+            typeof(EffectiveYamlConfig),
+            nameof(EffectiveYamlConfig.OtelExperimentalConfigFile));
+        AssertPreservesNull(
+            typeof(EffectiveYamlConfig.EffectiveAlwaysOnProfilingWithMemoryConfig),
+            nameof(EffectiveYamlConfig.EffectiveAlwaysOnProfilingWithMemoryConfig.MemoryProfiler));
 
-        var property = Assert.Single(
-            properties,
-            property => property.GetCustomAttribute<EffectiveYamlPropertyAttribute>()?.PreserveNull == true);
+        static void AssertPreservesNull(Type declaringType, string propertyName)
+        {
+            var property = declaringType.GetProperty(propertyName);
+            Assert.NotNull(property);
 
-        Assert.Equal(nameof(EffectiveYamlConfig.EffectiveAlwaysOnProfilingWithMemoryConfig.MemoryProfiler), property.Name);
+            var attribute = property.GetCustomAttribute<EffectiveYamlPropertyAttribute>();
+            Assert.NotNull(attribute);
+            Assert.True(attribute.PreserveNull);
+        }
     }
 
     [Fact]
@@ -62,7 +69,7 @@ public class EffectiveYamlConfigTests
     {
         var config = EffectiveYamlConfig.Create(CreateSnapshot());
 
-        Assert.Equal("null", config.OtelExperimentalConfigFile);
+        Assert.Null(config.OtelExperimentalConfigFile);
     }
 
     [Fact]
