@@ -51,7 +51,7 @@ public class OpAmpTests
 
         new OpAmp().ConfigureOptions(settings, pluginSettings);
 
-        Assert.False(settings.EffectiveConfigurationReporting.EnableReporting);
+        Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
         Assert.False(settings.RemoteConfiguration.AcceptsRemoteConfig);
         Assert.False(ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled);
     }
