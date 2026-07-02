@@ -26,9 +26,15 @@ Remote configuration is a Splunk OpAMP feature flag. Configure it through:
   `opamp/development.features.remote_config`.
 
 Remote configuration is opt-in. When OpAMP and the remote configuration feature
-are enabled, the distribution advertises `AcceptsRemoteConfig` and listens for
-an OpAMP `AgentRemoteConfig.AgentConfigMap` entry named `splunk.remote.config`
-with content type `application/yaml`.
+are enabled, the distribution advertises `AcceptsRemoteConfig` and
+`ReportsRemoteConfig` and listens for an OpAMP
+`AgentRemoteConfig.AgentConfigMap` entry named `splunk.remote.config` with
+content type `application/yaml`.
+
+The distribution reports remote configuration status for each new
+`AgentRemoteConfig.config_hash`. It sends `Applying` before processing the
+payload, then `Applied` after the payload is applied or `Failed` with an error
+message when the payload cannot be applied.
 
 ## Effective configuration contents
 

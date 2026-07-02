@@ -38,6 +38,7 @@ public class OpAmpTests
 
         Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
         Assert.True(settings.RemoteConfiguration.AcceptsRemoteConfig);
+        Assert.True(settings.RemoteConfiguration.ReportsRemoteConfigStatus);
         Assert.True(ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled);
         Assert.False(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
     }
@@ -53,6 +54,7 @@ public class OpAmpTests
 
         Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
         Assert.False(settings.RemoteConfiguration.AcceptsRemoteConfig);
+        Assert.False(settings.RemoteConfiguration.ReportsRemoteConfigStatus);
         Assert.False(ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled);
     }
 }

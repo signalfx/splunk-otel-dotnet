@@ -18,6 +18,7 @@ using System.Threading;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.OpAmp.Client;
+using OpenTelemetry.OpAmp.Client.Messages;
 using OpenTelemetry.OpAmp.Client.Settings;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -43,7 +44,7 @@ internal sealed class OpAmp
     public OpAmp()
     {
         _effectiveConfigReporter = new Lazy<EffectiveConfigReporter?>(TryCreateEffectiveConfigReporter);
-        _remoteConfigurationListener = new OpAmpRemoteConfigurationListener(SendEffectiveConfigAfterRemoteConfiguration);
+        _remoteConfigurationListener = new OpAmpRemoteConfigurationListener(SendEffectiveConfigAfterRemoteConfiguration, SendRemoteConfigStatusAsync);
     }
 
     public void ConfigureOptions(OpAmpClientSettings settings, PluginSettings pluginSettings)
@@ -57,6 +58,7 @@ internal sealed class OpAmp
 
         _remoteConfigurationEnabled = pluginSettings.OpAmpRemoteConfigEnabled;
         settings.RemoteConfiguration.AcceptsRemoteConfig = pluginSettings.OpAmpRemoteConfigEnabled;
+        settings.RemoteConfiguration.ReportsRemoteConfigStatus = true;
     }
 
     public void RecordPluginConfig(PluginSettings settings)
@@ -145,6 +147,24 @@ internal sealed class OpAmp
     private void SendEffectiveConfigAfterRemoteConfiguration()
     {
         _ = ReportEffectiveConfigAsync();
+    }
+
+    private async Task SendRemoteConfigStatusAsync(RemoteConfigStatusReport statusReport)
+    {
+        try
+        {
+            var client = Volatile.Read(ref _opAmpClient);
+            if (client == null)
+            {
+                return;
+            }
+
+            await client.SendRemoteConfigStatusAsync(statusReport).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            Log.Warning($"Failed to report remote configuration status to OpAMP server: {e.Message}");
+        }
     }
 
     private void TryReportEffectiveConfig()
