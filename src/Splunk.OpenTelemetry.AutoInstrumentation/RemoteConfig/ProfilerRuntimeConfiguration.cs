@@ -64,17 +64,17 @@ internal static class ProfilerRuntimeConfiguration
             _snapshotsSamplingInterval = settings.SnapshotsSamplingInterval == 0
                 ? Constants.DefaultSnapshotSamplingIntervalMs
                 : settings.SnapshotsSamplingInterval;
-            _opAmpRemoteConfigurationEnabled = false;
+            _opAmpRemoteConfigurationEnabled = settings.OpAmpRemoteConfigEnabled;
         }
     }
 
-    public static void EnableOpAmpRemoteConfiguration()
-    {
-        lock (Sync)
-        {
-            _opAmpRemoteConfigurationEnabled = true;
-        }
-    }
+    // public static void EnableOpAmpRemoteConfiguration()
+    // {
+    //     lock (Sync)
+    //     {
+    //         _opAmpRemoteConfigurationEnabled = true;
+    //     }
+    // }
 
     public static void Apply(YamlRoot? configuration)
     {

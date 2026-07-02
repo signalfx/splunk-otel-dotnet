@@ -46,28 +46,18 @@ internal sealed class OpAmp
         _remoteConfigurationListener = new OpAmpRemoteConfigurationListener(SendEffectiveConfigAfterRemoteConfiguration);
     }
 
-    public static void EnableEffectiveConfigReporting(OpAmpClientSettings settings)
-    {
-        settings.EffectiveConfigurationReporting.EnableReporting = true;
-    }
-
-    public static void EnableRemoteConfiguration(OpAmpClientSettings settings)
-    {
-        settings.RemoteConfiguration.AcceptsRemoteConfig = true;
-    }
-
     public void ConfigureOptions(OpAmpClientSettings settings, PluginSettings pluginSettings)
     {
-        EnableEffectiveConfigReporting(settings);
-
         if (!pluginSettings.OpAmpRemoteConfigEnabled)
         {
             return;
         }
 
-        _remoteConfigurationEnabled = true;
-        EnableRemoteConfiguration(settings);
-        ProfilerRuntimeConfiguration.EnableOpAmpRemoteConfiguration();
+        settings.EffectiveConfigurationReporting.EnableReporting = true;
+
+        _remoteConfigurationEnabled = pluginSettings.OpAmpRemoteConfigEnabled;
+        settings.RemoteConfiguration.AcceptsRemoteConfig = pluginSettings.OpAmpRemoteConfigEnabled;
+        // ProfilerRuntimeConfiguration.EnableOpAmpRemoteConfiguration();
     }
 
     public void RecordPluginConfig(PluginSettings settings)
