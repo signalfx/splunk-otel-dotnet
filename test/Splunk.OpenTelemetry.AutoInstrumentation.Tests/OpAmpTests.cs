@@ -24,27 +24,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 public class OpAmpTests
 {
     [Fact]
-    public void EnableEffectiveConfigReporting_EnablesEffectiveConfigReporting()
-    {
-        var settings = new OpAmpClientSettings();
-
-        OpAmp.EnableEffectiveConfigReporting(settings);
-
-        Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
-    }
-
-    [Fact]
-    public void EnableRemoteConfiguration_AcceptsRemoteConfiguration()
-    {
-        var settings = new OpAmpClientSettings();
-
-        OpAmp.EnableRemoteConfiguration(settings);
-
-        Assert.True(settings.RemoteConfiguration.AcceptsRemoteConfig);
-    }
-
-    [Fact]
-    public void ConfigureOptions_EnablesRemoteConfigurationRuntimeMode()
+    public void ConfigureOptions_EnablesRemoteConfigurationRuntimeModeWhenCpuProfilerIsInitiallyDisabled()
     {
         var pluginSettings = new PluginSettings(new NameValueConfigurationSource(
             new NameValueCollection
@@ -59,6 +39,7 @@ public class OpAmpTests
         Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
         Assert.True(settings.RemoteConfiguration.AcceptsRemoteConfig);
         Assert.True(ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled);
+        Assert.False(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
     }
 
     [Fact]
@@ -70,7 +51,7 @@ public class OpAmpTests
 
         new OpAmp().ConfigureOptions(settings, pluginSettings);
 
-        Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
+        Assert.False(settings.EffectiveConfigurationReporting.EnableReporting);
         Assert.False(settings.RemoteConfiguration.AcceptsRemoteConfig);
         Assert.False(ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled);
     }
