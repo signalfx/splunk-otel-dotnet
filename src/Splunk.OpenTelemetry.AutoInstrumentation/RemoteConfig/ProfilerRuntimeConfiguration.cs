@@ -68,14 +68,6 @@ internal static class ProfilerRuntimeConfiguration
         }
     }
 
-    // public static void EnableOpAmpRemoteConfiguration()
-    // {
-    //     lock (Sync)
-    //     {
-    //         _opAmpRemoteConfigurationEnabled = true;
-    //     }
-    // }
-
     public static void Apply(YamlRoot? configuration)
     {
         var profilingConfig = configuration?.Distribution?.Splunk?.Profiling;
