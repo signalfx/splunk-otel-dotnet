@@ -55,7 +55,7 @@ internal static class InstrumentationData
             new("process.runtime.dotnet.gc.committed_memory.size", upDownCounter, "Amount of committed virtual memory for the managed GC heap, as observed during the last garbage collection. Only available for .NET 8.", conditionallyBundled),
             new("process.runtime.dotnet.gc.duration", counter, "The total amount of time paused in GC since the process start. Only available for .NET 8.", conditionallyBundled),
             new("process.runtime.dotnet.monitor.lock_contention.count", counter, "Contentions count when trying to acquire a monitor lock since the process started. Only available for .NET 8. and .NET Framework.", conditionallyBundled),
-            new("process.runtime.dotnet.thread_pool.threads.count", counter, "Number of thread pool threads, as observed during the last measurement. Only available for .NET 8.", conditionallyBundled),
+            new("process.runtime.dotnet.thread_pool.threads.count", upDownCounter, "Number of thread pool threads, as observed during the last measurement. Only available for .NET 8.", conditionallyBundled),
             new("process.runtime.dotnet.thread_pool.completed_items.count", counter, "Number of work items processed by the thread pool since the process started. Only available for .NET 8.", conditionallyBundled),
             new("process.runtime.dotnet.thread_pool.queue.length", upDownCounter, "Number of work items currently queued for processing by the thread pool. Only available for .NET 8.", conditionallyBundled),
             new("process.runtime.dotnet.jit.il_compiled.size", counter, "Bytes of intermediate language that have been compiled since the process started. Only available for .NET 8.", conditionallyBundled),
