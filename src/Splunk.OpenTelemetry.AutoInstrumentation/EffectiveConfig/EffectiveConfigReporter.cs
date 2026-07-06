@@ -32,6 +32,7 @@ internal sealed class EffectiveConfigReporter
     private readonly EffectiveProviderEndpointTracker<TracerProvider> _traceEndpointTracker;
     private readonly EffectiveProviderEndpointTracker<MeterProvider> _metricEndpointTracker;
     private readonly EffectiveLogEndpointTracker _logEndpointTracker;
+    private volatile EffectiveProfilerFeatures _profilerFeatures;
     private OpAmpClient? _opAmpClient;
 
     public EffectiveConfigReporter(EffectiveConfigStaticSettings staticSettings)
@@ -104,6 +105,11 @@ internal sealed class EffectiveConfigReporter
         Volatile.Write(ref _opAmpClient, client);
     }
 
+    public void SetProfilerFeatures(EffectiveProfilerFeatures profilerFeatures)
+    {
+        _profilerFeatures = profilerFeatures;
+    }
+
     internal EffectiveConfigFile BuildCurrentPayload()
     {
         var traceEndpoints = _traceEndpointTracker.GetCurrentEndpoints();
@@ -111,6 +117,7 @@ internal sealed class EffectiveConfigReporter
         var logEndpoints = _logEndpointTracker.GetCurrentEndpoints();
         var snapshot = EffectiveConfigSnapshot.Create(
             _staticSettings,
+            _profilerFeatures,
             traceEndpoints,
             metricEndpoints,
             logEndpoints);

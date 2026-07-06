@@ -284,6 +284,46 @@ public class SmokeTests : TestHelper, IDisposable
         AssertEnvironmentConfigPayload(payload, expectedPayload);
     }
 
+#if NET
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void EffectiveEnvVarConfigReportsRequestedProfilersDisabledWhenClrProfilerIsDisabled()
+    {
+        using var opAmpServer = new MockOpAmpServer(Output);
+
+        SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "0");
+        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+        SetEnvironmentVariable("SPLUNK_PROFILER_ENABLED", "true");
+        SetEnvironmentVariable("SPLUNK_PROFILER_MEMORY_ENABLED", "true");
+        SetEnvironmentVariable("SPLUNK_PROFILER_CALL_STACK_INTERVAL", "10000");
+        SetEnvironmentVariable("SPLUNK_SNAPSHOT_PROFILER_ENABLED", "true");
+        SetEnvironmentVariable("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL", "5000");
+        DisableAllInstrumentations();
+
+        var expectedPayload = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = "none",
+            ["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"] = "none",
+            ["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"] = "none",
+            ["SPLUNK_PROFILER_ENABLED"] = "false",
+            ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
+            ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
+            ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "5000",
+            ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
+            ["OTEL_CONFIG_FILE"] = "null",
+            ["OTEL_EXPERIMENTAL_CONFIG_FILE"] = "null"
+        };
+
+        var payload = RunTestApplicationAndAssertEffectiveConfig(
+            opAmpServer,
+            payload => EnvironmentConfigPayloadMatches(payload, expectedPayload),
+            "environment",
+            ExpectedEnvVarConfigContentType);
+
+        AssertEnvironmentConfigPayload(payload, expectedPayload);
+    }
+#endif
+
     [Fact]
     [Trait("Category", "EndToEnd")]
     public void EffectiveEnvVarConfigReportsBridgeLoggerProviderEndpoint()

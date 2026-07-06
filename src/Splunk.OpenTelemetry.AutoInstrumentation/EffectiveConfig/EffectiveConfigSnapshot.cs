@@ -66,6 +66,7 @@ internal sealed class EffectiveConfigSnapshot
 
     public static EffectiveConfigSnapshot Create(
         EffectiveConfigStaticSettings staticSettings,
+        EffectiveProfilerFeatures profilerFeatures,
         IReadOnlyList<EffectiveOtlpEndpoint> traceEndpoints,
         IReadOnlyList<EffectiveOtlpEndpoint> metricEndpoints,
         IReadOnlyList<EffectiveOtlpEndpoint> logEndpoints)
@@ -75,9 +76,9 @@ internal sealed class EffectiveConfigSnapshot
             traceEndpoints: traceEndpoints,
             metricEndpoints: metricEndpoints,
             logEndpoints: logEndpoints,
-            cpuProfilerEnabled: staticSettings.CpuProfilerEnabled,
-            memoryProfilerEnabled: staticSettings.MemoryProfilerEnabled,
-            snapshotProfilerEnabled: staticSettings.SnapshotProfilerEnabled,
+            cpuProfilerEnabled: (profilerFeatures & EffectiveProfilerFeatures.Cpu) != 0,
+            memoryProfilerEnabled: (profilerFeatures & EffectiveProfilerFeatures.Memory) != 0,
+            snapshotProfilerEnabled: (profilerFeatures & EffectiveProfilerFeatures.Snapshot) != 0,
             cpuProfilerCallStackInterval: staticSettings.CpuProfilerCallStackInterval,
             snapshotSamplingInterval: staticSettings.SnapshotSamplingInterval,
             otelExperimentalConfigFile: staticSettings.OtelExperimentalConfigFile);

@@ -28,9 +28,6 @@ public class EffectiveConfigStaticSettingsTests
     {
         var configuration = new NameValueCollection
         {
-            { ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled, "true" },
-            { ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled, "true" },
-            { ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, "10000" },
             { ConfigurationKeys.Splunk.Snapshots.Enabled, "true" },
             { ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, "5000" }
         };
@@ -42,13 +39,6 @@ public class EffectiveConfigStaticSettingsTests
 
         Assert.Null(effectiveSettings.FileBasedConfigFileName);
         Assert.Null(effectiveSettings.OtelExperimentalConfigFile);
-        Assert.True(effectiveSettings.CpuProfilerEnabled);
-#if NET
-        Assert.True(effectiveSettings.MemoryProfilerEnabled);
-#else
-        Assert.False(effectiveSettings.MemoryProfilerEnabled);
-#endif
-        Assert.True(effectiveSettings.SnapshotProfilerEnabled);
         Assert.Equal(10000U, effectiveSettings.CpuProfilerCallStackInterval);
         Assert.Equal(5000U, effectiveSettings.SnapshotSamplingInterval);
     }

@@ -199,7 +199,19 @@ internal class PluginSettings
     {
         var fileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName);
         var experimentalFileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.ExperimentalFileName);
-        return (fileName ?? experimentalFileName ?? Constants.DefaultFileBasedConfigFileName, experimentalFileName);
+        return ResolveFileBasedConfigFileNames(fileName, experimentalFileName);
+    }
+
+    internal static (string FileName, string? ExperimentalFileName) ResolveFileBasedConfigFileNames(
+        string? fileName,
+        string? experimentalFileName)
+    {
+        var resolvedExperimentalFileName = string.IsNullOrEmpty(experimentalFileName) ? null : experimentalFileName;
+        var resolvedFileName = string.IsNullOrEmpty(fileName)
+            ? resolvedExperimentalFileName ?? Constants.DefaultFileBasedConfigFileName
+            : fileName!;
+
+        return (resolvedFileName, resolvedExperimentalFileName);
     }
 
     private static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)

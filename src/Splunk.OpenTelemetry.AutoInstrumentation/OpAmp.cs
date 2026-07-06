@@ -89,6 +89,8 @@ internal sealed class OpAmp
 
     public void MarkInstrumentationInitialized()
     {
+        var effectiveConfigReporter = _effectiveConfigReporter.Value;
+        effectiveConfigReporter?.SetProfilerFeatures(UpstreamProfilerStateResolver.Resolve());
         Volatile.Write(ref _instrumentationInitialized, 1);
         TryReportEffectiveConfig();
     }

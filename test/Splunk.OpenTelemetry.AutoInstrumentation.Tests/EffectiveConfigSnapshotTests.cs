@@ -24,32 +24,19 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 public class EffectiveConfigSnapshotTests
 {
     [Fact]
-    public void Create_CopiesEnvironmentStaticSettings()
+    public void Create_CopiesResolvedProfilerState()
     {
-        var configuration = new NameValueCollection
-        {
-            { ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled, "true" },
-            { ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled, "true" },
-            { ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, "10000" },
-            { ConfigurationKeys.Splunk.Snapshots.Enabled, "true" },
-            { ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, "5000" }
-        };
-        var staticSettings = new EffectiveConfigStaticSettings(
-            new PluginSettings(new NameValueConfigurationSource(configuration)));
-        var snapshot = EffectiveConfigSnapshot.Create(staticSettings, [], [], []);
+        const EffectiveProfilerFeatures profilerFeatures = EffectiveProfilerFeatures.Cpu | EffectiveProfilerFeatures.Snapshot;
+        var snapshot = EffectiveConfigSnapshot.Create(
+            CreateStaticSettings(),
+            profilerFeatures,
+            [],
+            [],
+            []);
 
-        Assert.False(snapshot.IsFileBasedConfig);
-        Assert.Null(snapshot.FileBasedConfigFileName);
-        Assert.Null(snapshot.OtelExperimentalConfigFile);
         Assert.True(snapshot.CpuProfilerEnabled);
-#if NET
-        Assert.True(snapshot.MemoryProfilerEnabled);
-#else
         Assert.False(snapshot.MemoryProfilerEnabled);
-#endif
         Assert.True(snapshot.SnapshotProfilerEnabled);
-        Assert.Equal(10000U, snapshot.CpuProfilerCallStackInterval);
-        Assert.Equal(5000U, snapshot.SnapshotSamplingInterval);
     }
 
     [Fact]
@@ -58,7 +45,7 @@ public class EffectiveConfigSnapshotTests
         var staticSettings = new EffectiveConfigStaticSettings(
             new PluginSettings(new YamlRoot(), "stable.yaml", "experimental.yaml"));
 
-        var snapshot = EffectiveConfigSnapshot.Create(staticSettings, [], [], []);
+        var snapshot = EffectiveConfigSnapshot.Create(staticSettings, EffectiveProfilerFeatures.None, [], [], []);
 
         Assert.True(snapshot.IsFileBasedConfig);
         Assert.Equal("stable.yaml", snapshot.FileBasedConfigFileName);
@@ -85,6 +72,7 @@ public class EffectiveConfigSnapshotTests
         var expectedLogEndpoints = logEndpoints.ToArray();
         var snapshot = EffectiveConfigSnapshot.Create(
             CreateStaticSettings(),
+            EffectiveProfilerFeatures.None,
             traceEndpoints,
             metricEndpoints,
             logEndpoints);

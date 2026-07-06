@@ -22,13 +22,6 @@ internal sealed class EffectiveConfigStaticSettings
     {
         FileBasedConfigFileName = settings.FileBasedConfigFileName;
         OtelExperimentalConfigFile = settings.OtelExperimentalConfigFile;
-        CpuProfilerEnabled = settings.CpuProfilerEnabled;
-#if NET
-        MemoryProfilerEnabled = settings.MemoryProfilerEnabled;
-#else
-        MemoryProfilerEnabled = false;
-#endif
-        SnapshotProfilerEnabled = settings.SnapshotsEnabled;
         CpuProfilerCallStackInterval = settings.CpuProfilerCallStackInterval;
         SnapshotSamplingInterval = settings.SnapshotsSamplingInterval;
     }
@@ -36,12 +29,6 @@ internal sealed class EffectiveConfigStaticSettings
     public string? FileBasedConfigFileName { get; }
 
     public string? OtelExperimentalConfigFile { get; }
-
-    public bool CpuProfilerEnabled { get; }
-
-    public bool MemoryProfilerEnabled { get; }
-
-    public bool SnapshotProfilerEnabled { get; }
 
     public uint CpuProfilerCallStackInterval { get; }
 

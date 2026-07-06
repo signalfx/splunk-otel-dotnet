@@ -111,18 +111,19 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 
         [Theory]
         [InlineData("stable.yaml", "experimental.yaml", "stable.yaml", "experimental.yaml")]
+        [InlineData("stable.yaml", null, "stable.yaml", null)]
         [InlineData(null, "experimental.yaml", "experimental.yaml", "experimental.yaml")]
+        [InlineData("", "experimental.yaml", "experimental.yaml", "experimental.yaml")]
+        [InlineData("", null, "config.yaml", null)]
+        [InlineData(null, "", "config.yaml", null)]
         [InlineData(null, null, "config.yaml", null)]
-        internal void ResolveFileBasedConfigFileNames_PrefersStableThenExperimentalThenDefault(
+        internal void ResolveFileBasedConfigFileNames_UsesFirstNonEmptyFileName(
             string? stableFileName,
             string? experimentalFileName,
             string expectedFileName,
             string? expectedExperimentalFileName)
         {
-            Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName, stableFileName);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.ExperimentalFileName, experimentalFileName);
-
-            var fileNames = PluginSettings.ResolveFileBasedConfigFileNames();
+            var fileNames = PluginSettings.ResolveFileBasedConfigFileNames(stableFileName, experimentalFileName);
 
             Assert.Equal(expectedFileName, fileNames.FileName);
             Assert.Equal(expectedExperimentalFileName, fileNames.ExperimentalFileName);
