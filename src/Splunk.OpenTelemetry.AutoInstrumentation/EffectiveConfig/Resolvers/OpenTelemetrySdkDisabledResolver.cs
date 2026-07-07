@@ -1,4 +1,4 @@
-// <copyright file="UpstreamInstrumentationResolver.cs" company="Splunk Inc.">
+// <copyright file="OpenTelemetrySdkDisabledResolver.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,13 +16,13 @@
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 
-internal static class UpstreamInstrumentationResolver
+internal static class OpenTelemetrySdkDisabledResolver
 {
-    private const string InstrumentationTypeName = "OpenTelemetry.AutoInstrumentation.Instrumentation, OpenTelemetry.AutoInstrumentation";
+    private static readonly Lazy<bool> IsDisabledCache = new(() =>
+        bool.TryParse(Environment.GetEnvironmentVariable("OTEL_SDK_DISABLED"), out var disabled) && disabled);
 
-    public static Type GetInstrumentationType()
+    public static bool IsDisabled()
     {
-        return Type.GetType(InstrumentationTypeName, throwOnError: false)
-            ?? throw new TypeLoadException("The pinned upstream Instrumentation type was not found.");
+        return IsDisabledCache.Value;
     }
 }

@@ -15,68 +15,47 @@
 // </copyright>
 
 using System.Reflection;
-using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 
 internal static class UpstreamOpAmpEnabledResolver
 {
-    private static readonly ILogger Log = new Logger();
-    private static readonly Lazy<bool> IsEnabledCache = new(ResolveDefault);
+    private static readonly Lazy<bool> IsEnabledCache = new(Resolve);
 
     public static bool IsEnabled()
     {
         return IsEnabledCache.Value;
     }
 
-    private static bool ResolveDefault()
+    private static bool Resolve()
     {
-        try
+        var instrumentationType = UpstreamInstrumentationResolver.GetInstrumentationType();
+        var opAmpSettingsProperty = instrumentationType
+            .GetProperty("OpAmpSettings", BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new MissingMemberException(instrumentationType.FullName, "OpAmpSettings");
+        var opAmpSettingsLazy = opAmpSettingsProperty.GetValue(null)
+            ?? throw new InvalidOperationException(
+                $"Property {instrumentationType.FullName}.OpAmpSettings returned null.");
+
+        var valueProperty = opAmpSettingsLazy
+            .GetType()
+            .GetProperty("Value", BindingFlags.Instance | BindingFlags.Public)
+            ?? throw new MissingMemberException(opAmpSettingsLazy.GetType().FullName, "Value");
+        var opAmpSettings = valueProperty.GetValue(opAmpSettingsLazy)
+            ?? throw new InvalidOperationException(
+                $"Property {opAmpSettingsLazy.GetType().FullName}.Value returned null.");
+
+        var enabledProperty = opAmpSettings
+            .GetType()
+            .GetProperty("OpAmpClientEnabled", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            ?? throw new MissingMemberException(opAmpSettings.GetType().FullName, "OpAmpClientEnabled");
+
+        if (enabledProperty.GetValue(opAmpSettings) is not bool enabled)
         {
-            var instrumentationType = UpstreamInstrumentationResolver.TryGetInstrumentationType();
-            if (instrumentationType == null)
-            {
-                return WarnAndReturnFalse("Instrumentation type was not found.");
-            }
-
-            var opAmpSettingsLazy = instrumentationType
-                .GetProperty("OpAmpSettings", BindingFlags.Static | BindingFlags.NonPublic)
-                ?.GetValue(null);
-            if (opAmpSettingsLazy == null)
-            {
-                return WarnAndReturnFalse("OpAmpSettings property was not found.");
-            }
-
-            var opAmpSettings = opAmpSettingsLazy
-                .GetType()
-                .GetProperty("Value", BindingFlags.Instance | BindingFlags.Public)
-                ?.GetValue(opAmpSettingsLazy);
-            if (opAmpSettings == null)
-            {
-                return WarnAndReturnFalse("OpAmpSettings value was not found.");
-            }
-
-            var enabledValue = opAmpSettings
-                .GetType()
-                .GetProperty("OpAmpClientEnabled", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                ?.GetValue(opAmpSettings);
-
-            if (enabledValue is bool enabled)
-            {
-                return enabled;
-            }
-
-            return WarnAndReturnFalse("OpAmpClientEnabled property was not found.");
+            throw new InvalidOperationException(
+                $"The pinned upstream {opAmpSettings.GetType().FullName}.OpAmpClientEnabled has an unexpected value.");
         }
-        catch (Exception ex)
-        {
-            return WarnAndReturnFalse(ex.Message);
-        }
-    }
 
-    private static bool WarnAndReturnFalse(string reason)
-    {
-        Log.Warning($"Could not resolve upstream OpAMP enabled setting: {reason}");
-        return false;
+        return enabled;
     }
 }

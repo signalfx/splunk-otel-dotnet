@@ -30,7 +30,7 @@ public class EffectiveLogEndpointTrackerTests
         Assert.True(tracker.CaptureLogExporterOptions(CreateHttpLogOptions("http://logs-collector:4318/v1/logs")));
         Assert.Equal(
             [EffectiveOtlpEndpoint.Http("http://logs-collector:4318/v1/logs")],
-            tracker.GetCurrentEndpoints());
+            tracker.GetEndpoints());
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public class EffectiveLogEndpointTrackerTests
 
         Assert.True(tracker.CaptureLogExporterOptions(options));
         Assert.False(tracker.CaptureLogExporterOptions(options));
-        Assert.Single(tracker.GetCurrentEndpoints());
+        Assert.Single(tracker.GetEndpoints());
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public class EffectiveLogEndpointTrackerTests
         Assert.True(tracker.CaptureLogExporterOptions(CreateGrpcLogOptions("http://logs-collector:4318")));
 
         Assert.Collection(
-            tracker.GetCurrentEndpoints(),
+            tracker.GetEndpoints(),
             endpoint => Assert.Equal(EffectiveOtlpExporterType.HttpProtobuf, endpoint.ExporterType),
             endpoint => Assert.Equal(EffectiveOtlpExporterType.Grpc, endpoint.ExporterType));
     }
@@ -68,28 +68,42 @@ public class EffectiveLogEndpointTrackerTests
 
         Assert.Equal(
             [EffectiveOtlpEndpoint.Http("http://logs-collector:4318/v1/logs", EffectiveOtlpPipelineType.Batch)],
-            tracker.GetCurrentEndpoints());
+            tracker.GetEndpoints());
     }
 
     [Fact]
-    public void GetCurrentEndpoints_SetsBridgeLoggerProviderEndpoints_WhenILoggerWasNotConfigured()
+    public void CaptureLogExporterOptions_KeepsFailureAfterLaterCaptureSucceeds()
+    {
+        var tracker = CreateILoggerTracker();
+        var unsupportedOptions = CreateHttpLogOptions("http://unsupported-collector:4318/v1/logs");
+        unsupportedOptions.Protocol = (OtlpExportProtocol)42;
+
+        Assert.False(tracker.CaptureLogExporterOptions(unsupportedOptions));
+        Assert.True(tracker.CaptureLogExporterOptions(
+            CreateHttpLogOptions("http://logs-collector:4318/v1/logs")));
+
+        Assert.Throws<InvalidOperationException>(() => tracker.GetEndpoints());
+    }
+
+    [Fact]
+    public void GetEndpoints_SetsBridgeLoggerProviderEndpoints_WhenILoggerWasNotConfigured()
     {
         var tracker = CreateTracker(() => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
 
         Assert.Equal(
             [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")],
-            tracker.GetCurrentEndpoints());
+            tracker.GetEndpoints());
     }
 
     [Fact]
-    public void GetCurrentEndpoints_SetsBridgeLoggerProviderEndpoints_WhenOptionsHookRanWithoutILogger()
+    public void GetEndpoints_SetsBridgeLoggerProviderEndpoints_WhenOptionsHookRanWithoutILogger()
     {
         var tracker = CreateTracker(() => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
 
         Assert.False(tracker.CaptureLogExporterOptions(CreateHttpLogOptions("http://options-collector:4318/v1/logs")));
         Assert.Equal(
             [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")],
-            tracker.GetCurrentEndpoints());
+            tracker.GetEndpoints());
     }
 
     [Fact]
@@ -98,31 +112,46 @@ public class EffectiveLogEndpointTrackerTests
         var tracker = CreateTracker();
 
         Assert.False(tracker.CaptureLogExporterOptions(CreateHttpLogOptions("http://options-collector:4318/v1/logs")));
-        Assert.Empty(tracker.GetCurrentEndpoints());
+        Assert.Empty(tracker.GetEndpoints());
     }
 
     [Fact]
-    public void GetCurrentEndpoints_ReturnsEmpty_WhenBridgeLoggerProviderHasNoOtlpEndpoints()
+    public void GetEndpoints_ReturnsEmpty_WhenBridgeLoggerProviderHasNoOtlpEndpoints()
     {
         var tracker = CreateTracker(() => []);
 
-        Assert.Empty(tracker.GetCurrentEndpoints());
+        Assert.Empty(tracker.GetEndpoints());
     }
 
     [Fact]
-    public void GetCurrentEndpoints_ReturnsEmpty_WhenBridgeLoggerProviderCouldNotBeResolved()
+    public void GetEndpoints_ReturnsEmpty_WhenBridgeLoggerProviderCouldNotBeResolved()
     {
         var tracker = CreateTracker(() => null);
 
-        Assert.Empty(tracker.GetCurrentEndpoints());
+        Assert.Empty(tracker.GetEndpoints());
     }
 
     [Fact]
-    public void GetCurrentEndpoints_ReturnsEmpty_WhenBridgeLoggerProviderResolutionFails()
+    public void GetEndpoints_ClearsBridgeEndpoints_WhenResolverReturnsNull()
+    {
+        IReadOnlyList<EffectiveOtlpEndpoint>? bridgeEndpoints =
+            [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")];
+        var tracker = CreateTracker(() => bridgeEndpoints);
+
+        Assert.Single(tracker.GetEndpoints());
+
+        bridgeEndpoints = null;
+
+        Assert.Empty(tracker.GetEndpoints());
+    }
+
+    [Fact]
+    public void GetEndpoints_Throws_WhenBridgeLoggerProviderResolutionFails()
     {
         var tracker = CreateTracker(() => throw new InvalidOperationException("bridge resolver failed"));
 
-        Assert.Empty(tracker.GetCurrentEndpoints());
+        var exception = Assert.Throws<InvalidOperationException>(() => tracker.GetEndpoints());
+        Assert.Equal("bridge resolver failed", exception.Message);
     }
 
     [Fact]
@@ -132,12 +161,15 @@ public class EffectiveLogEndpointTrackerTests
 
         Assert.Equal(
             [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")],
-            tracker.GetCurrentEndpoints());
+            tracker.GetEndpoints());
 
         Assert.True(tracker.MarkOpenTelemetryLoggerConfigured());
 
-        Assert.Empty(tracker.GetCurrentEndpoints());
+        Assert.Empty(tracker.GetEndpoints());
+        Assert.True(tracker.CaptureLogExporterOptions(
+            CreateHttpLogOptions("http://logs-collector:4318/v1/logs")));
         Assert.False(tracker.MarkOpenTelemetryLoggerConfigured());
+        Assert.Single(tracker.GetEndpoints());
     }
 
     private static OtlpExporterOptions CreateHttpLogOptions(

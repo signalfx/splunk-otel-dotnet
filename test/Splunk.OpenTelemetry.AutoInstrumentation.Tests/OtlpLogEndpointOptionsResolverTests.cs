@@ -122,16 +122,38 @@ public class OtlpLogEndpointOptionsResolverTests
             EffectiveOtlpExporterType.Grpc);
     }
 
+    [Fact]
+    public void ResolveEndpoint_Throws_WhenProcessorTypeIsUnsupported()
+    {
+        var options = new OtlpExporterOptions
+        {
+            Protocol = OtlpExportProtocol.HttpProtobuf,
+            ExportProcessorType = (ExportProcessorType)int.MaxValue
+        };
+
+        Assert.Throws<InvalidOperationException>(() => OtlpLogEndpointOptionsResolver.ResolveEndpoint(options));
+    }
+
+    [Fact]
+    public void ResolveEndpoint_Throws_WhenProtocolIsUnsupported()
+    {
+        var options = new OtlpExporterOptions
+        {
+            Protocol = (OtlpExportProtocol)byte.MaxValue
+        };
+
+        Assert.Throws<InvalidOperationException>(() => OtlpLogEndpointOptionsResolver.ResolveEndpoint(options));
+    }
+
     private static void AssertEndpoint(
-        EffectiveOtlpEndpoint? endpoint,
+        EffectiveOtlpEndpoint endpoint,
         string expectedEndpoint,
         EffectiveOtlpExporterType expectedExporterType,
         EffectiveOtlpPipelineType expectedPipelineType = EffectiveOtlpPipelineType.Batch)
     {
-        Assert.NotNull(endpoint);
-        Assert.Equal(expectedEndpoint, endpoint.Value.Endpoint);
-        Assert.Equal(expectedExporterType, endpoint.Value.ExporterType);
-        Assert.Equal(expectedPipelineType, endpoint.Value.PipelineType);
+        Assert.Equal(expectedEndpoint, endpoint.Endpoint);
+        Assert.Equal(expectedExporterType, endpoint.ExporterType);
+        Assert.Equal(expectedPipelineType, endpoint.PipelineType);
     }
 
     private sealed class EnvironmentVariableScope : IDisposable

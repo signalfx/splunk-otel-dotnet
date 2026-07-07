@@ -4,7 +4,9 @@ You can configure Splunk Distribution of OpenTelemetry .NET to report effective
 configuration using Open Agent Management Protocol (OpAMP) to a configured
 OpAMP server.
 
-Effective configuration reporting is enabled when OpAMP is enabled.
+Effective configuration reporting is enabled when OpAMP is enabled and the
+active configuration passes startup validation. Automatic SDK setup is required;
+`OTEL_SDK_DISABLED=true` remains supported as a valid no-op SDK configuration.
 
 ## Configuration
 

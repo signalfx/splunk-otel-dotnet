@@ -23,14 +23,22 @@ internal static class UpstreamLoggerProviderResolver
 {
     private const BindingFlags StaticNonPublicFlags = BindingFlags.Static | BindingFlags.NonPublic;
 
-    public static LoggerProvider? TryGetAlreadyCreatedLoggerProvider()
+    public static LoggerProvider? GetAlreadyCreatedLoggerProvider()
     {
-        var instrumentationType = UpstreamInstrumentationResolver.TryGetInstrumentationType();
-        var loggerProviderFactory = instrumentationType
-            ?.GetField("LoggerProviderFactory", StaticNonPublicFlags)
-            ?.GetValue(null);
+        var instrumentationType = UpstreamInstrumentationResolver.GetInstrumentationType();
 
-        if (loggerProviderFactory is not Lazy<LoggerProvider?> lazyLoggerProvider || !lazyLoggerProvider.IsValueCreated)
+        var loggerProviderFactory = instrumentationType
+            .GetField("LoggerProviderFactory", StaticNonPublicFlags)
+            ?.GetValue(null)
+            ?? throw new MissingMemberException(instrumentationType.FullName, "LoggerProviderFactory");
+
+        if (loggerProviderFactory is not Lazy<LoggerProvider?> lazyLoggerProvider)
+        {
+            throw new InvalidOperationException(
+                $"The pinned upstream {instrumentationType.FullName}.LoggerProviderFactory has an unexpected type.");
+        }
+
+        if (!lazyLoggerProvider.IsValueCreated)
         {
             // Effective config reporting must not create bridge providers just to inspect them.
             return null;

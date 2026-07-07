@@ -29,6 +29,7 @@ public class EffectiveConfigReporterTests
         var reporter = new EffectiveConfigReporter(
             new EffectiveConfigStaticSettings(
                 new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()))),
+            openTelemetrySdkDisabled: false,
             () => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
 
         var payload = reporter.BuildCurrentPayload();
@@ -36,5 +37,22 @@ public class EffectiveConfigReporterTests
         Assert.Contains(
             "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://bridge-collector:4318/v1/logs",
             Encoding.UTF8.GetString(payload.Content.ToArray()));
+    }
+
+    [Fact]
+    public void BuildCurrentPayload_ReturnsNoSignalEndpoints_WhenSdkIsDisabled()
+    {
+        var reporter = new EffectiveConfigReporter(
+            new EffectiveConfigStaticSettings(
+                new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()))),
+            openTelemetrySdkDisabled: true,
+            () => throw new InvalidOperationException("The bridge resolver should not be called."));
+
+        var payload = reporter.BuildCurrentPayload();
+        var content = Encoding.UTF8.GetString(payload.Content.ToArray());
+
+        Assert.Contains("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=none", content);
+        Assert.Contains("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=none", content);
+        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=none", content);
     }
 }

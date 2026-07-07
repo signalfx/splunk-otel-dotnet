@@ -32,24 +32,35 @@ internal sealed class EffectiveConfigReporter
     private readonly EffectiveProviderEndpointTracker<TracerProvider> _traceEndpointTracker;
     private readonly EffectiveProviderEndpointTracker<MeterProvider> _metricEndpointTracker;
     private readonly EffectiveLogEndpointTracker _logEndpointTracker;
+    private readonly bool _openTelemetrySdkDisabled;
     private volatile EffectiveProfilerFeatures _profilerFeatures;
     private OpAmpClient? _opAmpClient;
 
-    public EffectiveConfigReporter(EffectiveConfigStaticSettings staticSettings)
-        : this(staticSettings, new EffectiveLogEndpointTracker())
+    public EffectiveConfigReporter(
+        EffectiveConfigStaticSettings staticSettings,
+        bool openTelemetrySdkDisabled)
+        : this(staticSettings, openTelemetrySdkDisabled, new EffectiveLogEndpointTracker())
     {
     }
 
     internal EffectiveConfigReporter(
         EffectiveConfigStaticSettings staticSettings,
+        bool openTelemetrySdkDisabled,
         Func<IReadOnlyList<EffectiveOtlpEndpoint>?> bridgeLogEndpointResolver)
-        : this(staticSettings, new EffectiveLogEndpointTracker(bridgeLogEndpointResolver))
+        : this(
+            staticSettings,
+            openTelemetrySdkDisabled,
+            new EffectiveLogEndpointTracker(bridgeLogEndpointResolver))
     {
     }
 
-    private EffectiveConfigReporter(EffectiveConfigStaticSettings staticSettings, EffectiveLogEndpointTracker logEndpointTracker)
+    private EffectiveConfigReporter(
+        EffectiveConfigStaticSettings staticSettings,
+        bool openTelemetrySdkDisabled,
+        EffectiveLogEndpointTracker logEndpointTracker)
     {
         _staticSettings = staticSettings;
+        _openTelemetrySdkDisabled = openTelemetrySdkDisabled;
         _traceEndpointTracker = new EffectiveProviderEndpointTracker<TracerProvider>(
             OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints);
         _metricEndpointTracker = new EffectiveProviderEndpointTracker<MeterProvider>(
@@ -59,6 +70,11 @@ internal sealed class EffectiveConfigReporter
 
     public void CaptureTraceEndpoints(TracerProvider provider)
     {
+        if (_openTelemetrySdkDisabled)
+        {
+            return;
+        }
+
         if (_traceEndpointTracker.Capture(provider))
         {
             SendUpdatedPayloadIfOpAmpClientIsAvailable();
@@ -67,6 +83,11 @@ internal sealed class EffectiveConfigReporter
 
     public void CaptureMetricEndpoints(MeterProvider provider)
     {
+        if (_openTelemetrySdkDisabled)
+        {
+            return;
+        }
+
         if (_metricEndpointTracker.Capture(provider))
         {
             SendUpdatedPayloadIfOpAmpClientIsAvailable();
@@ -75,6 +96,11 @@ internal sealed class EffectiveConfigReporter
 
     public void MarkOpenTelemetryLoggerConfigured()
     {
+        if (_openTelemetrySdkDisabled)
+        {
+            return;
+        }
+
         if (_logEndpointTracker.MarkOpenTelemetryLoggerConfigured())
         {
             SendUpdatedPayloadIfOpAmpClientIsAvailable();
@@ -83,6 +109,11 @@ internal sealed class EffectiveConfigReporter
 
     public void CaptureLogExporterOptions(OtlpExporterOptions options)
     {
+        if (_openTelemetrySdkDisabled)
+        {
+            return;
+        }
+
         if (_logEndpointTracker.CaptureLogExporterOptions(options))
         {
             SendUpdatedPayloadIfOpAmpClientIsAvailable();
@@ -105,16 +136,34 @@ internal sealed class EffectiveConfigReporter
         Volatile.Write(ref _opAmpClient, client);
     }
 
-    public void SetProfilerFeatures(EffectiveProfilerFeatures profilerFeatures)
+    public void RunPreflight(EffectiveProfilerFeatures profilerFeatures)
     {
         _profilerFeatures = profilerFeatures;
+#if NET
+        if (!_openTelemetrySdkDisabled)
+        {
+            OtlpLogEndpointOptionsResolver.ValidateCompatibility();
+        }
+#endif
+
+        // Build and serialize the payload now so failures prevent capability advertisement.
+        // The initial report rebuilds it to include endpoints captured after preflight.
+        _ = BuildCurrentPayload();
     }
 
     internal EffectiveConfigFile BuildCurrentPayload()
     {
-        var traceEndpoints = _traceEndpointTracker.GetCurrentEndpoints();
-        var metricEndpoints = _metricEndpointTracker.GetCurrentEndpoints();
-        var logEndpoints = _logEndpointTracker.GetCurrentEndpoints();
+        IReadOnlyList<EffectiveOtlpEndpoint> traceEndpoints = [];
+        IReadOnlyList<EffectiveOtlpEndpoint> metricEndpoints = [];
+        IReadOnlyList<EffectiveOtlpEndpoint> logEndpoints = [];
+
+        if (!_openTelemetrySdkDisabled)
+        {
+            traceEndpoints = _traceEndpointTracker.GetEndpoints();
+            metricEndpoints = _metricEndpointTracker.GetEndpoints();
+            logEndpoints = _logEndpointTracker.GetEndpoints();
+        }
+
         var snapshot = EffectiveConfigSnapshot.Create(
             _staticSettings,
             _profilerFeatures,

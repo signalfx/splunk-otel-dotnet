@@ -34,11 +34,11 @@ public class EffectiveProviderEndpointTrackerTests
         resolvedEndpoints = [EffectiveOtlpEndpoint.Http("http://second-collector:4318/v1/traces")];
 
         Assert.True(tracker.Capture(provider));
-        Assert.Equal(resolvedEndpoints, tracker.GetCurrentEndpoints());
+        Assert.Equal(resolvedEndpoints, tracker.GetEndpoints());
     }
 
     [Fact]
-    public void Capture_ClearsPreviouslyResolvedEndpoints_WhenResolutionFails()
+    public void Capture_MarksTrackerUnhealthyUntilResolutionSucceeds()
     {
         var resolutionFails = false;
         var tracker = CreateTracker(
@@ -51,20 +51,25 @@ public class EffectiveProviderEndpointTrackerTests
 
         resolutionFails = true;
 
-        Assert.True(tracker.Capture(provider));
-        Assert.Empty(tracker.GetCurrentEndpoints());
         Assert.False(tracker.Capture(provider));
+        Assert.Throws<InvalidOperationException>(() => tracker.GetEndpoints());
+        Assert.False(tracker.Capture(provider));
+
+        resolutionFails = false;
+
+        Assert.False(tracker.Capture(provider));
+        Assert.Single(tracker.GetEndpoints());
     }
 
     [Fact]
-    public void GetCurrentEndpoints_ReturnsImmutableSnapshot()
+    public void GetEndpoints_ReturnsImmutableSnapshot()
     {
         IReadOnlyList<EffectiveOtlpEndpoint> resolvedEndpoints =
             [EffectiveOtlpEndpoint.Http("http://first-collector:4318/v1/traces")];
         var tracker = CreateTracker(_ => resolvedEndpoints);
         var provider = new object();
         tracker.Capture(provider);
-        var snapshot = tracker.GetCurrentEndpoints();
+        var snapshot = tracker.GetEndpoints();
 
         resolvedEndpoints = [EffectiveOtlpEndpoint.Http("http://second-collector:4318/v1/traces")];
         tracker.Capture(provider);

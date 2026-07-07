@@ -16,7 +16,6 @@
 
 using System.Collections;
 using System.Reflection;
-using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 
@@ -24,81 +23,54 @@ internal static class UpstreamProfilerStateResolver
 {
     private const BindingFlags StaticNonPublicFlags = BindingFlags.Static | BindingFlags.NonPublic;
     private const BindingFlags InstanceNonPublicFlags = BindingFlags.Instance | BindingFlags.NonPublic;
-    private static readonly ILogger Log = new Logger();
 
     public static EffectiveProfilerFeatures Resolve()
     {
-        try
+        var instrumentationType = UpstreamInstrumentationResolver.GetInstrumentationType();
+
+        var sampleExporterField = instrumentationType.GetField("_sampleExporter", StaticNonPublicFlags)
+            ?? throw new MissingMemberException(instrumentationType.FullName, "_sampleExporter");
+
+        var sampleExporter = sampleExporterField.GetValue(null);
+        if (sampleExporter == null)
         {
-            var instrumentationType = UpstreamInstrumentationResolver.TryGetInstrumentationType();
-            if (instrumentationType == null)
-            {
-                return WarnAndReturnDisabled("Instrumentation type was not found.");
-            }
+            return EffectiveProfilerFeatures.None;
+        }
 
-            var sampleExporterField = instrumentationType.GetField("_sampleExporter", StaticNonPublicFlags);
-            if (sampleExporterField == null)
-            {
-                return WarnAndReturnDisabled("_sampleExporter field was not found.");
-            }
+        var sampleExporterType = sampleExporter.GetType();
+        var bufferProcessor = sampleExporterType
+            .GetField("_bufferProcessor", InstanceNonPublicFlags)
+            ?.GetValue(sampleExporter)
+            ?? throw new MissingMemberException(sampleExporterType.FullName, "_bufferProcessor");
 
-            var sampleExporter = sampleExporterField.GetValue(null);
-            if (sampleExporter == null)
-            {
-                return EffectiveProfilerFeatures.None;
-            }
+        var bufferProcessorType = bufferProcessor.GetType();
+        var sampleHandlers = bufferProcessorType
+            .GetField("_sampleHandlers", InstanceNonPublicFlags)
+            ?.GetValue(bufferProcessor) as IDictionary
+            ?? throw new MissingMemberException(bufferProcessorType.FullName, "_sampleHandlers");
 
-            var bufferProcessor = sampleExporter
-                .GetType()
-                .GetField("_bufferProcessor", InstanceNonPublicFlags)
-                ?.GetValue(sampleExporter);
-            if (bufferProcessor == null)
-            {
-                return WarnAndReturnDisabled("_bufferProcessor field was not found.");
-            }
+        var profilerFeatures = EffectiveProfilerFeatures.None;
 
-            var sampleHandlers = bufferProcessor
-                .GetType()
-                .GetField("_sampleHandlers", InstanceNonPublicFlags)
-                ?.GetValue(bufferProcessor) as IDictionary;
-            if (sampleHandlers == null)
+        foreach (var sampleType in sampleHandlers.Keys)
+        {
+            switch (sampleType?.ToString())
             {
-                return WarnAndReturnDisabled("_sampleHandlers field was not found or had an unexpected type.");
-            }
-
-            var profilerFeatures = EffectiveProfilerFeatures.None;
-
-            foreach (var sampleType in sampleHandlers.Keys)
-            {
-                switch (sampleType?.ToString())
-                {
-                    case "Continuous":
-                        profilerFeatures |= EffectiveProfilerFeatures.Cpu;
-                        break;
-                    case "Allocation":
+                case "Continuous":
+                    profilerFeatures |= EffectiveProfilerFeatures.Cpu;
+                    break;
+                case "Allocation":
 #if NET
-                        profilerFeatures |= EffectiveProfilerFeatures.Memory;
+                    profilerFeatures |= EffectiveProfilerFeatures.Memory;
 #endif
-                        break;
-                    case "SelectedThreads":
-                        profilerFeatures |= EffectiveProfilerFeatures.Snapshot;
-                        break;
-                }
+                    break;
+                case "SelectedThreads":
+                    profilerFeatures |= EffectiveProfilerFeatures.Snapshot;
+                    break;
             }
-
-            // These handlers prove that the managed export pipelines were registered.
-            // Upstream does not expose whether native sampler or EventPipe startup succeeded.
-            return profilerFeatures;
         }
-        catch (Exception ex)
-        {
-            return WarnAndReturnDisabled(ex.Message);
-        }
-    }
 
-    private static EffectiveProfilerFeatures WarnAndReturnDisabled(string reason)
-    {
-        Log.Warning($"Could not resolve upstream profiler state: {reason}");
-        return EffectiveProfilerFeatures.None;
+        // These handlers prove that the managed export pipelines were registered.
+        // Upstream does not expose whether native sampler or EventPipe startup succeeded.
+        return profilerFeatures;
     }
 }

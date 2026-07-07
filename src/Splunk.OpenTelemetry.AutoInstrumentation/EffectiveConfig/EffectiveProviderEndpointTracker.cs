@@ -25,6 +25,7 @@ internal sealed class EffectiveProviderEndpointTracker<TProvider>
     private readonly object _lock = new();
     private readonly List<EffectiveOtlpEndpoint> _endpoints = [];
     private readonly Func<TProvider, IReadOnlyList<EffectiveOtlpEndpoint>> _endpointResolver;
+    private bool _resolutionFailed;
 
     public EffectiveProviderEndpointTracker(Func<TProvider, IReadOnlyList<EffectiveOtlpEndpoint>> endpointResolver)
     {
@@ -43,10 +44,12 @@ internal sealed class EffectiveProviderEndpointTracker<TProvider>
             }
             catch (Exception ex)
             {
-                endpoints = [];
+                _resolutionFailed = true;
                 Log.Warning($"Failed to resolve endpoints from {typeof(TProvider).Name}: {ex.Message}");
+                return false;
             }
 
+            _resolutionFailed = false;
             if (_endpoints.SequenceEqual(endpoints))
             {
                 return false;
@@ -58,10 +61,16 @@ internal sealed class EffectiveProviderEndpointTracker<TProvider>
         }
     }
 
-    public IReadOnlyList<EffectiveOtlpEndpoint> GetCurrentEndpoints()
+    public IReadOnlyList<EffectiveOtlpEndpoint> GetEndpoints()
     {
         lock (_lock)
         {
+            if (_resolutionFailed)
+            {
+                throw new InvalidOperationException(
+                    $"The OpenTelemetry SDK {typeof(TProvider).Name} graph could not be inspected.");
+            }
+
             return _endpoints.ToArray();
         }
     }

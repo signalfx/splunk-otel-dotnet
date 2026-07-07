@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 
+using System.Diagnostics;
 using System.Reflection;
 using OpenTelemetry;
 using OpenTelemetry.Exporter;
@@ -79,6 +80,91 @@ public class OtlpEndpointProviderGraphResolverTests
     }
 
     [Fact]
+    public void ResolveTraceEndpoints_IgnoresUnknownProcessorWithoutExporter()
+    {
+        using var provider = global::OpenTelemetry.Sdk.CreateTracerProviderBuilder()
+            .AddProcessor(new NoopActivityProcessor())
+            .Build();
+
+        Assert.Empty(OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
+    }
+
+    [Fact]
+    public void ResolveTraceEndpoints_IgnoresUnknownProcessorWithNonOtlpExporter()
+    {
+        using var provider = global::OpenTelemetry.Sdk.CreateTracerProviderBuilder()
+            .AddProcessor(new UnknownActivityProcessorWithExporter(new UnknownActivityExporter()))
+            .Build();
+
+        Assert.Empty(OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
+    }
+
+    [Fact]
+    public void ResolveTraceEndpoints_IgnoresUnknownProcessorWithUnrelatedHeadField()
+    {
+        using var provider = global::OpenTelemetry.Sdk.CreateTracerProviderBuilder()
+            .AddProcessor(new NoopActivityProcessorWithHead())
+            .Build();
+
+        Assert.Empty(OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
+    }
+
+    [Fact]
+    public void ResolveTraceEndpoints_Throws_WhenUnknownProcessorUsesOtlpExporter()
+    {
+        using var provider = global::OpenTelemetry.Sdk.CreateTracerProviderBuilder()
+            .AddProcessor(new UnknownActivityProcessorWithExporter(
+                new OtlpTraceExporter(CreateHttpOptions("http://collector:4318/custom-traces"))))
+            .Build();
+
+        Assert.Throws<InvalidOperationException>(
+            () => OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
+    }
+
+    [Fact]
+    public void ResolveTraceEndpoints_ReturnsEndpoint_WhenOtlpProcessorTypeIsDerived()
+    {
+        using var provider = global::OpenTelemetry.Sdk.CreateTracerProviderBuilder()
+            .AddProcessor(new DerivedSimpleActivityExportProcessor(
+                new OtlpTraceExporter(CreateHttpOptions("http://collector:4318/custom-traces"))))
+            .Build();
+
+        Assert.Equal(
+            [EffectiveOtlpEndpoint.Http("http://collector:4318/custom-traces", EffectiveOtlpPipelineType.Simple)],
+            OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
+    }
+
+    [Fact]
+    public void ResolveTraceEndpoints_Throws_WhenOtlpExporterTypeIsDerived()
+    {
+        using var provider = global::OpenTelemetry.Sdk.CreateTracerProviderBuilder()
+            .AddProcessor(new SimpleActivityExportProcessor(
+                new DerivedOtlpTraceExporter(CreateHttpOptions("http://collector:4318/custom-traces"))))
+            .Build();
+
+        Assert.Throws<InvalidOperationException>(
+            () => OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
+    }
+
+    [Fact]
+    public void ResolveTraceEndpoints_Throws_WhenCompositeHeadIsNull()
+    {
+        using var provider = global::OpenTelemetry.Sdk.CreateTracerProviderBuilder()
+            .AddProcessor(new NoopActivityProcessor())
+            .AddProcessor(new NoopActivityProcessor())
+            .Build();
+        var processor = provider.GetType()
+            .GetProperty("Processor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+            .GetValue(provider)!;
+        processor.GetType()
+            .GetField("Head", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+            .SetValue(processor, null);
+
+        Assert.Throws<InvalidOperationException>(
+            () => OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
+    }
+
+    [Fact]
     public void ResolveMetricEndpoints_ReturnsOtlpExporterEndpoint()
     {
         using var provider = global::OpenTelemetry.Sdk.CreateMeterProviderBuilder()
@@ -117,12 +203,51 @@ public class OtlpEndpointProviderGraphResolverTests
     }
 
     [Fact]
-    public void ResolveMetricEndpoints_ReturnsEmpty_WhenOtlpExporterUsesUnknownReaderType()
+    public void ResolveMetricEndpoints_Throws_WhenOtlpExporterTypeIsDerived()
+    {
+        using var provider = global::OpenTelemetry.Sdk.CreateMeterProviderBuilder()
+            .AddMeter("test-meter")
+            .AddReader(new PeriodicExportingMetricReader(
+                new DerivedOtlpMetricExporter(CreateHttpOptions("http://collector:4318/custom-metrics"))))
+            .Build();
+
+        Assert.Throws<InvalidOperationException>(
+            () => OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
+    }
+
+    [Fact]
+    public void ResolveMetricEndpoints_ReturnsEndpoint_WhenOtlpReaderTypeIsDerived()
+    {
+        using var provider = global::OpenTelemetry.Sdk.CreateMeterProviderBuilder()
+            .AddMeter("test-meter")
+            .AddReader(new DerivedPeriodicExportingMetricReader(
+                new OtlpMetricExporter(CreateHttpOptions("http://collector:4318/custom-metrics"))))
+            .Build();
+
+        Assert.Equal(
+            [EffectiveOtlpEndpoint.Http("http://collector:4318/custom-metrics", EffectiveOtlpPipelineType.Periodic)],
+            OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
+    }
+
+    [Fact]
+    public void ResolveMetricEndpoints_Throws_WhenOtlpExporterUsesUnknownReaderType()
     {
         using var provider = global::OpenTelemetry.Sdk.CreateMeterProviderBuilder()
             .AddMeter("test-meter")
             .AddReader(new UnknownExportingMetricReader(
                 new OtlpMetricExporter(CreateHttpOptions("http://collector:4318/custom-metrics"))))
+            .Build();
+
+        Assert.Throws<InvalidOperationException>(
+            () => OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
+    }
+
+    [Fact]
+    public void ResolveMetricEndpoints_IgnoresUnknownReaderTypeWithNonOtlpExporter()
+    {
+        using var provider = global::OpenTelemetry.Sdk.CreateMeterProviderBuilder()
+            .AddMeter("test-meter")
+            .AddReader(new UnknownExportingMetricReader(new UnknownMetricExporter()))
             .Build();
 
         Assert.Empty(OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
@@ -230,5 +355,84 @@ public class OtlpEndpointProviderGraphResolverTests
             : base(exporter)
         {
         }
+    }
+
+    private sealed class UnknownMetricExporter : BaseExporter<Metric>
+    {
+        public override ExportResult Export(in Batch<Metric> batch)
+        {
+            return ExportResult.Success;
+        }
+    }
+
+    private sealed class DerivedOtlpTraceExporter : OtlpTraceExporter
+    {
+        public DerivedOtlpTraceExporter(OtlpExporterOptions options)
+            : base(options)
+        {
+        }
+    }
+
+    private sealed class DerivedOtlpMetricExporter : OtlpMetricExporter
+    {
+        public DerivedOtlpMetricExporter(OtlpExporterOptions options)
+            : base(options)
+        {
+        }
+    }
+
+    private sealed class DerivedSimpleActivityExportProcessor : SimpleActivityExportProcessor
+    {
+        public DerivedSimpleActivityExportProcessor(BaseExporter<Activity> exporter)
+            : base(exporter)
+        {
+        }
+    }
+
+    private sealed class DerivedPeriodicExportingMetricReader : PeriodicExportingMetricReader
+    {
+        public DerivedPeriodicExportingMetricReader(BaseExporter<Metric> exporter)
+            : base(exporter)
+        {
+        }
+    }
+
+    private sealed class UnknownActivityProcessorWithExporter : BaseProcessor<Activity>
+    {
+        private readonly BaseExporter<Activity> exporter;
+
+        public UnknownActivityProcessorWithExporter(BaseExporter<Activity> exporter)
+        {
+            this.exporter = exporter;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                exporter.Dispose();
+            }
+
+            base.Dispose(disposing);
+        }
+    }
+
+    private sealed class UnknownActivityExporter : BaseExporter<Activity>
+    {
+        public override ExportResult Export(in Batch<Activity> batch)
+        {
+            return ExportResult.Success;
+        }
+    }
+
+    private sealed class NoopActivityProcessor : BaseProcessor<Activity>
+    {
+    }
+
+    private sealed class NoopActivityProcessorWithHead : BaseProcessor<Activity>
+    {
+#pragma warning disable CA1051, SA1401 // The field name intentionally exercises composite detection.
+        public readonly object? Head = null;
+#pragma warning restore CA1051, SA1401
     }
 }

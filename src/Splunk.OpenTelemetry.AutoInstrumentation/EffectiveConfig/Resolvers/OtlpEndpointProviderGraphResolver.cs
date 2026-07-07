@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 
+using System.Diagnostics;
 using System.Reflection;
 using OpenTelemetry;
 using OpenTelemetry.Exporter;
@@ -30,29 +31,39 @@ internal static class OtlpEndpointProviderGraphResolver
 
     public static IReadOnlyList<EffectiveOtlpEndpoint> ResolveTraceEndpoints(TracerProvider provider)
     {
-        var processor = GetPropertyValue(provider, "Processor");
-        return ResolveEndpointsFromPipeline(processor, typeof(OtlpTraceExporter), ResolveTracePipelineType);
+        var processor = GetRequiredNullablePropertyValue(provider, "Processor");
+        return ResolveEndpointsFromPipeline(
+            processor,
+            typeof(OtlpTraceExporter),
+            ResolveTracePipelineType,
+            static pipelineItem => pipelineItem is BaseExportProcessor<Activity>);
     }
 
     public static IReadOnlyList<EffectiveOtlpEndpoint> ResolveMetricEndpoints(MeterProvider provider)
     {
-        var reader = GetPropertyValue(provider, "Reader");
+        var reader = GetRequiredNullablePropertyValue(provider, "Reader");
         return ResolveEndpointsFromPipeline(
             reader,
             typeof(OtlpMetricExporter),
-            ResolveMetricPipelineType);
+            ResolveMetricPipelineType,
+            static pipelineItem => pipelineItem is BaseExportingMetricReader);
     }
 
     public static IReadOnlyList<EffectiveOtlpEndpoint> ResolveLogEndpoints(LoggerProvider provider)
     {
-        var processor = GetPropertyValue(provider, "Processor");
-        return ResolveEndpointsFromPipeline(processor, typeof(OtlpLogExporter), ResolveLogPipelineType);
+        var processor = GetRequiredNullablePropertyValue(provider, "Processor");
+        return ResolveEndpointsFromPipeline(
+            processor,
+            typeof(OtlpLogExporter),
+            ResolveLogPipelineType,
+            static pipelineItem => pipelineItem is BaseExportProcessor<LogRecord>);
     }
 
     private static IReadOnlyList<EffectiveOtlpEndpoint> ResolveEndpointsFromPipeline(
         object? pipeline,
         Type exporterType,
-        Func<object, EffectiveOtlpPipelineType?> pipelineTypeResolver)
+        Func<object, EffectiveOtlpPipelineType?> pipelineTypeResolver,
+        Func<object, bool> isExportingPipelineItem)
     {
         if (pipeline == null)
         {
@@ -65,21 +76,46 @@ internal static class OtlpEndpointProviderGraphResolver
             var pipelineType = pipelineTypeResolver(pipelineItem);
             if (pipelineType == null)
             {
+                var unknownPipelineExporter = GetFieldValue(pipelineItem, "exporter");
+                if (unknownPipelineExporter != null)
+                {
+                    if (exporterType.IsInstanceOfType(unknownPipelineExporter))
+                    {
+                        throw new InvalidOperationException(
+                            $"The active OTLP exporter uses unsupported pipeline type {pipelineItem.GetType().FullName}.");
+                    }
+
+                    continue;
+                }
+
+                if (isExportingPipelineItem(pipelineItem))
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to read the exporter from pipeline type {pipelineItem.GetType().FullName}.");
+                }
+
+                if (IsOpenTelemetrySdkType(pipelineItem.GetType()))
+                {
+                    throw new InvalidOperationException($"The SDK uses unsupported pipeline type {pipelineItem.GetType().FullName}.");
+                }
+
                 continue;
             }
 
             var exporter = GetExporter(pipelineItem);
             // SDK type filtering prevents reading endpoints from non-OTLP exporters.
-            if (exporter == null || exporter.GetType() != exporterType)
+            if (!exporterType.IsInstanceOfType(exporter))
             {
                 continue;
             }
 
-            var endpoint = ResolveEndpoint(exporter, pipelineType.Value);
-            if (endpoint != null)
+            if (exporter.GetType() != exporterType)
             {
-                endpoints.Add(endpoint.Value);
+                throw new InvalidOperationException(
+                    $"The active OTLP exporter uses unsupported exporter type {exporter.GetType().FullName}.");
             }
+
+            endpoints.Add(ResolveEndpoint(exporter, pipelineType.Value));
         }
 
         return endpoints;
@@ -88,29 +124,29 @@ internal static class OtlpEndpointProviderGraphResolver
     private static IEnumerable<object> FlattenPipeline(object pipeline)
     {
         // Single exporters are stored directly; multiple exporters use a linked-list pipeline.
-        var head = GetFieldValue(pipeline, "Head");
-        if (head == null)
+        var pipelineType = pipeline.GetType();
+        if (!IsSupportedCompositePipelineType(pipelineType))
         {
             yield return pipeline;
             yield break;
         }
 
-        for (var node = head; node != null; node = GetPropertyValue(node, "Next"))
+        var headField = FindField(pipelineType, "Head")
+            ?? throw new MissingMemberException(pipelineType.FullName, "Head");
+        var head = headField.GetValue(pipeline)
+            ?? throw new InvalidOperationException($"Field {pipelineType.FullName}.Head returned null.");
+        for (var node = head; node != null; node = GetRequiredNullablePropertyValue(node, "Next"))
         {
-            var value = GetFieldValue(node, "Value");
-            if (value != null)
-            {
-                yield return value;
-            }
+            yield return GetRequiredFieldValue(node, "Value");
         }
     }
 
-    private static object? GetExporter(object pipelineItem)
+    private static object GetExporter(object pipelineItem)
     {
-        return GetFieldValue(pipelineItem, "exporter");
+        return GetRequiredFieldValue(pipelineItem, "exporter");
     }
 
-    private static EffectiveOtlpEndpoint? ResolveEndpoint(
+    private static EffectiveOtlpEndpoint ResolveEndpoint(
         object exporter,
         EffectiveOtlpPipelineType pipelineType)
     {
@@ -121,29 +157,31 @@ internal static class OtlpEndpointProviderGraphResolver
             ?? throw new InvalidOperationException($"Failed to read OTLP exporter endpoint from {exportClient.GetType().FullName}.");
 
         var exporterType = ResolveExporterType(exportClient);
-        return exporterType == null
-            ? null
-            : new EffectiveOtlpEndpoint(endpoint.AbsoluteUri, exporterType.Value, pipelineType);
+        return new EffectiveOtlpEndpoint(endpoint.AbsoluteUri, exporterType, pipelineType);
     }
 
     private static EffectiveOtlpPipelineType? ResolveTracePipelineType(object pipelineItem)
     {
-        return pipelineItem switch
+        if (pipelineItem is BatchActivityExportProcessor)
         {
-            BatchActivityExportProcessor => EffectiveOtlpPipelineType.Batch,
-            SimpleActivityExportProcessor => EffectiveOtlpPipelineType.Simple,
-            _ => null
-        };
+            return EffectiveOtlpPipelineType.Batch;
+        }
+
+        return pipelineItem is SimpleActivityExportProcessor
+            ? EffectiveOtlpPipelineType.Simple
+            : null;
     }
 
     private static EffectiveOtlpPipelineType? ResolveLogPipelineType(object pipelineItem)
     {
-        return pipelineItem switch
+        if (pipelineItem is BatchLogRecordExportProcessor)
         {
-            BatchLogRecordExportProcessor => EffectiveOtlpPipelineType.Batch,
-            SimpleLogRecordExportProcessor => EffectiveOtlpPipelineType.Simple,
-            _ => null
-        };
+            return EffectiveOtlpPipelineType.Batch;
+        }
+
+        return pipelineItem is SimpleLogRecordExportProcessor
+            ? EffectiveOtlpPipelineType.Simple
+            : null;
     }
 
     private static EffectiveOtlpPipelineType? ResolveMetricPipelineType(object pipelineItem)
@@ -153,21 +191,40 @@ internal static class OtlpEndpointProviderGraphResolver
             : null;
     }
 
-    private static EffectiveOtlpExporterType? ResolveExporterType(object exportClient)
+    private static bool IsSupportedCompositePipelineType(Type type)
+    {
+        if (!IsOpenTelemetrySdkType(type))
+        {
+            return false;
+        }
+
+        return (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(CompositeProcessor<>)) ||
+            type.FullName == "OpenTelemetry.Metrics.CompositeMetricReader";
+    }
+
+    private static bool IsOpenTelemetrySdkType(Type type)
+    {
+        return type.Assembly == typeof(BaseProcessor<>).Assembly;
+    }
+
+    private static EffectiveOtlpExporterType ResolveExporterType(object exportClient)
     {
         // The SDK's export-client implementation preserves the selected transport after options have been applied.
         return exportClient.GetType().FullName switch
         {
             "OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.ExportClient.OtlpHttpExportClient" => EffectiveOtlpExporterType.HttpProtobuf,
             "OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.ExportClient.OtlpGrpcExportClient" => EffectiveOtlpExporterType.Grpc,
-            _ => null
+            _ => throw new InvalidOperationException(
+                $"The active OTLP exporter uses unsupported export client type {exportClient.GetType().FullName}.")
         };
     }
 
-    private static object? GetPropertyValue(object source, string name)
+    private static object? GetRequiredNullablePropertyValue(object source, string name)
     {
-        var property = FindProperty(source.GetType(), name);
-        return property?.GetValue(source);
+        var property = FindProperty(source.GetType(), name)
+            ?? throw new MissingMemberException(source.GetType().FullName, name);
+
+        return property.GetValue(source);
     }
 
     private static object GetRequiredPropertyValue(object source, string name)

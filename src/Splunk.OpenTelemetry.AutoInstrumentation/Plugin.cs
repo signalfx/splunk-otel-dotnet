@@ -144,7 +144,7 @@ public class Plugin
     /// <param name="settings">OpAMP client settings.</param>
     public void ConfigureOpAmpOptions(OpAmpClientSettings settings)
     {
-        OpAmp.EnableEffectiveConfigReporting(settings);
+        _opAmp.ConfigureEffectiveConfigReporting(settings);
     }
 
     /// <summary>

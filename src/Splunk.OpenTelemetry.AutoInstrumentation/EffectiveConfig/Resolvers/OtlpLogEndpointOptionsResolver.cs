@@ -28,13 +28,19 @@ internal static class OtlpLogEndpointOptionsResolver
     private static readonly PropertyInfo? AppendSignalPathToEndpointProperty =
         typeof(OtlpExporterOptions).GetProperty("AppendSignalPathToEndpoint", BindingFlags.Instance | BindingFlags.NonPublic);
 
-    public static EffectiveOtlpEndpoint? ResolveEndpoint(OtlpExporterOptions options)
+    public static void ValidateCompatibility()
+    {
+        if (AppendSignalPathToEndpointProperty?.PropertyType != typeof(bool))
+        {
+            throw new MissingMemberException(
+                typeof(OtlpExporterOptions).FullName,
+                "AppendSignalPathToEndpoint");
+        }
+    }
+
+    public static EffectiveOtlpEndpoint ResolveEndpoint(OtlpExporterOptions options)
     {
         var pipelineType = ResolvePipelineType(options.ExportProcessorType);
-        if (pipelineType == null)
-        {
-            return null;
-        }
 
         // ILogger options are captured before SDK export clients add signal-specific paths.
 #pragma warning disable CS0618 // OtlpExportProtocol.Grpc is obsolete but still used by the SDK and specification.
@@ -44,29 +50,23 @@ internal static class OtlpLogEndpointOptionsResolver
             // Mirror the SDK's final gRPC logs endpoint path.
             return EffectiveOtlpEndpoint.Grpc(
                 Format(AppendPathIfNotPresent(options.Endpoint, LogsGrpcSignalPath)),
-                pipelineType.Value);
+                pipelineType);
         }
 
         if (options.Protocol != OtlpExportProtocol.HttpProtobuf)
         {
-            return null;
+            throw new InvalidOperationException(
+                $"The active OTLP logs exporter uses unsupported protocol {options.Protocol}.");
         }
 
-        var appendSignalPathToEndpoint = TryGetAppendSignalPathToEndpoint(options);
-        if (appendSignalPathToEndpoint == null)
-        {
-            // HTTP path behavior depends on a private SDK flag; omit rather than guess.
-            return null;
-        }
-
-        var endpoint = appendSignalPathToEndpoint.Value
+        var endpoint = GetAppendSignalPathToEndpoint(options)
             ? AppendPathIfNotPresent(options.Endpoint, LogsHttpSignalPath)
             : options.Endpoint;
 
-        return EffectiveOtlpEndpoint.Http(Format(endpoint), pipelineType.Value);
+        return EffectiveOtlpEndpoint.Http(Format(endpoint), pipelineType);
     }
 
-    private static EffectiveOtlpPipelineType? ResolvePipelineType(ExportProcessorType processorType)
+    private static EffectiveOtlpPipelineType ResolvePipelineType(ExportProcessorType processorType)
     {
         return processorType switch
         {
@@ -74,15 +74,15 @@ internal static class OtlpLogEndpointOptionsResolver
             // OpenTelemetry .NET currently ignores Simple on OtlpExporterOptions for logs and constructs a batch processor.
             // Remove this normalization when the SDK dependency includes https://github.com/open-telemetry/opentelemetry-dotnet/issues/7281.
             ExportProcessorType.Simple => EffectiveOtlpPipelineType.Batch,
-            _ => null
+            _ => throw new InvalidOperationException(
+                $"The active OTLP logs exporter uses unsupported processor type {processorType}.")
         };
     }
 
-    private static bool? TryGetAppendSignalPathToEndpoint(OtlpExporterOptions options)
+    private static bool GetAppendSignalPathToEndpoint(OtlpExporterOptions options)
     {
-        return AppendSignalPathToEndpointProperty?.GetValue(options) is bool appendSignalPathToEndpoint
-            ? appendSignalPathToEndpoint
-            : null;
+        ValidateCompatibility();
+        return (bool)AppendSignalPathToEndpointProperty!.GetValue(options)!;
     }
 
     private static Uri AppendPathIfNotPresent(Uri endpoint, string path)

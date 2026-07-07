@@ -28,6 +28,7 @@ internal sealed class EffectiveLogEndpointTracker
     private readonly List<EffectiveOtlpEndpoint> _endpoints = [];
     private readonly Func<IReadOnlyList<EffectiveOtlpEndpoint>?> _bridgeLogEndpointResolver;
     private bool _iloggerLogsConfigured;
+    private bool _hasILoggerResolutionFailure;
 
     public EffectiveLogEndpointTracker()
         : this(ResolveBridgeLogEndpoints)
@@ -44,6 +45,11 @@ internal sealed class EffectiveLogEndpointTracker
     {
         lock (_lock)
         {
+            if (_iloggerLogsConfigured)
+            {
+                return false;
+            }
+
             // ILogger owns its LoggerProvider and disables bridge logging, so bridge reflection would report a different logs pipeline.
             _iloggerLogsConfigured = true;
             var hadEndpoints = _endpoints.Count > 0;
@@ -66,34 +72,35 @@ internal sealed class EffectiveLogEndpointTracker
             {
                 // Upstream's ILogger path calls the marker before configuring OTLP exporters, but SDK export clients do not exist yet.
                 var endpoint = OtlpLogEndpointOptionsResolver.ResolveEndpoint(options);
-                if (endpoint == null)
+                if (_endpoints.Contains(endpoint))
                 {
                     return false;
                 }
 
-                if (_endpoints.Contains(endpoint.Value))
-                {
-                    return false;
-                }
-
-                _endpoints.Add(endpoint.Value);
+                _endpoints.Add(endpoint);
                 return true;
             }
             catch (Exception ex)
             {
+                _hasILoggerResolutionFailure = true;
                 Log.Warning($"Failed to resolve logs endpoint from OtlpExporterOptions: {ex.Message}");
                 return false;
             }
         }
     }
 
-    public IReadOnlyList<EffectiveOtlpEndpoint> GetCurrentEndpoints()
+    public IReadOnlyList<EffectiveOtlpEndpoint> GetEndpoints()
     {
         lock (_lock)
         {
             if (!_iloggerLogsConfigured)
             {
-                CaptureBridgeLogEndpoints();
+                RefreshBridgeLogEndpoints();
+            }
+
+            if (_hasILoggerResolutionFailure)
+            {
+                throw new InvalidOperationException("The OpenTelemetry logs endpoint state could not be resolved.");
             }
 
             return _endpoints.ToArray();
@@ -103,41 +110,19 @@ internal sealed class EffectiveLogEndpointTracker
     private static IReadOnlyList<EffectiveOtlpEndpoint>? ResolveBridgeLogEndpoints()
     {
         // NLog/log4net bridges use upstream's LoggerProvider; do not force Lazy.Value here.
-        var bridgeLoggerProvider = UpstreamLoggerProviderResolver.TryGetAlreadyCreatedLoggerProvider();
+        var bridgeLoggerProvider = UpstreamLoggerProviderResolver.GetAlreadyCreatedLoggerProvider();
         return bridgeLoggerProvider == null
             ? null
             : OtlpEndpointProviderGraphResolver.ResolveLogEndpoints(bridgeLoggerProvider);
     }
 
-    private void CaptureBridgeLogEndpoints()
+    private void RefreshBridgeLogEndpoints()
     {
-        try
+        var bridgeLogEndpoints = _bridgeLogEndpointResolver();
+        _endpoints.Clear();
+        if (bridgeLogEndpoints != null)
         {
-            var bridgeLogEndpoints = _bridgeLogEndpointResolver();
-            if (_iloggerLogsConfigured)
-            {
-                return;
-            }
-
-            _endpoints.Clear();
-            if (bridgeLogEndpoints == null)
-            {
-                // Without provider-graph results, bridge log endpoints are not known valid.
-                return;
-            }
-
-            // Provider-graph values are the known-valid bridge endpoints.
             _endpoints.AddRange(bridgeLogEndpoints);
-        }
-        catch (Exception ex)
-        {
-            // Reflection failure means bridge log endpoints are not known valid.
-            if (!_iloggerLogsConfigured)
-            {
-                _endpoints.Clear();
-            }
-
-            Log.Warning($"Failed to resolve logs endpoints from LoggerProvider: {ex.Message}");
         }
     }
 }

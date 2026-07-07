@@ -284,6 +284,55 @@ public class SmokeTests : TestHelper, IDisposable
         AssertEnvironmentConfigPayload(payload, expectedPayload);
     }
 
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void EffectiveConfigIsNotAdvertisedWhenAutomaticSdkSetupIsDisabled()
+    {
+        using var opAmpServer = new MockOpAmpServer(Output);
+
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_SETUP_SDK", "false");
+        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+        opAmpServer.Expect(
+            frame => frame.AgentDescription != null && !ReportsEffectiveConfigCapability(frame),
+            "Does not report effective config capability");
+
+        RunTestApplicationAndAssertOpAmp(
+            opAmpServer,
+            () => opAmpServer.AssertNoEffectiveConfigFrames());
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void EffectiveConfigReportsNoEndpointsWhenSdkIsDisabled()
+    {
+        using var opAmpServer = new MockOpAmpServer(Output);
+
+        SetEnvironmentVariable("OTEL_SDK_DISABLED", "true");
+        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+
+        var expectedPayload = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = "none",
+            ["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"] = "none",
+            ["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"] = "none",
+            ["SPLUNK_PROFILER_ENABLED"] = "false",
+            ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
+            ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
+            ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "40",
+            ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
+            ["OTEL_CONFIG_FILE"] = "null",
+            ["OTEL_EXPERIMENTAL_CONFIG_FILE"] = "null"
+        };
+
+        var payload = RunTestApplicationAndAssertEffectiveConfig(
+            opAmpServer,
+            payload => EnvironmentConfigPayloadMatches(payload, expectedPayload),
+            "environment",
+            ExpectedEnvVarConfigContentType);
+
+        AssertEnvironmentConfigPayload(payload, expectedPayload);
+    }
+
 #if NET
     [Fact]
     [Trait("Category", "EndToEnd")]
@@ -725,15 +774,27 @@ public class SmokeTests : TestHelper, IDisposable
         string fileName,
         string contentType)
     {
-        SetEnvironmentVariable("OTEL_DOTNET_AUTO_OPAMP_ENABLED", "true");
-        SetEnvironmentVariable("OTEL_DOTNET_AUTO_OPAMP_SERVER_URL", $"http://localhost:{opAmpServer.Port}/v1/opamp");
-
         opAmpServer.Expect(ReportsEffectiveConfigCapability, "Reports effective config capability");
         opAmpServer.ExpectEffectiveConfigPayload(
             fileName,
             contentType,
             effectiveConfigPredicate,
             "Has expected single-file effective config payload");
+
+        RunTestApplicationAndAssertOpAmp(opAmpServer);
+
+        return opAmpServer.AssertEffectiveConfigPayloads(
+            fileName,
+            contentType,
+            effectiveConfigPredicate);
+    }
+
+    private void RunTestApplicationAndAssertOpAmp(
+        MockOpAmpServer opAmpServer,
+        Action? assertWhileRunning = null)
+    {
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_OPAMP_ENABLED", "true");
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_OPAMP_SERVER_URL", $"http://localhost:{opAmpServer.Port}/v1/opamp");
         SetEnvironmentVariable("LONG_RUNNING", "true");
 
         using var process = StartTestApplication();
@@ -744,6 +805,9 @@ public class SmokeTests : TestHelper, IDisposable
         try
         {
             opAmpServer.AssertExpectations();
+            Assert.False(process.HasExited, "The test application exited before the while-running assertions.");
+            assertWhileRunning?.Invoke();
+            Assert.False(process.HasExited, "The test application exited during the while-running assertions.");
         }
         finally
         {
@@ -761,11 +825,6 @@ public class SmokeTests : TestHelper, IDisposable
                 Output.WriteResult(helper);
             }
         }
-
-        return opAmpServer.AssertEffectiveConfigPayloads(
-            fileName,
-            contentType,
-            effectiveConfigPredicate);
     }
 
     private void DisableAllInstrumentations()
