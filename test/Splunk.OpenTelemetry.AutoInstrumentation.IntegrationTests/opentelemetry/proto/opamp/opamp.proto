@@ -97,6 +97,12 @@ message AgentToServer
     // A message indicating the components that are available for configuration on the agent.
     // Status: [Development]
     AvailableComponents available_components = 14;
+
+    // The status of the OfferedConnectionSettings that was previously received
+    // from the Server. This field SHOULD be unset if the offered connection
+    // settings status is unchanged since the last AgentToServer message.
+    // Status: [Development]
+    ConnectionSettingsStatus connection_settings_status = 15;
 }
 
 enum AgentToServerFlags
@@ -306,7 +312,7 @@ enum ServerCapabilities
 message OpAMPConnectionSettings
 {
     // OpAMP Server URL This MUST be a WebSocket or HTTP URL and MUST be non-empty, for
-    // example: "wss://example.com:4318/v1/opamp"
+    // example: "wss://example.com:4320/v1/opamp"
     string destination_endpoint = 1;
 
     // Optional headers to use when connecting. Typically used to set access tokens or
@@ -340,6 +346,10 @@ message OpAMPConnectionSettings
     // Optional connection specific TLS settings.
     // Status: [Development]
     TLSConnectionSettings tls = 5;
+
+    // Optional connection specific proxy settings.
+    // Status: [Development]
+    ProxyConnectionSettings proxy = 6;
 }
 
 // The TelemetryConnectionSettings message is a collection of fields which comprise an
@@ -371,6 +381,10 @@ message TelemetryConnectionSettings
     // Optional connection specific TLS settings.
     // Status: [Development]
     TLSConnectionSettings tls = 4;
+
+    // Optional connection specific proxy settings.
+    // Status: [Development]
+    ProxyConnectionSettings proxy = 5;
 }
 
 // The OtherConnectionSettings message is a collection of fields which comprise an
@@ -421,6 +435,10 @@ message OtherConnectionSettings
     // Optional connection specific TLS settings.
     // Status: [Development]
     TLSConnectionSettings tls = 5;
+
+    // Optional connection specific proxy settings.
+    // Status: [Development]
+    ProxyConnectionSettings proxy = 6;
 }
 
 
@@ -438,14 +456,27 @@ message TLSConnectionSettings
   // skip certificate verification.
   bool insecure_skip_verify = 3;
 
-  // Miniumum accepted TLS version; default "1.2".
+  // Minimum accepted TLS version; default "1.2".
   string min_version = 4;
 
-  // Maxiumum accepted TLS version; default "".
+  // Maximum accepted TLS version; default "".
   string max_version = 5;
 
     // Explicit list of cipher suites.
     repeated string cipher_suites = 6;
+}
+
+// Status: [Development]
+message ProxyConnectionSettings
+{
+    // A URL, host:port or some other destination specifier.
+    string url = 1;
+
+    // Optional headers to send to proxies during CONNECT requests.
+    // These headers can be ignored for non-HTTP based proxies.
+    // For example:
+    // key="Authorization", Value="Basic YWxhZGRpbjpvcGVuc2VzYW1l".
+    Headers connect_headers = 2;
 }
 
 // Status: [Beta]
@@ -780,6 +811,9 @@ enum AgentCapabilities
     // The agent will report AvailableComponents via the AgentToServer.available_components field.
     // Status: [Development]
     AgentCapabilities_ReportsAvailableComponents = 0x00004000;
+    // The agent will report ConnectionSettingsOffers status via AgentToServer.connection_settings_status field.
+    // Status: [Development]
+    AgentCapabilities_ReportsConnectionSettingsStatus = 0x00008000;
     // Add new capabilities here, continuing with the least significant unused bit.
 }
 
@@ -831,6 +865,39 @@ message RemoteConfigStatus
 
     // Optional error message if status==FAILED.
     string error_message = 3;
+}
+
+// Status: [Development]
+message ConnectionSettingsStatus
+{
+    // The hash of the connection settings that was last received by this Agent
+    // in the connection_settings.hash field. The Server SHOULD compare this
+    // hash with the OfferedConnectionSettings hash it has for the Agent and if
+    // the hashes are different the Server MUST include the connection_settings
+    // field in the response in the ServerToAgent message.
+    bytes last_connection_settings_hash = 1;
+
+    ConnectionSettingsStatuses status = 2;
+
+    // Optional error message if status==FAILED.
+    string error_message = 3;
+}
+
+// Status: [Development]
+enum ConnectionSettingsStatuses
+{
+    // The value of status field is not set.
+    ConnectionSettingsStatuses_UNSET = 0;
+
+    // ConnectionSettings were successfully applied by the Agent.
+    ConnectionSettingsStatuses_APPLIED = 1;
+
+    // Agent is currently applying the ConnectionSettings that it received.
+    ConnectionSettingsStatuses_APPLYING = 2;
+
+    // Agent tried to apply the ConnectionSettings it received earlier, but failed.
+    // See error_message for more details.
+    ConnectionSettingsStatuses_FAILED = 3;
 }
 
 enum RemoteConfigStatuses
