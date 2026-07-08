@@ -27,11 +27,9 @@ internal sealed class EffectiveConfigSnapshot
         bool memoryProfilerEnabled,
         bool snapshotProfilerEnabled,
         uint cpuProfilerCallStackInterval,
-        uint snapshotSamplingInterval,
-        string? otelExperimentalConfigFile = null)
+        uint snapshotSamplingInterval)
     {
         FileBasedConfigFileName = fileBasedConfigFileName;
-        OtelExperimentalConfigFile = otelExperimentalConfigFile;
         TraceEndpoints = CopyEndpoints(traceEndpoints);
         MetricEndpoints = CopyEndpoints(metricEndpoints);
         LogEndpoints = CopyEndpoints(logEndpoints);
@@ -45,8 +43,6 @@ internal sealed class EffectiveConfigSnapshot
     public bool IsFileBasedConfig => FileBasedConfigFileName != null;
 
     public string? FileBasedConfigFileName { get; }
-
-    public string? OtelExperimentalConfigFile { get; }
 
     public IReadOnlyList<EffectiveOtlpEndpoint> TraceEndpoints { get; }
 
@@ -80,8 +76,7 @@ internal sealed class EffectiveConfigSnapshot
             memoryProfilerEnabled: (profilerFeatures & EffectiveProfilerFeatures.Memory) != 0,
             snapshotProfilerEnabled: (profilerFeatures & EffectiveProfilerFeatures.Snapshot) != 0,
             cpuProfilerCallStackInterval: staticSettings.CpuProfilerCallStackInterval,
-            snapshotSamplingInterval: staticSettings.SnapshotSamplingInterval,
-            otelExperimentalConfigFile: staticSettings.OtelExperimentalConfigFile);
+            snapshotSamplingInterval: staticSettings.SnapshotSamplingInterval);
     }
 
     private static IReadOnlyList<EffectiveOtlpEndpoint> CopyEndpoints(IReadOnlyList<EffectiveOtlpEndpoint> endpoints)

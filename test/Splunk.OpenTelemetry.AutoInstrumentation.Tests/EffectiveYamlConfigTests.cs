@@ -38,9 +38,6 @@ public class EffectiveYamlConfigTests
     public void YamlModel_PreservesRequiredNulls()
     {
         AssertPreservesNull(
-            typeof(EffectiveYamlConfig),
-            nameof(EffectiveYamlConfig.OtelExperimentalConfigFile));
-        AssertPreservesNull(
             typeof(EffectiveYamlConfig.EffectiveAlwaysOnProfilingWithMemoryConfig),
             nameof(EffectiveYamlConfig.EffectiveAlwaysOnProfilingWithMemoryConfig.MemoryProfiler));
 
@@ -58,18 +55,9 @@ public class EffectiveYamlConfigTests
     [Fact]
     public void Create_CapturesConfigFileMetadata()
     {
-        var config = EffectiveYamlConfig.Create(CreateSnapshot(otelExperimentalConfigFile: "experimental.yaml"));
-
-        Assert.Equal("stable.yaml", config.OtelConfigFile);
-        Assert.Equal("experimental.yaml", config.OtelExperimentalConfigFile);
-    }
-
-    [Fact]
-    public void Create_UsesYamlNullForMissingExperimentalConfigFile()
-    {
         var config = EffectiveYamlConfig.Create(CreateSnapshot());
 
-        Assert.Null(config.OtelExperimentalConfigFile);
+        Assert.Equal("stable.yaml", config.OtelConfigFile);
     }
 
     [Fact]
@@ -141,7 +129,6 @@ public class EffectiveYamlConfigTests
     }
 
     private static EffectiveConfigSnapshot CreateSnapshot(
-        string? otelExperimentalConfigFile = null,
         IReadOnlyList<EffectiveOtlpEndpoint>? traceEndpoints = null,
         IReadOnlyList<EffectiveOtlpEndpoint>? metricEndpoints = null,
         bool cpuProfilerEnabled = false,
@@ -156,7 +143,6 @@ public class EffectiveYamlConfigTests
             memoryProfilerEnabled: memoryProfilerEnabled,
             snapshotProfilerEnabled: false,
             cpuProfilerCallStackInterval: 10000,
-            snapshotSamplingInterval: 40,
-            otelExperimentalConfigFile: otelExperimentalConfigFile);
+            snapshotSamplingInterval: 40);
     }
 }

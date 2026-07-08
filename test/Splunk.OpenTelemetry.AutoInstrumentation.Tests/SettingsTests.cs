@@ -110,30 +110,22 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
         }
 
         [Theory]
-        [InlineData("stable.yaml", "experimental.yaml", "stable.yaml", "experimental.yaml")]
-        [InlineData("stable.yaml", null, "stable.yaml", null)]
-        [InlineData(null, "experimental.yaml", "experimental.yaml", "experimental.yaml")]
-        [InlineData("", "experimental.yaml", "experimental.yaml", "experimental.yaml")]
-        [InlineData("", null, "config.yaml", null)]
-        [InlineData(null, "", "config.yaml", null)]
-        [InlineData(null, null, "config.yaml", null)]
-        internal void ResolveFileBasedConfigFileNames_UsesFirstNonEmptyFileName(
+        [InlineData("stable.yaml", "stable.yaml")]
+        [InlineData("", "config.yaml")]
+        [InlineData(null, "config.yaml")]
+        internal void ResolveFileBasedConfigFileName_UsesConfiguredOrDefaultFileName(
             string? stableFileName,
-            string? experimentalFileName,
-            string expectedFileName,
-            string? expectedExperimentalFileName)
+            string expectedFileName)
         {
-            var fileNames = PluginSettings.ResolveFileBasedConfigFileNames(stableFileName, experimentalFileName);
+            var fileName = PluginSettings.ResolveFileBasedConfigFileName(stableFileName);
 
-            Assert.Equal(expectedFileName, fileNames.FileName);
-            Assert.Equal(expectedExperimentalFileName, fileNames.ExperimentalFileName);
+            Assert.Equal(expectedFileName, fileName);
         }
 
         private static void ClearEnvVars()
         {
             Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.Enabled, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName, null);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.ExperimentalFileName, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Realm, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AccessToken, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled, null);

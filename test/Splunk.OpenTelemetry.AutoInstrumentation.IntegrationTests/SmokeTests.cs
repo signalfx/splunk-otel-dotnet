@@ -271,8 +271,7 @@ public class SmokeTests : TestHelper, IDisposable
             ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "true",
             ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "5000",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
-            ["OTEL_CONFIG_FILE"] = "null",
-            ["OTEL_EXPERIMENTAL_CONFIG_FILE"] = "null"
+            ["OTEL_CONFIG_FILE"] = "null"
         };
 
         var payload = RunTestApplicationAndAssertEffectiveConfig(
@@ -320,8 +319,7 @@ public class SmokeTests : TestHelper, IDisposable
             ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "40",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
-            ["OTEL_CONFIG_FILE"] = "null",
-            ["OTEL_EXPERIMENTAL_CONFIG_FILE"] = "null"
+            ["OTEL_CONFIG_FILE"] = "null"
         };
 
         var payload = RunTestApplicationAndAssertEffectiveConfig(
@@ -359,8 +357,7 @@ public class SmokeTests : TestHelper, IDisposable
             ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "5000",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
-            ["OTEL_CONFIG_FILE"] = "null",
-            ["OTEL_EXPERIMENTAL_CONFIG_FILE"] = "null"
+            ["OTEL_CONFIG_FILE"] = "null"
         };
 
         var payload = RunTestApplicationAndAssertEffectiveConfig(
@@ -435,8 +432,7 @@ public class SmokeTests : TestHelper, IDisposable
             ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "40",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
-            ["OTEL_CONFIG_FILE"] = "null",
-            ["OTEL_EXPERIMENTAL_CONFIG_FILE"] = "null"
+            ["OTEL_CONFIG_FILE"] = "null"
         };
 
         var payload = RunTestApplicationAndAssertEffectiveConfig(
@@ -474,8 +470,7 @@ public class SmokeTests : TestHelper, IDisposable
             ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "40",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
-            ["OTEL_CONFIG_FILE"] = "null",
-            ["OTEL_EXPERIMENTAL_CONFIG_FILE"] = "null"
+            ["OTEL_CONFIG_FILE"] = "null"
         };
 
         var payload = RunTestApplicationAndAssertEffectiveConfig(

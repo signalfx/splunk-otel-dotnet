@@ -21,14 +21,11 @@ internal sealed class EffectiveConfigStaticSettings
     public EffectiveConfigStaticSettings(PluginSettings settings)
     {
         FileBasedConfigFileName = settings.FileBasedConfigFileName;
-        OtelExperimentalConfigFile = settings.OtelExperimentalConfigFile;
         CpuProfilerCallStackInterval = settings.CpuProfilerCallStackInterval;
         SnapshotSamplingInterval = settings.SnapshotsSamplingInterval;
     }
 
     public string? FileBasedConfigFileName { get; }
-
-    public string? OtelExperimentalConfigFile { get; }
 
     public uint CpuProfilerCallStackInterval { get; }
 

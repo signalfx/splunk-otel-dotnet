@@ -69,7 +69,7 @@ internal class PluginSettings
         ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
     }
 
-    internal PluginSettings(YamlRoot configuration, string? fileName = null, string? experimentalFileName = null)
+    internal PluginSettings(YamlRoot configuration, string? fileName = null)
     {
         if (configuration == null)
         {
@@ -77,7 +77,6 @@ internal class PluginSettings
         }
 
         FileBasedConfigFileName = fileName ?? Constants.DefaultFileBasedConfigFileName;
-        OtelExperimentalConfigFile = experimentalFileName;
         Realm = Constants.None;
         AccessToken = null;
         IsOtlpEndpointSet = false;
@@ -143,8 +142,6 @@ internal class PluginSettings
 
     public string? FileBasedConfigFileName { get; }
 
-    public string? OtelExperimentalConfigFile { get; }
-
     public bool CpuProfilerEnabled { get; }
 
     public uint CpuProfilerCallStackInterval { get; }
@@ -165,19 +162,16 @@ internal class PluginSettings
     {
         if (IsYamlConfigEnabled)
         {
-            var fileNames = ResolveFileBasedConfigFileNames();
+            var fileName = ResolveFileBasedConfigFileName();
 
-            var splunkConfiguration = LoadSplunkConfig(fileNames.FileName);
+            var splunkConfiguration = LoadSplunkConfig(fileName);
             if (splunkConfiguration != null)
             {
-                return new PluginSettings(
-                    splunkConfiguration,
-                    fileNames.FileName,
-                    fileNames.ExperimentalFileName);
+                return new PluginSettings(splunkConfiguration, fileName);
             }
             else
             {
-                Log.Error($"Failed to load Splunk configuration from file '{fileNames.FileName}'. Falling back to environment variables.");
+                Log.Error($"Failed to load Splunk configuration from file '{fileName}'. Falling back to environment variables.");
             }
         }
 
@@ -195,23 +189,15 @@ internal class PluginSettings
         return new PluginSettings(configurationSource);
     }
 
-    internal static (string FileName, string? ExperimentalFileName) ResolveFileBasedConfigFileNames()
+    internal static string ResolveFileBasedConfigFileName()
     {
         var fileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName);
-        var experimentalFileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.ExperimentalFileName);
-        return ResolveFileBasedConfigFileNames(fileName, experimentalFileName);
+        return ResolveFileBasedConfigFileName(fileName);
     }
 
-    internal static (string FileName, string? ExperimentalFileName) ResolveFileBasedConfigFileNames(
-        string? fileName,
-        string? experimentalFileName)
+    internal static string ResolveFileBasedConfigFileName(string? fileName)
     {
-        var resolvedExperimentalFileName = string.IsNullOrEmpty(experimentalFileName) ? null : experimentalFileName;
-        var resolvedFileName = string.IsNullOrEmpty(fileName)
-            ? resolvedExperimentalFileName ?? Constants.DefaultFileBasedConfigFileName
-            : fileName!;
-
-        return (resolvedFileName, resolvedExperimentalFileName);
+        return string.IsNullOrEmpty(fileName) ? Constants.DefaultFileBasedConfigFileName : fileName!;
     }
 
     private static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)

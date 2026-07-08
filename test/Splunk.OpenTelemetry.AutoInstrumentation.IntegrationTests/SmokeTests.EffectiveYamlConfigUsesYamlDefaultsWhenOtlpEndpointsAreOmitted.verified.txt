@@ -1,5 +1,4 @@
 otel_config_file: "{configFile}"
-otel_experimental_config_file: 
 tracer_provider:
   processors:
     - batch:

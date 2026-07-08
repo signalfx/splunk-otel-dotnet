@@ -43,13 +43,12 @@ public class EffectiveConfigSnapshotTests
     public void Create_CopiesFileBasedStaticSettings()
     {
         var staticSettings = new EffectiveConfigStaticSettings(
-            new PluginSettings(new YamlRoot(), "stable.yaml", "experimental.yaml"));
+            new PluginSettings(new YamlRoot(), "stable.yaml"));
 
         var snapshot = EffectiveConfigSnapshot.Create(staticSettings, EffectiveProfilerFeatures.None, [], [], []);
 
         Assert.True(snapshot.IsFileBasedConfig);
         Assert.Equal("stable.yaml", snapshot.FileBasedConfigFileName);
-        Assert.Equal("experimental.yaml", snapshot.OtelExperimentalConfigFile);
     }
 
     [Fact]

@@ -21,19 +21,16 @@ internal sealed class EffectiveYamlConfig
     [EffectiveYamlProperty("otel_config_file", 0)]
     public string? OtelConfigFile { get; set; }
 
-    [EffectiveYamlProperty("otel_experimental_config_file", 1, preserveNull: true)]
-    public string? OtelExperimentalConfigFile { get; set; }
-
-    [EffectiveYamlProperty("tracer_provider", 2)]
+    [EffectiveYamlProperty("tracer_provider", 1)]
     public EffectiveProcessorProviderConfig? TracerProvider { get; set; }
 
-    [EffectiveYamlProperty("meter_provider", 3)]
+    [EffectiveYamlProperty("meter_provider", 2)]
     public EffectiveMeterProviderConfig? MeterProvider { get; set; }
 
-    [EffectiveYamlProperty("logger_provider", 4)]
+    [EffectiveYamlProperty("logger_provider", 3)]
     public EffectiveProcessorProviderConfig? LoggerProvider { get; set; }
 
-    [EffectiveYamlProperty("distribution", 5)]
+    [EffectiveYamlProperty("distribution", 4)]
     public EffectiveDistributionConfig? Distribution { get; set; }
 
     public static EffectiveYamlConfig Create(EffectiveConfigSnapshot snapshot)
@@ -43,7 +40,6 @@ internal sealed class EffectiveYamlConfig
         return new EffectiveYamlConfig
         {
             OtelConfigFile = snapshot.FileBasedConfigFileName,
-            OtelExperimentalConfigFile = snapshot.OtelExperimentalConfigFile,
             TracerProvider = snapshot.TraceEndpoints.Count == 0
                 ? null
                 : new EffectiveProcessorProviderConfig

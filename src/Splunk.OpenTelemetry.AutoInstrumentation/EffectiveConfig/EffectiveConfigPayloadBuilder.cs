@@ -46,8 +46,7 @@ internal static class EffectiveConfigPayloadBuilder
             ("SPLUNK_SNAPSHOT_PROFILER_ENABLED", FormatBoolean(snapshot.SnapshotProfilerEnabled)),
             ("SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL", FormatUInt(snapshot.SnapshotSamplingInterval)),
             ("SPLUNK_PROFILER_CALL_STACK_INTERVAL", FormatUInt(snapshot.CpuProfilerCallStackInterval)),
-            ("OTEL_CONFIG_FILE", "null"),
-            ("OTEL_EXPERIMENTAL_CONFIG_FILE", "null")
+            ("OTEL_CONFIG_FILE", "null")
         };
 
         var body = string.Join("\n", entries.Select(entry => entry.Key + "=" + entry.Value));

@@ -38,7 +38,6 @@ public class EffectiveConfigStaticSettingsTests
         settings.SnapshotsSamplingInterval = 1000;
 
         Assert.Null(effectiveSettings.FileBasedConfigFileName);
-        Assert.Null(effectiveSettings.OtelExperimentalConfigFile);
         Assert.Equal(10000U, effectiveSettings.CpuProfilerCallStackInterval);
         Assert.Equal(5000U, effectiveSettings.SnapshotSamplingInterval);
     }
@@ -46,10 +45,9 @@ public class EffectiveConfigStaticSettingsTests
     [Fact]
     public void Constructor_CapturesFileBasedConfigMetadata()
     {
-        var settings = new PluginSettings(new YamlRoot(), "stable.yaml", "experimental.yaml");
+        var settings = new PluginSettings(new YamlRoot(), "stable.yaml");
         var effectiveSettings = new EffectiveConfigStaticSettings(settings);
 
         Assert.Equal("stable.yaml", effectiveSettings.FileBasedConfigFileName);
-        Assert.Equal("experimental.yaml", effectiveSettings.OtelExperimentalConfigFile);
     }
 }

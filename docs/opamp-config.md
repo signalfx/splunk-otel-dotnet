@@ -12,12 +12,12 @@ active configuration passes startup validation. Automatic SDK setup is required;
 
 ### Environment variables
 
-See the [docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.16.0-beta.1/docs/config.md#opamp-client)
+See the [docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.16.0/docs/config.md#opamp-client)
 for more details.
 
 ### File-based configuration
 
-See the [docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.16.0-beta.1/docs/file-based-configuration.md#opamp)
+See the [docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.16.0/docs/file-based-configuration.md#opamp)
 for more details.
 
 ## Effective configuration contents
@@ -37,7 +37,6 @@ The properties body contains the final values for:
 - `SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL`
 - `SPLUNK_PROFILER_CALL_STACK_INTERVAL`
 - `OTEL_CONFIG_FILE`
-- `OTEL_EXPERIMENTAL_CONFIG_FILE`
 
 For .NET Framework applications, `SPLUNK_PROFILER_MEMORY_ENABLED` is always
 reported as `false` because memory profiling is not supported on .NET Framework.
