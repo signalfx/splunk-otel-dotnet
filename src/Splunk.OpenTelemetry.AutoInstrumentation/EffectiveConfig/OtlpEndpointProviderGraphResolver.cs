@@ -98,10 +98,20 @@ internal static class OtlpEndpointProviderGraphResolver
         // ExportClient.Endpoint is the final endpoint used by the SDK exporter.
         var transmissionHandler = GetRequiredFieldValue(exporter, "transmissionHandler");
         var exportClient = GetRequiredPropertyValue(transmissionHandler, "ExportClient");
+        exportClient = UnwrapLazyExportClient(exportClient);
         var endpoint = GetRequiredPropertyValue(exportClient, "Endpoint") as Uri
             ?? throw new InvalidOperationException($"Failed to read OTLP exporter endpoint from {exportClient.GetType().FullName}.");
 
         return endpoint.AbsoluteUri;
+    }
+
+    private static object UnwrapLazyExportClient(object exportClient)
+    {
+        // OpenTelemetry 1.16 defers log export-client creation until the provider is built.
+        var lazyExportClient = GetFieldValue(exportClient, "exportClient");
+        return lazyExportClient == null
+            ? exportClient
+            : GetRequiredPropertyValue(lazyExportClient, "Value");
     }
 
     private static object? GetPropertyValue(object source, string name)
