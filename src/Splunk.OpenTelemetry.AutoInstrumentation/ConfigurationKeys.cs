@@ -29,7 +29,7 @@ internal static class ConfigurationKeys
         /// Configuration key for the path to the configuration file.
         /// Default is <c>"config.yaml"</c>.
         /// </summary>
-        public const string FileName = "OTEL_EXPERIMENTAL_CONFIG_FILE";
+        public const string FileName = "OTEL_CONFIG_FILE";
     }
 
     public static class Splunk
