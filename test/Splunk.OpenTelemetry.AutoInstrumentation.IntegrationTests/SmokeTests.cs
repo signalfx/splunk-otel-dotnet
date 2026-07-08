@@ -250,8 +250,7 @@ public class SmokeTests : TestHelper, IDisposable
         EnableDefaultExporters();
 
         // ILogger instrumentation is required to be able to capture logs endpoint.
-        SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED", "false");
-        SetEnvironmentVariable("OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED", "false");
+        DisableTraceAndMetricInstrumentations();
 
         var expectedPayload = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -391,6 +390,7 @@ public class SmokeTests : TestHelper, IDisposable
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_ILOGGER_INSTRUMENTATION_ENABLED", "false");
 
         EnableBytecodeInstrumentation();
+        DisableTraceAndMetricInstrumentations();
 
         RunTestApplicationAndAssertEffectiveConfig(
             opAmpServer,
@@ -824,8 +824,13 @@ public class SmokeTests : TestHelper, IDisposable
 
     private void DisableAllInstrumentations()
     {
+        DisableTraceAndMetricInstrumentations();
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED", "false");
+    }
+
+    private void DisableTraceAndMetricInstrumentations()
+    {
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED", "false");
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED", "false");
-        SetEnvironmentVariable("OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED", "false");
     }
 }
