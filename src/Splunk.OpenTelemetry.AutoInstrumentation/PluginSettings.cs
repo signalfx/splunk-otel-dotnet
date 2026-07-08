@@ -15,9 +15,9 @@
 // </copyright>
 
 using System.Diagnostics;
-using System.Reflection;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration.Parser;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
@@ -167,7 +167,7 @@ internal class PluginSettings
         {
             var fileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName) ?? "config.yaml";
 
-            var splunkConfiguration = LoadSplunkConfig(fileName);
+            var splunkConfiguration = YamlConfigurationParser.ParseFile(fileName);
             if (splunkConfiguration != null)
             {
                 return new PluginSettings(splunkConfiguration);
@@ -207,41 +207,6 @@ internal class PluginSettings
         }
 
         return interval;
-    }
-
-    internal static YamlRoot? LoadSplunkConfig(string fileName)
-    {
-        var parserType = Type.GetType("OpenTelemetry.AutoInstrumentation.Configurations.FileBasedConfiguration.Parser.Parser, OpenTelemetry.AutoInstrumentation");
-        if (parserType == null)
-        {
-            throw new Exception("Could not find Parser type for YAML configuration parsing.");
-        }
-
-        var parseYaml = parserType
-            .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
-            .FirstOrDefault(m =>
-                m.Name == "ParseYaml" &&
-                m.IsGenericMethodDefinition &&
-                m.GetParameters().Length == 1 &&
-                m.GetParameters()[0].ParameterType == typeof(string));
-
-        if (parseYaml == null)
-        {
-            throw new MissingMethodException(parserType.FullName, "ParseYaml<T>(string)");
-        }
-
-        var closed = parseYaml.MakeGenericMethod(typeof(YamlRoot));
-
-        var yamlRoot = closed.Invoke(null, new object[] { fileName });
-
-        if (yamlRoot == null)
-        {
-            return null;
-        }
-        else
-        {
-            return (YamlRoot)yamlRoot;
-        }
     }
 
 #if NET

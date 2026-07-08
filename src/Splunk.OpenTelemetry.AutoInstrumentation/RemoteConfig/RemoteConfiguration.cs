@@ -15,6 +15,7 @@
 // </copyright>
 
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration.Parser;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
@@ -30,27 +31,6 @@ internal static class RemoteConfiguration
 
     internal static YamlRoot? ParseYaml(string yaml)
     {
-        var fileName = Path.Combine(Path.GetTempPath(), $"splunk-remote-config-{Guid.NewGuid():N}.yaml");
-        try
-        {
-            File.WriteAllText(fileName, yaml);
-            return PluginSettings.LoadSplunkConfig(fileName);
-        }
-        finally
-        {
-            TryDelete(fileName);
-        }
-    }
-
-    private static void TryDelete(string fileName)
-    {
-        try
-        {
-            File.Delete(fileName);
-        }
-        catch
-        {
-            // Best effort cleanup for a transient parser input file.
-        }
+        return YamlConfigurationParser.ParseContent(yaml);
     }
 }
