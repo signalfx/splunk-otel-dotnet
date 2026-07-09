@@ -1,0 +1,21 @@
+otel_config_file: "{configFile}"
+tracer_provider:
+  processors:
+    - batch:
+        exporter:
+          otlp_http:
+            endpoint: "http://localhost:4318/v1/traces"
+    - simple:
+        exporter:
+          otlp_http:
+            endpoint: "http://localhost:4319/v1/traces"
+meter_provider:
+  readers:
+    - periodic:
+        exporter:
+          otlp_http:
+            endpoint: "http://localhost:4318/v1/metrics"
+    - periodic:
+        exporter:
+          otlp_http:
+            endpoint: "http://localhost:4319/v1/metrics"

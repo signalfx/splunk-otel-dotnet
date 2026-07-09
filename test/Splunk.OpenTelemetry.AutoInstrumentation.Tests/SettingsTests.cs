@@ -156,6 +156,19 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             Assert.False(settings.OpAmpRemoteConfigEnabled);
         }
 
+        [Theory]
+        [InlineData("stable.yaml", "stable.yaml")]
+        [InlineData("", "config.yaml")]
+        [InlineData(null, "config.yaml")]
+        internal void ResolveFileBasedConfigFileName_UsesConfiguredOrDefaultFileName(
+            string? stableFileName,
+            string expectedFileName)
+        {
+            var fileName = PluginSettings.ResolveFileBasedConfigFileName(stableFileName);
+
+            Assert.Equal(expectedFileName, fileName);
+        }
+
         private static void ClearEnvVars()
         {
             Environment.SetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.Enabled, null);

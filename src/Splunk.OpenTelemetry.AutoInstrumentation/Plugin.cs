@@ -23,6 +23,7 @@ using OpenTelemetry.OpAmp.Client.Settings;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
@@ -66,7 +67,7 @@ public class Plugin
         _metrics = new Metrics(Settings);
         _traces = new Traces(Settings);
         _sdk = new Sdk();
-        _opAmp = new OpAmp();
+        _opAmp = new OpAmp(new EffectiveConfigStaticSettings(Settings));
     }
 
     internal static PluginSettings Settings => SettingsFactory.Value;
@@ -99,8 +100,7 @@ public class Plugin
     /// <returns>>Returns <see cref="ResourceBuilder"/> for chaining.</returns>
     public ResourceBuilder ConfigureResource(ResourceBuilder builder)
     {
-        var resource = ResourceConfigurator.Configure(builder, Settings);
-        _opAmp.RecordServiceName(resource);
+        ResourceConfigurator.Configure(builder, Settings);
         return builder;
     }
 
@@ -278,7 +278,6 @@ public class Plugin
             ProfilerRuntimeConfiguration.ApplyCurrentToNative();
         }
 
-        _opAmp.RecordPluginConfig(Settings);
         _opAmp.MarkInstrumentationInitialized();
     }
 

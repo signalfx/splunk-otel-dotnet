@@ -14,15 +14,14 @@
 // limitations under the License.
 // </copyright>
 
-using System.Threading;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.OpAmp.Client;
 using OpenTelemetry.OpAmp.Client.Messages;
 using OpenTelemetry.OpAmp.Client.Settings;
-using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
@@ -34,41 +33,80 @@ internal sealed class OpAmp
 
     private readonly Lazy<EffectiveConfigReporter?> _effectiveConfigReporter;
     private readonly OpAmpRemoteConfigurationListener _remoteConfigurationListener;
+    private readonly Func<EffectiveProfilerFeatures> _profilerStateResolver;
+    private int _effectiveConfigReportingEnabled;
+    private int _remoteConfigurationEnabled;
     private int _instrumentationInitialized;
     private int _opAmpClientStarted;
     private int _initialEffectiveConfigReportStarted;
-    private bool _remoteConfigurationEnabled;
     private Task? _initialEffectiveConfigReportTask;
     private OpAmpClient? _opAmpClient;
 
-    public OpAmp()
+    public OpAmp(EffectiveConfigStaticSettings staticSettings)
+        : this(
+            CreateEffectiveConfigReporterFactory(staticSettings),
+            UpstreamOpAmpEnabledResolver.IsEnabled,
+            UpstreamSdkSetupEnabledResolver.IsEnabled,
+            UpstreamProfilerStateResolver.Resolve)
     {
-        _effectiveConfigReporter = new Lazy<EffectiveConfigReporter?>(TryCreateEffectiveConfigReporter);
+    }
+
+    internal OpAmp(
+        Func<EffectiveConfigReporter> effectiveConfigReporterFactory,
+        Func<bool> opAmpEnabledResolver,
+        Func<bool> sdkSetupEnabledResolver,
+        Func<EffectiveProfilerFeatures> profilerStateResolver)
+    {
+        _effectiveConfigReporter = new(() => TryCreateEffectiveConfigReporter(
+            effectiveConfigReporterFactory,
+            opAmpEnabledResolver,
+            sdkSetupEnabledResolver));
+        _profilerStateResolver = profilerStateResolver;
         _remoteConfigurationListener = new OpAmpRemoteConfigurationListener(SendEffectiveConfigAfterRemoteConfiguration, SendRemoteConfigStatusAsync);
     }
 
     public void ConfigureOptions(OpAmpClientSettings settings, PluginSettings pluginSettings)
     {
-        settings.EffectiveConfigurationReporting.EnableReporting = true;
+        ConfigureRemoteConfiguration(settings, pluginSettings);
+        ConfigureEffectiveConfigReporting(settings);
+    }
 
+    public void ConfigureEffectiveConfigReporting(OpAmpClientSettings settings)
+    {
+        try
+        {
+            var effectiveConfigReporter = _effectiveConfigReporter.Value;
+            if (effectiveConfigReporter == null)
+            {
+                return;
+            }
+
+            var profilerState = ResolveProfilerState();
+            effectiveConfigReporter.RunPreflight(
+                profilerState.Features,
+                profilerState.CpuProfilerCallStackInterval);
+
+            settings.EffectiveConfigurationReporting.EnableReporting = true;
+            Volatile.Write(ref _effectiveConfigReportingEnabled, 1);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(
+                ex,
+                "Effective configuration reporting preflight failed. The capability will not be advertised.");
+        }
+    }
+
+    public void ConfigureRemoteConfiguration(OpAmpClientSettings settings, PluginSettings pluginSettings)
+    {
         if (!pluginSettings.OpAmpRemoteConfigEnabled)
         {
             return;
         }
 
-        _remoteConfigurationEnabled = pluginSettings.OpAmpRemoteConfigEnabled;
-        settings.RemoteConfiguration.AcceptsRemoteConfig = pluginSettings.OpAmpRemoteConfigEnabled;
+        Volatile.Write(ref _remoteConfigurationEnabled, 1);
+        settings.RemoteConfiguration.AcceptsRemoteConfig = true;
         settings.RemoteConfiguration.ReportsRemoteConfigStatus = true;
-    }
-
-    public void RecordPluginConfig(PluginSettings settings)
-    {
-        _effectiveConfigReporter.Value?.CaptureSplunkSettings(settings);
-    }
-
-    public void RecordServiceName(Resource resource)
-    {
-        _effectiveConfigReporter.Value?.CaptureServiceName(resource);
     }
 
     public void RecordLogExporterOptions(OtlpExporterOptions options)
@@ -94,9 +132,14 @@ internal sealed class OpAmp
     public void OnClientStarted(OpAmpClient client)
     {
         Volatile.Write(ref _opAmpClient, client);
-        if (_remoteConfigurationEnabled)
+        if (Volatile.Read(ref _remoteConfigurationEnabled) != 0)
         {
             client.Subscribe(_remoteConfigurationListener);
+        }
+
+        if (Volatile.Read(ref _effectiveConfigReportingEnabled) == 0)
+        {
+            return;
         }
 
         _effectiveConfigReporter.Value?.SetOpAmpClient(client);
@@ -107,7 +150,7 @@ internal sealed class OpAmp
     public void FlushBeforeClientStops()
     {
         var client = Volatile.Read(ref _opAmpClient);
-        if (_remoteConfigurationEnabled)
+        if (Volatile.Read(ref _remoteConfigurationEnabled) != 0)
         {
             client?.Unsubscribe(_remoteConfigurationListener);
         }
@@ -131,17 +174,40 @@ internal sealed class OpAmp
         TryReportEffectiveConfig();
     }
 
-    private static EffectiveConfigReporter? TryCreateEffectiveConfigReporter()
+    private static EffectiveConfigReporter? TryCreateEffectiveConfigReporter(
+        Func<EffectiveConfigReporter> effectiveConfigReporterFactory,
+        Func<bool> opAmpEnabledResolver,
+        Func<bool> sdkSetupEnabledResolver)
     {
         try
         {
-            return UpstreamOpAmpEnabledResolver.IsEnabled() ? new EffectiveConfigReporter() : null;
+            if (!opAmpEnabledResolver())
+            {
+                return null;
+            }
+
+            if (!sdkSetupEnabledResolver())
+            {
+                Log.Warning(
+                    "Effective configuration reporting is unavailable because automatic SDK setup is disabled and application-owned providers cannot be inspected.");
+                return null;
+            }
+
+            return effectiveConfigReporterFactory();
         }
         catch (Exception e)
         {
             Log.Warning($"Could not create effective configuration reporter: {e.Message}");
             return null;
         }
+    }
+
+    private static Func<EffectiveConfigReporter> CreateEffectiveConfigReporterFactory(
+        EffectiveConfigStaticSettings staticSettings)
+    {
+        return () => new EffectiveConfigReporter(
+            staticSettings,
+            OpenTelemetrySdkDisabledResolver.IsDisabled());
     }
 
     private void SendEffectiveConfigAfterRemoteConfiguration()
@@ -169,7 +235,8 @@ internal sealed class OpAmp
 
     private void TryReportEffectiveConfig()
     {
-        if (Volatile.Read(ref _instrumentationInitialized) == 0 ||
+        if (Volatile.Read(ref _effectiveConfigReportingEnabled) == 0 ||
+            Volatile.Read(ref _instrumentationInitialized) == 0 ||
             Volatile.Read(ref _opAmpClientStarted) == 0)
         {
             return;
@@ -193,11 +260,43 @@ internal sealed class OpAmp
                 return;
             }
 
+            RefreshProfilerState(effectiveConfigReporter);
             await effectiveConfigReporter.ReportToOpAmpAsync().ConfigureAwait(false);
         }
         catch (Exception e)
         {
             Log.Error(e, "Failed to report effective configuration to OpAMP server.");
+        }
+    }
+
+    private void RefreshProfilerState(EffectiveConfigReporter effectiveConfigReporter)
+    {
+        var profilerState = ResolveProfilerState();
+        effectiveConfigReporter.UpdateProfilerState(
+            profilerState.Features,
+            profilerState.CpuProfilerCallStackInterval);
+    }
+
+    private (EffectiveProfilerFeatures Features, uint? CpuProfilerCallStackInterval) ResolveProfilerState()
+    {
+        var profilerFeatures = _profilerStateResolver();
+        if (Volatile.Read(ref _remoteConfigurationEnabled) == 0)
+        {
+            return (profilerFeatures, null);
+        }
+
+        try
+        {
+            var runtimeSettings = ProfilerRuntimeConfiguration.Current;
+            profilerFeatures = runtimeSettings.CpuProfilerEnabled
+                ? profilerFeatures | EffectiveProfilerFeatures.Cpu
+                : profilerFeatures & ~EffectiveProfilerFeatures.Cpu;
+
+            return (profilerFeatures, runtimeSettings.CpuProfilerCallStackInterval);
+        }
+        catch (InvalidOperationException)
+        {
+            return (profilerFeatures, null);
         }
     }
 }

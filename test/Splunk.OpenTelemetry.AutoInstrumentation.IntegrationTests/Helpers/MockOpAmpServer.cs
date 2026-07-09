@@ -42,6 +42,7 @@ internal sealed class MockOpAmpServer : IDisposable
     private readonly BlockingCollection<AgentToServer> _frames = new(10);
     private readonly object _effectiveConfigFramesLock = new();
     private readonly List<EffectiveConfigFrameSnapshot> _effectiveConfigFrames = [];
+    private readonly ManualResetEventSlim _effectiveConfigReceived = new(false);
 
     public MockOpAmpServer(ITestOutputHelper output, string host = "localhost")
     {
@@ -141,7 +142,7 @@ internal sealed class MockOpAmpServer : IDisposable
             description);
     }
 
-    public void AssertEffectiveConfigPayloads(
+    public string AssertEffectiveConfigPayloads(
         string fileName,
         string contentType,
         Func<string, bool> finalPayloadPredicate)
@@ -176,12 +177,22 @@ internal sealed class MockOpAmpServer : IDisposable
             .Files[0]
             .Body;
         Assert.True(finalPayloadPredicate(finalPayload), "The final effective config payload did not contain the expected values.");
+        return finalPayload;
+    }
+
+    public void AssertNoEffectiveConfigFrames(TimeSpan? timeout = null)
+    {
+        timeout ??= TestTimeout.NoExpectation;
+        Assert.False(
+            _effectiveConfigReceived.Wait(timeout.Value),
+            "Expected no effective configuration frames.");
     }
 
     public void Dispose()
     {
         WriteOutput("Shutting down.");
         _listener.Dispose();
+        _effectiveConfigReceived.Dispose();
         _frames.Dispose();
     }
 
@@ -322,6 +333,7 @@ internal sealed class MockOpAmpServer : IDisposable
             return;
         }
 
+        _effectiveConfigReceived.Set();
         var files = effectiveConfig.ConfigMap?.ConfigMap
             .Select(file => new EffectiveConfigFileSnapshot(file.Key, file.Value.ContentType, file.Value.Body.ToStringUtf8()))
             .ToArray() ?? [];
