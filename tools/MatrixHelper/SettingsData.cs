@@ -66,6 +66,10 @@ internal static class SettingsData
             new("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", "Equivalent to `OTEL_EXPORTER_OTLP_TIMEOUT`, but applies only to traces.", "10000", "int", ExporterCategory),
             new("OTEL_EXPORTER_OTLP_METRICS_TIMEOUT", "Equivalent to `OTEL_EXPORTER_OTLP_TIMEOUT`, but applies only to metrics.", "10000", "int", ExporterCategory),
             new("OTEL_EXPORTER_OTLP_LOGS_TIMEOUT", "Equivalent to `OTEL_EXPORTER_OTLP_TIMEOUT`, but applies only to logs.", "10000", "int", ExporterCategory),
+            new("OTEL_EXPORTER_OTLP_COMPRESSION", "Compression method for the OTLP exporter. Supported values are `gzip`, `none`.", "none", "string", ExporterCategory),
+            new("OTEL_EXPORTER_OTLP_TRACES_COMPRESSION", "Equivalent to `OTEL_EXPORTER_OTLP_COMPRESSION`, but applies only to traces.", "none", "string", ExporterCategory),
+            new("OTEL_EXPORTER_OTLP_METRICS_COMPRESSION", "Equivalent to `OTEL_EXPORTER_OTLP_COMPRESSION`, but applies only to metrics.", "none", "string", ExporterCategory),
+            new("OTEL_EXPORTER_OTLP_LOGS_COMPRESSION", "Equivalent to `OTEL_EXPORTER_OTLP_COMPRESSION`, but applies only to logs.", "none", "string", ExporterCategory),
             new("OTEL_EXPORTER_OTLP_HEADERS", "Comma-separated list of additional HTTP headers sent with each export, for example: `Authorization=secret,X-Key=Value`.", string.Empty, "string", ExporterCategory),
             new("OTEL_EXPORTER_OTLP_TRACES_HEADERS", "Equivalent to `OTEL_EXPORTER_OTLP_HEADERS`, but applies only to traces.", string.Empty, "string", ExporterCategory),
             new("OTEL_EXPORTER_OTLP_METRICS_HEADERS", "Equivalent to `OTEL_EXPORTER_OTLP_HEADERS`, but applies only to metrics.", string.Empty, "string", ExporterCategory),
@@ -76,7 +80,7 @@ internal static class SettingsData
 
             // profiling
             new("SPLUNK_PROFILER_ENABLED", "Activates AlwaysOn Profiling.", "false", "boolean", ProfilingCategory),
-            new("SPLUNK_PROFILER_MEMORY_ENABLED", "Activates memory profiling.", "false", "boolean", ProfilingCategory),
+            new("SPLUNK_PROFILER_MEMORY_ENABLED", "Activates memory profiling. Not supported on .NET Framework.", "false", "boolean", ProfilingCategory),
             new("SPLUNK_PROFILER_LOGS_ENDPOINT", "The collector endpoint for profiler logs.", "http://localhost:4318/v1/logs", "string", ProfilingCategory),
             new("SPLUNK_PROFILER_CALL_STACK_INTERVAL", "Frequency with which call stacks are sampled, in milliseconds.", "10000", "int", ProfilingCategory),
             new("SPLUNK_PROFILER_EXPORT_TIMEOUT", "Export timeout, in milliseconds.", "3000", "int", ProfilingCategory),
@@ -138,7 +142,7 @@ internal static class SettingsData
 
             // OpAmp
             new("OTEL_DOTNET_AUTO_OPAMP_ENABLED", "Enables OpAMP client.", "false", "boolean", OpAmpCategory),
-            new("OTEL_DOTNET_AUTO_OPAMP_SERVER_URL", "OpAMP server url.", "https://localhost:4318/v1/opamp", "string", OpAmpCategory),
+            new("OTEL_DOTNET_AUTO_OPAMP_SERVER_URL", "OpAMP server url.", "https://localhost:4320/v1/opamp", "string", OpAmpCategory),
         };
 
         return settings;
