@@ -41,6 +41,8 @@ internal static class Constants
 
     public const bool DefaultTraceResponseHeaderEnabled = true;
 
+    public const string DefaultFileBasedConfigFileName = "config.yaml";
+
     public static class Ingest
     {
         public const string TracesIngestTemplate = "https://ingest.{0}.observability.splunkcloud.com/v2/trace/otlp";

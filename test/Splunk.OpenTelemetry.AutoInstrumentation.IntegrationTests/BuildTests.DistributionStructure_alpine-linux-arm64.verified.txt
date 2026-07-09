@@ -1,5 +1,6 @@
 ﻿[
   /LICENSE,
+  /SPLUNK_VERSION,
   /VERSION,
   /instrument.sh,
   /linux-musl-arm64/OpenTelemetry.AutoInstrumentation.Native.so,
