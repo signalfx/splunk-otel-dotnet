@@ -14,14 +14,15 @@
 // limitations under the License.
 // </copyright>
 
-namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 
 internal static class UpstreamInstrumentationResolver
 {
     private const string InstrumentationTypeName = "OpenTelemetry.AutoInstrumentation.Instrumentation, OpenTelemetry.AutoInstrumentation";
 
-    public static Type? TryGetInstrumentationType()
+    public static Type GetInstrumentationType()
     {
-        return Type.GetType(InstrumentationTypeName, throwOnError: false);
+        return Type.GetType(InstrumentationTypeName, throwOnError: false)
+            ?? throw new TypeLoadException("The pinned upstream Instrumentation type was not found.");
     }
 }
