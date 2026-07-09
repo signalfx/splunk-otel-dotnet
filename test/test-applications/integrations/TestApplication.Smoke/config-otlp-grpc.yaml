@@ -1,0 +1,21 @@
+file_format: "1.0-rc.1"
+
+plugins/development:
+  plugins:
+    - Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation
+
+opamp/development:
+  server_url: ${OTEL_DOTNET_AUTO_OPAMP_SERVER_URL}
+
+resource:
+  attributes:
+    - name: service.name
+      value: yaml-grpc-exporter-service
+      type: string
+
+meter_provider:
+  readers:
+    - periodic:
+        exporter:
+          otlp_grpc:
+            endpoint: http://localhost:4317

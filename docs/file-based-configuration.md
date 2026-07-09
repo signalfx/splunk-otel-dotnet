@@ -92,6 +92,7 @@ distribution:
           # If omitted or null, 10000 is used.
           sampling_interval: 10000
         # Configure memory allocation profiler
+        # Memory profiling is not supported on .NET Framework.
         memory_profiler:
           # Configure maximum memory samples collected per minute. 
           # Maximum value is 500.
@@ -136,6 +137,7 @@ distribution:
         # Configure CPU stack profiler with default settings
         cpu_profiler:
         # Configure Memory allocation profiler with default settings
+        # Memory profiling is not supported on .NET Framework.
         memory_profiler:
       # Configure Callgraph snapshot profiler with default settings
       callgraphs:
@@ -188,6 +190,7 @@ distribution:
           # If omitted or null, 10000 is used.
           sampling_interval: ${SPLUNK_PROFILER_CALL_STACK_INTERVAL}
         # Configure memory allocation profiler
+        # Memory profiling is not supported on .NET Framework.
         memory_profiler:
           # Configure maximum memory samples collected per minute. 
           # Maximum value is 500.
