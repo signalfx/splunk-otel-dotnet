@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Globalization;
 using System.Net.Http;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using TestApplication.Shared;
 
@@ -31,6 +32,16 @@ public class Program
     {
         ConsoleHelper.WriteSplashScreen(args);
 
+        // This is needed to verify OpAmp effective config reporting when ILogger integration is used.
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var logger = loggerFactory.CreateLogger<Program>();
+
+        if (Environment.GetEnvironmentVariable("SKIP_TELEMETRY_EMISSION") == "true")
+        {
+            WaitIfLongRunning();
+            return;
+        }
+
         if (args.Length != 2)
         {
             throw new InvalidOperationException("Missing arguments. Provide server port with --test-server-port <test-server-port>.");
@@ -40,20 +51,23 @@ public class Program
 
         EmitTraces(testServerPort);
         EmitMetrics();
-        EmitLogs();
+        EmitLogs(logger);
 
+        WaitIfLongRunning();
+    }
+
+    private static void WaitIfLongRunning()
+    {
         // The "LONG_RUNNING" environment variable is used by tests that access/receive
         // data that takes time to be produced.
-        var longRunning = Environment.GetEnvironmentVariable("LONG_RUNNING");
-
-        while (longRunning == "true")
+        if (Environment.GetEnvironmentVariable("LONG_RUNNING") == "true")
         {
             // In this case it is necessary to ensure that the test has a chance to read the
             // expected data, only by keeping the application alive for some time that can
             // be ensured. Anyway, tests that set "LONG_RUNNING" env var to true are expected
             // to kill the process directly.
             Console.WriteLine("LONG_RUNNING is true, waiting for process to be killed...");
-            Console.ReadLine();
+            Thread.Sleep(Timeout.Infinite);
         }
     }
 
@@ -93,11 +107,8 @@ public class Program
         myFruitCounter.Add(1, new KeyValuePair<string, object?>("name", "apple"));
     }
 
-    private static void EmitLogs()
+    private static void EmitLogs(ILogger<Program> logger)
     {
-        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-
-        var logger = loggerFactory.CreateLogger<Program>();
         logger.LogInformation("SmokeTest app log");
     }
 }

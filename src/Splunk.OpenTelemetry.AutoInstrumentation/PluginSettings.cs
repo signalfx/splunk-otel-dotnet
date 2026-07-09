@@ -1,4 +1,4 @@
-﻿// <copyright file="PluginSettings.cs" company="Splunk Inc.">
+// <copyright file="PluginSettings.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-using System.Diagnostics;
 using System.Reflection;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
@@ -70,13 +69,14 @@ internal class PluginSettings
         ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
     }
 
-    internal PluginSettings(YamlRoot configuration)
+    internal PluginSettings(YamlRoot configuration, string? fileName = null)
     {
         if (configuration == null)
         {
             throw new ArgumentNullException(nameof(configuration));
         }
 
+        FileBasedConfigFileName = fileName ?? Constants.DefaultFileBasedConfigFileName;
         Realm = Constants.None;
         AccessToken = null;
         IsOtlpEndpointSet = false;
@@ -140,6 +140,8 @@ internal class PluginSettings
 
     public bool IsOtlpEndpointSet { get; }
 
+    public string? FileBasedConfigFileName { get; }
+
     public bool CpuProfilerEnabled { get; }
 
     public uint CpuProfilerCallStackInterval { get; }
@@ -160,12 +162,12 @@ internal class PluginSettings
     {
         if (IsYamlConfigEnabled)
         {
-            var fileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName) ?? "config.yaml";
+            var fileName = ResolveFileBasedConfigFileName();
 
             var splunkConfiguration = LoadSplunkConfig(fileName);
             if (splunkConfiguration != null)
             {
-                return new PluginSettings(splunkConfiguration);
+                return new PluginSettings(splunkConfiguration, fileName);
             }
             else
             {
@@ -185,6 +187,17 @@ internal class PluginSettings
         };
 
         return new PluginSettings(configurationSource);
+    }
+
+    internal static string ResolveFileBasedConfigFileName()
+    {
+        var fileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName);
+        return ResolveFileBasedConfigFileName(fileName);
+    }
+
+    internal static string ResolveFileBasedConfigFileName(string? fileName)
+    {
+        return string.IsNullOrEmpty(fileName) ? Constants.DefaultFileBasedConfigFileName : fileName!;
     }
 
     private static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)

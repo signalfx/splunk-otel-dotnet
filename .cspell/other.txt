@@ -8,6 +8,7 @@ dylib
 Expector
 mktemp
 myapp
+opamp
 opentelemetry
 opentracing
 OTLP

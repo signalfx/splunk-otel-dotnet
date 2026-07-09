@@ -29,7 +29,7 @@ internal static class ConfigurationKeys
         /// Configuration key for the path to the configuration file.
         /// Default is <c>"config.yaml"</c>.
         /// </summary>
-        public const string FileName = "OTEL_EXPERIMENTAL_CONFIG_FILE";
+        public const string FileName = "OTEL_CONFIG_FILE";
     }
 
     public static class Splunk
@@ -61,17 +61,15 @@ internal static class ConfigurationKeys
             /// </summary>
             public const string CpuProfilerEnabled = "SPLUNK_PROFILER_ENABLED";
 
-#if NET
             /// <summary>
             /// Configuration key for enabling memory profiler.
             /// </summary>
             public const string MemoryProfilerEnabled = "SPLUNK_PROFILER_MEMORY_ENABLED";
 
             /// <summary>
-            /// Configuration key for Profiler maximum memory sample collected in a miniute. Defaults to 200, which is also the maximum.
+            /// Configuration key for Profiler maximum memory sample collected in a minute. Defaults to 200, which is also the maximum.
             /// </summary>
             public const string ProfilerMaxMemorySamples = "SPLUNK_PROFILER_MAX_MEMORY_SAMPLES";
-#endif
 
             /// <summary>
             /// Configuration key for endpoint where profiling data is sent. Defaults to the value in `OTLP_EXPORTER_OTLP_ENDPOINT`.
