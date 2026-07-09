@@ -1,0 +1,7 @@
+otel_config_file: "{configFile}"
+meter_provider:
+  readers:
+    - periodic:
+        exporter:
+          otlp_grpc:
+            endpoint: "http://localhost:4317/opentelemetry.proto.collector.metrics.v1.MetricsService/Export"

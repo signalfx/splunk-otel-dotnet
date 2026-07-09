@@ -1,4 +1,4 @@
-// <copyright file="EffectiveResourceConfigReader.cs" company="Splunk Inc.">
+// <copyright file="EffectiveConfigStaticSettings.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,26 +14,20 @@
 // limitations under the License.
 // </copyright>
 
-using OpenTelemetry.Resources;
-
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
-internal static class EffectiveResourceConfigReader
+internal sealed class EffectiveConfigStaticSettings
 {
-    private const string ServiceNameAttributeName = "service.name";
-
-    internal static string? ReadServiceName(Resource resource)
+    public EffectiveConfigStaticSettings(PluginSettings settings)
     {
-        foreach (var attribute in resource.Attributes)
-        {
-            if (string.Equals(attribute.Key, ServiceNameAttributeName, StringComparison.Ordinal) &&
-                attribute.Value is string serviceName &&
-                !string.IsNullOrEmpty(serviceName))
-            {
-                return serviceName;
-            }
-        }
-
-        return null;
+        FileBasedConfigFileName = settings.FileBasedConfigFileName;
+        CpuProfilerCallStackInterval = settings.CpuProfilerCallStackInterval;
+        SnapshotSamplingInterval = settings.SnapshotsSamplingInterval;
     }
+
+    public string? FileBasedConfigFileName { get; }
+
+    public uint CpuProfilerCallStackInterval { get; }
+
+    public uint SnapshotSamplingInterval { get; }
 }
