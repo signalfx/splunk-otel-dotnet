@@ -11,8 +11,9 @@
 #    OTEL_DOTNET_AUTO_HOME=%InstallationLocation%
 #    OTEL_DOTNET_AUTO_PLUGINS=Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation
 #  - For auto-instrumentation by container injection, the Linux command cp is
-#    used and must be availabe in the image.
-FROM busybox AS downloader
+#    used and must be available in the image.
+
+FROM busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d AS downloader
 
 ARG RELEASE_VER
 
@@ -26,7 +27,7 @@ RUN unzip splunk-opentelemetry-dotnet-linux-glibc-x64.zip &&\
     rm splunk-opentelemetry-dotnet-linux-glibc-x64.zip splunk-opentelemetry-dotnet-linux-musl-x64.zip &&\
     chmod -R go+r .
 
-FROM busybox
+FROM busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d
 
 LABEL org.opencontainers.image.source="https://github.com/signalfx/splunk-otel-dotnet"
 LABEL org.opencontainers.image.description="Splunk Distribution of OpenTelemetry .NET"

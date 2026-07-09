@@ -14,14 +14,13 @@
 // limitations under the License.
 // </copyright>
 
-using System.Threading;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.OpAmp.Client;
 using OpenTelemetry.OpAmp.Client.Settings;
-using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
@@ -31,29 +30,56 @@ internal sealed class OpAmp
     private static readonly ILogger Log = new Logger();
 
     private readonly Lazy<EffectiveConfigReporter?> _effectiveConfigReporter;
+    private readonly Func<EffectiveProfilerFeatures> _profilerStateResolver;
+    private int _effectiveConfigReportingEnabled;
     private int _instrumentationInitialized;
     private int _opAmpClientStarted;
     private int _initialEffectiveConfigReportStarted;
     private Task? _initialEffectiveConfigReportTask;
 
-    public OpAmp()
+    public OpAmp(EffectiveConfigStaticSettings staticSettings)
+        : this(
+            CreateEffectiveConfigReporterFactory(staticSettings),
+            UpstreamOpAmpEnabledResolver.IsEnabled,
+            UpstreamSdkSetupEnabledResolver.IsEnabled,
+            UpstreamProfilerStateResolver.Resolve)
     {
-        _effectiveConfigReporter = new Lazy<EffectiveConfigReporter?>(TryCreateEffectiveConfigReporter);
     }
 
-    public static void EnableEffectiveConfigReporting(OpAmpClientSettings settings)
+    internal OpAmp(
+        Func<EffectiveConfigReporter> effectiveConfigReporterFactory,
+        Func<bool> opAmpEnabledResolver,
+        Func<bool> sdkSetupEnabledResolver,
+        Func<EffectiveProfilerFeatures> profilerStateResolver)
     {
-        settings.EffectiveConfigurationReporting.EnableReporting = true;
+        _effectiveConfigReporter = new(() => TryCreateEffectiveConfigReporter(
+            effectiveConfigReporterFactory,
+            opAmpEnabledResolver,
+            sdkSetupEnabledResolver));
+        _profilerStateResolver = profilerStateResolver;
     }
 
-    public void RecordPluginConfig(PluginSettings settings)
+    public void ConfigureEffectiveConfigReporting(OpAmpClientSettings settings)
     {
-        _effectiveConfigReporter.Value?.CaptureSplunkSettings(settings);
-    }
+        try
+        {
+            var effectiveConfigReporter = _effectiveConfigReporter.Value;
+            if (effectiveConfigReporter == null)
+            {
+                return;
+            }
 
-    public void RecordServiceName(Resource resource)
-    {
-        _effectiveConfigReporter.Value?.CaptureServiceName(resource);
+            effectiveConfigReporter.RunPreflight(_profilerStateResolver());
+
+            settings.EffectiveConfigurationReporting.EnableReporting = true;
+            Volatile.Write(ref _effectiveConfigReportingEnabled, 1);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(
+                ex,
+                "Effective configuration reporting preflight failed. The capability will not be advertised.");
+        }
     }
 
     public void RecordLogExporterOptions(OtlpExporterOptions options)
@@ -78,6 +104,11 @@ internal sealed class OpAmp
 
     public void OnClientStarted(OpAmpClient client)
     {
+        if (Volatile.Read(ref _effectiveConfigReportingEnabled) == 0)
+        {
+            return;
+        }
+
         _effectiveConfigReporter.Value?.SetOpAmpClient(client);
         Volatile.Write(ref _opAmpClientStarted, 1);
         TryReportEffectiveConfig();
@@ -104,11 +135,26 @@ internal sealed class OpAmp
         TryReportEffectiveConfig();
     }
 
-    private static EffectiveConfigReporter? TryCreateEffectiveConfigReporter()
+    private static EffectiveConfigReporter? TryCreateEffectiveConfigReporter(
+        Func<EffectiveConfigReporter> effectiveConfigReporterFactory,
+        Func<bool> opAmpEnabledResolver,
+        Func<bool> sdkSetupEnabledResolver)
     {
         try
         {
-            return UpstreamOpAmpEnabledResolver.IsEnabled() ? new EffectiveConfigReporter() : null;
+            if (!opAmpEnabledResolver())
+            {
+                return null;
+            }
+
+            if (!sdkSetupEnabledResolver())
+            {
+                Log.Warning(
+                    "Effective configuration reporting is unavailable because automatic SDK setup is disabled and application-owned providers cannot be inspected.");
+                return null;
+            }
+
+            return effectiveConfigReporterFactory();
         }
         catch (Exception e)
         {
@@ -117,9 +163,18 @@ internal sealed class OpAmp
         }
     }
 
+    private static Func<EffectiveConfigReporter> CreateEffectiveConfigReporterFactory(
+        EffectiveConfigStaticSettings staticSettings)
+    {
+        return () => new EffectiveConfigReporter(
+            staticSettings,
+            OpenTelemetrySdkDisabledResolver.IsDisabled());
+    }
+
     private void TryReportEffectiveConfig()
     {
-        if (Volatile.Read(ref _instrumentationInitialized) == 0 ||
+        if (Volatile.Read(ref _effectiveConfigReportingEnabled) == 0 ||
+            Volatile.Read(ref _instrumentationInitialized) == 0 ||
             Volatile.Read(ref _opAmpClientStarted) == 0)
         {
             return;
