@@ -8,9 +8,7 @@ Effective configuration reporting is enabled when OpAMP is enabled and the
 active configuration passes startup validation. Automatic SDK setup is required;
 `OTEL_SDK_DISABLED=true` remains supported as a valid no-op SDK configuration.
 
-## Configuration
-
-### OpAMP client
+## OpAMP client Configuration
 
 Configure the OpAMP client through the OpenTelemetry .NET auto-instrumentation
 OpAMP options:
@@ -18,7 +16,7 @@ OpAMP options:
 - [Environment variables](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.16.0/docs/config.md#opamp-client)
 - [File-based configuration](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.16.0/docs/file-based-configuration.md#opamp)
 
-### Effective configuration
+## Effective configuration
 
 When instrumentation is configured without file-based configuration, the OpAMP
 effective configuration contains one file named `environment` with content type
@@ -48,7 +46,7 @@ resolved OTLP endpoints for active providers, plus active Splunk profiling
 settings. Environment variable templates and omitted YAML defaults are reported
 as their final evaluated values.
 
-### Remote configuration
+## Remote configuration
 
 Remote configuration is a Splunk OpAMP feature flag. Configure it through:
 
@@ -71,7 +69,7 @@ message when the payload cannot be applied.
 After a remote configuration is applied, subsequent OpAMP effective
 configuration reports reflect the active CPU profiler runtime state.
 
-#### Remote configuration payload
+### Remote configuration payload
 
 ```yaml
 distribution:
@@ -82,7 +80,7 @@ distribution:
           sampling_interval: 10000
 ```
 
-#### Runtime behavior
+### Runtime behavior
 
 Profiling remote configuration only works when the
 [.NET CLR Profiler](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.16.0/docs/config.md#net-clr-profiler)
