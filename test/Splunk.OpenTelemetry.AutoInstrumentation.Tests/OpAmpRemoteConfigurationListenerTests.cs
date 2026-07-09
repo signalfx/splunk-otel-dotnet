@@ -23,8 +23,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 public class OpAmpRemoteConfigurationListenerTests
 {
     private const string CpuProfilerRemoteConfiguration = """
-        file_format: "1.0-rc.1"
-
         distribution:
           splunk:
             profiling:
