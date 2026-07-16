@@ -28,6 +28,11 @@ internal static class EffectiveYamlSerializer
     private static readonly Lazy<MethodInfo> SerializeMethod = new(() =>
         GetInstanceMethod(Serializer.Value.GetType(), "Serialize", [typeof(object)]));
 
+    public static void ValidateCompatibility()
+    {
+        _ = SerializeMethod.Value;
+    }
+
     public static string Serialize(EffectiveYamlConfig value)
     {
         var result = SerializeMethod.Value.Invoke(Serializer.Value, [value]);

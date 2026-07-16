@@ -27,8 +27,9 @@ internal sealed class EffectiveLogEndpointTracker
     private readonly object _lock = new();
     private readonly List<EffectiveOtlpEndpoint> _endpoints = [];
     private readonly Func<IReadOnlyList<EffectiveOtlpEndpoint>?> _bridgeLogEndpointResolver;
+    private bool _bridgeLogEndpointsResolved;
     private bool _iloggerLogsConfigured;
-    private bool _hasILoggerResolutionFailure;
+    private bool _hasEndpointResolutionFailure;
 
     public EffectiveLogEndpointTracker()
         : this(ResolveBridgeLogEndpoints)
@@ -60,6 +61,7 @@ internal sealed class EffectiveLogEndpointTracker
 
     public bool CaptureLogExporterOptions(OtlpExporterOptions options)
     {
+        Exception? resolutionFailure = null;
         lock (_lock)
         {
             if (!_iloggerLogsConfigured)
@@ -77,33 +79,39 @@ internal sealed class EffectiveLogEndpointTracker
                     return false;
                 }
 
+                EffectiveConfigLimits.ValidateEndpointCount(_endpoints.Count + 1);
                 _endpoints.Add(endpoint);
                 return true;
             }
             catch (Exception ex)
             {
-                _hasILoggerResolutionFailure = true;
-                Log.Warning($"Failed to resolve logs endpoint from OtlpExporterOptions: {ex.Message}");
-                return false;
+                _hasEndpointResolutionFailure = true;
+                resolutionFailure = ex;
             }
         }
+
+        Log.Warning($"Failed to resolve logs endpoint from OtlpExporterOptions: {resolutionFailure!.Message}");
+        return false;
     }
 
     public IReadOnlyList<EffectiveOtlpEndpoint> GetEndpoints()
     {
+        ResolveBridgeLogEndpointsIfNeeded();
+
         lock (_lock)
         {
-            if (!_iloggerLogsConfigured)
-            {
-                RefreshBridgeLogEndpoints();
-            }
-
-            if (_hasILoggerResolutionFailure)
-            {
-                throw new InvalidOperationException("The OpenTelemetry logs endpoint state could not be resolved.");
-            }
-
+            ThrowIfResolutionFailed();
             return _endpoints.ToArray();
+        }
+    }
+
+    public void ValidateState()
+    {
+        ResolveBridgeLogEndpointsIfNeeded();
+
+        lock (_lock)
+        {
+            ThrowIfResolutionFailed();
         }
     }
 
@@ -116,13 +124,90 @@ internal sealed class EffectiveLogEndpointTracker
             : OtlpEndpointProviderGraphResolver.ResolveLogEndpoints(bridgeLoggerProvider);
     }
 
-    private void RefreshBridgeLogEndpoints()
+    private void ResolveBridgeLogEndpointsIfNeeded()
     {
-        var bridgeLogEndpoints = _bridgeLogEndpointResolver();
-        _endpoints.Clear();
+        lock (_lock)
+        {
+            if (!ShouldResolveBridgeLogEndpointsLocked())
+            {
+                return;
+            }
+        }
+
+        IReadOnlyList<EffectiveOtlpEndpoint>? bridgeLogEndpoints;
+        try
+        {
+            // Resolving the provider graph may initialize the SDK's lazy export client and invoke
+            // an application-provided HttpClientFactory. Do not run that code while holding _lock.
+            bridgeLogEndpoints = _bridgeLogEndpointResolver();
+        }
+        catch
+        {
+            lock (_lock)
+            {
+                if (!ShouldResolveBridgeLogEndpointsLocked())
+                {
+                    // ILogger configuration or another bridge resolution superseded this attempt.
+                    return;
+                }
+            }
+
+            throw;
+        }
+
+        InvalidOperationException? retentionFailure = null;
         if (bridgeLogEndpoints != null)
         {
-            _endpoints.AddRange(bridgeLogEndpoints);
+            try
+            {
+                EffectiveConfigLimits.ValidateEndpointCount(bridgeLogEndpoints.Count);
+            }
+            catch (InvalidOperationException ex)
+            {
+                retentionFailure = ex;
+            }
+        }
+
+        var logRetentionFailure = false;
+        lock (_lock)
+        {
+            if (!ShouldResolveBridgeLogEndpointsLocked())
+            {
+                return;
+            }
+
+            _bridgeLogEndpointsResolved = true;
+            if (retentionFailure != null)
+            {
+                _hasEndpointResolutionFailure = true;
+                logRetentionFailure = true;
+            }
+            else
+            {
+                _endpoints.Clear();
+                if (bridgeLogEndpoints != null)
+                {
+                    _endpoints.AddRange(bridgeLogEndpoints);
+                }
+            }
+        }
+
+        if (logRetentionFailure)
+        {
+            Log.Warning($"Failed to retain bridge logs endpoints: {retentionFailure!.Message}");
+        }
+    }
+
+    private bool ShouldResolveBridgeLogEndpointsLocked()
+    {
+        return !_iloggerLogsConfigured && !_bridgeLogEndpointsResolved;
+    }
+
+    private void ThrowIfResolutionFailed()
+    {
+        if (_hasEndpointResolutionFailure)
+        {
+            throw new InvalidOperationException("The OpenTelemetry logs endpoint state could not be resolved.");
         }
     }
 }

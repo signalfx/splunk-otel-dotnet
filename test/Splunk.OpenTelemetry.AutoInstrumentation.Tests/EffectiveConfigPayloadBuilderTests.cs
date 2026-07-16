@@ -82,6 +82,56 @@ public class EffectiveConfigPayloadBuilderTests
         });
     }
 
+    [Fact]
+    public void Build_EnvironmentConfig_RedactsEndpointCredentials()
+    {
+        var payload = EffectiveConfigPayloadBuilder.Build(CreateEnvironmentSnapshot(
+            traceEndpoints: [EffectiveOtlpEndpoint.Http("https://user:password@collector:4318/v1/traces")],
+            metricEndpoints: [EffectiveOtlpEndpoint.Http("https://collector:4318/v1/metrics?api_key=metric-secret")],
+            logEndpoints: [EffectiveOtlpEndpoint.Http("https://collector:4318/v1/logs#log-secret")]));
+
+        var actual = ParseEnvironmentConfigPayload(GetBody(payload));
+
+        Assert.Equal("https://collector:4318/v1/traces", actual["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"]);
+        Assert.Equal("https://collector:4318/v1/metrics", actual["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"]);
+        Assert.Equal("https://collector:4318/v1/logs", actual["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"]);
+    }
+
+    [Fact]
+    public void Build_EnvironmentConfig_RejectsMultipleEndpointsForAnySignal()
+    {
+        var endpoints = new[]
+        {
+            EffectiveOtlpEndpoint.Http("http://collector-1:4318"),
+            EffectiveOtlpEndpoint.Http("http://collector-2:4318")
+        };
+        var snapshots = new[]
+        {
+            CreateEnvironmentSnapshot(traceEndpoints: endpoints),
+            CreateEnvironmentSnapshot(metricEndpoints: endpoints),
+            CreateEnvironmentSnapshot(logEndpoints: endpoints)
+        };
+
+        foreach (var snapshot in snapshots)
+        {
+            var exception = Assert.Throws<InvalidOperationException>(
+                () => EffectiveConfigPayloadBuilder.Build(snapshot));
+
+            Assert.Contains("cannot represent 2 active", exception.Message);
+        }
+    }
+
+    [Fact]
+    public void CreateFile_RejectsPayloadOverSizeLimit()
+    {
+        var oversizedBody = new string('a', EffectiveConfigLimits.MaxPayloadSizeBytes + 1);
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => EffectiveConfigPayloadBuilder.CreateFile("config.yaml", "application/yaml", oversizedBody));
+
+        Assert.Contains(EffectiveConfigLimits.MaxPayloadSizeBytes.ToString(), exception.Message);
+    }
+
     private static EffectiveConfigSnapshot CreateEnvironmentSnapshot(
         IReadOnlyList<EffectiveOtlpEndpoint>? traceEndpoints = null,
         IReadOnlyList<EffectiveOtlpEndpoint>? metricEndpoints = null,

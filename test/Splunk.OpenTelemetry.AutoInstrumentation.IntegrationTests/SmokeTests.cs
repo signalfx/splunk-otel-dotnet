@@ -34,7 +34,6 @@ using OpAmp.Proto.V1;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.Helpers;
 using Xunit.Abstractions;
-using YamlDotNet.RepresentationModel;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests;
 
@@ -284,6 +283,98 @@ public class SmokeTests : TestHelper, IDisposable
 
     [Fact]
     [Trait("Category", "EndToEnd")]
+    public void OpAmpReportFullStateRequestIncludesCurrentEffectiveConfigAndClientState()
+    {
+        using var opAmpServer = new MockOpAmpServer(Output);
+
+        SetEnvironmentVariable("OTEL_SDK_DISABLED", "true");
+        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+        opAmpServer.RequestFullStateOnNextEffectiveConfig();
+
+        var expectedPayload = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = "none",
+            ["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"] = "none",
+            ["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"] = "none",
+            ["SPLUNK_PROFILER_ENABLED"] = "false",
+            ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
+            ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
+            ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "40",
+            ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
+            ["OTEL_CONFIG_FILE"] = "null"
+        };
+
+        opAmpServer.Expect(ReportsEffectiveConfigCapability, "Reports effective config capability");
+        opAmpServer.ExpectEffectiveConfigPayload(
+            "environment",
+            ExpectedEnvVarConfigContentType,
+            payload => EnvironmentConfigPayloadMatches(payload, expectedPayload),
+            "Has initial effective config payload");
+        opAmpServer.Expect(
+            frame =>
+            {
+                var configMap = frame.EffectiveConfig?.ConfigMap?.ConfigMap;
+                return frame.AgentDescription != null &&
+                       frame.Health != null &&
+                       ReportsEffectiveConfigCapability(frame) &&
+                       configMap != null &&
+                       configMap.TryGetValue("environment", out var configFile) &&
+                       configFile.ContentType == ExpectedEnvVarConfigContentType &&
+                       EnvironmentConfigPayloadMatches(configFile.Body.ToStringUtf8(), expectedPayload);
+            },
+            "Full state contains agent description, capabilities, health, and current effective config");
+
+        RunTestApplicationAndAssertOpAmp(opAmpServer);
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void LostEffectiveConfigIsRecoveredAfterHeartbeatSequenceGap()
+    {
+        using var opAmpServer = new MockOpAmpServer(Output);
+
+        SetEnvironmentVariable("OTEL_SDK_DISABLED", "true");
+        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+        opAmpServer.RejectNextEffectiveConfigAndRequestFullStateOnSequenceGap();
+
+        var expectedPayload = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = "none",
+            ["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"] = "none",
+            ["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"] = "none",
+            ["SPLUNK_PROFILER_ENABLED"] = "false",
+            ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
+            ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
+            ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "40",
+            ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
+            ["OTEL_CONFIG_FILE"] = "null"
+        };
+
+        opAmpServer.Expect(ReportsEffectiveConfigCapability, "Reports effective config capability");
+        opAmpServer.Expect(
+            frame =>
+            {
+                var configMap = frame.EffectiveConfig?.ConfigMap?.ConfigMap;
+                return frame.AgentDescription != null &&
+                       frame.Health != null &&
+                       ReportsEffectiveConfigCapability(frame) &&
+                       configMap != null &&
+                       configMap.TryGetValue("environment", out var configFile) &&
+                       configFile.ContentType == ExpectedEnvVarConfigContentType &&
+                       EnvironmentConfigPayloadMatches(configFile.Body.ToStringUtf8(), expectedPayload);
+            },
+            "Full state recovers the effective config rejected before the heartbeat sequence gap");
+
+        RunTestApplicationAndAssertOpAmp(opAmpServer);
+
+        opAmpServer.AssertEffectiveConfigPayloads(
+            "environment",
+            ExpectedEnvVarConfigContentType,
+            payload => EnvironmentConfigPayloadMatches(payload, expectedPayload));
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
     public void EffectiveConfigIsNotAdvertisedWhenAutomaticSdkSetupIsDisabled()
     {
         using var opAmpServer = new MockOpAmpServer(Output);
@@ -497,7 +588,9 @@ public class SmokeTests : TestHelper, IDisposable
 
         // Set traces and service name via env var; yaml substitutes them in.
         // Metrics endpoint is intentionally not set; yaml fallback value is used instead.
-        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://traces-collector:4318/v1/traces");
+        SetEnvironmentVariable(
+            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
+            "http://user:password@traces-collector:4318/v1/traces?api_key=secret#fragment");
         SetEnvironmentVariable("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "http://logs-collector:4318/v1/logs");
 
         var payload = RunTestApplicationAndAssertEffectiveConfig(
@@ -506,6 +599,10 @@ public class SmokeTests : TestHelper, IDisposable
             configFile,
             ExpectedYamlConfigContentType);
 
+        Assert.DoesNotContain("user", payload);
+        Assert.DoesNotContain("password", payload);
+        Assert.DoesNotContain("secret", payload);
+        Assert.DoesNotContain("fragment", payload);
         return VerifyEffectiveConfigPayload(payload, configFile);
     }
 
@@ -544,7 +641,7 @@ public class SmokeTests : TestHelper, IDisposable
 
         var payload = RunTestApplicationAndAssertEffectiveConfig(
             opAmpServer,
-            HasReceivedFinalEffectiveConfig,
+            HasEffectiveConfigPayload,
             configFile,
             ExpectedYamlConfigContentType);
 
@@ -585,54 +682,6 @@ public class SmokeTests : TestHelper, IDisposable
     private static bool HasEffectiveConfigPayload(string payload)
     {
         return !string.IsNullOrWhiteSpace(payload);
-    }
-
-    private static bool HasReceivedFinalEffectiveConfig(string payload)
-    {
-        // On .NET, ILogger endpoint capture can happen after the initial OpAmp
-        // effective config report is sent, so logger_provider may arrive in a
-        // subsequent effective config message.
-#if NET
-        return HasYamlSequenceItemCount(payload, "logger_provider", "processors", 2);
-#else
-        return HasEffectiveConfigPayload(payload);
-#endif
-    }
-
-    private static bool HasYamlSequenceItemCount(string payload, string sectionName, string sequenceName, int expectedItemCount)
-    {
-        if (string.IsNullOrWhiteSpace(payload))
-        {
-            return false;
-        }
-
-        try
-        {
-            var yaml = new YamlStream();
-            using var reader = new StringReader(payload);
-            yaml.Load(reader);
-
-            if (yaml.Documents.Count == 0 ||
-                yaml.Documents[0].RootNode is not YamlMappingNode root ||
-                !TryGetMappingChild(root, sectionName, out var sectionNode) ||
-                sectionNode is not YamlMappingNode section ||
-                !TryGetMappingChild(section, sequenceName, out var sequenceNode) ||
-                sequenceNode is not YamlSequenceNode sequence)
-            {
-                return false;
-            }
-
-            return sequence.Children.Count >= expectedItemCount;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private static bool TryGetMappingChild(YamlMappingNode mapping, string key, out YamlNode value)
-    {
-        return mapping.Children.TryGetValue(new YamlScalarNode(key), out value!);
     }
 
     private static bool EnvironmentConfigPayloadMatches(

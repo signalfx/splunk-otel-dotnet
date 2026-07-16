@@ -34,13 +34,29 @@ internal static class EffectiveConfigPayloadBuilder
         return snapshot.IsFileBasedConfig ? BuildYamlPayload(snapshot) : BuildEnvironmentPayload(snapshot);
     }
 
+    public static void ValidateCompatibility(bool isFileBasedConfig)
+    {
+        if (isFileBasedConfig)
+        {
+            EffectiveYamlSerializer.ValidateCompatibility();
+        }
+    }
+
+    internal static EffectiveConfigFile CreateFile(string fileName, string contentType, string body)
+    {
+        EffectiveConfigLimits.ValidateFileNameLength(fileName);
+        EffectiveConfigLimits.ValidatePayloadSize(Encoding.UTF8.GetByteCount(body));
+        var bytes = Encoding.UTF8.GetBytes(body);
+        return new EffectiveConfigFile(new ReadOnlyMemory<byte>(bytes), contentType, fileName);
+    }
+
     private static EffectiveConfigFile BuildEnvironmentPayload(EffectiveConfigSnapshot snapshot)
     {
         var entries = new (string Key, string Value)[]
         {
-            ("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", GetFirstEndpointOrDefault(snapshot.TraceEndpoints, DefaultEndpoint)),
-            ("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", GetFirstEndpointOrDefault(snapshot.MetricEndpoints, DefaultEndpoint)),
-            ("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", GetFirstEndpointOrDefault(snapshot.LogEndpoints, DefaultEndpoint)),
+            ("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", GetSingleEndpointOrDefault(snapshot.TraceEndpoints, "traces", DefaultEndpoint)),
+            ("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", GetSingleEndpointOrDefault(snapshot.MetricEndpoints, "metrics", DefaultEndpoint)),
+            ("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", GetSingleEndpointOrDefault(snapshot.LogEndpoints, "logs", DefaultEndpoint)),
             ("SPLUNK_PROFILER_ENABLED", FormatBoolean(snapshot.CpuProfilerEnabled)),
             ("SPLUNK_PROFILER_MEMORY_ENABLED", FormatBoolean(snapshot.MemoryProfilerEnabled)),
             ("SPLUNK_SNAPSHOT_PROFILER_ENABLED", FormatBoolean(snapshot.SnapshotProfilerEnabled)),
@@ -63,14 +79,17 @@ internal static class EffectiveConfigPayloadBuilder
             EffectiveYamlSerializer.Serialize(yamlConfig));
     }
 
-    private static EffectiveConfigFile CreateFile(string fileName, string contentType, string body)
+    private static string GetSingleEndpointOrDefault(
+        IReadOnlyList<EffectiveOtlpEndpoint> endpoints,
+        string signal,
+        string defaultValue)
     {
-        var bytes = Encoding.UTF8.GetBytes(body);
-        return new EffectiveConfigFile(new ReadOnlyMemory<byte>(bytes), contentType, fileName);
-    }
+        if (endpoints.Count > 1)
+        {
+            throw new InvalidOperationException(
+                $"Environment effective configuration cannot represent {endpoints.Count} active {signal} endpoints.");
+        }
 
-    private static string GetFirstEndpointOrDefault(IReadOnlyList<EffectiveOtlpEndpoint> endpoints, string defaultValue)
-    {
         return endpoints.Count == 0 ? defaultValue : endpoints[0].Endpoint;
     }
 

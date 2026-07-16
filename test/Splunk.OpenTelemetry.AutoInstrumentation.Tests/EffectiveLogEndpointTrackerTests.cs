@@ -59,20 +59,7 @@ public class EffectiveLogEndpointTrackerTests
     }
 
     [Fact]
-    public void CaptureLogExporterOptions_ReportsBatchWhenSdkIgnoresSimpleProcessorType()
-    {
-        var tracker = CreateILoggerTracker();
-
-        Assert.True(tracker.CaptureLogExporterOptions(
-            CreateHttpLogOptions("http://logs-collector:4318/v1/logs", ExportProcessorType.Simple)));
-
-        Assert.Equal(
-            [EffectiveOtlpEndpoint.Http("http://logs-collector:4318/v1/logs", EffectiveOtlpPipelineType.Batch)],
-            tracker.GetEndpoints());
-    }
-
-    [Fact]
-    public void CaptureLogExporterOptions_KeepsFailureAfterLaterCaptureSucceeds()
+    public void CaptureLogExporterOptions_RejectsILoggerExporterSet_WhenAnyExporterCannotBeResolved()
     {
         var tracker = CreateILoggerTracker();
         var unsupportedOptions = CreateHttpLogOptions("http://unsupported-collector:4318/v1/logs");
@@ -82,7 +69,23 @@ public class EffectiveLogEndpointTrackerTests
         Assert.True(tracker.CaptureLogExporterOptions(
             CreateHttpLogOptions("http://logs-collector:4318/v1/logs")));
 
+        Assert.Throws<InvalidOperationException>(() => tracker.ValidateState());
         Assert.Throws<InvalidOperationException>(() => tracker.GetEndpoints());
+    }
+
+    [Fact]
+    public void CaptureLogExporterOptions_RejectsEndpointCountOverLimit()
+    {
+        var tracker = CreateILoggerTracker();
+        for (var i = 0; i < EffectiveConfigLimits.MaxEndpointCount; i++)
+        {
+            Assert.True(tracker.CaptureLogExporterOptions(
+                CreateHttpLogOptions($"http://logs-collector-{i}:4318/v1/logs")));
+        }
+
+        Assert.False(tracker.CaptureLogExporterOptions(
+            CreateHttpLogOptions("http://excess-logs-collector:4318/v1/logs")));
+        Assert.Throws<InvalidOperationException>(() => tracker.ValidateState());
     }
 
     [Fact]
@@ -96,7 +99,7 @@ public class EffectiveLogEndpointTrackerTests
     }
 
     [Fact]
-    public void GetEndpoints_SetsBridgeLoggerProviderEndpoints_WhenOptionsHookRanWithoutILogger()
+    public void GetEndpoints_IgnoresOptionsHookWithoutILoggerAndUsesBridgeProvider()
     {
         var tracker = CreateTracker(() => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
 
@@ -104,15 +107,6 @@ public class EffectiveLogEndpointTrackerTests
         Assert.Equal(
             [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")],
             tracker.GetEndpoints());
-    }
-
-    [Fact]
-    public void CaptureLogExporterOptions_IgnoresEndpoint_WhenILoggerWasNotConfigured()
-    {
-        var tracker = CreateTracker();
-
-        Assert.False(tracker.CaptureLogExporterOptions(CreateHttpLogOptions("http://options-collector:4318/v1/logs")));
-        Assert.Empty(tracker.GetEndpoints());
     }
 
     [Fact]
@@ -124,7 +118,7 @@ public class EffectiveLogEndpointTrackerTests
     }
 
     [Fact]
-    public void GetEndpoints_ReturnsEmpty_WhenBridgeLoggerProviderCouldNotBeResolved()
+    public void GetEndpoints_ReturnsEmpty_WhenBridgeLoggerProviderDoesNotExist()
     {
         var tracker = CreateTracker(() => null);
 
@@ -132,7 +126,7 @@ public class EffectiveLogEndpointTrackerTests
     }
 
     [Fact]
-    public void GetEndpoints_ClearsBridgeEndpoints_WhenResolverReturnsNull()
+    public void GetEndpoints_CachesBridgeEndpoints()
     {
         IReadOnlyList<EffectiveOtlpEndpoint>? bridgeEndpoints =
             [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")];
@@ -142,16 +136,56 @@ public class EffectiveLogEndpointTrackerTests
 
         bridgeEndpoints = null;
 
-        Assert.Empty(tracker.GetEndpoints());
+        Assert.Single(tracker.GetEndpoints());
     }
 
     [Fact]
-    public void GetEndpoints_Throws_WhenBridgeLoggerProviderResolutionFails()
+    public async Task GetEndpoints_DiscardsBridgeResolution_WhenILoggerConfigurationWinsRace()
+    {
+        var resolutionStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var allowResolutionToComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var tracker = CreateTracker(() =>
+        {
+            resolutionStarted.SetResult(true);
+            allowResolutionToComplete.Task.GetAwaiter().GetResult();
+            return [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")];
+        });
+
+        var getEndpointsTask = Task.Run(tracker.GetEndpoints);
+        await WaitForCompletionAsync(resolutionStarted.Task);
+
+        var markILoggerTask = Task.Run(tracker.MarkOpenTelemetryLoggerConfigured);
+        try
+        {
+            Assert.False(await WaitForCompletionAsync(markILoggerTask));
+        }
+        finally
+        {
+            allowResolutionToComplete.TrySetResult(true);
+        }
+
+        Assert.Empty(await WaitForCompletionAsync(getEndpointsTask));
+    }
+
+    [Fact]
+    public void GetEndpoints_RejectsBridgeEndpointCountOverLimit()
+    {
+        var bridgeEndpoints = Enumerable.Range(0, EffectiveConfigLimits.MaxEndpointCount + 1)
+            .Select(index => EffectiveOtlpEndpoint.Http($"http://bridge-collector-{index}:4318/v1/logs"))
+            .ToArray();
+        var tracker = CreateTracker(() => bridgeEndpoints);
+
+        Assert.Throws<InvalidOperationException>(() => tracker.GetEndpoints());
+        Assert.Throws<InvalidOperationException>(() => tracker.ValidateState());
+    }
+
+    [Fact]
+    public void ValidateState_Throws_WhenBridgeLoggerProviderResolutionFails()
     {
         var tracker = CreateTracker(() => throw new InvalidOperationException("bridge resolver failed"));
 
-        var exception = Assert.Throws<InvalidOperationException>(() => tracker.GetEndpoints());
-        Assert.Equal("bridge resolver failed", exception.Message);
+        var validationException = Assert.Throws<InvalidOperationException>(() => tracker.ValidateState());
+        Assert.Equal("bridge resolver failed", validationException.Message);
     }
 
     [Fact]
@@ -200,6 +234,13 @@ public class EffectiveLogEndpointTrackerTests
         var tracker = CreateTracker();
         tracker.MarkOpenTelemetryLoggerConfigured();
         return tracker;
+    }
+
+    private static async Task<T> WaitForCompletionAsync<T>(Task<T> task)
+    {
+        var completedTask = await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(5)));
+        Assert.Same(task, completedTask);
+        return await task;
     }
 
     private static EffectiveLogEndpointTracker CreateTracker(

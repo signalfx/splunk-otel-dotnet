@@ -53,11 +53,13 @@ public class EffectiveProviderEndpointTrackerTests
 
         Assert.False(tracker.Capture(provider));
         Assert.Throws<InvalidOperationException>(() => tracker.GetEndpoints());
+        Assert.Throws<InvalidOperationException>(() => tracker.ValidateState());
         Assert.False(tracker.Capture(provider));
 
         resolutionFails = false;
 
         Assert.False(tracker.Capture(provider));
+        tracker.ValidateState();
         Assert.Single(tracker.GetEndpoints());
     }
 
@@ -77,6 +79,26 @@ public class EffectiveProviderEndpointTrackerTests
         Assert.Equal(
             [EffectiveOtlpEndpoint.Http("http://first-collector:4318/v1/traces")],
             snapshot);
+    }
+
+    [Fact]
+    public void Capture_RejectsEndpointCountOverLimitWithoutRetainingIt()
+    {
+        IReadOnlyList<EffectiveOtlpEndpoint> resolvedEndpoints = Enumerable.Range(
+                0,
+                EffectiveConfigLimits.MaxEndpointCount + 1)
+            .Select(index => EffectiveOtlpEndpoint.Http($"http://collector-{index}:4318/v1/traces"))
+            .ToArray();
+        var tracker = CreateTracker(_ => resolvedEndpoints);
+        var provider = new object();
+
+        Assert.False(tracker.Capture(provider));
+        Assert.Throws<InvalidOperationException>(() => tracker.GetEndpoints());
+
+        resolvedEndpoints = [EffectiveOtlpEndpoint.Http("http://collector:4318/v1/traces")];
+
+        Assert.True(tracker.Capture(provider));
+        Assert.Single(tracker.GetEndpoints());
     }
 
     private static EffectiveProviderEndpointTracker<object> CreateTracker(

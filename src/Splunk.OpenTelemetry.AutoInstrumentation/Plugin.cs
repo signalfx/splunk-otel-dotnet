@@ -161,7 +161,7 @@ public class Plugin
     /// </summary>
     public void BeforeOpAmpClientStopped()
     {
-        _opAmp.FlushBeforeClientStops();
+        _opAmp.StopClientReporting();
     }
 
 #if NETFRAMEWORK

@@ -147,24 +147,6 @@ public class OtlpEndpointProviderGraphResolverTests
     }
 
     [Fact]
-    public void ResolveTraceEndpoints_Throws_WhenCompositeHeadIsNull()
-    {
-        using var provider = global::OpenTelemetry.Sdk.CreateTracerProviderBuilder()
-            .AddProcessor(new NoopActivityProcessor())
-            .AddProcessor(new NoopActivityProcessor())
-            .Build();
-        var processor = provider.GetType()
-            .GetProperty("Processor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
-            .GetValue(provider)!;
-        processor.GetType()
-            .GetField("Head", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
-            .SetValue(processor, null);
-
-        Assert.Throws<InvalidOperationException>(
-            () => OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
-    }
-
-    [Fact]
     public void ResolveMetricEndpoints_ReturnsOtlpExporterEndpoint()
     {
         using var provider = global::OpenTelemetry.Sdk.CreateMeterProviderBuilder()

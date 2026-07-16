@@ -18,12 +18,16 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal readonly struct EffectiveOtlpEndpoint : IEquatable<EffectiveOtlpEndpoint>
 {
+    private const string HiddenEndpoint = "<hidden>";
+
     public EffectiveOtlpEndpoint(
         string endpoint,
         EffectiveOtlpExporterType exporterType,
         EffectiveOtlpPipelineType pipelineType)
     {
-        Endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
+        endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
+        EffectiveConfigLimits.ValidateEndpointLength(endpoint);
+        Endpoint = SanitizeEndpoint(endpoint);
         ExporterType = exporterType;
         PipelineType = pipelineType;
     }
@@ -73,5 +77,29 @@ internal readonly struct EffectiveOtlpEndpoint : IEquatable<EffectiveOtlpEndpoin
     public override string ToString()
     {
         return $"{PipelineType}:{ExporterType}:{Endpoint}";
+    }
+
+    private static string SanitizeEndpoint(string endpoint)
+    {
+        if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var endpointUri))
+        {
+            return HiddenEndpoint;
+        }
+
+        if (string.IsNullOrEmpty(endpointUri.UserInfo) &&
+            string.IsNullOrEmpty(endpointUri.Query) &&
+            string.IsNullOrEmpty(endpointUri.Fragment))
+        {
+            return endpoint;
+        }
+
+        var redactedEndpoint = new UriBuilder(endpointUri)
+        {
+            UserName = string.Empty,
+            Password = string.Empty,
+            Query = string.Empty,
+            Fragment = string.Empty,
+        };
+        return redactedEndpoint.Uri.AbsoluteUri;
     }
 }

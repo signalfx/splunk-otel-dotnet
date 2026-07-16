@@ -14,191 +14,33 @@
 // limitations under the License.
 // </copyright>
 
-using OpenTelemetry.Exporter;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.OpAmp.Client;
 using OpenTelemetry.OpAmp.Client.Messages;
-using OpenTelemetry.Trace;
-using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
-using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal sealed class EffectiveConfigReporter
 {
-    private static readonly ILogger Log = new Logger();
-
-    private readonly EffectiveConfigStaticSettings _staticSettings;
-    private readonly EffectiveProviderEndpointTracker<TracerProvider> _traceEndpointTracker;
-    private readonly EffectiveProviderEndpointTracker<MeterProvider> _metricEndpointTracker;
-    private readonly EffectiveLogEndpointTracker _logEndpointTracker;
-    private readonly bool _openTelemetrySdkDisabled;
-    private volatile EffectiveProfilerFeatures _profilerFeatures;
-    private OpAmpClient? _opAmpClient;
-
-    public EffectiveConfigReporter(
-        EffectiveConfigStaticSettings staticSettings,
-        bool openTelemetrySdkDisabled)
-        : this(staticSettings, openTelemetrySdkDisabled, new EffectiveLogEndpointTracker())
-    {
-    }
-
-    internal EffectiveConfigReporter(
-        EffectiveConfigStaticSettings staticSettings,
-        bool openTelemetrySdkDisabled,
-        Func<IReadOnlyList<EffectiveOtlpEndpoint>?> bridgeLogEndpointResolver)
-        : this(
-            staticSettings,
-            openTelemetrySdkDisabled,
-            new EffectiveLogEndpointTracker(bridgeLogEndpointResolver))
-    {
-    }
+    private readonly EffectiveConfigRecorder _recorder;
+    private readonly EffectiveProfilerFeatures _profilerFeatures;
 
     private EffectiveConfigReporter(
-        EffectiveConfigStaticSettings staticSettings,
-        bool openTelemetrySdkDisabled,
-        EffectiveLogEndpointTracker logEndpointTracker)
+        EffectiveConfigRecorder recorder,
+        EffectiveProfilerFeatures profilerFeatures)
     {
-        _staticSettings = staticSettings;
-        _openTelemetrySdkDisabled = openTelemetrySdkDisabled;
-        _traceEndpointTracker = new EffectiveProviderEndpointTracker<TracerProvider>(
-            OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints);
-        _metricEndpointTracker = new EffectiveProviderEndpointTracker<MeterProvider>(
-            OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints);
-        _logEndpointTracker = logEndpointTracker;
-    }
-
-    public void CaptureTraceEndpoints(TracerProvider provider)
-    {
-        if (_openTelemetrySdkDisabled)
-        {
-            return;
-        }
-
-        if (_traceEndpointTracker.Capture(provider))
-        {
-            SendUpdatedPayloadIfOpAmpClientIsAvailable();
-        }
-    }
-
-    public void CaptureMetricEndpoints(MeterProvider provider)
-    {
-        if (_openTelemetrySdkDisabled)
-        {
-            return;
-        }
-
-        if (_metricEndpointTracker.Capture(provider))
-        {
-            SendUpdatedPayloadIfOpAmpClientIsAvailable();
-        }
-    }
-
-    public void MarkOpenTelemetryLoggerConfigured()
-    {
-        if (_openTelemetrySdkDisabled)
-        {
-            return;
-        }
-
-        if (_logEndpointTracker.MarkOpenTelemetryLoggerConfigured())
-        {
-            SendUpdatedPayloadIfOpAmpClientIsAvailable();
-        }
-    }
-
-    public void CaptureLogExporterOptions(OtlpExporterOptions options)
-    {
-        if (_openTelemetrySdkDisabled)
-        {
-            return;
-        }
-
-        if (_logEndpointTracker.CaptureLogExporterOptions(options))
-        {
-            SendUpdatedPayloadIfOpAmpClientIsAvailable();
-        }
-    }
-
-    public async Task ReportToOpAmpAsync()
-    {
-        var client = Volatile.Read(ref _opAmpClient);
-        if (client == null)
-        {
-            return;
-        }
-
-        await SendCurrentPayloadAsync(client).ConfigureAwait(false);
-    }
-
-    public void SetOpAmpClient(OpAmpClient client)
-    {
-        Volatile.Write(ref _opAmpClient, client);
-    }
-
-    public void RunPreflight(EffectiveProfilerFeatures profilerFeatures)
-    {
+        _recorder = recorder;
         _profilerFeatures = profilerFeatures;
-#if NET
-        if (!_openTelemetrySdkDisabled)
-        {
-            OtlpLogEndpointOptionsResolver.ValidateCompatibility();
-        }
-#endif
+    }
 
-        // Build and serialize the payload now so failures prevent capability advertisement.
-        // The initial report rebuilds it to include endpoints captured after preflight.
-        _ = BuildCurrentPayload();
+    public static EffectiveConfigReporter CreateValidated(
+        EffectiveConfigRecorder recorder,
+        EffectiveProfilerFeatures profilerFeatures)
+    {
+        recorder.ValidateCompatibility();
+        return new EffectiveConfigReporter(recorder, profilerFeatures);
     }
 
     internal EffectiveConfigFile BuildCurrentPayload()
     {
-        IReadOnlyList<EffectiveOtlpEndpoint> traceEndpoints = [];
-        IReadOnlyList<EffectiveOtlpEndpoint> metricEndpoints = [];
-        IReadOnlyList<EffectiveOtlpEndpoint> logEndpoints = [];
-
-        if (!_openTelemetrySdkDisabled)
-        {
-            traceEndpoints = _traceEndpointTracker.GetEndpoints();
-            metricEndpoints = _metricEndpointTracker.GetEndpoints();
-            logEndpoints = _logEndpointTracker.GetEndpoints();
-        }
-
-        var snapshot = EffectiveConfigSnapshot.Create(
-            _staticSettings,
-            _profilerFeatures,
-            traceEndpoints,
-            metricEndpoints,
-            logEndpoints);
-        return EffectiveConfigPayloadBuilder.Build(snapshot);
-    }
-
-    private void SendUpdatedPayloadIfOpAmpClientIsAvailable()
-    {
-        var client = Volatile.Read(ref _opAmpClient);
-        if (client == null)
-        {
-            return;
-        }
-
-        _ = SendUpdatedPayloadAsync(client);
-    }
-
-    private async Task SendUpdatedPayloadAsync(OpAmpClient client)
-    {
-        try
-        {
-            await SendCurrentPayloadAsync(client).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            Log.Warning($"Failed to send updated effective configuration to OpAmp server: {ex.Message}");
-        }
-    }
-
-    private async Task SendCurrentPayloadAsync(OpAmpClient client)
-    {
-        var effectiveConfigFile = BuildCurrentPayload();
-        await client.SendEffectiveConfigAsync([effectiveConfigFile]).ConfigureAwait(false);
+        return EffectiveConfigPayloadBuilder.Build(_recorder.CreateSnapshot(_profilerFeatures));
     }
 }

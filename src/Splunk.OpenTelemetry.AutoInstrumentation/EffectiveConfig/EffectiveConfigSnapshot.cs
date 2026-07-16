@@ -29,6 +29,7 @@ internal sealed class EffectiveConfigSnapshot
         uint cpuProfilerCallStackInterval,
         uint snapshotSamplingInterval)
     {
+        EffectiveConfigLimits.ValidateFileNameLength(fileBasedConfigFileName);
         FileBasedConfigFileName = fileBasedConfigFileName;
         TraceEndpoints = CopyEndpoints(traceEndpoints);
         MetricEndpoints = CopyEndpoints(metricEndpoints);
@@ -81,6 +82,8 @@ internal sealed class EffectiveConfigSnapshot
 
     private static IReadOnlyList<EffectiveOtlpEndpoint> CopyEndpoints(IReadOnlyList<EffectiveOtlpEndpoint> endpoints)
     {
-        return (endpoints ?? throw new ArgumentNullException(nameof(endpoints))).ToArray();
+        endpoints = endpoints ?? throw new ArgumentNullException(nameof(endpoints));
+        EffectiveConfigLimits.ValidateEndpointCount(endpoints.Count);
+        return endpoints.ToArray();
     }
 }

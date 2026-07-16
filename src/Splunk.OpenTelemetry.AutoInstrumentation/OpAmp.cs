@@ -5,7 +5,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+// http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,17 +29,17 @@ internal sealed class OpAmp
 {
     private static readonly ILogger Log = new Logger();
 
-    private readonly Lazy<EffectiveConfigReporter?> _effectiveConfigReporter;
+    private readonly object _lifecycleLock = new();
+    private readonly Lazy<EffectiveConfigRecorder?> _effectiveConfigRecorder;
     private readonly Func<EffectiveProfilerFeatures> _profilerStateResolver;
-    private int _effectiveConfigReportingEnabled;
-    private int _instrumentationInitialized;
-    private int _opAmpClientStarted;
-    private int _initialEffectiveConfigReportStarted;
-    private Task? _initialEffectiveConfigReportTask;
+    private EffectiveConfigReporter? _effectiveConfigReporter;
+    private bool _instrumentationInitialized;
+    private ClientLifecycleState _clientLifecycleState;
+    private OpAmpReportingPump? _reportingPump;
 
     public OpAmp(EffectiveConfigStaticSettings staticSettings)
         : this(
-            CreateEffectiveConfigReporterFactory(staticSettings),
+            CreateEffectiveConfigRecorderFactory(staticSettings),
             UpstreamOpAmpEnabledResolver.IsEnabled,
             UpstreamSdkSetupEnabledResolver.IsEnabled,
             UpstreamProfilerStateResolver.Resolve)
@@ -47,32 +47,44 @@ internal sealed class OpAmp
     }
 
     internal OpAmp(
-        Func<EffectiveConfigReporter> effectiveConfigReporterFactory,
+        Func<EffectiveConfigRecorder> effectiveConfigRecorderFactory,
         Func<bool> opAmpEnabledResolver,
         Func<bool> sdkSetupEnabledResolver,
         Func<EffectiveProfilerFeatures> profilerStateResolver)
     {
-        _effectiveConfigReporter = new(() => TryCreateEffectiveConfigReporter(
-            effectiveConfigReporterFactory,
+        _effectiveConfigRecorder = new(() => TryCreateEffectiveConfigRecorder(
+            effectiveConfigRecorderFactory,
             opAmpEnabledResolver,
             sdkSetupEnabledResolver));
         _profilerStateResolver = profilerStateResolver;
+    }
+
+    private enum ClientLifecycleState
+    {
+        NotStarted,
+        Started,
+        Stopped
     }
 
     public void ConfigureEffectiveConfigReporting(OpAmpClientSettings settings)
     {
         try
         {
-            var effectiveConfigReporter = _effectiveConfigReporter.Value;
-            if (effectiveConfigReporter == null)
+            var recorder = _effectiveConfigRecorder.Value;
+            if (recorder == null)
             {
                 return;
             }
 
-            effectiveConfigReporter.RunPreflight(_profilerStateResolver());
+            var profilerFeatures = _profilerStateResolver();
+            var effectiveConfigReporter = EffectiveConfigReporter.CreateValidated(recorder, profilerFeatures);
+
+            lock (_lifecycleLock)
+            {
+                _effectiveConfigReporter = effectiveConfigReporter;
+            }
 
             settings.EffectiveConfigurationReporting.EnableReporting = true;
-            Volatile.Write(ref _effectiveConfigReportingEnabled, 1);
         }
         catch (Exception ex)
         {
@@ -84,59 +96,110 @@ internal sealed class OpAmp
 
     public void RecordLogExporterOptions(OtlpExporterOptions options)
     {
-        _effectiveConfigReporter.Value?.CaptureLogExporterOptions(options);
+        if (_effectiveConfigRecorder.Value?.CaptureLogExporterOptions(options) == true)
+        {
+            NotifyILoggerEffectiveConfigChanged();
+        }
     }
 
     public void MarkOpenTelemetryLoggerConfigured()
     {
-        _effectiveConfigReporter.Value?.MarkOpenTelemetryLoggerConfigured();
+        if (_effectiveConfigRecorder.Value?.MarkOpenTelemetryLoggerConfigured() == true)
+        {
+            NotifyILoggerEffectiveConfigChanged();
+        }
     }
 
     public void RecordTraceProviderEndpoints(TracerProvider provider)
     {
-        _effectiveConfigReporter.Value?.CaptureTraceEndpoints(provider);
+        _effectiveConfigRecorder.Value?.CaptureTraceEndpoints(provider);
     }
 
     public void RecordMetricProviderEndpoints(MeterProvider provider)
     {
-        _effectiveConfigReporter.Value?.CaptureMetricEndpoints(provider);
+        _effectiveConfigRecorder.Value?.CaptureMetricEndpoints(provider);
     }
 
     public void OnClientStarted(OpAmpClient client)
     {
-        if (Volatile.Read(ref _effectiveConfigReportingEnabled) == 0)
+        OpAmpReportingPump reportingPump;
+        lock (_lifecycleLock)
         {
-            return;
+            if (_clientLifecycleState != ClientLifecycleState.NotStarted)
+            {
+                if (_clientLifecycleState == ClientLifecycleState.Started &&
+                    _reportingPump?.IsForClient(client) == true)
+                {
+                    Log.Warning("Ignoring a duplicate OpAMP client-started callback for the active client.");
+                }
+                else
+                {
+                    Log.Warning("Ignoring an unexpected replacement OpAMP client.");
+                }
+
+                return;
+            }
+
+            reportingPump = new OpAmpReportingPump(
+                client,
+                _effectiveConfigReporter,
+                _instrumentationInitialized);
+            _reportingPump = reportingPump;
+            _clientLifecycleState = ClientLifecycleState.Started;
         }
 
-        _effectiveConfigReporter.Value?.SetOpAmpClient(client);
-        Volatile.Write(ref _opAmpClientStarted, 1);
-        TryReportEffectiveConfig();
+        try
+        {
+            reportingPump.Start();
+        }
+        catch (Exception ex)
+        {
+            reportingPump.Stop();
+            lock (_lifecycleLock)
+            {
+                if (ReferenceEquals(_reportingPump, reportingPump))
+                {
+                    _reportingPump = null;
+                    _clientLifecycleState = ClientLifecycleState.Stopped;
+                }
+            }
+
+            Log.Error(ex, "Failed to start OpAMP reporting. Automatic instrumentation will continue without reporting effective configuration or full state.");
+        }
     }
 
-    public void FlushBeforeClientStops()
+    public void StopClientReporting()
     {
-        TryReportEffectiveConfig();
-        var initialReportTask = Volatile.Read(ref _initialEffectiveConfigReportTask);
-        if (initialReportTask == null)
+        OpAmpReportingPump? reportingPump;
+        lock (_lifecycleLock)
         {
-            return;
+            if (_clientLifecycleState == ClientLifecycleState.Stopped)
+            {
+                return;
+            }
+
+            reportingPump = _reportingPump;
+            _reportingPump = null;
+            _clientLifecycleState = ClientLifecycleState.Stopped;
         }
 
-        if (!initialReportTask.Wait(TimeSpan.FromSeconds(5)))
-        {
-            Log.Warning("Timed out waiting for effective configuration report before OpAMP client stopped.");
-        }
+        reportingPump?.Stop();
     }
 
     public void MarkInstrumentationInitialized()
     {
-        Volatile.Write(ref _instrumentationInitialized, 1);
-        TryReportEffectiveConfig();
+        OpAmpReportingPump? reportingPump;
+        lock (_lifecycleLock)
+        {
+            _instrumentationInitialized = true;
+            reportingPump = _reportingPump;
+        }
+
+        reportingPump?.MarkInstrumentationInitialized();
     }
 
-    private static EffectiveConfigReporter? TryCreateEffectiveConfigReporter(
-        Func<EffectiveConfigReporter> effectiveConfigReporterFactory,
+    private static EffectiveConfigRecorder? TryCreateEffectiveConfigRecorder(
+        Func<EffectiveConfigRecorder> effectiveConfigRecorderFactory,
         Func<bool> opAmpEnabledResolver,
         Func<bool> sdkSetupEnabledResolver)
     {
@@ -154,7 +217,7 @@ internal sealed class OpAmp
                 return null;
             }
 
-            return effectiveConfigReporterFactory();
+            return effectiveConfigRecorderFactory();
         }
         catch (Exception e)
         {
@@ -163,46 +226,22 @@ internal sealed class OpAmp
         }
     }
 
-    private static Func<EffectiveConfigReporter> CreateEffectiveConfigReporterFactory(
+    private static Func<EffectiveConfigRecorder> CreateEffectiveConfigRecorderFactory(
         EffectiveConfigStaticSettings staticSettings)
     {
-        return () => new EffectiveConfigReporter(
+        return () => new EffectiveConfigRecorder(
             staticSettings,
             OpenTelemetrySdkDisabledResolver.IsDisabled());
     }
 
-    private void TryReportEffectiveConfig()
+    private void NotifyILoggerEffectiveConfigChanged()
     {
-        if (Volatile.Read(ref _effectiveConfigReportingEnabled) == 0 ||
-            Volatile.Read(ref _instrumentationInitialized) == 0 ||
-            Volatile.Read(ref _opAmpClientStarted) == 0)
+        OpAmpReportingPump? reportingPump;
+        lock (_lifecycleLock)
         {
-            return;
+            reportingPump = _reportingPump;
         }
 
-        if (Interlocked.Exchange(ref _initialEffectiveConfigReportStarted, 1) != 0)
-        {
-            return;
-        }
-
-        Volatile.Write(ref _initialEffectiveConfigReportTask, ReportEffectiveConfigAsync());
-    }
-
-    private async Task ReportEffectiveConfigAsync()
-    {
-        try
-        {
-            var effectiveConfigReporter = _effectiveConfigReporter.Value;
-            if (effectiveConfigReporter == null)
-            {
-                return;
-            }
-
-            await effectiveConfigReporter.ReportToOpAmpAsync().ConfigureAwait(false);
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "Failed to report effective configuration to OpAMP server.");
-        }
+        reportingPump?.NotifyILoggerEffectiveConfigChanged();
     }
 }

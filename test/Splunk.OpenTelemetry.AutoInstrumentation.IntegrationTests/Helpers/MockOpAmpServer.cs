@@ -43,6 +43,10 @@ internal sealed class MockOpAmpServer : IDisposable
     private readonly object _effectiveConfigFramesLock = new();
     private readonly List<EffectiveConfigFrameSnapshot> _effectiveConfigFrames = [];
     private readonly ManualResetEventSlim _effectiveConfigReceived = new(false);
+    private long _flagsOnNextEffectiveConfig;
+    private long _lastAcceptedSequenceNum;
+    private int _rejectNextEffectiveConfig;
+    private int _requestFullStateOnSequenceGap;
 
     public MockOpAmpServer(ITestOutputHelper output, string host = "localhost")
     {
@@ -58,6 +62,19 @@ internal sealed class MockOpAmpServer : IDisposable
     /// Gets the TCP port that this collector is listening on.
     /// </summary>
     public int Port => _listener.Port;
+
+    public void RequestFullStateOnNextEffectiveConfig()
+    {
+        Interlocked.Exchange(
+            ref _flagsOnNextEffectiveConfig,
+            (long)ServerToAgentFlags.ReportFullState);
+    }
+
+    public void RejectNextEffectiveConfigAndRequestFullStateOnSequenceGap()
+    {
+        Interlocked.Exchange(ref _rejectNextEffectiveConfig, 1);
+        Interlocked.Exchange(ref _requestFullStateOnSequenceGap, 1);
+    }
 
     public void Expect(Func<AgentToServer, bool>? predicate = null, string? description = null)
     {
@@ -242,37 +259,7 @@ internal sealed class MockOpAmpServer : IDisposable
         Assert.Fail(message.ToString());
     }
 
-    private static byte[] GenerateResponse(AgentToServer frame)
-    {
-        var content = "This is a mock server frame for testing purposes.";
-        var responseFrame = new ServerToAgent
-        {
-            InstanceUid = frame.InstanceUid,
-            CustomMessage = new CustomMessage
-            {
-                Data = ByteString.CopyFromUtf8(content),
-                Type = "Utf8String",
-            },
-        };
-
-        return responseFrame.ToByteArray();
-    }
-
-#if NETFRAMEWORK
-    private void HandleHttpRequests(HttpListenerContext ctx)
-    {
-        var frame = AgentToServer.Parser.ParseFrom(ctx.Request.InputStream);
-        RecordEffectiveConfigFrame(frame);
-        _frames.Add(frame);
-
-        var response = GenerateResponse(frame);
-
-        ctx.Response.StatusCode = (int)HttpStatusCode.OK;
-        ctx.Response.ContentType = "application/x-protobuf";
-        ctx.Response.OutputStream.Write(response, 0, response.Length);
-        ctx.Response.OutputStream.Close();
-    }
-#else
+#if !NETFRAMEWORK
     private static async Task<AgentToServer?> ProcessReceiveAsync(HttpRequest request)
     {
         var reader = request.BodyReader;
@@ -304,12 +291,84 @@ internal sealed class MockOpAmpServer : IDisposable
 
         return AgentToServer.Parser.ParseFrom(messageBuffer.WrittenSpan);
     }
+#endif
 
+    private byte[] GenerateResponse(AgentToServer frame)
+    {
+        var content = "This is a mock server frame for testing purposes.";
+        var flags = frame.EffectiveConfig == null
+            ? 0UL
+            : unchecked((ulong)Interlocked.Exchange(ref _flagsOnNextEffectiveConfig, 0));
+        var previousSequenceNum = unchecked((ulong)Interlocked.Exchange(
+            ref _lastAcceptedSequenceNum,
+            unchecked((long)frame.SequenceNum)));
+        if (Volatile.Read(ref _requestFullStateOnSequenceGap) != 0 &&
+            previousSequenceNum != 0 &&
+            frame.SequenceNum != previousSequenceNum + 1)
+        {
+            flags |= (ulong)ServerToAgentFlags.ReportFullState;
+        }
+
+        var responseFrame = new ServerToAgent
+        {
+            InstanceUid = frame.InstanceUid,
+            Flags = flags,
+            CustomMessage = new CustomMessage
+            {
+                Data = ByteString.CopyFromUtf8(content),
+                Type = "Utf8String",
+            },
+        };
+
+        return responseFrame.ToByteArray();
+    }
+
+    private bool ShouldReject(AgentToServer frame)
+    {
+        if (frame.EffectiveConfig == null ||
+            Interlocked.CompareExchange(ref _rejectNextEffectiveConfig, 0, 1) != 1)
+        {
+            return false;
+        }
+
+        WriteOutput($"Rejecting effective config frame with sequence number {frame.SequenceNum}.");
+        return true;
+    }
+
+#if NETFRAMEWORK
+    private void HandleHttpRequests(HttpListenerContext ctx)
+    {
+        var frame = AgentToServer.Parser.ParseFrom(ctx.Request.InputStream);
+        if (ShouldReject(frame))
+        {
+            ctx.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+            ctx.Response.OutputStream.Close();
+            return;
+        }
+
+        RecordEffectiveConfigFrame(frame);
+        _frames.Add(frame);
+
+        var response = GenerateResponse(frame);
+
+        ctx.Response.StatusCode = (int)HttpStatusCode.OK;
+        ctx.Response.ContentType = "application/x-protobuf";
+        ctx.Response.OutputStream.Write(response, 0, response.Length);
+        ctx.Response.OutputStream.Close();
+    }
+#else
     private async Task HandleHttpRequests(HttpContext ctx)
     {
         var frame = await ProcessReceiveAsync(ctx.Request).ConfigureAwait(false);
         if (frame == null)
         {
+            return;
+        }
+
+        if (ShouldReject(frame))
+        {
+            ctx.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+            await ctx.Response.CompleteAsync().ConfigureAwait(false);
             return;
         }
 
