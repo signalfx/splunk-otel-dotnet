@@ -31,7 +31,7 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
     private readonly object _lock = new();
     private readonly OpAmpClient _client;
     private readonly EffectiveConfigReporter? _effectiveConfigReporter;
-    private readonly OpAmpReportDispatcher _reportDispatcher;
+    private readonly IOpAmpReportDispatcher _reportDispatcher;
     private readonly Func<TimeSpan, CancellationToken, Task> _delayAsync;
     private readonly SemaphoreSlim _wakeSignal = new(0, 1);
     private readonly CancellationTokenSource _reportingCancellation = new();
@@ -61,7 +61,7 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
     internal OpAmpReportingPump(
         OpAmpClient client,
         EffectiveConfigReporter? effectiveConfigReporter,
-        OpAmpReportDispatcher reportDispatcher,
+        IOpAmpReportDispatcher reportDispatcher,
         Func<TimeSpan, CancellationToken, Task> delayAsync,
         bool instrumentationInitialized)
     {

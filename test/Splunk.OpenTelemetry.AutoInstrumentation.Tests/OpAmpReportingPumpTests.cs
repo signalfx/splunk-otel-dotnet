@@ -17,6 +17,7 @@
 #if NET
 using System.Collections.Specialized;
 using System.Net.Http;
+using System.Text;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.OpAmp.Client;
 using OpenTelemetry.OpAmp.Client.Messages;
@@ -88,24 +89,11 @@ public class OpAmpReportingPumpTests
     [Fact]
     public async Task FailedILoggerEffectiveConfigUpdateWaitsForAnotherChangeBeforeRetrying()
     {
-        var failedRequestCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var batchDelay = ManuallyReleasedDelay.ForILoggerBatching();
-        var requestProbe = new OpAmpHttpRequestProbe(onRequest: async (requestNumber, cancellationToken) =>
-        {
-            if (requestNumber != 2)
-            {
-                return;
-            }
-
-            try
-            {
-                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
-            }
-            finally
-            {
-                failedRequestCompleted.TrySetResult(true);
-            }
-        });
+        var reportDispatcher = new ScriptedOpAmpReportDispatcher(
+            OpAmpDispatchResult.ClientAccepted,
+            OpAmpDispatchResult.Failed,
+            OpAmpDispatchResult.ClientAccepted);
+        var requestProbe = new OpAmpHttpRequestProbe();
         var recorder = CreateRecorder(
             () => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
         using var innerClient = new HttpClient(requestProbe);
@@ -113,26 +101,29 @@ public class OpAmpReportingPumpTests
         var reportingPump = StartReporting(
             client,
             CreateReporter(recorder),
-            batchDelay.DelayAsync,
-            TimeSpan.FromMilliseconds(50));
+            static (_, _) => Task.CompletedTask,
+            reportDispatcher: reportDispatcher);
         reportingPump.MarkInstrumentationInitialized();
-        await requestProbe.WaitForCountAsync(1);
+        await reportDispatcher.WaitForEffectiveConfigDispatchCountAsync(1);
 
         MarkOpenTelemetryLoggerConfigured(recorder, reportingPump);
-        await batchDelay.ReleaseNextAsync();
-        await requestProbe.WaitForCountAsync(2);
-        await WaitForCompletionAsync(failedRequestCompleted.Task);
-        Assert.Equal(2, requestProbe.Count);
+        await reportDispatcher.WaitForEffectiveConfigDispatchCountAsync(2);
+
+        var unexpectedRetry = reportDispatcher.WaitForEffectiveConfigDispatchCountAsync(3);
+        var completedTask = await Task.WhenAny(unexpectedRetry, Task.Delay(TimeSpan.FromMilliseconds(100)));
+        Assert.NotSame(unexpectedRetry, completedTask);
 
         RecordLogExporterOptions(
             recorder,
             reportingPump,
             new Uri("http://logs-collector:4318/v1/logs"));
-        await batchDelay.ReleaseNextAsync();
-        await requestProbe.WaitForCountAsync(3);
+        await WaitForCompletionAsync(unexpectedRetry);
         reportingPump.Stop();
 
-        Assert.Equal(3, requestProbe.Count);
+        Assert.Equal(3, reportDispatcher.EffectiveConfigDispatchCount);
+        Assert.Contains(
+            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://logs-collector:4318/v1/logs",
+            reportDispatcher.GetEffectiveConfigBody(3));
     }
 
     [Fact]
@@ -463,12 +454,13 @@ public class OpAmpReportingPumpTests
         OpAmpClient client,
         EffectiveConfigReporter? reporter = null,
         Func<TimeSpan, CancellationToken, Task>? delayAsync = null,
-        TimeSpan? dispatchTimeout = null)
+        TimeSpan? dispatchTimeout = null,
+        IOpAmpReportDispatcher? reportDispatcher = null)
     {
         var reportingPump = new OpAmpReportingPump(
             client,
             reporter,
-            new OpAmpReportDispatcher(dispatchTimeout ?? DefaultDispatchTimeout),
+            reportDispatcher ?? new OpAmpReportDispatcher(dispatchTimeout ?? DefaultDispatchTimeout),
             delayAsync ?? Task.Delay,
             instrumentationInitialized: false);
         reportingPump.Start();
@@ -521,6 +513,77 @@ public class OpAmpReportingPumpTests
         }))
         {
             reportingPump.NotifyILoggerEffectiveConfigChanged();
+        }
+    }
+
+    private sealed class ScriptedOpAmpReportDispatcher : IOpAmpReportDispatcher
+    {
+        private readonly object _lock = new();
+        private readonly Queue<OpAmpDispatchResult> _effectiveConfigResults;
+        private readonly List<string> _effectiveConfigBodies = [];
+        private readonly SemaphoreSlim _effectiveConfigDispatchObserved = new(0);
+
+        public ScriptedOpAmpReportDispatcher(params OpAmpDispatchResult[] effectiveConfigResults)
+        {
+            _effectiveConfigResults = new Queue<OpAmpDispatchResult>(effectiveConfigResults);
+        }
+
+        public int EffectiveConfigDispatchCount
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    return _effectiveConfigBodies.Count;
+                }
+            }
+        }
+
+        public Task<OpAmpDispatchResult> DispatchEffectiveConfigAsync(
+            OpAmpClient client,
+            EffectiveConfigReporter effectiveConfigReporter,
+            CancellationToken sessionCancellationToken)
+        {
+            var payload = effectiveConfigReporter.BuildCurrentPayload();
+            OpAmpDispatchResult result;
+            lock (_lock)
+            {
+                if (_effectiveConfigResults.Count == 0)
+                {
+                    throw new InvalidOperationException("No scripted effective-config dispatch result remains.");
+                }
+
+                result = _effectiveConfigResults.Dequeue();
+                _effectiveConfigBodies.Add(Encoding.UTF8.GetString(payload.Content.Span));
+            }
+
+            _effectiveConfigDispatchObserved.Release();
+            return Task.FromResult(result);
+        }
+
+        public Task<OpAmpDispatchResult> DispatchFullStateReportAsync(
+            OpAmpClient client,
+            EffectiveConfigReporter? effectiveConfigReporter,
+            CancellationToken sessionCancellationToken)
+        {
+            throw new InvalidOperationException("The test did not expect a full-state report.");
+        }
+
+        public string GetEffectiveConfigBody(int dispatchNumber)
+        {
+            lock (_lock)
+            {
+                Assert.InRange(dispatchNumber, 1, _effectiveConfigBodies.Count);
+                return _effectiveConfigBodies[dispatchNumber - 1];
+            }
+        }
+
+        public async Task WaitForEffectiveConfigDispatchCountAsync(int expectedCount)
+        {
+            while (EffectiveConfigDispatchCount < expectedCount)
+            {
+                Assert.True(await _effectiveConfigDispatchObserved.WaitAsync(TimeSpan.FromSeconds(5)));
+            }
         }
     }
 }

@@ -29,7 +29,7 @@ internal enum OpAmpDispatchResult
     ClientAccepted
 }
 
-internal sealed class OpAmpReportDispatcher
+internal sealed class OpAmpReportDispatcher : IOpAmpReportDispatcher
 {
     private static readonly ILogger Log = new Logger();
     private static readonly TimeSpan DefaultDispatchTimeout = TimeSpan.FromSeconds(30);
