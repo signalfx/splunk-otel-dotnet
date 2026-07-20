@@ -54,12 +54,25 @@ public class EffectiveOtlpEndpointTests
     }
 
     [Fact]
-    public void Equality_UsesSanitizedEndpoint()
+    public void Equality_IgnoresRedactedEndpointComponents()
     {
-        var first = EffectiveOtlpEndpoint.Http("https://user:first@collector:4318/v1/traces?api_key=first");
-        var second = EffectiveOtlpEndpoint.Http("https://user:second@collector:4318/v1/traces?api_key=second");
+        var first = EffectiveOtlpEndpoint.Http("https://collector:4318/v1/traces");
+        var second = EffectiveOtlpEndpoint.Http("https://user:password@collector:4318/v1/traces?api_key=secret#fragment-secret");
 
         Assert.Equal(first, second);
         Assert.Equal(first.GetHashCode(), second.GetHashCode());
+    }
+
+    [Theory]
+    [InlineData("http://collector:4318/v1/traces", "https://collector:4318/v1/traces")]
+    [InlineData("https://collector:4318/v1/traces", "https://other-collector:4318/v1/traces")]
+    [InlineData("https://collector:4318/v1/traces", "https://collector:4319/v1/traces")]
+    [InlineData("https://collector:4318/v1/traces", "https://collector:4318/other/traces")]
+    public void Equality_DistinguishesDestinationComponents(string firstEndpoint, string secondEndpoint)
+    {
+        var first = EffectiveOtlpEndpoint.Http(firstEndpoint);
+        var second = EffectiveOtlpEndpoint.Http(secondEndpoint);
+
+        Assert.NotEqual(first, second);
     }
 }

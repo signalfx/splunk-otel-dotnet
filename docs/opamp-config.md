@@ -54,9 +54,9 @@ resolved OTLP endpoints for active providers, plus active Splunk profiling
 settings. Environment variable templates and omitted YAML defaults are reported
 as their final evaluated values.
 
-Reported OTLP endpoints omit URI user information, query strings, and fragments
-to prevent credentials embedded in endpoint URLs from being disclosed. The URI
-scheme, host, port, and path are preserved.
+Reported OTLP endpoints retain the URI scheme, host, port, and path.
+User information, query, and fragment components are removed to avoid
+disclosing credentials or other sensitive data embedded in the URL.
 
 Effective configuration reporting is bounded to a 512 KiB UTF-8 payload, a
 4,096-character configuration file name, 8,192 characters per OTLP endpoint,
