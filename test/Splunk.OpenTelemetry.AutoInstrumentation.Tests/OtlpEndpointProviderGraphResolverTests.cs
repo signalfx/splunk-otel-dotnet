@@ -254,6 +254,28 @@ public class OtlpEndpointProviderGraphResolverTests
             OtlpEndpointProviderGraphResolver.ResolveLogEndpoints(provider));
     }
 
+    [Fact]
+    public void ResolveLogEndpoints_MatchesLogOptionsResolverForSimpleExporterOption()
+    {
+        EffectiveOtlpEndpoint? endpointResolvedFromOptions = null;
+        using var provider = CreateLoggerProviderBuilder()
+            .AddOtlpExporter(options =>
+            {
+                ConfigureHttpEndpoint(
+                    options,
+                    "http://collector:4318/custom-logs",
+                    ExportProcessorType.Simple);
+                endpointResolvedFromOptions = OtlpLogEndpointOptionsResolver.ResolveEndpoint(options);
+            })
+            .Build();
+
+        var endpointResolvedFromProvider = Assert.Single(
+            OtlpEndpointProviderGraphResolver.ResolveLogEndpoints(provider));
+
+        // This detects when the fix for https://github.com/open-telemetry/opentelemetry-dotnet/issues/7281 reaches the pinned SDK.
+        Assert.Equal(endpointResolvedFromProvider, endpointResolvedFromOptions);
+    }
+
 #if NET
     [Fact]
     public void ResolveTraceEndpoints_ReturnsGrpcOtlpExporterEndpoint()

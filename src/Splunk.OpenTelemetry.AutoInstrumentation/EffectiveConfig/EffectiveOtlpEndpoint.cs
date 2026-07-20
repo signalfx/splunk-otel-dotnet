@@ -81,7 +81,9 @@ internal readonly struct EffectiveOtlpEndpoint : IEquatable<EffectiveOtlpEndpoin
 
     private static string SanitizeEndpoint(string endpoint)
     {
-        if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var endpointUri))
+        if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var endpointUri) ||
+            (endpointUri.Scheme != Uri.UriSchemeHttp && endpointUri.Scheme != Uri.UriSchemeHttps) ||
+            string.IsNullOrEmpty(endpointUri.Host))
         {
             return HiddenEndpoint;
         }

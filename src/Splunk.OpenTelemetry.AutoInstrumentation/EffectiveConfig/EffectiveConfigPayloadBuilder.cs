@@ -29,6 +29,13 @@ internal static class EffectiveConfigPayloadBuilder
 
     private const string DefaultEndpoint = "none";
 
+    private enum OtlpSignal
+    {
+        Traces,
+        Metrics,
+        Logs
+    }
+
     public static EffectiveConfigFile Build(EffectiveConfigSnapshot snapshot)
     {
         return snapshot.IsFileBasedConfig ? BuildYamlPayload(snapshot) : BuildEnvironmentPayload(snapshot);
@@ -54,9 +61,9 @@ internal static class EffectiveConfigPayloadBuilder
     {
         var entries = new (string Key, string Value)[]
         {
-            ("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", GetSingleEndpointOrDefault(snapshot.TraceEndpoints, "traces", DefaultEndpoint)),
-            ("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", GetSingleEndpointOrDefault(snapshot.MetricEndpoints, "metrics", DefaultEndpoint)),
-            ("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", GetSingleEndpointOrDefault(snapshot.LogEndpoints, "logs", DefaultEndpoint)),
+            ("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", GetSingleEndpointOrDefault(snapshot.TraceEndpoints, OtlpSignal.Traces, DefaultEndpoint)),
+            ("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", GetSingleEndpointOrDefault(snapshot.MetricEndpoints, OtlpSignal.Metrics, DefaultEndpoint)),
+            ("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", GetSingleEndpointOrDefault(snapshot.LogEndpoints, OtlpSignal.Logs, DefaultEndpoint)),
             ("SPLUNK_PROFILER_ENABLED", FormatBoolean(snapshot.CpuProfilerEnabled)),
             ("SPLUNK_PROFILER_MEMORY_ENABLED", FormatBoolean(snapshot.MemoryProfilerEnabled)),
             ("SPLUNK_SNAPSHOT_PROFILER_ENABLED", FormatBoolean(snapshot.SnapshotProfilerEnabled)),
@@ -81,13 +88,13 @@ internal static class EffectiveConfigPayloadBuilder
 
     private static string GetSingleEndpointOrDefault(
         IReadOnlyList<EffectiveOtlpEndpoint> endpoints,
-        string signal,
+        OtlpSignal signal,
         string defaultValue)
     {
         if (endpoints.Count > 1)
         {
             throw new InvalidOperationException(
-                $"Environment effective configuration cannot represent {endpoints.Count} active {signal} endpoints.");
+                $"Environment effective configuration cannot represent {endpoints.Count} active {signal.ToString().ToLowerInvariant()} endpoints.");
         }
 
         return endpoints.Count == 0 ? defaultValue : endpoints[0].Endpoint;

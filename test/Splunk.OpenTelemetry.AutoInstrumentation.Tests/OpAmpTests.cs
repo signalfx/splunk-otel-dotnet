@@ -18,7 +18,9 @@ using System.Collections.Specialized;
 #if NET
 using System.Net.Http;
 using OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.OpAmp.Client;
+using OpenTelemetry.Trace;
 using static Splunk.OpenTelemetry.AutoInstrumentation.Tests.OpAmpTestHelpers;
 #endif
 using OpenTelemetry.OpAmp.Client.Settings;
@@ -60,6 +62,25 @@ public class OpAmpTests
     }
 
     [Fact]
+    public void ConfigureEffectiveConfigReporting_DoesNotCreateRecorderOrEnableReporting_WhenOpAmpIsDisabled()
+    {
+        var recorderCreated = false;
+        var settings = new OpAmpClientSettings();
+        var opAmp = CreateOpAmp(
+            effectiveConfigRecorderFactory: () =>
+            {
+                recorderCreated = true;
+                return CreateRecorder();
+            },
+            opAmpEnabledResolver: () => false);
+
+        opAmp.ConfigureEffectiveConfigReporting(settings);
+
+        Assert.False(recorderCreated);
+        Assert.False(settings.EffectiveConfigurationReporting.EnableReporting);
+    }
+
+    [Fact]
     public void ConfigureEffectiveConfigReporting_DoesNotEnableReporting_WhenProfilerStateResolutionFails()
     {
         var settings = new OpAmpClientSettings();
@@ -87,6 +108,39 @@ public class OpAmpTests
     }
 
 #if NET
+    [Fact]
+    public void MarkOpenTelemetryLoggerConfigured_DoesNotCreateRecorder_WhenOpAmpIsDisabled()
+    {
+        AssertRecordingHookDoesNotCreateRecorder(static opAmp => opAmp.MarkOpenTelemetryLoggerConfigured());
+    }
+
+    [Fact]
+    public void RecordLogExporterOptions_DoesNotCreateRecorder_WhenOpAmpIsDisabled()
+    {
+        AssertRecordingHookDoesNotCreateRecorder(static opAmp =>
+            opAmp.RecordLogExporterOptions(new OtlpExporterOptions()));
+    }
+
+    [Fact]
+    public void RecordTraceProviderEndpoints_DoesNotCreateRecorder_WhenOpAmpIsDisabled()
+    {
+        AssertRecordingHookDoesNotCreateRecorder(static opAmp =>
+        {
+            using var tracerProvider = global::OpenTelemetry.Sdk.CreateTracerProviderBuilder().Build();
+            opAmp.RecordTraceProviderEndpoints(tracerProvider);
+        });
+    }
+
+    [Fact]
+    public void RecordMetricProviderEndpoints_DoesNotCreateRecorder_WhenOpAmpIsDisabled()
+    {
+        AssertRecordingHookDoesNotCreateRecorder(static opAmp =>
+        {
+            using var meterProvider = global::OpenTelemetry.Sdk.CreateMeterProviderBuilder().Build();
+            opAmp.RecordMetricProviderEndpoints(meterProvider);
+        });
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -316,6 +370,22 @@ public class OpAmpTests
     }
 
 #if NET
+    private static void AssertRecordingHookDoesNotCreateRecorder(Action<OpAmp> invokeRecordingHook)
+    {
+        var recorderCreated = false;
+        var opAmp = CreateOpAmp(
+            effectiveConfigRecorderFactory: () =>
+            {
+                recorderCreated = true;
+                return CreateRecorder();
+            },
+            opAmpEnabledResolver: () => false);
+
+        invokeRecordingHook(opAmp);
+
+        Assert.False(recorderCreated);
+    }
+
     private static OpAmpClient CreateClient(
         HttpClient innerClient,
         Action<OpAmpClientSettings>? configure = null)
