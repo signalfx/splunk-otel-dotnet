@@ -31,7 +31,11 @@ public class EffectiveProviderEndpointTrackerTests
         Assert.True(tracker.Capture(provider));
         Assert.False(tracker.Capture(provider));
 
-        resolvedEndpoints = [EffectiveOtlpEndpoint.Http("http://second-collector:4318/v1/traces")];
+        resolvedEndpoints =
+        [
+            EffectiveOtlpEndpoint.Http("http://second-collector:4318/v1/traces"),
+            EffectiveOtlpEndpoint.Http("http://third-collector:4318/v1/traces")
+        ];
 
         Assert.True(tracker.Capture(provider));
         Assert.Equal(resolvedEndpoints, tracker.GetEndpoints());
@@ -79,26 +83,6 @@ public class EffectiveProviderEndpointTrackerTests
         Assert.Equal(
             [EffectiveOtlpEndpoint.Http("http://first-collector:4318/v1/traces")],
             snapshot);
-    }
-
-    [Fact]
-    public void Capture_RejectsEndpointCountOverLimitWithoutRetainingIt()
-    {
-        IReadOnlyList<EffectiveOtlpEndpoint> resolvedEndpoints = Enumerable.Range(
-                0,
-                EffectiveConfigLimits.MaxEndpointCount + 1)
-            .Select(index => EffectiveOtlpEndpoint.Http($"http://collector-{index}:4318/v1/traces"))
-            .ToArray();
-        var tracker = CreateTracker(_ => resolvedEndpoints);
-        var provider = new object();
-
-        Assert.False(tracker.Capture(provider));
-        Assert.Throws<InvalidOperationException>(() => tracker.GetEndpoints());
-
-        resolvedEndpoints = [EffectiveOtlpEndpoint.Http("http://collector:4318/v1/traces")];
-
-        Assert.True(tracker.Capture(provider));
-        Assert.Single(tracker.GetEndpoints());
     }
 
     private static EffectiveProviderEndpointTracker<object> CreateTracker(

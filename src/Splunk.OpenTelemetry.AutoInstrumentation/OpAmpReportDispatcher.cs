@@ -29,7 +29,7 @@ internal enum OpAmpDispatchResult
     ClientAccepted
 }
 
-internal sealed class OpAmpReportDispatcher : IOpAmpReportDispatcher
+internal sealed class OpAmpReportDispatcher
 {
     private static readonly ILogger Log = new Logger();
     private static readonly TimeSpan DefaultDispatchTimeout = TimeSpan.FromSeconds(30);
@@ -144,16 +144,10 @@ internal sealed class OpAmpReportDispatcher : IOpAmpReportDispatcher
 
         if (ReferenceEquals(completedTask, dispatchTask))
         {
-            var deadlineElapsed = deadlineTask.Status == TaskStatus.RanToCompletion;
             deadlineCancellation.Cancel();
 
             await dispatchTask.ConfigureAwait(false);
             sessionCancellationToken.ThrowIfCancellationRequested();
-            if (deadlineElapsed)
-            {
-                throw new TimeoutException($"The OpAMP dispatch exceeded the {_dispatchTimeout} deadline.");
-            }
-
             return;
         }
 

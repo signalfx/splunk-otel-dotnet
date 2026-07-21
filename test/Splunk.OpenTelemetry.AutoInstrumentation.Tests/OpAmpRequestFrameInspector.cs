@@ -40,6 +40,8 @@ internal sealed class OpAmpRequestFrameInspector
     public bool IsFullStateReport => GetPropertyValue(_frame, "AgentDescription") != null &&
         GetPropertyValue(_frame, "Health") != null;
 
+    public bool HasEffectiveConfig => GetPropertyValue(_frame, "EffectiveConfig") != null;
+
     public static OpAmpRequestFrameInspector Parse(byte[] requestBody)
     {
         var frame = ParseAgentToServerMethod.Invoke(AgentToServerParser, [requestBody])!;

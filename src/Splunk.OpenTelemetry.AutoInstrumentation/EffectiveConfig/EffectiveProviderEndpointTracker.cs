@@ -41,7 +41,6 @@ internal sealed class EffectiveProviderEndpointTracker<TProvider>
             {
                 endpoints = _endpointResolver(provider)
                     ?? throw new InvalidOperationException($"The {typeof(TProvider).Name} endpoint resolver returned null.");
-                EffectiveConfigLimits.ValidateEndpointCount(endpoints.Count);
             }
             catch (Exception ex)
             {

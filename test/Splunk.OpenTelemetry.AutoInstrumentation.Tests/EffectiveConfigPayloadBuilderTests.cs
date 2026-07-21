@@ -114,22 +114,124 @@ public class EffectiveConfigPayloadBuilderTests
 
         foreach (var snapshot in snapshots)
         {
-            var exception = Assert.Throws<InvalidOperationException>(
+            var validationException = Assert.Throws<InvalidOperationException>(
+                () => EffectiveConfigPayloadBuilder.Validate(snapshot));
+            var buildException = Assert.Throws<InvalidOperationException>(
                 () => EffectiveConfigPayloadBuilder.Build(snapshot));
 
-            Assert.Contains("cannot represent 2 active", exception.Message);
+            Assert.Equal(validationException.Message, buildException.Message);
+            Assert.Contains("cannot represent 2 active", validationException.Message);
         }
     }
 
     [Fact]
-    public void CreateFile_RejectsPayloadOverSizeLimit()
+    public void Validate_EnvironmentConfig_AllowsContentAtExactSizeLimit()
     {
-        var oversizedBody = new string('a', EffectiveConfigLimits.MaxPayloadSizeBytes + 1);
+        var baselineEndpoint = CreatePaddedEndpoint(0);
+        var baselinePayload = EffectiveConfigPayloadBuilder.Build(CreateEnvironmentSnapshot(
+            traceEndpoints: [baselineEndpoint],
+            metricEndpoints: [baselineEndpoint],
+            logEndpoints: [baselineEndpoint]));
+        var paddingSizeBytes = EffectiveConfigLimits.MaxFileContentSizeBytes - baselinePayload.Content.Length;
 
+        // U+00E9 is valid IRI path input and Uri.AbsoluteUri represents it as the six ASCII
+        // characters "%C3%A9". This expansion reaches the payload limit while keeping each
+        // input URI below the 65,519-character limit imposed by .NET 9 and earlier.
+        const int EscapedCharacterSizeBytes = 6;
+        var escapedCharacterCount = paddingSizeBytes / EscapedCharacterSizeBytes;
+        var charactersPerEndpoint = escapedCharacterCount / 3;
+        var remainingAsciiCharacterCount = paddingSizeBytes % EscapedCharacterSizeBytes;
+        var snapshot = CreateEnvironmentSnapshot(
+            traceEndpoints: [CreatePaddedEndpoint(charactersPerEndpoint, remainingAsciiCharacterCount)],
+            metricEndpoints: [CreatePaddedEndpoint(charactersPerEndpoint)],
+            logEndpoints: [CreatePaddedEndpoint(escapedCharacterCount - (2 * charactersPerEndpoint))]);
+
+        EffectiveConfigPayloadBuilder.Validate(snapshot);
+        var payload = EffectiveConfigPayloadBuilder.Build(snapshot);
+
+        Assert.Equal(EffectiveConfigLimits.MaxFileContentSizeBytes, payload.Content.Length);
+
+        static EffectiveOtlpEndpoint CreatePaddedEndpoint(
+            int escapedCharacterCount,
+            int asciiCharacterCount = 0)
+        {
+            return EffectiveOtlpEndpoint.Http(
+                "http://collector/" +
+                new string('\u00e9', escapedCharacterCount) +
+                new string('a', asciiCharacterCount));
+        }
+    }
+
+    [Fact]
+    public void Build_EnvironmentConfig_RejectsContentOverSizeLimit()
+    {
+        var longPath = new string('\u00e9', 50_000);
+        var snapshot = CreateEnvironmentSnapshot(
+            traceEndpoints: [EffectiveOtlpEndpoint.Http($"http://trace-collector/{longPath}")],
+            metricEndpoints: [EffectiveOtlpEndpoint.Http($"http://metric-collector/{longPath}")]);
+
+        var validationException = Assert.Throws<InvalidOperationException>(
+            () => EffectiveConfigPayloadBuilder.Validate(snapshot));
+        var buildException = Assert.Throws<InvalidOperationException>(
+            () => EffectiveConfigPayloadBuilder.Build(snapshot));
+
+        Assert.Equal(validationException.Message, buildException.Message);
+        Assert.Contains(
+            EffectiveConfigLimits.MaxFileContentSizeBytes.ToString(),
+            validationException.Message);
+    }
+
+    [Fact]
+    public void CreateFile_AllowsContentAtSizeLimit()
+    {
+        var body = new string('a', EffectiveConfigLimits.MaxFileContentSizeBytes);
+
+        var file = EffectiveConfigPayloadBuilder.CreateFile(
+            "config.yaml",
+            "application/yaml",
+            body);
+
+        Assert.Equal(EffectiveConfigLimits.MaxFileContentSizeBytes, file.Content.Length);
+    }
+
+    [Fact]
+    public void CreateFile_RejectsContentOverSizeLimit()
+    {
         var exception = Assert.Throws<InvalidOperationException>(
-            () => EffectiveConfigPayloadBuilder.CreateFile("config.yaml", "application/yaml", oversizedBody));
+            () => EffectiveConfigPayloadBuilder.CreateFile(
+                "config.yaml",
+                "application/yaml",
+                new string('a', EffectiveConfigLimits.MaxFileContentSizeBytes + 1)));
 
-        Assert.Contains(EffectiveConfigLimits.MaxPayloadSizeBytes.ToString(), exception.Message);
+        Assert.Contains(EffectiveConfigLimits.MaxFileContentSizeBytes.ToString(), exception.Message);
+    }
+
+    [Fact]
+    public void CreateFile_AppliesSizeLimitToUtf8Bytes()
+    {
+        var bodyAtLimit = new string('\u00e9', EffectiveConfigLimits.MaxFileContentSizeBytes / 2);
+        var file = EffectiveConfigPayloadBuilder.CreateFile(
+            "config.yaml",
+            "application/yaml",
+            bodyAtLimit);
+
+        Assert.Equal(EffectiveConfigLimits.MaxFileContentSizeBytes, file.Content.Length);
+        Assert.Throws<InvalidOperationException>(
+            () => EffectiveConfigPayloadBuilder.CreateFile(
+                "config.yaml",
+                "application/yaml",
+                bodyAtLimit + '\u00e9'));
+    }
+
+    [Fact]
+    public void CreateFile_DoesNotCountMetadataAgainstContentLimit()
+    {
+        var file = EffectiveConfigPayloadBuilder.CreateFile(
+            new string('f', 4097),
+            new string('c', 4097),
+            new string('a', EffectiveConfigLimits.MaxFileContentSizeBytes));
+
+        Assert.Equal(EffectiveConfigLimits.MaxFileContentSizeBytes, file.Content.Length);
     }
 
     private static EffectiveConfigSnapshot CreateEnvironmentSnapshot(

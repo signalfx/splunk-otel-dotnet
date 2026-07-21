@@ -36,6 +36,7 @@ internal sealed class EffectiveConfigReporter
         EffectiveProfilerFeatures profilerFeatures)
     {
         recorder.ValidateCompatibility();
+        EffectiveConfigPayloadBuilder.Validate(recorder.CreateSnapshot(profilerFeatures));
         return new EffectiveConfigReporter(recorder, profilerFeatures);
     }
 

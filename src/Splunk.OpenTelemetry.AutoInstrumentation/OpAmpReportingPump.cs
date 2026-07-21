@@ -31,14 +31,13 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
     private readonly object _lock = new();
     private readonly OpAmpClient _client;
     private readonly EffectiveConfigReporter? _effectiveConfigReporter;
-    private readonly IOpAmpReportDispatcher _reportDispatcher;
+    private readonly OpAmpReportDispatcher _reportDispatcher;
     private readonly Func<TimeSpan, CancellationToken, Task> _delayAsync;
     private readonly SemaphoreSlim _wakeSignal = new(0, 1);
     private readonly CancellationTokenSource _reportingCancellation = new();
     private readonly CancellationToken _reportingCancellationToken;
     private bool _started;
     private bool _instrumentationInitialized;
-    private bool _initialEffectiveConfigPending;
     private bool _fullStateReportPending;
     private bool _iLoggerEffectiveConfigUpdatePending;
     private bool _wakeQueued;
@@ -61,7 +60,7 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
     internal OpAmpReportingPump(
         OpAmpClient client,
         EffectiveConfigReporter? effectiveConfigReporter,
-        IOpAmpReportDispatcher reportDispatcher,
+        OpAmpReportDispatcher reportDispatcher,
         Func<TimeSpan, CancellationToken, Task> delayAsync,
         bool instrumentationInitialized)
     {
@@ -70,14 +69,13 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
         _reportDispatcher = reportDispatcher;
         _delayAsync = delayAsync;
         _instrumentationInitialized = instrumentationInitialized;
-        _initialEffectiveConfigPending = effectiveConfigReporter != null;
+        _fullStateReportPending = true;
         _reportingCancellationToken = _reportingCancellation.Token;
     }
 
     private enum ReportingWorkKind
     {
         None,
-        InitialEffectiveConfig,
         FullStateReport,
         ILoggerEffectiveConfigUpdate
     }
@@ -151,7 +149,6 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
             }
 
             _stopped = true;
-            _initialEffectiveConfigPending = false;
             _fullStateReportPending = false;
             _iLoggerEffectiveConfigUpdatePending = false;
             unsubscribe = _started;
@@ -242,9 +239,6 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
 
         switch (work)
         {
-            case ReportingWorkKind.InitialEffectiveConfig:
-                await SendInitialEffectiveConfigAsync().ConfigureAwait(false);
-                break;
             case ReportingWorkKind.FullStateReport:
                 await SendFullStateReportAsync().ConfigureAwait(false);
                 break;
@@ -266,51 +260,12 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
             return ReportingWorkKind.FullStateReport;
         }
 
-        if (_initialEffectiveConfigPending)
-        {
-            return ReportingWorkKind.InitialEffectiveConfig;
-        }
-
         if (_effectiveConfigReporter != null && _iLoggerEffectiveConfigUpdatePending)
         {
             return ReportingWorkKind.ILoggerEffectiveConfigUpdate;
         }
 
         return ReportingWorkKind.None;
-    }
-
-    private async Task SendInitialEffectiveConfigAsync()
-    {
-        EffectiveConfigReporter effectiveConfigReporter;
-        bool claimedILoggerEffectiveConfigUpdate;
-        lock (_lock)
-        {
-            if (_stopped ||
-                _fullStateReportPending ||
-                !_initialEffectiveConfigPending ||
-                _effectiveConfigReporter == null)
-            {
-                return;
-            }
-
-            effectiveConfigReporter = _effectiveConfigReporter;
-            claimedILoggerEffectiveConfigUpdate = ClaimPendingILoggerEffectiveConfigUpdateLocked();
-        }
-
-        var result = await DispatchClaimedEffectiveConfigAsync(
-            effectiveConfigReporter,
-            claimedILoggerEffectiveConfigUpdate).ConfigureAwait(false);
-
-        if (result == OpAmpDispatchResult.ClientAccepted)
-        {
-            lock (_lock)
-            {
-                if (!_stopped)
-                {
-                    _initialEffectiveConfigPending = false;
-                }
-            }
-        }
     }
 
     private async Task SendFullStateReportAsync()
@@ -355,11 +310,7 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
                 _fullStateReportCooldownTask = cooldownTask;
             }
 
-            if (result == OpAmpDispatchResult.ClientAccepted)
-            {
-                _initialEffectiveConfigPending = false;
-            }
-            else
+            if (result != OpAmpDispatchResult.ClientAccepted)
             {
                 RestorePendingILoggerEffectiveConfigUpdateLocked(claimedILoggerEffectiveConfigUpdate);
                 if (result == OpAmpDispatchResult.Failed)
@@ -411,6 +362,8 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
         {
             if (!_stopped && result != OpAmpDispatchResult.ClientAccepted)
             {
+                // Keep the update pending, but wait for another reporting event to wake the worker
+                // instead of retrying a persistent failure in a hot loop.
                 RestorePendingILoggerEffectiveConfigUpdateLocked(claimedILoggerEffectiveConfigUpdate);
             }
         }

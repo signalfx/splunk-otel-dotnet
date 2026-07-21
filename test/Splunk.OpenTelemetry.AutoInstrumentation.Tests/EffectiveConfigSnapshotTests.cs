@@ -56,7 +56,8 @@ public class EffectiveConfigSnapshotTests
     {
         var traceEndpoints = new List<EffectiveOtlpEndpoint>
         {
-            EffectiveOtlpEndpoint.Http("http://collector:4318/v1/traces")
+            EffectiveOtlpEndpoint.Http("http://first-collector:4318/v1/traces"),
+            EffectiveOtlpEndpoint.Http("http://second-collector:4318/v1/traces")
         };
         var metricEndpoints = new List<EffectiveOtlpEndpoint>
         {
@@ -83,47 +84,6 @@ public class EffectiveConfigSnapshotTests
         Assert.Equal(expectedTraceEndpoints, snapshot.TraceEndpoints);
         Assert.Equal(expectedMetricEndpoints, snapshot.MetricEndpoints);
         Assert.Equal(expectedLogEndpoints, snapshot.LogEndpoints);
-    }
-
-    [Fact]
-    public void Constructor_RejectsFileNameOverLengthLimit()
-    {
-        var fileName = new string('a', EffectiveConfigLimits.MaxFileNameLength + 1);
-
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => CreateSnapshot(fileBasedConfigFileName: fileName));
-
-        Assert.Contains(EffectiveConfigLimits.MaxFileNameLength.ToString(), exception.Message);
-    }
-
-    [Fact]
-    public void Constructor_RejectsEndpointCountOverLimit()
-    {
-        var endpoints = Enumerable.Repeat(
-                EffectiveOtlpEndpoint.Http("http://collector:4318/v1/traces"),
-                EffectiveConfigLimits.MaxEndpointCount + 1)
-            .ToArray();
-
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => CreateSnapshot(traceEndpoints: endpoints));
-
-        Assert.Contains(EffectiveConfigLimits.MaxEndpointCount.ToString(), exception.Message);
-    }
-
-    private static EffectiveConfigSnapshot CreateSnapshot(
-        string? fileBasedConfigFileName = null,
-        IReadOnlyList<EffectiveOtlpEndpoint>? traceEndpoints = null)
-    {
-        return new EffectiveConfigSnapshot(
-            fileBasedConfigFileName,
-            traceEndpoints ?? [],
-            [],
-            [],
-            cpuProfilerEnabled: false,
-            memoryProfilerEnabled: false,
-            snapshotProfilerEnabled: false,
-            cpuProfilerCallStackInterval: 10000,
-            snapshotSamplingInterval: 40);
     }
 
     private static EffectiveConfigStaticSettings CreateStaticSettings()

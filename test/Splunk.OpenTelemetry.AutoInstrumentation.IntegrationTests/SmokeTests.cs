@@ -283,13 +283,12 @@ public class SmokeTests : TestHelper, IDisposable
 
     [Fact]
     [Trait("Category", "EndToEnd")]
-    public void OpAmpReportFullStateRequestIncludesCurrentEffectiveConfigAndClientState()
+    public void InitialOpAmpFullStateReportIncludesCurrentEffectiveConfigAndClientState()
     {
         using var opAmpServer = new MockOpAmpServer(Output);
 
         SetEnvironmentVariable("OTEL_SDK_DISABLED", "true");
         SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
-        opAmpServer.RequestFullStateOnNextEffectiveConfig();
 
         var expectedPayload = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -305,11 +304,6 @@ public class SmokeTests : TestHelper, IDisposable
         };
 
         opAmpServer.Expect(ReportsEffectiveConfigCapability, "Reports effective config capability");
-        opAmpServer.ExpectEffectiveConfigPayload(
-            "environment",
-            ExpectedEnvVarConfigContentType,
-            payload => EnvironmentConfigPayloadMatches(payload, expectedPayload),
-            "Has initial effective config payload");
         opAmpServer.Expect(
             frame =>
             {
@@ -322,7 +316,7 @@ public class SmokeTests : TestHelper, IDisposable
                        configFile.ContentType == ExpectedEnvVarConfigContentType &&
                        EnvironmentConfigPayloadMatches(configFile.Body.ToStringUtf8(), expectedPayload);
             },
-            "Full state contains agent description, capabilities, health, and current effective config");
+            "Initial full state contains agent description, capabilities, health, and current effective config");
 
         RunTestApplicationAndAssertOpAmp(opAmpServer);
     }

@@ -17,7 +17,6 @@
 #if NET
 using System.Collections.Specialized;
 using System.Net.Http;
-using System.Text;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.OpAmp.Client;
 using OpenTelemetry.OpAmp.Client.Messages;
@@ -32,7 +31,7 @@ public class OpAmpReportingPumpTests
     private static readonly TimeSpan DefaultDispatchTimeout = TimeSpan.FromSeconds(30);
 
     [Fact]
-    public async Task PendingFullStateReportTakesPriorityOverInitialEffectiveConfig()
+    public async Task InitialReportIsFullStateAndIncludesEffectiveConfig()
     {
         var requestProbe = new OpAmpHttpRequestProbe();
         using var innerClient = new HttpClient(requestProbe);
@@ -40,7 +39,6 @@ public class OpAmpReportingPumpTests
         var reportingPump = StartReporting(
             client,
             CreateReporter(CreateRecorder()));
-        reportingPump.HandleMessage(CreateFlagsMessage(ServerSentFlags.ReportFullState));
         reportingPump.MarkInstrumentationInitialized();
 
         await requestProbe.WaitForCountAsync(1);
@@ -84,46 +82,6 @@ public class OpAmpReportingPumpTests
         var updateFrame = OpAmpRequestFrameInspector.Parse(requestProbe.GetRequestBody(2));
         var updateBody = updateFrame.GetEffectiveConfigBody("environment");
         Assert.Contains("http://logs-collector-1:4318/v1/logs", updateBody);
-    }
-
-    [Fact]
-    public async Task FailedILoggerEffectiveConfigUpdateWaitsForAnotherChangeBeforeRetrying()
-    {
-        var reportDispatcher = new ScriptedOpAmpReportDispatcher(
-            OpAmpDispatchResult.ClientAccepted,
-            OpAmpDispatchResult.Failed,
-            OpAmpDispatchResult.ClientAccepted);
-        var requestProbe = new OpAmpHttpRequestProbe();
-        var recorder = CreateRecorder(
-            () => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
-        using var innerClient = new HttpClient(requestProbe);
-        using var client = CreateClient(innerClient);
-        var reportingPump = StartReporting(
-            client,
-            CreateReporter(recorder),
-            static (_, _) => Task.CompletedTask,
-            reportDispatcher: reportDispatcher);
-        reportingPump.MarkInstrumentationInitialized();
-        await reportDispatcher.WaitForEffectiveConfigDispatchCountAsync(1);
-
-        MarkOpenTelemetryLoggerConfigured(recorder, reportingPump);
-        await reportDispatcher.WaitForEffectiveConfigDispatchCountAsync(2);
-
-        var unexpectedRetry = reportDispatcher.WaitForEffectiveConfigDispatchCountAsync(3);
-        var completedTask = await Task.WhenAny(unexpectedRetry, Task.Delay(TimeSpan.FromMilliseconds(100)));
-        Assert.NotSame(unexpectedRetry, completedTask);
-
-        RecordLogExporterOptions(
-            recorder,
-            reportingPump,
-            new Uri("http://logs-collector:4318/v1/logs"));
-        await WaitForCompletionAsync(unexpectedRetry);
-        reportingPump.Stop();
-
-        Assert.Equal(3, reportDispatcher.EffectiveConfigDispatchCount);
-        Assert.Contains(
-            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://logs-collector:4318/v1/logs",
-            reportDispatcher.GetEffectiveConfigBody(3));
     }
 
     [Fact]
@@ -204,7 +162,7 @@ public class OpAmpReportingPumpTests
     }
 
     [Fact]
-    public async Task ILoggerChangeWhileInitialPayloadIsInFlightTriggersLaterUpdate()
+    public async Task ILoggerChangeWhileInitialFullStateReportIsInFlightTriggersLaterUpdate()
     {
         var batchDelay = ManuallyReleasedDelay.ForILoggerBatching();
         var recorder = CreateRecorder();
@@ -264,7 +222,7 @@ public class OpAmpReportingPumpTests
     }
 
     [Fact]
-    public async Task TimedOutInitialEffectiveConfigDeliveryIsRetriedByAFullStateRequest()
+    public async Task TimedOutInitialFullStateReportIsRetriedByAFullStateRequest()
     {
         var failedRequestCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var requestProbe = new OpAmpHttpRequestProbe(onRequest: async (requestNumber, cancellationToken) =>
@@ -308,40 +266,19 @@ public class OpAmpReportingPumpTests
         using var innerClient = new HttpClient(requestProbe);
         using var client = CreateClient(innerClient);
 
-        recorder.MarkOpenTelemetryLoggerConfigured();
-        recorder.CaptureLogExporterOptions(new OtlpExporterOptions
-        {
-            Protocol = (OtlpExportProtocol)42,
-            Endpoint = new Uri("http://unsupported-collector:4318/v1/logs")
-        });
         var reportingPump = StartReporting(client, reporter);
-        reportingPump.HandleMessage(CreateFlagsMessage(ServerSentFlags.ReportFullState));
+        MarkOpenTelemetryLoggerConfigured(recorder, reportingPump);
+        RecordLogExporterOptions(recorder, reportingPump, new Uri("http://logs-collector-1:4318"));
+        RecordLogExporterOptions(recorder, reportingPump, new Uri("http://logs-collector-2:4318"));
         reportingPump.MarkInstrumentationInitialized();
         await requestProbe.WaitForCountAsync(1);
 
         reportingPump.Stop();
 
         Assert.Equal(1, requestProbe.Count);
-    }
-
-    [Fact]
-    public async Task ReportFullStateFlagsAreCoalescedUntilInstrumentationIsInitialized()
-    {
-        var requestProbe = new OpAmpHttpRequestProbe();
-        using var innerClient = new HttpClient(requestProbe);
-        using var client = CreateClient(innerClient);
-        var reportingPump = StartReporting(client);
-
-        reportingPump.HandleMessage(CreateFlagsMessage(ServerSentFlags.ReportFullState));
-        reportingPump.HandleMessage(CreateFlagsMessage(ServerSentFlags.ReportFullState));
-
-        Assert.Equal(0, requestProbe.Count);
-
-        reportingPump.MarkInstrumentationInitialized();
-        await requestProbe.WaitForCountAsync(1);
-        reportingPump.Stop();
-
-        Assert.Equal(1, requestProbe.Count);
+        var requestFrame = OpAmpRequestFrameInspector.Parse(requestProbe.GetRequestBody(1));
+        Assert.True(requestFrame.IsFullStateReport);
+        Assert.False(requestFrame.HasEffectiveConfig);
     }
 
     [Fact]
@@ -353,7 +290,6 @@ public class OpAmpReportingPumpTests
         using var client = CreateClient(innerClient);
         var reportingPump = StartReporting(client, delayAsync: cooldown.DelayAsync);
         reportingPump.MarkInstrumentationInitialized();
-        reportingPump.HandleMessage(CreateFlagsMessage(ServerSentFlags.ReportFullState));
 
         await requestProbe.WaitForCountAsync(1);
 
@@ -375,57 +311,6 @@ public class OpAmpReportingPumpTests
     }
 
     [Fact]
-    public async Task TimedOutFullStateReportIsRetriedWhenTheServerRequestsItAgain()
-    {
-        var failedRequestCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var requestProbe = new OpAmpHttpRequestProbe(onRequest: async (requestNumber, cancellationToken) =>
-        {
-            if (requestNumber != 1)
-            {
-                return;
-            }
-
-            try
-            {
-                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
-            }
-            finally
-            {
-                failedRequestCompleted.TrySetResult(true);
-            }
-        });
-        using var innerClient = new HttpClient(requestProbe);
-        using var client = CreateClient(innerClient);
-        var reportingPump = StartReporting(
-            client,
-            dispatchTimeout: TimeSpan.FromMilliseconds(50));
-        reportingPump.MarkInstrumentationInitialized();
-        reportingPump.HandleMessage(CreateFlagsMessage(ServerSentFlags.ReportFullState));
-
-        await requestProbe.WaitForCountAsync(1);
-        await WaitForCompletionAsync(failedRequestCompleted.Task);
-
-        reportingPump.HandleMessage(CreateFlagsMessage(ServerSentFlags.ReportFullState));
-        await requestProbe.WaitForCountAsync(2);
-        reportingPump.Stop();
-    }
-
-    [Fact]
-    public void ReportAvailableComponentsFlagDoesNotTriggerFullStateReport()
-    {
-        var requestProbe = new OpAmpHttpRequestProbe();
-        using var innerClient = new HttpClient(requestProbe);
-        using var client = CreateClient(innerClient);
-        var reportingPump = StartReporting(client);
-        reportingPump.MarkInstrumentationInitialized();
-
-        reportingPump.HandleMessage(CreateFlagsMessage(ServerSentFlags.ReportAvailableComponents));
-        reportingPump.Stop();
-
-        Assert.Equal(0, requestProbe.Count);
-    }
-
-    [Fact]
     public async Task StopCancelsInFlightFullStateReportWithoutWaiting()
     {
         var cancellationObserved = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -438,7 +323,6 @@ public class OpAmpReportingPumpTests
         using var innerClient = new HttpClient(requestProbe);
         using var client = CreateClient(innerClient);
         var reportingPump = StartReporting(client);
-        reportingPump.HandleMessage(CreateFlagsMessage(ServerSentFlags.ReportFullState));
         reportingPump.MarkInstrumentationInitialized();
         await requestProbe.WaitForCountAsync(1);
 
@@ -454,13 +338,12 @@ public class OpAmpReportingPumpTests
         OpAmpClient client,
         EffectiveConfigReporter? reporter = null,
         Func<TimeSpan, CancellationToken, Task>? delayAsync = null,
-        TimeSpan? dispatchTimeout = null,
-        IOpAmpReportDispatcher? reportDispatcher = null)
+        TimeSpan? dispatchTimeout = null)
     {
         var reportingPump = new OpAmpReportingPump(
             client,
             reporter,
-            reportDispatcher ?? new OpAmpReportDispatcher(dispatchTimeout ?? DefaultDispatchTimeout),
+            new OpAmpReportDispatcher(dispatchTimeout ?? DefaultDispatchTimeout),
             delayAsync ?? Task.Delay,
             instrumentationInitialized: false);
         reportingPump.Start();
@@ -513,77 +396,6 @@ public class OpAmpReportingPumpTests
         }))
         {
             reportingPump.NotifyILoggerEffectiveConfigChanged();
-        }
-    }
-
-    private sealed class ScriptedOpAmpReportDispatcher : IOpAmpReportDispatcher
-    {
-        private readonly object _lock = new();
-        private readonly Queue<OpAmpDispatchResult> _effectiveConfigResults;
-        private readonly List<string> _effectiveConfigBodies = [];
-        private readonly SemaphoreSlim _effectiveConfigDispatchObserved = new(0);
-
-        public ScriptedOpAmpReportDispatcher(params OpAmpDispatchResult[] effectiveConfigResults)
-        {
-            _effectiveConfigResults = new Queue<OpAmpDispatchResult>(effectiveConfigResults);
-        }
-
-        public int EffectiveConfigDispatchCount
-        {
-            get
-            {
-                lock (_lock)
-                {
-                    return _effectiveConfigBodies.Count;
-                }
-            }
-        }
-
-        public Task<OpAmpDispatchResult> DispatchEffectiveConfigAsync(
-            OpAmpClient client,
-            EffectiveConfigReporter effectiveConfigReporter,
-            CancellationToken sessionCancellationToken)
-        {
-            var payload = effectiveConfigReporter.BuildCurrentPayload();
-            OpAmpDispatchResult result;
-            lock (_lock)
-            {
-                if (_effectiveConfigResults.Count == 0)
-                {
-                    throw new InvalidOperationException("No scripted effective-config dispatch result remains.");
-                }
-
-                result = _effectiveConfigResults.Dequeue();
-                _effectiveConfigBodies.Add(Encoding.UTF8.GetString(payload.Content.Span));
-            }
-
-            _effectiveConfigDispatchObserved.Release();
-            return Task.FromResult(result);
-        }
-
-        public Task<OpAmpDispatchResult> DispatchFullStateReportAsync(
-            OpAmpClient client,
-            EffectiveConfigReporter? effectiveConfigReporter,
-            CancellationToken sessionCancellationToken)
-        {
-            throw new InvalidOperationException("The test did not expect a full-state report.");
-        }
-
-        public string GetEffectiveConfigBody(int dispatchNumber)
-        {
-            lock (_lock)
-            {
-                Assert.InRange(dispatchNumber, 1, _effectiveConfigBodies.Count);
-                return _effectiveConfigBodies[dispatchNumber - 1];
-            }
-        }
-
-        public async Task WaitForEffectiveConfigDispatchCountAsync(int expectedCount)
-        {
-            while (EffectiveConfigDispatchCount < expectedCount)
-            {
-                Assert.True(await _effectiveConfigDispatchObserved.WaitAsync(TimeSpan.FromSeconds(5)));
-            }
         }
     }
 }

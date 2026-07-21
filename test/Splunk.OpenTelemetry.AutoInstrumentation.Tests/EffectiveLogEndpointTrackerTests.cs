@@ -45,6 +45,21 @@ public class EffectiveLogEndpointTrackerTests
     }
 
     [Fact]
+    public void CaptureLogExporterOptions_RetainsEndpointsWithSameRedactedValue()
+    {
+        var tracker = CreateILoggerTracker();
+
+        Assert.True(tracker.CaptureLogExporterOptions(
+            CreateHttpLogOptions("http://first:secret@logs-collector:4318/v1/logs")));
+        Assert.True(tracker.CaptureLogExporterOptions(
+            CreateHttpLogOptions("http://second:secret@logs-collector:4318/v1/logs")));
+
+        var endpoints = tracker.GetEndpoints();
+        Assert.Equal(2, endpoints.Count);
+        Assert.All(endpoints, endpoint => Assert.Equal("http://logs-collector:4318/v1/logs", endpoint.Endpoint));
+    }
+
+    [Fact]
     public void CaptureLogExporterOptions_PreservesEndpointsWithDifferentExporterTypes()
     {
         var tracker = CreateILoggerTracker();
@@ -74,28 +89,16 @@ public class EffectiveLogEndpointTrackerTests
     }
 
     [Fact]
-    public void CaptureLogExporterOptions_RejectsEndpointCountOverLimit()
-    {
-        var tracker = CreateILoggerTracker();
-        for (var i = 0; i < EffectiveConfigLimits.MaxEndpointCount; i++)
-        {
-            Assert.True(tracker.CaptureLogExporterOptions(
-                CreateHttpLogOptions($"http://logs-collector-{i}:4318/v1/logs")));
-        }
-
-        Assert.False(tracker.CaptureLogExporterOptions(
-            CreateHttpLogOptions("http://excess-logs-collector:4318/v1/logs")));
-        Assert.Throws<InvalidOperationException>(() => tracker.ValidateState());
-    }
-
-    [Fact]
     public void GetEndpoints_SetsBridgeLoggerProviderEndpoints_WhenILoggerWasNotConfigured()
     {
-        var tracker = CreateTracker(() => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
+        IReadOnlyList<EffectiveOtlpEndpoint> bridgeEndpoints =
+        [
+            EffectiveOtlpEndpoint.Http("http://first-bridge-collector:4318/v1/logs"),
+            EffectiveOtlpEndpoint.Http("http://second-bridge-collector:4318/v1/logs")
+        ];
+        var tracker = CreateTracker(() => bridgeEndpoints);
 
-        Assert.Equal(
-            [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")],
-            tracker.GetEndpoints());
+        Assert.Equal(bridgeEndpoints, tracker.GetEndpoints());
     }
 
     [Fact]
@@ -165,18 +168,6 @@ public class EffectiveLogEndpointTrackerTests
         }
 
         Assert.Empty(await WaitForCompletionAsync(getEndpointsTask));
-    }
-
-    [Fact]
-    public void GetEndpoints_RejectsBridgeEndpointCountOverLimit()
-    {
-        var bridgeEndpoints = Enumerable.Range(0, EffectiveConfigLimits.MaxEndpointCount + 1)
-            .Select(index => EffectiveOtlpEndpoint.Http($"http://bridge-collector-{index}:4318/v1/logs"))
-            .ToArray();
-        var tracker = CreateTracker(() => bridgeEndpoints);
-
-        Assert.Throws<InvalidOperationException>(() => tracker.GetEndpoints());
-        Assert.Throws<InvalidOperationException>(() => tracker.ValidateState());
     }
 
     [Fact]

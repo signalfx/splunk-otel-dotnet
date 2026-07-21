@@ -8,9 +8,11 @@ Effective configuration reporting is enabled when OpAMP is enabled and the
 active configuration passes startup validation. Automatic SDK setup is required;
 `OTEL_SDK_DISABLED=true` remains supported as a valid no-op SDK configuration.
 
-When the server requests a full-state report, the plugin reports the current
-effective configuration together with the agent description, capabilities, and
-health supplied by the OpAMP client.
+After automatic instrumentation initializes, the plugin sends one full-state
+report. When effective configuration reporting is enabled, that report contains
+the current effective configuration together with the agent description,
+capabilities, and health supplied by the OpAMP client. Later server requests
+produce a fresh full-state report.
 
 ## Configuration
 
@@ -54,12 +56,31 @@ resolved OTLP endpoints for active providers, plus active Splunk profiling
 settings. Environment variable templates and omitted YAML defaults are reported
 as their final evaluated values.
 
-Reported OTLP endpoints retain the URI scheme, host, port, and path.
+Reported OTLP endpoints preserve the URI scheme, host, effective port, and
+normalized path.
 User information, query, and fragment components are removed to avoid
 disclosing credentials or other sensitive data embedded in the URL.
+Endpoint hosts and paths are not redacted and should not contain secrets.
+Distinct active endpoints that differ only in redacted components remain
+separate exporter entries, although their reported endpoint values are
+identical.
 
-Effective configuration reporting is bounded to a 512 KiB UTF-8 payload, a
-4,096-character configuration file name, 8,192 characters per OTLP endpoint,
-and 32 endpoints per signal. If any limit is exceeded, the effective
-configuration portion is rejected; a full-state report can still be sent
-without effective configuration.
+An endpoint that cannot be represented as an absolute HTTP or HTTPS URI is
+treated as an effective-configuration resolution failure. The plugin does not
+emit a placeholder or a partial endpoint set. A full-state report can still be
+sent without the effective-configuration section.
+
+Effective configuration file content is bounded to 512 KiB of UTF-8 data. The
+limit applies to the serialized file body. OpAMP file-name and content-type
+fields, protobuf framing, and other request fields are outside it; values also
+present in the serialized body, such as `otel_config_file`, count as file
+content. The plugin does not impose additional fixed length or count caps on
+file names or OTLP endpoints.
+
+For file-based configuration, all actively used OTLP endpoints represented by
+the effective-config schema are reported when the complete serialized body fits
+within the budget. The environment representation supports at most one active
+endpoint per signal. Multiple endpoints for a signal therefore cause
+effective-configuration resolution to fail. Content that exceeds the limit is
+rejected rather than truncated; in either failure case, a full-state report can
+still be sent without effective configuration.

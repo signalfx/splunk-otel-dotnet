@@ -38,7 +38,12 @@ internal static class EffectiveConfigPayloadBuilder
 
     public static EffectiveConfigFile Build(EffectiveConfigSnapshot snapshot)
     {
-        return snapshot.IsFileBasedConfig ? BuildYamlPayload(snapshot) : BuildEnvironmentPayload(snapshot);
+        return CreateFile(BuildValidatedContent(snapshot));
+    }
+
+    public static void Validate(EffectiveConfigSnapshot snapshot)
+    {
+        _ = BuildValidatedContent(snapshot);
     }
 
     public static void ValidateCompatibility(bool isFileBasedConfig)
@@ -51,13 +56,49 @@ internal static class EffectiveConfigPayloadBuilder
 
     internal static EffectiveConfigFile CreateFile(string fileName, string contentType, string body)
     {
-        EffectiveConfigLimits.ValidateFileNameLength(fileName);
-        EffectiveConfigLimits.ValidatePayloadSize(Encoding.UTF8.GetByteCount(body));
-        var bytes = Encoding.UTF8.GetBytes(body);
-        return new EffectiveConfigFile(new ReadOnlyMemory<byte>(bytes), contentType, fileName);
+        return CreateFile(CreateValidatedContent(fileName, contentType, body));
     }
 
-    private static EffectiveConfigFile BuildEnvironmentPayload(EffectiveConfigSnapshot snapshot)
+    private static EffectiveConfigFile CreateFile(ValidatedPayloadContent content)
+    {
+        var bytes = new byte[content.Utf8ByteCount];
+        Encoding.UTF8.GetBytes(content.Body, 0, content.Body.Length, bytes, 0);
+        return new EffectiveConfigFile(new ReadOnlyMemory<byte>(bytes), content.ContentType, content.FileName);
+    }
+
+    private static ValidatedPayloadContent CreateValidatedContent(
+        string fileName,
+        string contentType,
+        string body)
+    {
+        var bodySizeBytes = Encoding.UTF8.GetByteCount(body);
+        EffectiveConfigLimits.ValidateFileContentSize(bodySizeBytes);
+
+        return new ValidatedPayloadContent(fileName, contentType, body, bodySizeBytes);
+    }
+
+    private static void ValidateEnvironmentBodySize(
+        IReadOnlyList<(string Key, string Value)> entries)
+    {
+        long bodySizeBytes = entries.Count == 0 ? 0 : entries.Count - 1;
+        foreach (var entry in entries)
+        {
+            bodySizeBytes += Encoding.UTF8.GetByteCount(entry.Key);
+            bodySizeBytes += 1; // '=' separator
+            bodySizeBytes += Encoding.UTF8.GetByteCount(entry.Value);
+        }
+
+        EffectiveConfigLimits.ValidateFileContentSize(bodySizeBytes);
+    }
+
+    private static ValidatedPayloadContent BuildValidatedContent(EffectiveConfigSnapshot snapshot)
+    {
+        return snapshot.IsFileBasedConfig
+            ? BuildValidatedYamlContent(snapshot)
+            : BuildValidatedEnvironmentContent(snapshot);
+    }
+
+    private static ValidatedPayloadContent BuildValidatedEnvironmentContent(EffectiveConfigSnapshot snapshot)
     {
         var entries = new (string Key, string Value)[]
         {
@@ -72,18 +113,21 @@ internal static class EffectiveConfigPayloadBuilder
             ("OTEL_CONFIG_FILE", "null")
         };
 
+        ValidateEnvironmentBodySize(entries);
         var body = string.Join("\n", entries.Select(entry => entry.Key + "=" + entry.Value));
-        return CreateFile(EnvironmentFileName, EnvironmentContentType, body);
+        return CreateValidatedContent(EnvironmentFileName, EnvironmentContentType, body);
     }
 
-    private static EffectiveConfigFile BuildYamlPayload(EffectiveConfigSnapshot snapshot)
+    private static ValidatedPayloadContent BuildValidatedYamlContent(EffectiveConfigSnapshot snapshot)
     {
         var yamlConfig = EffectiveYamlConfig.Create(snapshot);
 
-        return CreateFile(
+        return CreateValidatedContent(
             snapshot.FileBasedConfigFileName!,
             YamlContentType,
-            EffectiveYamlSerializer.Serialize(yamlConfig));
+            EffectiveYamlSerializer.Serialize(
+                yamlConfig,
+                EffectiveConfigLimits.MaxFileContentSizeBytes));
     }
 
     private static string GetSingleEndpointOrDefault(
@@ -108,5 +152,28 @@ internal static class EffectiveConfigPayloadBuilder
     private static string FormatUInt(uint value)
     {
         return value.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private readonly struct ValidatedPayloadContent
+    {
+        public ValidatedPayloadContent(
+            string fileName,
+            string contentType,
+            string body,
+            int utf8ByteCount)
+        {
+            FileName = fileName;
+            ContentType = contentType;
+            Body = body;
+            Utf8ByteCount = utf8ByteCount;
+        }
+
+        public string FileName { get; }
+
+        public string ContentType { get; }
+
+        public string Body { get; }
+
+        public int Utf8ByteCount { get; }
     }
 }

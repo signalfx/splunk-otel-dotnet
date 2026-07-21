@@ -43,7 +43,6 @@ internal sealed class MockOpAmpServer : IDisposable
     private readonly object _effectiveConfigFramesLock = new();
     private readonly List<EffectiveConfigFrameSnapshot> _effectiveConfigFrames = [];
     private readonly ManualResetEventSlim _effectiveConfigReceived = new(false);
-    private long _flagsOnNextEffectiveConfig;
     private long _lastAcceptedSequenceNum;
     private int _rejectNextEffectiveConfig;
     private int _requestFullStateOnSequenceGap;
@@ -62,13 +61,6 @@ internal sealed class MockOpAmpServer : IDisposable
     /// Gets the TCP port that this collector is listening on.
     /// </summary>
     public int Port => _listener.Port;
-
-    public void RequestFullStateOnNextEffectiveConfig()
-    {
-        Interlocked.Exchange(
-            ref _flagsOnNextEffectiveConfig,
-            (long)ServerToAgentFlags.ReportFullState);
-    }
 
     public void RejectNextEffectiveConfigAndRequestFullStateOnSequenceGap()
     {
@@ -296,9 +288,7 @@ internal sealed class MockOpAmpServer : IDisposable
     private byte[] GenerateResponse(AgentToServer frame)
     {
         var content = "This is a mock server frame for testing purposes.";
-        var flags = frame.EffectiveConfig == null
-            ? 0UL
-            : unchecked((ulong)Interlocked.Exchange(ref _flagsOnNextEffectiveConfig, 0));
+        var flags = 0UL;
         var previousSequenceNum = unchecked((ulong)Interlocked.Exchange(
             ref _lastAcceptedSequenceNum,
             unchecked((long)frame.SequenceNum)));

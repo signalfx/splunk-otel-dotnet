@@ -93,6 +93,25 @@ public class OpAmpTests
     }
 
     [Fact]
+    public void ConfigureEffectiveConfigReporting_DoesNotEnableReporting_WhenCurrentPayloadCannotBeBuilt()
+    {
+        var settings = new OpAmpClientSettings();
+        var recorder = new EffectiveConfigRecorder(
+            CreateStaticSettings(),
+            openTelemetrySdkDisabled: false,
+            () =>
+            [
+                EffectiveOtlpEndpoint.Http("http://first-logs-collector:4318/v1/logs"),
+                EffectiveOtlpEndpoint.Http("http://second-logs-collector:4318/v1/logs")
+            ]);
+        var opAmp = CreateOpAmp(() => recorder);
+
+        opAmp.ConfigureEffectiveConfigReporting(settings);
+
+        Assert.False(settings.EffectiveConfigurationReporting.EnableReporting);
+    }
+
+    [Fact]
     public void ConfigureEffectiveConfigReporting_EnablesReporting_WhenSdkIsDisabled()
     {
         var settings = new OpAmpClientSettings();
@@ -144,7 +163,7 @@ public class OpAmpTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task InitialEffectiveConfigReportIsSentOnce_WhenReadinessSignalsArriveInEitherOrder(
+    public async Task InitialFullStateReportIsSentOnce_WhenReadinessSignalsArriveInEitherOrder(
         bool instrumentationInitializedFirst)
     {
         var opAmp = CreateOpAmp();
@@ -168,10 +187,11 @@ public class OpAmpTests
         opAmp.StopClientReporting();
 
         Assert.Equal(1, requestProbe.Count);
+        Assert.True(OpAmpRequestFrameInspector.Parse(requestProbe.GetRequestBody(1)).IsFullStateReport);
     }
 
     [Fact]
-    public async Task EffectiveConfigChangeBeforeInstrumentationInitializationIsIncludedInInitialReport()
+    public async Task EffectiveConfigChangeBeforeInstrumentationInitializationIsIncludedInInitialFullStateReport()
     {
         var opAmp = CreateOpAmp();
         var requestProbe = new OpAmpHttpRequestProbe();
@@ -196,13 +216,14 @@ public class OpAmpTests
 
         Assert.Equal(1, requestProbe.Count);
         var requestFrame = OpAmpRequestFrameInspector.Parse(requestProbe.GetRequestBody(1));
+        Assert.True(requestFrame.IsFullStateReport);
         Assert.Contains(
             $"OTEL_EXPORTER_OTLP_LOGS_ENDPOINT={logsEndpoint}",
             requestFrame.GetEffectiveConfigBody("environment"));
     }
 
     [Fact]
-    public void ConfigureEffectiveConfigReporting_DoesNotAdvertiseOrSend_WhenProviderGraphPreflightFails()
+    public async Task ConfigureEffectiveConfigReporting_DoesNotAdvertiseEffectiveConfig_WhenProviderGraphPreflightFails()
     {
         var settings = new OpAmpClientSettings();
         var providerGraphResolverCalled = false;
@@ -219,15 +240,14 @@ public class OpAmpTests
         using var innerClient = new HttpClient(requestProbe);
 
         opAmp.ConfigureEffectiveConfigReporting(settings);
-        using var client = CreateClient(
-            innerClient,
-            clientSettings => clientSettings.EffectiveConfigurationReporting.EnableReporting = true);
+        using var client = CreateClient(innerClient);
 
         Assert.False(settings.EffectiveConfigurationReporting.EnableReporting);
         Assert.True(providerGraphResolverCalled);
 
         opAmp.OnClientStarted(client);
         opAmp.MarkInstrumentationInitialized();
+        await requestProbe.WaitForCountAsync(1);
         opAmp.MarkOpenTelemetryLoggerConfigured();
         opAmp.RecordLogExporterOptions(new OtlpExporterOptions
         {
@@ -236,7 +256,10 @@ public class OpAmpTests
         });
         opAmp.StopClientReporting();
 
-        Assert.Equal(0, requestProbe.Count);
+        Assert.Equal(1, requestProbe.Count);
+        var requestFrame = OpAmpRequestFrameInspector.Parse(requestProbe.GetRequestBody(1));
+        Assert.True(requestFrame.IsFullStateReport);
+        Assert.False(requestFrame.HasEffectiveConfig);
     }
 
     [Fact]

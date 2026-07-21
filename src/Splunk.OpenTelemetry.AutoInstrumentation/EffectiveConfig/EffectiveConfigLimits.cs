@@ -18,44 +18,14 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal static class EffectiveConfigLimits
 {
-    public const int MaxPayloadSizeBytes = 512 * 1024;
-    public const int MaxFileNameLength = 4096;
-    public const int MaxEndpointLength = 8192;
-    public const int MaxEndpointCount = 32;
+    public const int MaxFileContentSizeBytes = 512 * 1024;
 
-    public static void ValidatePayloadSize(int payloadSizeBytes)
+    public static void ValidateFileContentSize(long contentSizeBytes)
     {
-        if (payloadSizeBytes > MaxPayloadSizeBytes)
+        if (contentSizeBytes > MaxFileContentSizeBytes)
         {
             throw new InvalidOperationException(
-                $"Effective configuration payload size {payloadSizeBytes} bytes exceeds the {MaxPayloadSizeBytes}-byte limit.");
-        }
-    }
-
-    public static void ValidateFileNameLength(string? fileName)
-    {
-        if (fileName?.Length > MaxFileNameLength)
-        {
-            throw new InvalidOperationException(
-                $"Effective configuration file name length {fileName.Length} exceeds the {MaxFileNameLength}-character limit.");
-        }
-    }
-
-    public static void ValidateEndpointLength(string endpoint)
-    {
-        if (endpoint.Length > MaxEndpointLength)
-        {
-            throw new InvalidOperationException(
-                $"OTLP endpoint length {endpoint.Length} exceeds the {MaxEndpointLength}-character effective configuration limit.");
-        }
-    }
-
-    public static void ValidateEndpointCount(int endpointCount)
-    {
-        if (endpointCount > MaxEndpointCount)
-        {
-            throw new InvalidOperationException(
-                $"Effective configuration endpoint count {endpointCount} exceeds the per-signal limit of {MaxEndpointCount}.");
+                $"Effective configuration file content size {contentSizeBytes} bytes exceeds the {MaxFileContentSizeBytes}-byte limit.");
         }
     }
 }

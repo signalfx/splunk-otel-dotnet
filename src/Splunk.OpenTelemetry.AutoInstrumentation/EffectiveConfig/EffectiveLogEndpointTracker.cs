@@ -26,6 +26,7 @@ internal sealed class EffectiveLogEndpointTracker
 
     private readonly object _lock = new();
     private readonly List<EffectiveOtlpEndpoint> _endpoints = [];
+    private readonly HashSet<EffectiveOtlpEndpoint> _endpointSet = [];
     private readonly Func<IReadOnlyList<EffectiveOtlpEndpoint>?> _bridgeLogEndpointResolver;
     private bool _bridgeLogEndpointsResolved;
     private bool _iloggerLogsConfigured;
@@ -55,6 +56,7 @@ internal sealed class EffectiveLogEndpointTracker
             _iloggerLogsConfigured = true;
             var hadEndpoints = _endpoints.Count > 0;
             _endpoints.Clear();
+            _endpointSet.Clear();
             return hadEndpoints;
         }
     }
@@ -74,12 +76,11 @@ internal sealed class EffectiveLogEndpointTracker
             {
                 // Upstream's ILogger path calls the marker before configuring OTLP exporters, but SDK export clients do not exist yet.
                 var endpoint = OtlpLogEndpointOptionsResolver.ResolveEndpoint(options);
-                if (_endpoints.Contains(endpoint))
+                if (!_endpointSet.Add(endpoint))
                 {
                     return false;
                 }
 
-                EffectiveConfigLimits.ValidateEndpointCount(_endpoints.Count + 1);
                 _endpoints.Add(endpoint);
                 return true;
             }
@@ -155,20 +156,6 @@ internal sealed class EffectiveLogEndpointTracker
             throw;
         }
 
-        InvalidOperationException? retentionFailure = null;
-        if (bridgeLogEndpoints != null)
-        {
-            try
-            {
-                EffectiveConfigLimits.ValidateEndpointCount(bridgeLogEndpoints.Count);
-            }
-            catch (InvalidOperationException ex)
-            {
-                retentionFailure = ex;
-            }
-        }
-
-        var logRetentionFailure = false;
         lock (_lock)
         {
             if (!ShouldResolveBridgeLogEndpointsLocked())
@@ -177,24 +164,11 @@ internal sealed class EffectiveLogEndpointTracker
             }
 
             _bridgeLogEndpointsResolved = true;
-            if (retentionFailure != null)
+            _endpoints.Clear();
+            if (bridgeLogEndpoints != null)
             {
-                _hasEndpointResolutionFailure = true;
-                logRetentionFailure = true;
+                _endpoints.AddRange(bridgeLogEndpoints);
             }
-            else
-            {
-                _endpoints.Clear();
-                if (bridgeLogEndpoints != null)
-                {
-                    _endpoints.AddRange(bridgeLogEndpoints);
-                }
-            }
-        }
-
-        if (logRetentionFailure)
-        {
-            Log.Warning($"Failed to retain bridge logs endpoints: {retentionFailure!.Message}");
         }
     }
 
