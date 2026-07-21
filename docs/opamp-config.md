@@ -62,7 +62,7 @@ Endpoints that cannot be represented as absolute HTTP or HTTPS URIs cause
 effective-configuration resolution to fail. In this case, the agent omits the
 effective-configuration section but may still send the full-state report.
 
-The serialized effective configuration file is limited to 512 KiB. Content that
+The serialized effective configuration file is limited to 4 MiB. Content that
 exceeds this limit is rejected rather than truncated.
 
 File-based configuration may report multiple active OTLP endpoints per signal.
