@@ -65,13 +65,25 @@ internal sealed class EffectiveProviderEndpointTracker<TProvider>
     {
         lock (_lock)
         {
-            if (_resolutionFailed)
-            {
-                throw new InvalidOperationException(
-                    $"The OpenTelemetry SDK {typeof(TProvider).Name} graph could not be inspected.");
-            }
-
+            ThrowIfResolutionFailed();
             return _endpoints.ToArray();
+        }
+    }
+
+    public void ValidateState()
+    {
+        lock (_lock)
+        {
+            ThrowIfResolutionFailed();
+        }
+    }
+
+    private void ThrowIfResolutionFailed()
+    {
+        if (_resolutionFailed)
+        {
+            throw new InvalidOperationException(
+                $"The OpenTelemetry SDK {typeof(TProvider).Name} graph could not be inspected.");
         }
     }
 }

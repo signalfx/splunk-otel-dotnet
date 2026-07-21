@@ -46,7 +46,6 @@ internal sealed class EffectiveYamlConfig
                 {
                     Processors = snapshot.TraceEndpoints
                         .Select(endpoint => new EffectiveProcessorConfig(endpoint))
-                        .ToArray()
                 },
             MeterProvider = snapshot.MetricEndpoints.Count == 0
                 ? null
@@ -54,7 +53,6 @@ internal sealed class EffectiveYamlConfig
                 {
                     Readers = snapshot.MetricEndpoints
                         .Select(endpoint => new EffectivePeriodicReaderConfig(endpoint))
-                        .ToArray()
                 },
             LoggerProvider = snapshot.LogEndpoints.Count == 0
                 ? null
@@ -62,7 +60,6 @@ internal sealed class EffectiveYamlConfig
                 {
                     Processors = snapshot.LogEndpoints
                         .Select(endpoint => new EffectiveProcessorConfig(endpoint))
-                        .ToArray()
                 },
             Distribution = profiling == null
                 ? null
@@ -79,13 +76,13 @@ internal sealed class EffectiveYamlConfig
     internal sealed class EffectiveProcessorProviderConfig
     {
         [EffectiveYamlProperty("processors", 0)]
-        public IReadOnlyList<EffectiveProcessorConfig> Processors { get; set; } = [];
+        public IEnumerable<EffectiveProcessorConfig> Processors { get; set; } = [];
     }
 
     internal sealed class EffectiveMeterProviderConfig
     {
         [EffectiveYamlProperty("readers", 0)]
-        public IReadOnlyList<EffectivePeriodicReaderConfig> Readers { get; set; } = [];
+        public IEnumerable<EffectivePeriodicReaderConfig> Readers { get; set; } = [];
     }
 
     internal sealed class EffectiveProcessorConfig

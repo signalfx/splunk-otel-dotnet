@@ -8,6 +8,12 @@ Effective configuration reporting is enabled when OpAMP is enabled and the
 active configuration passes startup validation. Automatic SDK setup is required;
 `OTEL_SDK_DISABLED=true` remains supported as a valid no-op SDK configuration.
 
+After automatic instrumentation initializes, the plugin sends one full-state
+report. When effective configuration reporting is enabled, that report contains
+the current effective configuration together with the agent description,
+capabilities, and health supplied by the OpAMP client. Later server requests
+produce a fresh full-state report.
+
 ## Configuration
 
 ### Environment variables
@@ -49,3 +55,16 @@ The YAML body is a filtered effective representation of the active configuration
 resolved OTLP endpoints for active providers, plus active Splunk profiling
 settings. Environment variable templates and omitted YAML defaults are reported
 as their final evaluated values.
+
+Endpoint hosts and paths are not redacted and must not contain secrets.
+
+Endpoints that cannot be represented as absolute HTTP or HTTPS URIs cause
+effective-configuration resolution to fail. In this case, the agent omits the
+effective-configuration section but may still send the full-state report.
+
+The serialized effective configuration file is limited to 512 KiB. Content that
+exceeds this limit is rejected rather than truncated.
+
+File-based configuration may report multiple active OTLP endpoints per signal.
+The environment representation supports only one endpoint per signal; multiple
+active endpoints therefore cause effective-configuration resolution to fail.

@@ -56,7 +56,8 @@ public class EffectiveConfigSnapshotTests
     {
         var traceEndpoints = new List<EffectiveOtlpEndpoint>
         {
-            EffectiveOtlpEndpoint.Http("http://collector:4318/v1/traces")
+            EffectiveOtlpEndpoint.Http("http://first-collector:4318/v1/traces"),
+            EffectiveOtlpEndpoint.Http("http://second-collector:4318/v1/traces")
         };
         var metricEndpoints = new List<EffectiveOtlpEndpoint>
         {

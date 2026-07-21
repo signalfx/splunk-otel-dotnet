@@ -81,6 +81,7 @@ internal sealed class EffectiveConfigSnapshot
 
     private static IReadOnlyList<EffectiveOtlpEndpoint> CopyEndpoints(IReadOnlyList<EffectiveOtlpEndpoint> endpoints)
     {
-        return (endpoints ?? throw new ArgumentNullException(nameof(endpoints))).ToArray();
+        endpoints = endpoints ?? throw new ArgumentNullException(nameof(endpoints));
+        return endpoints.ToArray();
     }
 }

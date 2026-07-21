@@ -31,7 +31,11 @@ public class EffectiveProviderEndpointTrackerTests
         Assert.True(tracker.Capture(provider));
         Assert.False(tracker.Capture(provider));
 
-        resolvedEndpoints = [EffectiveOtlpEndpoint.Http("http://second-collector:4318/v1/traces")];
+        resolvedEndpoints =
+        [
+            EffectiveOtlpEndpoint.Http("http://second-collector:4318/v1/traces"),
+            EffectiveOtlpEndpoint.Http("http://third-collector:4318/v1/traces")
+        ];
 
         Assert.True(tracker.Capture(provider));
         Assert.Equal(resolvedEndpoints, tracker.GetEndpoints());
@@ -53,11 +57,13 @@ public class EffectiveProviderEndpointTrackerTests
 
         Assert.False(tracker.Capture(provider));
         Assert.Throws<InvalidOperationException>(() => tracker.GetEndpoints());
+        Assert.Throws<InvalidOperationException>(() => tracker.ValidateState());
         Assert.False(tracker.Capture(provider));
 
         resolutionFails = false;
 
         Assert.False(tracker.Capture(provider));
+        tracker.ValidateState();
         Assert.Single(tracker.GetEndpoints());
     }
 
