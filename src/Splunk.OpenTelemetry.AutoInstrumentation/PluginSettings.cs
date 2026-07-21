@@ -1,4 +1,4 @@
-// <copyright file="PluginSettings.cs" company="Splunk Inc.">
+﻿// <copyright file="PluginSettings.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -89,7 +89,7 @@ internal class PluginSettings
         TraceResponseHeaderEnabled = traceConfig?.Aspnetcore?.ResponseHeaderEnabled ?? Constants.DefaultTraceResponseHeaderEnabled;
 #endif
 
-        OpAmpRemoteConfigEnabled = configuration.OpAmpDevelopment?.Features?.RemoteConfig != null;
+        OpAmpRemoteConfigEnabled = configuration.OpampDevelopment?.Features?.RemoteConfig != null;
 
         var profilingConfig = configuration.Distribution?.Splunk?.Profiling;
         if (profilingConfig != null)
