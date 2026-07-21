@@ -18,7 +18,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal static class EffectiveConfigLimits
 {
-    public const int MaxFileContentSizeBytes = 512 * 1024;
+    public const int MaxFileContentSizeBytes = 4 * 1024 * 1024;
 
     public static void ValidateFileContentSize(long contentSizeBytes)
     {

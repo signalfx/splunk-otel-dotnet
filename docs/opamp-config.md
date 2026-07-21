@@ -70,7 +70,7 @@ treated as an effective-configuration resolution failure. The plugin does not
 emit a placeholder or a partial endpoint set. A full-state report can still be
 sent without the effective-configuration section.
 
-Effective configuration file content is bounded to 512 KiB of UTF-8 data. The
+Effective configuration file content is bounded to 4 MiB of UTF-8 data. The
 limit applies to the serialized file body. OpAMP file-name and content-type
 fields, protobuf framing, and other request fields are outside it; values also
 present in the serialized body, such as `otel_config_file`, count as file
