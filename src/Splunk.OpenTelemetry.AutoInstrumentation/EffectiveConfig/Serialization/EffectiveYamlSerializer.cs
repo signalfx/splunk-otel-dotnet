@@ -16,27 +16,44 @@
 
 using System.Globalization;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
+using System.Text;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Serialization;
 
 internal static class EffectiveYamlSerializer
 {
+    private const int MaximumTerminalLineEndingCharacters = 2;
     private const string UpstreamAssemblyName = "OpenTelemetry.AutoInstrumentation";
 
     private static readonly Lazy<object> Serializer = new(CreateSerializer);
 
     private static readonly Lazy<MethodInfo> SerializeMethod = new(() =>
-        GetInstanceMethod(Serializer.Value.GetType(), "Serialize", [typeof(object)]));
+        GetInstanceMethod(Serializer.Value.GetType(), "Serialize", [typeof(TextWriter), typeof(object)]));
 
-    public static string Serialize(EffectiveYamlConfig value)
+    public static void ValidateCompatibility()
     {
-        var result = SerializeMethod.Value.Invoke(Serializer.Value, [value]);
-        if (result is not string serialized)
+        _ = SerializeMethod.Value;
+    }
+
+    public static string Serialize(EffectiveYamlConfig value, int maxContentSizeBytes)
+    {
+        // A UTF-8 body uses at least one byte per UTF-16 code unit, so the byte limit
+        // is also a safe character bound that cannot reject otherwise valid content.
+        using var writer = new BoundedStringWriter(
+            maxContentSizeBytes,
+            MaximumTerminalLineEndingCharacters);
+        try
         {
-            throw new InvalidOperationException("The upstream YAML serializer returned a non-string result.");
+            SerializeMethod.Value.Invoke(Serializer.Value, [writer, value]);
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException != null)
+        {
+            ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+            throw;
         }
 
-        return serialized.TrimEnd('\r', '\n');
+        return writer.ToString();
     }
 
     private static object CreateSerializer()
@@ -164,5 +181,71 @@ internal static class EffectiveYamlSerializer
     {
         return Type.GetType($"{fullName}, {UpstreamAssemblyName}", throwOnError: false)
             ?? throw new TypeLoadException($"Could not load upstream type '{fullName}' from '{UpstreamAssemblyName}'.");
+    }
+
+    internal sealed class BoundedStringWriter : TextWriter
+    {
+        private readonly StringBuilder _builder = new();
+        private readonly int _maxBufferedCharacters;
+        private readonly int _maxContentCharacters;
+
+        public BoundedStringWriter(
+            int maxContentCharacters,
+            int terminalLineEndingAllowanceCharacters = 0)
+        {
+            if (maxContentCharacters < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxContentCharacters));
+            }
+
+            if (terminalLineEndingAllowanceCharacters < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(terminalLineEndingAllowanceCharacters));
+            }
+
+            _maxContentCharacters = maxContentCharacters;
+            _maxBufferedCharacters = checked(maxContentCharacters + terminalLineEndingAllowanceCharacters);
+        }
+
+        public override Encoding Encoding => Encoding.UTF8;
+
+        public override void Write(char value)
+        {
+            EnsureBufferCapacity(1);
+            _builder.Append(value);
+        }
+
+        public override void Write(char[] buffer, int index, int count)
+        {
+            EnsureBufferCapacity(count);
+            _builder.Append(buffer, index, count);
+        }
+
+        public override void Write(string? value)
+        {
+            if (value == null)
+            {
+                return;
+            }
+
+            EnsureBufferCapacity(value.Length);
+            _builder.Append(value);
+        }
+
+        public override string ToString() => _builder.ToString().TrimEnd('\r', '\n');
+
+        private void EnsureBufferCapacity(int additionalCharacters)
+        {
+            if (additionalCharacters > _maxBufferedCharacters - _builder.Length)
+            {
+                ThrowLimitExceeded();
+            }
+        }
+
+        private void ThrowLimitExceeded()
+        {
+            throw new InvalidOperationException(
+                $"Effective configuration serialization exceeds its {_maxContentCharacters}-character allocation guard.");
+        }
     }
 }

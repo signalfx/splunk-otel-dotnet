@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-using System.Reflection;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Serialization;
 
@@ -22,36 +21,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
 public class EffectiveYamlConfigTests
 {
-    [Fact]
-    public void YamlModel_AnnotatesEveryPublicProperty()
-    {
-        var properties = new[] { typeof(EffectiveYamlConfig) }
-            .Concat(typeof(EffectiveYamlConfig).GetNestedTypes(BindingFlags.NonPublic | BindingFlags.Public))
-            .SelectMany(type => type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly));
-
-        Assert.All(
-            properties,
-            property => Assert.NotNull(property.GetCustomAttribute<EffectiveYamlPropertyAttribute>()));
-    }
-
-    [Fact]
-    public void YamlModel_PreservesRequiredNulls()
-    {
-        AssertPreservesNull(
-            typeof(EffectiveYamlConfig.EffectiveAlwaysOnProfilingWithMemoryConfig),
-            nameof(EffectiveYamlConfig.EffectiveAlwaysOnProfilingWithMemoryConfig.MemoryProfiler));
-
-        static void AssertPreservesNull(Type declaringType, string propertyName)
-        {
-            var property = declaringType.GetProperty(propertyName);
-            Assert.NotNull(property);
-
-            var attribute = property.GetCustomAttribute<EffectiveYamlPropertyAttribute>();
-            Assert.NotNull(attribute);
-            Assert.True(attribute.PreserveNull);
-        }
-    }
-
     [Fact]
     public void Create_CapturesConfigFileMetadata()
     {
@@ -107,6 +76,39 @@ public class EffectiveYamlConfigTests
         Assert.Equal(
             "http://collector:4317/opentelemetry.proto.collector.metrics.v1.MetricsService/Export",
             exporter.OtlpGrpc!.Endpoint);
+    }
+
+    [Fact]
+    public void Create_RetainsEndpointsWithSameRedactedValueWithoutDisclosingSecrets()
+    {
+        var config = EffectiveYamlConfig.Create(CreateSnapshot(
+            traceEndpoints:
+            [
+                EffectiveOtlpEndpoint.Http("https://first:secret@collector:4318/v1/traces?api_key=first"),
+                EffectiveOtlpEndpoint.Http("https://second:secret@collector:4318/v1/traces?api_key=second")
+            ]));
+
+        var endpoints = config.TracerProvider!.Processors
+            .Select(processor => processor.Batch!.Exporter.OtlpHttp!.Endpoint)
+            .ToArray();
+        var reportedValues = string.Join("\n", endpoints);
+
+        Assert.Equal(2, endpoints.Length);
+        Assert.All(endpoints, endpoint => Assert.Equal("https://collector:4318/v1/traces", endpoint));
+        Assert.DoesNotContain("first:secret", reportedValues);
+        Assert.DoesNotContain("second:secret", reportedValues);
+        Assert.DoesNotContain("api_key", reportedValues);
+    }
+
+    [Fact]
+    public void BoundedStringWriter_StopsAtCharacterAllocationGuard()
+    {
+        using var writer = new EffectiveYamlSerializer.BoundedStringWriter(4);
+        writer.Write("abcd");
+
+        var exception = Assert.Throws<InvalidOperationException>(() => writer.Write('e'));
+
+        Assert.Contains("4-character", exception.Message);
     }
 
     [Fact]

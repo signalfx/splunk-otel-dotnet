@@ -18,12 +18,25 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal readonly struct EffectiveOtlpEndpoint : IEquatable<EffectiveOtlpEndpoint>
 {
+    private readonly string? _canonicalEndpointIdentity;
+
     public EffectiveOtlpEndpoint(
         string endpoint,
         EffectiveOtlpExporterType exporterType,
         EffectiveOtlpPipelineType pipelineType)
     {
-        Endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
+        endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
+        if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var endpointUri) ||
+            (endpointUri.Scheme != Uri.UriSchemeHttp && endpointUri.Scheme != Uri.UriSchemeHttps) ||
+            string.IsNullOrEmpty(endpointUri.Host))
+        {
+            throw new ArgumentException(
+                "The OTLP endpoint must be an absolute HTTP or HTTPS URI with a host.",
+                nameof(endpoint));
+        }
+
+        _canonicalEndpointIdentity = endpointUri.AbsoluteUri;
+        Endpoint = SanitizeEndpoint(endpointUri);
         ExporterType = exporterType;
         PipelineType = pipelineType;
     }
@@ -50,7 +63,7 @@ internal readonly struct EffectiveOtlpEndpoint : IEquatable<EffectiveOtlpEndpoin
 
     public bool Equals(EffectiveOtlpEndpoint other)
     {
-        return string.Equals(Endpoint, other.Endpoint, StringComparison.Ordinal)
+        return string.Equals(_canonicalEndpointIdentity, other._canonicalEndpointIdentity, StringComparison.Ordinal)
             && ExporterType == other.ExporterType
             && PipelineType == other.PipelineType;
     }
@@ -64,7 +77,9 @@ internal readonly struct EffectiveOtlpEndpoint : IEquatable<EffectiveOtlpEndpoin
     {
         unchecked
         {
-            var hashCode = Endpoint == null ? 0 : StringComparer.Ordinal.GetHashCode(Endpoint);
+            var hashCode = _canonicalEndpointIdentity == null
+                ? 0
+                : StringComparer.Ordinal.GetHashCode(_canonicalEndpointIdentity);
             hashCode = (hashCode * 397) ^ (int)ExporterType;
             return (hashCode * 397) ^ (int)PipelineType;
         }
@@ -73,5 +88,24 @@ internal readonly struct EffectiveOtlpEndpoint : IEquatable<EffectiveOtlpEndpoin
     public override string ToString()
     {
         return $"{PipelineType}:{ExporterType}:{Endpoint}";
+    }
+
+    private static string SanitizeEndpoint(Uri endpointUri)
+    {
+        if (string.IsNullOrEmpty(endpointUri.UserInfo) &&
+            string.IsNullOrEmpty(endpointUri.Query) &&
+            string.IsNullOrEmpty(endpointUri.Fragment))
+        {
+            return endpointUri.AbsoluteUri;
+        }
+
+        var redactedEndpoint = new UriBuilder(endpointUri)
+        {
+            UserName = string.Empty,
+            Password = string.Empty,
+            Query = string.Empty,
+            Fragment = string.Empty,
+        };
+        return redactedEndpoint.Uri.AbsoluteUri;
     }
 }

@@ -82,6 +82,101 @@ public class EffectiveConfigPayloadBuilderTests
         });
     }
 
+    [Fact]
+    public void Build_EnvironmentConfig_RedactsEndpointCredentials()
+    {
+        var payload = EffectiveConfigPayloadBuilder.Build(CreateEnvironmentSnapshot(
+            traceEndpoints: [EffectiveOtlpEndpoint.Http("https://user:password@collector:4318/v1/traces")],
+            metricEndpoints: [EffectiveOtlpEndpoint.Http("https://collector:4318/v1/metrics?api_key=metric-secret")],
+            logEndpoints: [EffectiveOtlpEndpoint.Http("https://collector:4318/v1/logs#log-secret")]));
+
+        var actual = ParseEnvironmentConfigPayload(GetBody(payload));
+
+        Assert.Equal("https://collector:4318/v1/traces", actual["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"]);
+        Assert.Equal("https://collector:4318/v1/metrics", actual["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"]);
+        Assert.Equal("https://collector:4318/v1/logs", actual["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"]);
+    }
+
+    [Fact]
+    public void Build_EnvironmentConfig_RejectsMultipleEndpointsForAnySignal()
+    {
+        var endpoints = new[]
+        {
+            EffectiveOtlpEndpoint.Http("http://collector-1:4318"),
+            EffectiveOtlpEndpoint.Http("http://collector-2:4318")
+        };
+        var snapshots = new[]
+        {
+            CreateEnvironmentSnapshot(traceEndpoints: endpoints),
+            CreateEnvironmentSnapshot(metricEndpoints: endpoints),
+            CreateEnvironmentSnapshot(logEndpoints: endpoints)
+        };
+
+        foreach (var snapshot in snapshots)
+        {
+            var validationException = Assert.Throws<InvalidOperationException>(
+                () => EffectiveConfigPayloadBuilder.Validate(snapshot));
+            var buildException = Assert.Throws<InvalidOperationException>(
+                () => EffectiveConfigPayloadBuilder.Build(snapshot));
+
+            Assert.Equal(validationException.Message, buildException.Message);
+            Assert.Contains("cannot represent 2 active", validationException.Message);
+        }
+    }
+
+    [Fact]
+    public void CreateFile_AllowsContentAtSizeLimit()
+    {
+        var body = new string('a', EffectiveConfigLimits.MaxFileContentSizeBytes);
+
+        var file = EffectiveConfigPayloadBuilder.CreateFile(
+            "config.yaml",
+            "application/yaml",
+            body);
+
+        Assert.Equal(EffectiveConfigLimits.MaxFileContentSizeBytes, file.Content.Length);
+    }
+
+    [Fact]
+    public void CreateFile_RejectsContentOverSizeLimit()
+    {
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => EffectiveConfigPayloadBuilder.CreateFile(
+                "config.yaml",
+                "application/yaml",
+                new string('a', EffectiveConfigLimits.MaxFileContentSizeBytes + 1)));
+
+        Assert.Contains(EffectiveConfigLimits.MaxFileContentSizeBytes.ToString(), exception.Message);
+    }
+
+    [Fact]
+    public void CreateFile_AppliesSizeLimitToUtf8Bytes()
+    {
+        var bodyAtLimit = new string('\u00e9', EffectiveConfigLimits.MaxFileContentSizeBytes / 2);
+        var file = EffectiveConfigPayloadBuilder.CreateFile(
+            "config.yaml",
+            "application/yaml",
+            bodyAtLimit);
+
+        Assert.Equal(EffectiveConfigLimits.MaxFileContentSizeBytes, file.Content.Length);
+        Assert.Throws<InvalidOperationException>(
+            () => EffectiveConfigPayloadBuilder.CreateFile(
+                "config.yaml",
+                "application/yaml",
+                bodyAtLimit + '\u00e9'));
+    }
+
+    [Fact]
+    public void CreateFile_DoesNotCountMetadataAgainstContentLimit()
+    {
+        var file = EffectiveConfigPayloadBuilder.CreateFile(
+            new string('f', 4097),
+            new string('c', 4097),
+            new string('a', EffectiveConfigLimits.MaxFileContentSizeBytes));
+
+        Assert.Equal(EffectiveConfigLimits.MaxFileContentSizeBytes, file.Content.Length);
+    }
+
     private static EffectiveConfigSnapshot CreateEnvironmentSnapshot(
         IReadOnlyList<EffectiveOtlpEndpoint>? traceEndpoints = null,
         IReadOnlyList<EffectiveOtlpEndpoint>? metricEndpoints = null,

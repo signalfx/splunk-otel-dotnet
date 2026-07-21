@@ -16,6 +16,7 @@
 
 using System.Collections.Specialized;
 using System.Text;
+using OpenTelemetry.Exporter;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
@@ -24,35 +25,44 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 public class EffectiveConfigReporterTests
 {
     [Fact]
-    public void BuildCurrentPayload_CapturesBridgeLoggerProviderEndpoints()
+    public void BuildCurrentPayload_UsesUpdatedProfilerRuntimeState()
     {
-        var reporter = new EffectiveConfigReporter(
+        var recorder = new EffectiveConfigRecorder(
             new EffectiveConfigStaticSettings(
                 new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()))),
-            openTelemetrySdkDisabled: false,
-            () => [EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs")]);
+            openTelemetrySdkDisabled: true);
+        var reporter = EffectiveConfigReporter.CreateValidated(recorder, EffectiveProfilerFeatures.None);
 
-        var payload = reporter.BuildCurrentPayload();
+        reporter.UpdateProfilerState(EffectiveProfilerFeatures.Cpu, cpuProfilerCallStackInterval: 1234);
 
-        Assert.Contains(
-            "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://bridge-collector:4318/v1/logs",
-            Encoding.UTF8.GetString(payload.Content.ToArray()));
+        var body = Encoding.UTF8.GetString(reporter.BuildCurrentPayload().Content.ToArray());
+        Assert.Contains("SPLUNK_PROFILER_ENABLED=true", body, StringComparison.Ordinal);
+        Assert.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=1234", body, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void BuildCurrentPayload_ReturnsNoSignalEndpoints_WhenSdkIsDisabled()
+    public void BuildCurrentPayload_CreatesEffectiveConfigFileFromCurrentRecorderState()
     {
-        var reporter = new EffectiveConfigReporter(
+        const string logsEndpoint = "http://logs-collector:4318/v1/logs";
+        var recorder = new EffectiveConfigRecorder(
             new EffectiveConfigStaticSettings(
                 new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()))),
-            openTelemetrySdkDisabled: true,
-            () => throw new InvalidOperationException("The bridge resolver should not be called."));
+            openTelemetrySdkDisabled: false,
+            () => null);
+        var reporter = EffectiveConfigReporter.CreateValidated(recorder, EffectiveProfilerFeatures.None);
+        recorder.MarkOpenTelemetryLoggerConfigured();
+        Assert.True(recorder.CaptureLogExporterOptions(new OtlpExporterOptions
+        {
+            Protocol = OtlpExportProtocol.HttpProtobuf,
+            Endpoint = new Uri(logsEndpoint)
+        }));
 
         var payload = reporter.BuildCurrentPayload();
-        var content = Encoding.UTF8.GetString(payload.Content.ToArray());
 
-        Assert.Contains("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=none", content);
-        Assert.Contains("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=none", content);
-        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=none", content);
+        Assert.Equal("environment", payload.FileName);
+        Assert.Equal("text/plain; format=properties; vendor=splunk; v=1.0.0", payload.ContentType);
+        Assert.Contains(
+            $"OTEL_EXPORTER_OTLP_LOGS_ENDPOINT={logsEndpoint}",
+            Encoding.UTF8.GetString(payload.Content.ToArray()));
     }
 }

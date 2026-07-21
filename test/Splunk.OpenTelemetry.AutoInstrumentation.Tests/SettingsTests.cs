@@ -129,7 +129,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             var settings = new PluginSettings(
                 new YamlRoot
                 {
-                    OpAmpDevelopment = new OpampDevelopment
+                    OpampDevelopment = new OpampDevelopment
                     {
                         Features = new Features
                         {
@@ -147,7 +147,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             var settings = new PluginSettings(
                 new YamlRoot
                 {
-                    OpAmpDevelopment = new OpampDevelopment
+                    OpampDevelopment = new OpampDevelopment
                     {
                         Features = new Features()
                     }

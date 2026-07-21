@@ -147,24 +147,6 @@ public class OtlpEndpointProviderGraphResolverTests
     }
 
     [Fact]
-    public void ResolveTraceEndpoints_Throws_WhenCompositeHeadIsNull()
-    {
-        using var provider = global::OpenTelemetry.Sdk.CreateTracerProviderBuilder()
-            .AddProcessor(new NoopActivityProcessor())
-            .AddProcessor(new NoopActivityProcessor())
-            .Build();
-        var processor = provider.GetType()
-            .GetProperty("Processor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
-            .GetValue(provider)!;
-        processor.GetType()
-            .GetField("Head", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
-            .SetValue(processor, null);
-
-        Assert.Throws<InvalidOperationException>(
-            () => OtlpEndpointProviderGraphResolver.ResolveTraceEndpoints(provider));
-    }
-
-    [Fact]
     public void ResolveMetricEndpoints_ReturnsOtlpExporterEndpoint()
     {
         using var provider = global::OpenTelemetry.Sdk.CreateMeterProviderBuilder()
@@ -270,6 +252,28 @@ public class OtlpEndpointProviderGraphResolverTests
                 EffectiveOtlpEndpoint.Http("http://collector:4319/logs-b", EffectiveOtlpPipelineType.Simple)
             ],
             OtlpEndpointProviderGraphResolver.ResolveLogEndpoints(provider));
+    }
+
+    [Fact]
+    public void ResolveLogEndpoints_MatchesLogOptionsResolverForSimpleExporterOption()
+    {
+        EffectiveOtlpEndpoint? endpointResolvedFromOptions = null;
+        using var provider = CreateLoggerProviderBuilder()
+            .AddOtlpExporter(options =>
+            {
+                ConfigureHttpEndpoint(
+                    options,
+                    "http://collector:4318/custom-logs",
+                    ExportProcessorType.Simple);
+                endpointResolvedFromOptions = OtlpLogEndpointOptionsResolver.ResolveEndpoint(options);
+            })
+            .Build();
+
+        var endpointResolvedFromProvider = Assert.Single(
+            OtlpEndpointProviderGraphResolver.ResolveLogEndpoints(provider));
+
+        // This detects when the fix for https://github.com/open-telemetry/opentelemetry-dotnet/issues/7281 reaches the pinned SDK.
+        Assert.Equal(endpointResolvedFromProvider, endpointResolvedFromOptions);
     }
 
 #if NET
