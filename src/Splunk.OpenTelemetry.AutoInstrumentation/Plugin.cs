@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
@@ -57,6 +58,7 @@ public class Plugin
     private readonly Traces _traces;
     private readonly Sdk _sdk;
     private readonly OpAmp _opAmp;
+    private bool _opAmpConfigurationHookInvoked;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Plugin"/> class.
@@ -146,6 +148,7 @@ public class Plugin
     /// <param name="settings">OpAMP client settings.</param>
     public void ConfigureOpAmpOptions(OpAmpClientSettings settings)
     {
+        _opAmpConfigurationHookInvoked = true;
         _opAmp.ConfigureOptions(settings, Settings);
     }
 
@@ -278,7 +281,12 @@ public class Plugin
             ProfilerRuntimeConfiguration.ApplyCurrentToNative();
         }
 
-        _opAmp.MarkInstrumentationInitialized();
+        // Upstream invokes this hook even when OpAMP is disabled. On .NET Framework, entering the
+        // OpAMP lifecycle path eagerly loads the client assembly, so only enter it after configuration.
+        if (_opAmpConfigurationHookInvoked)
+        {
+            MarkOpAmpInstrumentationInitialized();
+        }
     }
 
     internal static PprofInOtlpLogsExporter? TryGetPprofInOtlpLogsExporter()
@@ -337,5 +345,11 @@ public class Plugin
             new SampleExporter(new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint)),
             new NativeFormatParser(Settings.SnapshotsEnabled),
             () => ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private void MarkOpAmpInstrumentationInitialized()
+    {
+        _opAmp.MarkInstrumentationInitialized();
     }
 }
