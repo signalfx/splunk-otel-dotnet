@@ -7,6 +7,10 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.15.0...HEAD)
 
+### Added
+
+- Experimental support for OpAMP remote configuration for CPU profiling.
+
 ## [1.15.0](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.15.0)
 
 This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.16.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.16.0).
@@ -18,7 +22,6 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.16.0
   and source reference of Splunk Distribution of OpenTelemetry .NET Automatic
   Instrumentation. `VERSION` file keeps the data for the upstream OpenTelemetry
   .NET Auto Instrumentation distribution.
-- Experimental support for OpAMP remote configuration for CPU profiling.
 
 ### Changed
 
