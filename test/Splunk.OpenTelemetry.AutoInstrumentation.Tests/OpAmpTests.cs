@@ -228,6 +228,37 @@ public class OpAmpTests
         Assert.True(OpAmpRequestFrameInspector.Parse(requestProbe.GetRequestBody(1)).IsFullStateReport);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task InitialFullStateReportIncludesUnsetRemoteConfigStatusOnlyWhenRemoteConfigIsEnabled(
+        bool remoteConfigEnabled)
+    {
+        var pluginSettings = new PluginSettings(new NameValueConfigurationSource(
+            new NameValueCollection
+            {
+                [ConfigurationKeys.Splunk.OpAmp.RemoteConfig] = remoteConfigEnabled.ToString()
+            }));
+        var opAmp = CreateOpAmp();
+        var requestProbe = new OpAmpHttpRequestProbe();
+        using var innerClient = new HttpClient(requestProbe);
+        using var client = CreateClient(
+            innerClient,
+            settings => opAmp.ConfigureRemoteConfiguration(settings, pluginSettings));
+
+        opAmp.OnClientStarted(client);
+        opAmp.MarkInstrumentationInitialized();
+        await requestProbe.WaitForCountAsync(1);
+        opAmp.StopClientReporting();
+
+        var requestFrame = OpAmpRequestFrameInspector.Parse(requestProbe.GetRequestBody(1));
+        Assert.Equal(remoteConfigEnabled, requestFrame.HasRemoteConfigStatus);
+        if (remoteConfigEnabled)
+        {
+            Assert.Equal("Unset", requestFrame.RemoteConfigStatus);
+        }
+    }
+
     [Fact]
     public async Task EffectiveConfigChangeBeforeInstrumentationInitializationIsIncludedInInitialFullStateReport()
     {

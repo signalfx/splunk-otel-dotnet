@@ -310,6 +310,7 @@ public class SmokeTests : TestHelper, IDisposable
                 var configMap = frame.EffectiveConfig?.ConfigMap?.ConfigMap;
                 return frame.AgentDescription != null &&
                        frame.Health != null &&
+                       frame.RemoteConfigStatus == null &&
                        ReportsEffectiveConfigCapability(frame) &&
                        configMap != null &&
                        configMap.TryGetValue("environment", out var configFile) &&
@@ -317,6 +318,24 @@ public class SmokeTests : TestHelper, IDisposable
                        EnvironmentConfigPayloadMatches(configFile.Body.ToStringUtf8(), expectedPayload);
             },
             "Initial full state contains agent description, capabilities, health, and current effective config");
+
+        RunTestApplicationAndAssertOpAmp(opAmpServer);
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public void InitialOpAmpFullStateReportIncludesUnsetRemoteConfigStatusWhenRemoteConfigIsEnabled()
+    {
+        using var opAmpServer = new MockOpAmpServer(Output);
+
+        SetEnvironmentVariable("OTEL_SDK_DISABLED", "true");
+        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
+        SetEnvironmentVariable(ConfigurationKeys.Splunk.OpAmp.RemoteConfig, "true");
+
+        opAmpServer.Expect(
+            frame => frame.AgentDescription != null &&
+                     frame.RemoteConfigStatus?.Status == RemoteConfigStatuses.Unset,
+            "Initial full state contains an unset remote configuration status");
 
         RunTestApplicationAndAssertOpAmp(opAmpServer);
     }

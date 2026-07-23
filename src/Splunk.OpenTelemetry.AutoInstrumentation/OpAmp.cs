@@ -30,7 +30,6 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 internal sealed class OpAmp
 {
     private static readonly ILogger Log = new Logger();
-
     private readonly object _lifecycleLock = new();
     private readonly Lazy<EffectiveConfigRecorder?> _effectiveConfigRecorder;
     private readonly OpAmpRemoteConfigurationListener _remoteConfigurationListener;
@@ -42,6 +41,7 @@ internal sealed class OpAmp
     private ClientLifecycleState _clientLifecycleState;
     private OpAmpClient? _opAmpClient;
     private OpAmpReportingPump? _reportingPump;
+    private RemoteConfigStatusReport? _remoteConfigStatus;
 
     public OpAmp(EffectiveConfigStaticSettings staticSettings)
         : this(
@@ -118,6 +118,11 @@ internal sealed class OpAmp
         }
 
         Volatile.Write(ref _remoteConfigurationEnabled, 1);
+        lock (_lifecycleLock)
+        {
+            _remoteConfigStatus = new([0], RemoteConfigStatusCode.Unset);
+        }
+
         settings.RemoteConfiguration.AcceptsRemoteConfig = true;
         settings.RemoteConfiguration.ReportsRemoteConfigStatus = true;
     }
@@ -171,6 +176,7 @@ internal sealed class OpAmp
             reportingPump = new OpAmpReportingPump(
                 client,
                 _effectiveConfigReporter,
+                GetRemoteConfigStatus,
                 _instrumentationInitialized);
             _opAmpClient = client;
             _reportingPump = reportingPump;
@@ -342,6 +348,7 @@ internal sealed class OpAmp
             OpAmpClient? client;
             lock (_lifecycleLock)
             {
+                _remoteConfigStatus = statusReport;
                 client = _clientLifecycleState == ClientLifecycleState.Started
                     ? _opAmpClient
                     : null;
@@ -357,6 +364,14 @@ internal sealed class OpAmp
         catch (Exception e)
         {
             Log.Warning($"Failed to report remote configuration status to OpAMP server: {e.Message}");
+        }
+    }
+
+    private RemoteConfigStatusReport? GetRemoteConfigStatus()
+    {
+        lock (_lifecycleLock)
+        {
+            return _remoteConfigStatus;
         }
     }
 

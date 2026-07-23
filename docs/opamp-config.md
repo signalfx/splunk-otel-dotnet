@@ -85,6 +85,10 @@ The distribution reports remote configuration status for each new
 payload, then `Applied` after the payload is applied or `Failed` with an error
 message when the payload cannot be applied.
 
+The initial full-state report contains an `Unset` remote configuration status
+when remote configuration is enabled. The status is omitted when remote
+configuration is disabled.
+
 After a remote configuration is applied, subsequent OpAMP effective
 configuration reports reflect the active CPU profiler runtime state.
 

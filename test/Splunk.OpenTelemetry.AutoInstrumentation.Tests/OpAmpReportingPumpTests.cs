@@ -345,6 +345,7 @@ public class OpAmpReportingPumpTests
             reporter,
             new OpAmpReportDispatcher(dispatchTimeout ?? DefaultDispatchTimeout),
             delayAsync ?? Task.Delay,
+            remoteConfigStatusResolver: null,
             instrumentationInitialized: false);
         reportingPump.Start();
         return reportingPump;
