@@ -93,7 +93,10 @@ internal static class ProfilerRuntimeConfiguration
 
             next = new ProfilerRuntimeSettings(
                 cpuProfilerEnabled,
-                cpuProfilerEnabled ? cpuProfilerCallStackInterval : Constants.DefaultSamplingInterval);
+                cpuProfilerEnabled ? cpuProfilerCallStackInterval : Constants.DefaultSamplingInterval,
+                _settings.AllocationSamplingEnabled,
+                _settings.MaxMemorySamplesPerMinute,
+                _settings.SelectedThreadSamplingInterval);
 
             _settings = next;
         }

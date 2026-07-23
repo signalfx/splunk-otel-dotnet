@@ -35,12 +35,7 @@ internal static class NativeContinuousProfilerConfigurator
 
         try
         {
-            method.Invoke(
-                null,
-                [
-                    settings.CpuProfilerEnabled,
-                    settings.CpuProfilerCallStackInterval
-                ]);
+            method.Invoke(null, CreateConfigureNativeContinuousProfilerArguments(settings));
         }
         catch (Exception ex)
         {
@@ -48,14 +43,31 @@ internal static class NativeContinuousProfilerConfigurator
         }
     }
 
-    private static MethodInfo? ResolveConfigureNativeContinuousProfilerMethod()
+    internal static MethodInfo? FindConfigureNativeContinuousProfilerMethod(Type? nativeMethodsType)
     {
-        var nativeMethodsType = Type.GetType("OpenTelemetry.AutoInstrumentation.NativeMethods, OpenTelemetry.AutoInstrumentation");
         return nativeMethodsType?.GetMethod(
             "ConfigureNativeContinuousProfiler",
             BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static,
             binder: null,
-            types: [typeof(bool), typeof(uint)],
+            types: [typeof(bool), typeof(uint), typeof(bool), typeof(uint), typeof(uint)],
             modifiers: null);
+    }
+
+    internal static object?[] CreateConfigureNativeContinuousProfilerArguments(ProfilerRuntimeSettings settings)
+    {
+        return
+        [
+            settings.CpuProfilerEnabled,
+            settings.CpuProfilerCallStackInterval,
+            settings.AllocationSamplingEnabled,
+            settings.MaxMemorySamplesPerMinute,
+            settings.SelectedThreadSamplingInterval
+        ];
+    }
+
+    private static MethodInfo? ResolveConfigureNativeContinuousProfilerMethod()
+    {
+        var nativeMethodsType = Type.GetType("OpenTelemetry.AutoInstrumentation.NativeMethods, OpenTelemetry.AutoInstrumentation");
+        return FindConfigureNativeContinuousProfilerMethod(nativeMethodsType);
     }
 }

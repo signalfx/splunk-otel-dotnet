@@ -20,15 +20,27 @@ internal sealed class ProfilerRuntimeSettings
 {
     public ProfilerRuntimeSettings(
         bool cpuProfilerEnabled,
-        uint cpuProfilerCallStackInterval)
+        uint cpuProfilerCallStackInterval,
+        bool allocationSamplingEnabled,
+        uint maxMemorySamplesPerMinute,
+        uint selectedThreadSamplingInterval)
     {
         CpuProfilerEnabled = cpuProfilerEnabled;
         CpuProfilerCallStackInterval = cpuProfilerCallStackInterval;
+        AllocationSamplingEnabled = allocationSamplingEnabled;
+        MaxMemorySamplesPerMinute = maxMemorySamplesPerMinute;
+        SelectedThreadSamplingInterval = selectedThreadSamplingInterval;
     }
 
     public bool CpuProfilerEnabled { get; }
 
     public uint CpuProfilerCallStackInterval { get; }
+
+    public bool AllocationSamplingEnabled { get; }
+
+    public uint MaxMemorySamplesPerMinute { get; }
+
+    public uint SelectedThreadSamplingInterval { get; }
 
     public static ProfilerRuntimeSettings FromPluginSettings(PluginSettings settings)
     {
@@ -36,8 +48,23 @@ internal sealed class ProfilerRuntimeSettings
             ? Constants.DefaultSamplingInterval
             : settings.CpuProfilerCallStackInterval;
 
+#if NET
+        var allocationSamplingEnabled = settings.MemoryProfilerEnabled;
+        var maxMemorySamplesPerMinute = settings.MemoryProfilerMaxMemorySamplesPerMinute;
+#else
+        const bool allocationSamplingEnabled = false;
+        const uint maxMemorySamplesPerMinute = 0;
+#endif
+        var snapshotsSamplingInterval = settings.SnapshotsSamplingInterval == 0
+            ? (uint)Constants.DefaultSnapshotSamplingIntervalMs
+            : settings.SnapshotsSamplingInterval;
+        var selectedThreadSamplingInterval = settings.SnapshotsEnabled ? snapshotsSamplingInterval : 0u;
+
         return new ProfilerRuntimeSettings(
             settings.CpuProfilerEnabled,
-            cpuProfilerCallStackInterval);
+            cpuProfilerCallStackInterval,
+            allocationSamplingEnabled,
+            maxMemorySamplesPerMinute,
+            selectedThreadSamplingInterval);
     }
 }

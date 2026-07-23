@@ -125,7 +125,16 @@ public class ProfilerRuntimeRemoteConfigurationTests
     [Fact]
     public void Apply_IgnoresUnsupportedProfilerSettings()
     {
-        ProfilerRuntimeConfiguration.Initialize(CreateSettings());
+        var settings = new NameValueCollection
+        {
+            { ConfigurationKeys.Splunk.Snapshots.Enabled, "true" },
+            { ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, "40" }
+        };
+#if NET
+        settings.Add(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled, "true");
+        settings.Add(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples, "137");
+#endif
+        ProfilerRuntimeConfiguration.Initialize(CreateSettings(settings));
 
         ProfilerRuntimeConfiguration.Apply(
             CreateConfiguration(
@@ -140,10 +149,21 @@ public class ProfilerRuntimeRemoteConfigurationTests
                         }
 #endif
                     },
-                    Callgraphs = new CallGraphsConfiguration()
+                    Callgraphs = new CallGraphsConfiguration
+                    {
+                        SamplingInterval = 300
+                    }
                 }));
 
         Assert.False(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
+        Assert.Equal(40u, ProfilerRuntimeConfiguration.Current.SelectedThreadSamplingInterval);
+#if NET
+        Assert.True(ProfilerRuntimeConfiguration.Current.AllocationSamplingEnabled);
+        Assert.Equal(137u, ProfilerRuntimeConfiguration.Current.MaxMemorySamplesPerMinute);
+#else
+        Assert.False(ProfilerRuntimeConfiguration.Current.AllocationSamplingEnabled);
+        Assert.Equal(0u, ProfilerRuntimeConfiguration.Current.MaxMemorySamplesPerMinute);
+#endif
     }
 
     private static PluginSettings CreateSettings(NameValueCollection? configuration = null)
