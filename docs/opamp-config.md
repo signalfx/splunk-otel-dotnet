@@ -107,6 +107,16 @@ is enabled before the process starts. Without the .NET CLR Profiler, profiling
 does not run, and remote configuration cannot enable or configure the .NET CLR
 Profiler at runtime.
 
+Enabling remote configuration initializes the continuous profiling pipeline at
+startup so that CPU profiling can be enabled later at runtime. This setup occurs
+even when CPU profiling is initially disabled and includes the
+`PprofInOtlpLogsExporter`, the upstream `BufferProcessor`, and its background
+export thread. On .NET Framework, it also starts the profiler canary thread.
+Native CPU sample collection remains disabled until CPU profiling is enabled,
+but the initialized pipeline can still add CPU, memory, and thread overhead.
+Leave remote configuration disabled when runtime profiler activation is not
+required.
+
 Supported at runtime:
 
 - `always_on.cpu_profiler`: enable or disable CPU profiling.
