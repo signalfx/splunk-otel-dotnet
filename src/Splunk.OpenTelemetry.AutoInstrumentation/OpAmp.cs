@@ -17,25 +17,31 @@
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.OpAmp.Client;
+using OpenTelemetry.OpAmp.Client.Messages;
 using OpenTelemetry.OpAmp.Client.Settings;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
+using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
 internal sealed class OpAmp
 {
     private static readonly ILogger Log = new Logger();
-
     private readonly object _lifecycleLock = new();
     private readonly Lazy<EffectiveConfigRecorder?> _effectiveConfigRecorder;
+    private readonly OpAmpRemoteConfigurationListener _remoteConfigurationListener;
     private readonly Func<EffectiveProfilerFeatures> _profilerStateResolver;
     private EffectiveConfigReporter? _effectiveConfigReporter;
     private bool _instrumentationInitialized;
+    private int _remoteConfigurationEnabled;
+    private bool _remoteConfigurationSubscribed;
     private ClientLifecycleState _clientLifecycleState;
+    private OpAmpClient? _opAmpClient;
     private OpAmpReportingPump? _reportingPump;
+    private RemoteConfigStatusReport? _remoteConfigStatus;
 
     public OpAmp(EffectiveConfigStaticSettings staticSettings)
         : this(
@@ -57,6 +63,7 @@ internal sealed class OpAmp
             opAmpEnabledResolver,
             sdkSetupEnabledResolver));
         _profilerStateResolver = profilerStateResolver;
+        _remoteConfigurationListener = new OpAmpRemoteConfigurationListener(SendEffectiveConfigAfterRemoteConfiguration, SendRemoteConfigStatusAsync);
     }
 
     private enum ClientLifecycleState
@@ -64,6 +71,12 @@ internal sealed class OpAmp
         NotStarted,
         Started,
         Stopped
+    }
+
+    public void ConfigureOptions(OpAmpClientSettings settings, PluginSettings pluginSettings)
+    {
+        ConfigureRemoteConfiguration(settings, pluginSettings);
+        ConfigureEffectiveConfigReporting(settings);
     }
 
     public void ConfigureEffectiveConfigReporting(OpAmpClientSettings settings)
@@ -76,8 +89,11 @@ internal sealed class OpAmp
                 return;
             }
 
-            var profilerFeatures = _profilerStateResolver();
-            var effectiveConfigReporter = EffectiveConfigReporter.CreateValidated(recorder, profilerFeatures);
+            var profilerState = ResolveProfilerState();
+            var effectiveConfigReporter = EffectiveConfigReporter.CreateValidated(
+                recorder,
+                profilerState.Features,
+                profilerState.CpuProfilerCallStackInterval);
 
             lock (_lifecycleLock)
             {
@@ -92,6 +108,23 @@ internal sealed class OpAmp
                 ex,
                 "Effective configuration reporting preflight failed. The capability will not be advertised.");
         }
+    }
+
+    public void ConfigureRemoteConfiguration(OpAmpClientSettings settings, PluginSettings pluginSettings)
+    {
+        if (!pluginSettings.OpAmpRemoteConfigEnabled)
+        {
+            return;
+        }
+
+        Volatile.Write(ref _remoteConfigurationEnabled, 1);
+        lock (_lifecycleLock)
+        {
+            _remoteConfigStatus = new([0], RemoteConfigStatusCode.Unset);
+        }
+
+        settings.RemoteConfiguration.AcceptsRemoteConfig = true;
+        settings.RemoteConfiguration.ReportsRemoteConfigStatus = true;
     }
 
     public void RecordLogExporterOptions(OtlpExporterOptions options)
@@ -143,23 +176,60 @@ internal sealed class OpAmp
             reportingPump = new OpAmpReportingPump(
                 client,
                 _effectiveConfigReporter,
+                GetRemoteConfigStatus,
                 _instrumentationInitialized);
+            _opAmpClient = client;
             _reportingPump = reportingPump;
             _clientLifecycleState = ClientLifecycleState.Started;
         }
 
+        var remoteConfigurationSubscribed = false;
+        var clientStoppedBeforeSubscriptionCompleted = false;
         try
         {
+            if (Volatile.Read(ref _remoteConfigurationEnabled) != 0)
+            {
+                client.Subscribe(_remoteConfigurationListener);
+                remoteConfigurationSubscribed = true;
+
+                lock (_lifecycleLock)
+                {
+                    if (_clientLifecycleState == ClientLifecycleState.Started &&
+                        ReferenceEquals(_opAmpClient, client) &&
+                        ReferenceEquals(_reportingPump, reportingPump))
+                    {
+                        _remoteConfigurationSubscribed = true;
+                    }
+                    else
+                    {
+                        clientStoppedBeforeSubscriptionCompleted = true;
+                    }
+                }
+
+                if (clientStoppedBeforeSubscriptionCompleted)
+                {
+                    TryUnsubscribeRemoteConfiguration(client);
+                    return;
+                }
+            }
+
             reportingPump.Start();
         }
         catch (Exception ex)
         {
+            if (remoteConfigurationSubscribed)
+            {
+                TryUnsubscribeRemoteConfiguration(client);
+            }
+
             reportingPump.Stop();
             lock (_lifecycleLock)
             {
                 if (ReferenceEquals(_reportingPump, reportingPump))
                 {
+                    _opAmpClient = null;
                     _reportingPump = null;
+                    _remoteConfigurationSubscribed = false;
                     _clientLifecycleState = ClientLifecycleState.Stopped;
                 }
             }
@@ -170,7 +240,9 @@ internal sealed class OpAmp
 
     public void StopClientReporting()
     {
+        OpAmpClient? client;
         OpAmpReportingPump? reportingPump;
+        bool remoteConfigurationSubscribed;
         lock (_lifecycleLock)
         {
             if (_clientLifecycleState == ClientLifecycleState.Stopped)
@@ -178,9 +250,18 @@ internal sealed class OpAmp
                 return;
             }
 
+            client = _opAmpClient;
+            _opAmpClient = null;
             reportingPump = _reportingPump;
             _reportingPump = null;
+            remoteConfigurationSubscribed = _remoteConfigurationSubscribed;
+            _remoteConfigurationSubscribed = false;
             _clientLifecycleState = ClientLifecycleState.Stopped;
+        }
+
+        if (client != null && remoteConfigurationSubscribed)
+        {
+            TryUnsubscribeRemoteConfiguration(client);
         }
 
         reportingPump?.Stop();
@@ -234,6 +315,66 @@ internal sealed class OpAmp
             OpenTelemetrySdkDisabledResolver.IsDisabled());
     }
 
+    private void SendEffectiveConfigAfterRemoteConfiguration()
+    {
+        try
+        {
+            EffectiveConfigReporter? effectiveConfigReporter;
+            OpAmpReportingPump? reportingPump;
+            lock (_lifecycleLock)
+            {
+                effectiveConfigReporter = _effectiveConfigReporter;
+                reportingPump = _reportingPump;
+            }
+
+            if (effectiveConfigReporter == null)
+            {
+                return;
+            }
+
+            RefreshProfilerState(effectiveConfigReporter);
+            reportingPump?.NotifyEffectiveConfigChanged();
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Failed to report effective configuration to OpAMP server.");
+        }
+    }
+
+    private async Task SendRemoteConfigStatusAsync(RemoteConfigStatusReport statusReport)
+    {
+        try
+        {
+            OpAmpClient? client;
+            lock (_lifecycleLock)
+            {
+                _remoteConfigStatus = statusReport;
+                client = _clientLifecycleState == ClientLifecycleState.Started
+                    ? _opAmpClient
+                    : null;
+            }
+
+            if (client == null)
+            {
+                return;
+            }
+
+            await client.SendRemoteConfigStatusAsync(statusReport).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            Log.Warning($"Failed to report remote configuration status to OpAMP server: {e.Message}");
+        }
+    }
+
+    private RemoteConfigStatusReport? GetRemoteConfigStatus()
+    {
+        lock (_lifecycleLock)
+        {
+            return _remoteConfigStatus;
+        }
+    }
+
     private void NotifyILoggerEffectiveConfigChanged()
     {
         OpAmpReportingPump? reportingPump;
@@ -243,5 +384,52 @@ internal sealed class OpAmp
         }
 
         reportingPump?.NotifyILoggerEffectiveConfigChanged();
+    }
+
+    private void TryUnsubscribeRemoteConfiguration(OpAmpClient client)
+    {
+        try
+        {
+            client.Unsubscribe(_remoteConfigurationListener);
+        }
+        catch (ObjectDisposedException)
+        {
+            // The owner may dispose the client before the shutdown callback stops reporting work.
+        }
+        catch (Exception ex)
+        {
+            Log.Warning($"Failed to unsubscribe from OpAMP remote configuration: {ex.Message}");
+        }
+    }
+
+    private void RefreshProfilerState(EffectiveConfigReporter effectiveConfigReporter)
+    {
+        var profilerState = ResolveProfilerState();
+        effectiveConfigReporter.UpdateProfilerState(
+            profilerState.Features,
+            profilerState.CpuProfilerCallStackInterval);
+    }
+
+    private (EffectiveProfilerFeatures Features, uint? CpuProfilerCallStackInterval) ResolveProfilerState()
+    {
+        var profilerFeatures = _profilerStateResolver();
+        if (Volatile.Read(ref _remoteConfigurationEnabled) == 0)
+        {
+            return (profilerFeatures, null);
+        }
+
+        try
+        {
+            var runtimeSettings = ProfilerRuntimeConfiguration.Current;
+            profilerFeatures = runtimeSettings.CpuProfilerEnabled
+                ? profilerFeatures | EffectiveProfilerFeatures.Cpu
+                : profilerFeatures & ~EffectiveProfilerFeatures.Cpu;
+
+            return (profilerFeatures, runtimeSettings.CpuProfilerCallStackInterval);
+        }
+        catch (InvalidOperationException)
+        {
+            return (profilerFeatures, null);
+        }
     }
 }

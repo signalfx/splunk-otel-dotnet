@@ -21,27 +21,71 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 internal sealed class EffectiveConfigReporter
 {
     private readonly EffectiveConfigRecorder _recorder;
-    private readonly EffectiveProfilerFeatures _profilerFeatures;
+    private volatile EffectiveProfilerFeatures _profilerFeatures;
+    private long _cpuProfilerCallStackInterval;
 
     private EffectiveConfigReporter(
         EffectiveConfigRecorder recorder,
-        EffectiveProfilerFeatures profilerFeatures)
+        EffectiveProfilerFeatures profilerFeatures,
+        uint cpuProfilerCallStackInterval)
     {
         _recorder = recorder;
         _profilerFeatures = profilerFeatures;
+        _cpuProfilerCallStackInterval = cpuProfilerCallStackInterval;
     }
 
     public static EffectiveConfigReporter CreateValidated(
         EffectiveConfigRecorder recorder,
-        EffectiveProfilerFeatures profilerFeatures)
+        EffectiveProfilerFeatures profilerFeatures,
+        uint? cpuProfilerCallStackInterval = null)
     {
         recorder.ValidateCompatibility();
-        EffectiveConfigPayloadBuilder.Validate(recorder.CreateSnapshot(profilerFeatures));
-        return new EffectiveConfigReporter(recorder, profilerFeatures);
+        var snapshot = recorder.CreateSnapshot(profilerFeatures);
+        var effectiveCpuProfilerCallStackInterval =
+            cpuProfilerCallStackInterval ?? snapshot.CpuProfilerCallStackInterval;
+        EffectiveConfigPayloadBuilder.Validate(
+            WithCpuProfilerCallStackInterval(snapshot, effectiveCpuProfilerCallStackInterval));
+        return new EffectiveConfigReporter(
+            recorder,
+            profilerFeatures,
+            effectiveCpuProfilerCallStackInterval);
+    }
+
+    public void UpdateProfilerState(EffectiveProfilerFeatures profilerFeatures, uint? cpuProfilerCallStackInterval = null)
+    {
+        _profilerFeatures = profilerFeatures;
+        if (cpuProfilerCallStackInterval.HasValue)
+        {
+            Volatile.Write(ref _cpuProfilerCallStackInterval, cpuProfilerCallStackInterval.Value);
+        }
     }
 
     internal EffectiveConfigFile BuildCurrentPayload()
     {
-        return EffectiveConfigPayloadBuilder.Build(_recorder.CreateSnapshot(_profilerFeatures));
+        var snapshot = _recorder.CreateSnapshot(_profilerFeatures);
+        var cpuProfilerCallStackInterval = unchecked((uint)Volatile.Read(ref _cpuProfilerCallStackInterval));
+        return EffectiveConfigPayloadBuilder.Build(
+            WithCpuProfilerCallStackInterval(snapshot, cpuProfilerCallStackInterval));
+    }
+
+    private static EffectiveConfigSnapshot WithCpuProfilerCallStackInterval(
+        EffectiveConfigSnapshot snapshot,
+        uint cpuProfilerCallStackInterval)
+    {
+        if (snapshot.CpuProfilerCallStackInterval == cpuProfilerCallStackInterval)
+        {
+            return snapshot;
+        }
+
+        return new EffectiveConfigSnapshot(
+            fileBasedConfigFileName: snapshot.FileBasedConfigFileName,
+            traceEndpoints: snapshot.TraceEndpoints,
+            metricEndpoints: snapshot.MetricEndpoints,
+            logEndpoints: snapshot.LogEndpoints,
+            cpuProfilerEnabled: snapshot.CpuProfilerEnabled,
+            memoryProfilerEnabled: snapshot.MemoryProfilerEnabled,
+            snapshotProfilerEnabled: snapshot.SnapshotProfilerEnabled,
+            cpuProfilerCallStackInterval: cpuProfilerCallStackInterval,
+            snapshotSamplingInterval: snapshot.SnapshotSamplingInterval);
     }
 }

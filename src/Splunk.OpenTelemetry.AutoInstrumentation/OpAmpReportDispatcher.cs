@@ -82,6 +82,7 @@ internal sealed class OpAmpReportDispatcher
     public async Task<OpAmpDispatchResult> DispatchFullStateReportAsync(
         OpAmpClient client,
         EffectiveConfigReporter? effectiveConfigReporter,
+        RemoteConfigStatusReport? remoteConfigStatus,
         CancellationToken sessionCancellationToken)
     {
         if (sessionCancellationToken.IsCancellationRequested)
@@ -89,7 +90,10 @@ internal sealed class OpAmpReportDispatcher
             return OpAmpDispatchResult.Canceled;
         }
 
-        var report = new FullStateReport();
+        var report = new FullStateReport
+        {
+            RemoteConfigStatus = remoteConfigStatus
+        };
         var result = OpAmpDispatchResult.ClientAccepted;
         if (effectiveConfigReporter != null)
         {

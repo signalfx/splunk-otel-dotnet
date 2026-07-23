@@ -26,11 +26,49 @@ using static Splunk.OpenTelemetry.AutoInstrumentation.Tests.OpAmpTestHelpers;
 using OpenTelemetry.OpAmp.Client.Settings;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
 public class OpAmpTests
 {
+    [Fact]
+    public void ConfigureOptions_EnablesRemoteConfigurationRuntimeModeWhenCpuProfilerIsInitiallyDisabled()
+    {
+        var pluginSettings = new PluginSettings(new NameValueConfigurationSource(
+            new NameValueCollection
+            {
+                [ConfigurationKeys.Splunk.OpAmp.RemoteConfig] = "true"
+            }));
+        ProfilerRuntimeConfiguration.Initialize(pluginSettings);
+        var settings = new OpAmpClientSettings();
+        var opAmp = CreateOpAmp();
+
+        opAmp.ConfigureOptions(settings, pluginSettings);
+
+        Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
+        Assert.True(settings.RemoteConfiguration.AcceptsRemoteConfig);
+        Assert.True(settings.RemoteConfiguration.ReportsRemoteConfigStatus);
+        Assert.True(ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled);
+        Assert.False(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
+        Assert.Equal((uint)Constants.DefaultSamplingInterval, ProfilerRuntimeConfiguration.Current.CpuProfilerCallStackInterval);
+    }
+
+    [Fact]
+    public void ConfigureOptions_RemoteConfigurationIsDisabledByDefault()
+    {
+        var pluginSettings = new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        ProfilerRuntimeConfiguration.Initialize(pluginSettings);
+        var settings = new OpAmpClientSettings();
+
+        CreateOpAmp().ConfigureOptions(settings, pluginSettings);
+
+        Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
+        Assert.False(settings.RemoteConfiguration.AcceptsRemoteConfig);
+        Assert.False(settings.RemoteConfiguration.ReportsRemoteConfigStatus);
+        Assert.False(ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled);
+    }
+
     [Fact]
     public void ConfigureEffectiveConfigReporting_EnablesEffectiveConfigReportingAfterSuccessfulPreflight()
     {
@@ -188,6 +226,37 @@ public class OpAmpTests
 
         Assert.Equal(1, requestProbe.Count);
         Assert.True(OpAmpRequestFrameInspector.Parse(requestProbe.GetRequestBody(1)).IsFullStateReport);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task InitialFullStateReportIncludesUnsetRemoteConfigStatusOnlyWhenRemoteConfigIsEnabled(
+        bool remoteConfigEnabled)
+    {
+        var pluginSettings = new PluginSettings(new NameValueConfigurationSource(
+            new NameValueCollection
+            {
+                [ConfigurationKeys.Splunk.OpAmp.RemoteConfig] = remoteConfigEnabled.ToString()
+            }));
+        var opAmp = CreateOpAmp();
+        var requestProbe = new OpAmpHttpRequestProbe();
+        using var innerClient = new HttpClient(requestProbe);
+        using var client = CreateClient(
+            innerClient,
+            settings => opAmp.ConfigureRemoteConfiguration(settings, pluginSettings));
+
+        opAmp.OnClientStarted(client);
+        opAmp.MarkInstrumentationInitialized();
+        await requestProbe.WaitForCountAsync(1);
+        opAmp.StopClientReporting();
+
+        var requestFrame = OpAmpRequestFrameInspector.Parse(requestProbe.GetRequestBody(1));
+        Assert.Equal(remoteConfigEnabled, requestFrame.HasRemoteConfigStatus);
+        if (remoteConfigEnabled)
+        {
+            Assert.Equal("Unset", requestFrame.RemoteConfigStatus);
+        }
     }
 
     [Fact]

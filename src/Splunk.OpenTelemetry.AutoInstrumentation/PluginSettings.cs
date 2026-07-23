@@ -1,4 +1,4 @@
-// <copyright file="PluginSettings.cs" company="Splunk Inc.">
+﻿// <copyright file="PluginSettings.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +14,9 @@
 // limitations under the License.
 // </copyright>
 
-using System.Reflection;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration.Parser;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
@@ -67,6 +67,7 @@ internal class PluginSettings
         ProfilerExportInterval = GetFinalExportInterval(exportInterval);
 
         ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
+        OpAmpRemoteConfigEnabled = source.GetBool(ConfigurationKeys.Splunk.OpAmp.RemoteConfig) ?? false;
     }
 
     internal PluginSettings(YamlRoot configuration, string? fileName = null)
@@ -87,6 +88,8 @@ internal class PluginSettings
 #else
         TraceResponseHeaderEnabled = traceConfig?.Aspnetcore?.ResponseHeaderEnabled ?? Constants.DefaultTraceResponseHeaderEnabled;
 #endif
+
+        OpAmpRemoteConfigEnabled = configuration.OpampDevelopment?.Features?.RemoteConfig != null;
 
         var profilingConfig = configuration.Distribution?.Splunk?.Profiling;
         if (profilingConfig != null)
@@ -158,13 +161,15 @@ internal class PluginSettings
 
     public uint ProfilerExportInterval { get; }
 
+    public bool OpAmpRemoteConfigEnabled { get; }
+
     public static PluginSettings FromDefaultSources()
     {
         if (IsYamlConfigEnabled)
         {
             var fileName = ResolveFileBasedConfigFileName();
 
-            var splunkConfiguration = LoadSplunkConfig(fileName);
+            var splunkConfiguration = YamlConfigurationParser.ParseFile(fileName);
             if (splunkConfiguration != null)
             {
                 return new PluginSettings(splunkConfiguration, fileName);
@@ -200,7 +205,7 @@ internal class PluginSettings
         return string.IsNullOrEmpty(fileName) ? Constants.DefaultFileBasedConfigFileName : fileName!;
     }
 
-    private static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)
+    internal static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)
     {
         var interval = callStackInterval < 0 ? Constants.DefaultSamplingInterval : (uint)callStackInterval;
         if (snapshotsEnabled)
@@ -274,40 +279,5 @@ internal class PluginSettings
         }
 
         return new Uri(profilerLogsEndpoint);
-    }
-
-    private static YamlRoot? LoadSplunkConfig(string fileName)
-    {
-        var parserType = Type.GetType("OpenTelemetry.AutoInstrumentation.Configurations.FileBasedConfiguration.Parser.Parser, OpenTelemetry.AutoInstrumentation");
-        if (parserType == null)
-        {
-            throw new Exception("Could not find Parser type for YAML configuration parsing.");
-        }
-
-        var parseYaml = parserType
-            .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
-            .FirstOrDefault(m =>
-                m.Name == "ParseYaml" &&
-                m.IsGenericMethodDefinition &&
-                m.GetParameters().Length == 1 &&
-                m.GetParameters()[0].ParameterType == typeof(string));
-
-        if (parseYaml == null)
-        {
-            throw new MissingMethodException(parserType.FullName, "ParseYaml<T>(string)");
-        }
-
-        var closed = parseYaml.MakeGenericMethod(typeof(YamlRoot));
-
-        var yamlRoot = closed.Invoke(null, new object[] { fileName });
-
-        if (yamlRoot == null)
-        {
-            return null;
-        }
-        else
-        {
-            return (YamlRoot)yamlRoot;
-        }
     }
 }

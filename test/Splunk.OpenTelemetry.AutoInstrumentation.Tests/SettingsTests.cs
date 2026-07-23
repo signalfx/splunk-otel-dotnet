@@ -16,6 +16,7 @@
 
 using System.Collections.Specialized;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 {
@@ -103,10 +104,56 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             Assert.Equal(10000u, settings.CpuProfilerCallStackInterval);
             Assert.Equal(3000u, settings.ProfilerHttpClientTimeout);
             Assert.Equal(500u, settings.ProfilerExportInterval);
+            Assert.False(settings.OpAmpRemoteConfigEnabled);
 #if NET
             Assert.False(settings.MemoryProfilerEnabled);
             Assert.Equal(200u, settings.MemoryProfilerMaxMemorySamplesPerMinute);
 #endif
+        }
+
+        [Fact]
+        internal void PluginSettings_ReadsOpAmpRemoteConfigFromEnvironment()
+        {
+            var settings = new PluginSettings(new NameValueConfigurationSource(
+                new NameValueCollection
+                {
+                    [ConfigurationKeys.Splunk.OpAmp.RemoteConfig] = "true"
+                }));
+
+            Assert.True(settings.OpAmpRemoteConfigEnabled);
+        }
+
+        [Fact]
+        internal void PluginSettings_ReadsOpAmpRemoteConfigFromYaml()
+        {
+            var settings = new PluginSettings(
+                new YamlRoot
+                {
+                    OpampDevelopment = new OpampDevelopment
+                    {
+                        Features = new Features
+                        {
+                            RemoteConfig = new object()
+                        }
+                    }
+                });
+
+            Assert.True(settings.OpAmpRemoteConfigEnabled);
+        }
+
+        [Fact]
+        internal void PluginSettings_DisablesOpAmpRemoteConfigWhenYamlFeatureIsOmitted()
+        {
+            var settings = new PluginSettings(
+                new YamlRoot
+                {
+                    OpampDevelopment = new OpampDevelopment
+                    {
+                        Features = new Features()
+                    }
+                });
+
+            Assert.False(settings.OpAmpRemoteConfigEnabled);
         }
 
         [Theory]
@@ -129,6 +176,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.Realm, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AccessToken, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled, null);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.OpAmp.RemoteConfig, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint, null);

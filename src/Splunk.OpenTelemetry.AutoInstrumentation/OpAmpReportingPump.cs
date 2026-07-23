@@ -31,6 +31,7 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
     private readonly object _lock = new();
     private readonly OpAmpClient _client;
     private readonly EffectiveConfigReporter? _effectiveConfigReporter;
+    private readonly Func<RemoteConfigStatusReport?> _remoteConfigStatusResolver;
     private readonly OpAmpReportDispatcher _reportDispatcher;
     private readonly Func<TimeSpan, CancellationToken, Task> _delayAsync;
     private readonly SemaphoreSlim _wakeSignal = new(0, 1);
@@ -47,12 +48,14 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
     public OpAmpReportingPump(
         OpAmpClient client,
         EffectiveConfigReporter? effectiveConfigReporter,
+        Func<RemoteConfigStatusReport?> remoteConfigStatusResolver,
         bool instrumentationInitialized)
         : this(
             client,
             effectiveConfigReporter,
             new OpAmpReportDispatcher(),
             Task.Delay,
+            remoteConfigStatusResolver,
             instrumentationInitialized)
     {
     }
@@ -62,12 +65,14 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
         EffectiveConfigReporter? effectiveConfigReporter,
         OpAmpReportDispatcher reportDispatcher,
         Func<TimeSpan, CancellationToken, Task> delayAsync,
+        Func<RemoteConfigStatusReport?>? remoteConfigStatusResolver,
         bool instrumentationInitialized)
     {
         _client = client;
         _effectiveConfigReporter = effectiveConfigReporter;
         _reportDispatcher = reportDispatcher;
         _delayAsync = delayAsync;
+        _remoteConfigStatusResolver = remoteConfigStatusResolver ?? (() => null);
         _instrumentationInitialized = instrumentationInitialized;
         _fullStateReportPending = true;
         _reportingCancellationToken = _reportingCancellation.Token;
@@ -125,6 +130,11 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
     }
 
     public void NotifyILoggerEffectiveConfigChanged()
+    {
+        NotifyEffectiveConfigChanged();
+    }
+
+    public void NotifyEffectiveConfigChanged()
     {
         lock (_lock)
         {
@@ -291,6 +301,7 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
         var result = await _reportDispatcher.DispatchFullStateReportAsync(
             _client,
             _effectiveConfigReporter,
+            _remoteConfigStatusResolver(),
             _reportingCancellationToken).ConfigureAwait(false);
         var clientAccepted = result is OpAmpDispatchResult.ClientAccepted or
             OpAmpDispatchResult.ClientAcceptedWithoutEffectiveConfig;

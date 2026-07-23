@@ -14,19 +14,15 @@ the current effective configuration together with the agent description,
 capabilities, and health supplied by the OpAMP client. Later server requests
 produce a fresh full-state report.
 
-## Configuration
+## OpAMP client configuration
 
-### Environment variables
+Configure the OpAMP client through the OpenTelemetry .NET auto-instrumentation
+OpAMP options:
 
-See the [docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.16.0/docs/config.md#opamp-client)
-for more details.
+- [Environment variables](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.16.0/docs/config.md#opamp-client)
+- [File-based configuration](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.16.0/docs/file-based-configuration.md#opamp)
 
-### File-based configuration
-
-See the [docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.16.0/docs/file-based-configuration.md#opamp)
-for more details.
-
-## Effective configuration contents
+## Effective configuration
 
 When instrumentation is configured without file-based configuration, the OpAMP
 effective configuration contains one file named `environment` with content type
@@ -68,3 +64,64 @@ exceeds this limit is rejected rather than truncated.
 File-based configuration may report multiple active OTLP endpoints per signal.
 The environment representation supports only one endpoint per signal; multiple
 active endpoints therefore cause effective-configuration resolution to fail.
+
+## Remote configuration
+
+Remote configuration is a Splunk OpAMP feature flag. Configure it through:
+
+- [Advanced Configuration](advanced-config.md) for the
+  `SPLUNK_OPAMP_REMOTE_CONFIG` environment variable.
+- [File-based Configuration](file-based-configuration.md) for
+  `opamp/development.features.remote_config`.
+
+Remote configuration is opt-in. When OpAMP and the remote configuration feature
+are enabled, the distribution advertises `AcceptsRemoteConfig` and
+`ReportsRemoteConfig` and listens for an OpAMP
+`AgentRemoteConfig.AgentConfigMap` entry named `splunk.remote.config` with
+content type `application/yaml`.
+
+The distribution reports remote configuration status for each new
+`AgentRemoteConfig.config_hash`. It sends `Applying` before processing the
+payload, then `Applied` after the payload is applied or `Failed` with an error
+message when the payload cannot be applied.
+
+The initial full-state report contains an `Unset` remote configuration status
+when remote configuration is enabled. The status is omitted when remote
+configuration is disabled.
+
+After a remote configuration is applied, subsequent OpAMP effective
+configuration reports reflect the active CPU profiler runtime state.
+
+### Remote configuration payload
+
+```yaml
+distribution:
+  splunk:
+    profiling:
+      always_on:
+        cpu_profiler:
+          sampling_interval: 10000
+```
+
+### Runtime behavior
+
+Profiling remote configuration only works when the
+[.NET CLR Profiler](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.16.0/docs/config.md#net-clr-profiler)
+is enabled before the process starts. Without the .NET CLR Profiler, profiling
+does not run, and remote configuration cannot enable or configure the .NET CLR
+Profiler at runtime.
+
+Enabling remote configuration initializes the continuous profiling pipeline at
+startup so that CPU profiling can be enabled later at runtime. This setup occurs
+even when CPU profiling is initially disabled and includes the
+`PprofInOtlpLogsExporter`, the upstream `BufferProcessor`, and its background
+export thread. On .NET Framework, it also starts the profiler canary thread.
+Native CPU sample collection remains disabled until CPU profiling is enabled,
+but the initialized pipeline can still add CPU, memory, and thread overhead.
+Leave remote configuration disabled when runtime profiler activation is not
+required.
+
+Supported at runtime:
+
+- `always_on.cpu_profiler`: enable or disable CPU profiling.
+- `always_on.cpu_profiler.sampling_interval`: update CPU sampling interval.

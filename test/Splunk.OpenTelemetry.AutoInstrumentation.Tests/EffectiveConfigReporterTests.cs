@@ -25,6 +25,22 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 public class EffectiveConfigReporterTests
 {
     [Fact]
+    public void BuildCurrentPayload_UsesUpdatedProfilerRuntimeState()
+    {
+        var recorder = new EffectiveConfigRecorder(
+            new EffectiveConfigStaticSettings(
+                new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()))),
+            openTelemetrySdkDisabled: true);
+        var reporter = EffectiveConfigReporter.CreateValidated(recorder, EffectiveProfilerFeatures.None);
+
+        reporter.UpdateProfilerState(EffectiveProfilerFeatures.Cpu, cpuProfilerCallStackInterval: 1234);
+
+        var body = Encoding.UTF8.GetString(reporter.BuildCurrentPayload().Content.ToArray());
+        Assert.Contains("SPLUNK_PROFILER_ENABLED=true", body, StringComparison.Ordinal);
+        Assert.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=1234", body, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void BuildCurrentPayload_CreatesEffectiveConfigFileFromCurrentRecorderState()
     {
         const string logsEndpoint = "http://logs-collector:4318/v1/logs";
