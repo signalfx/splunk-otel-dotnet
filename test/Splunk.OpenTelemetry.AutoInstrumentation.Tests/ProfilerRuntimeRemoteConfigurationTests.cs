@@ -102,7 +102,7 @@ public class ProfilerRuntimeRemoteConfigurationTests
                 }));
 
         Assert.False(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
-        Assert.Equal((uint)Constants.DefaultSamplingInterval, ProfilerRuntimeConfiguration.Current.CpuProfilerCallStackInterval);
+        Assert.Equal(0u, ProfilerRuntimeConfiguration.Current.CpuProfilerCallStackInterval);
     }
 
     [Fact]
@@ -156,6 +156,7 @@ public class ProfilerRuntimeRemoteConfigurationTests
                 }));
 
         Assert.False(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
+        Assert.Equal(0u, ProfilerRuntimeConfiguration.Current.CpuProfilerCallStackInterval);
         Assert.Equal(40u, ProfilerRuntimeConfiguration.Current.SelectedThreadSamplingInterval);
 #if NET
         Assert.True(ProfilerRuntimeConfiguration.Current.AllocationSamplingEnabled);

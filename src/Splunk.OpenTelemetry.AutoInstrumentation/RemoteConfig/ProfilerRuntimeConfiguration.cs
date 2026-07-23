@@ -89,11 +89,11 @@ internal static class ProfilerRuntimeConfiguration
             var cpuProfilerEnabled = cpuProfiler != null;
             var cpuProfilerCallStackInterval = cpuProfilerEnabled
                 ? PluginSettings.GetFinalContinuousSamplingInterval((int)cpuProfiler!.SamplingInterval, _snapshotsEnabled, _snapshotsSamplingInterval)
-                : Constants.DefaultSamplingInterval;
+                : 0u;
 
             next = new ProfilerRuntimeSettings(
                 cpuProfilerEnabled,
-                cpuProfilerEnabled ? cpuProfilerCallStackInterval : Constants.DefaultSamplingInterval,
+                cpuProfilerCallStackInterval,
                 _settings.AllocationSamplingEnabled,
                 _settings.MaxMemorySamplesPerMinute,
                 _settings.SelectedThreadSamplingInterval);

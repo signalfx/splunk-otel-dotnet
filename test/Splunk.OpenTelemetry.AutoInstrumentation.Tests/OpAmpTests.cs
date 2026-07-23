@@ -51,6 +51,7 @@ public class OpAmpTests
         Assert.True(settings.RemoteConfiguration.ReportsRemoteConfigStatus);
         Assert.True(ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled);
         Assert.False(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
+        Assert.Equal((uint)Constants.DefaultSamplingInterval, ProfilerRuntimeConfiguration.Current.CpuProfilerCallStackInterval);
     }
 
     [Fact]
