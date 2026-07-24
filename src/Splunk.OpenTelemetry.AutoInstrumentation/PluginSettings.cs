@@ -167,9 +167,9 @@ internal class PluginSettings
 
     public Uri ProfilerLogsEndpoint { get; } = new Uri(Constants.DefaultProfilerLogsEndpoint);
 
-    public uint ProfilerHttpClientTimeout { get; }
+    public uint ProfilerHttpClientTimeout { get; } = Constants.DefaultProfilerExportTimeout;
 
-    public uint ProfilerExportInterval { get; }
+    public uint ProfilerExportInterval { get; } = Constants.DefaultProfilerExportInterval;
 
     public bool OpAmpRemoteConfigEnabled { get; }
 

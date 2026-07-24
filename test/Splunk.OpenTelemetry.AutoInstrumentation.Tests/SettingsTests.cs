@@ -139,6 +139,8 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
                 });
 
             Assert.True(settings.OpAmpRemoteConfigEnabled);
+            Assert.Equal(3000u, settings.ProfilerHttpClientTimeout);
+            Assert.Equal(500u, settings.ProfilerExportInterval);
         }
 
         [Fact]
