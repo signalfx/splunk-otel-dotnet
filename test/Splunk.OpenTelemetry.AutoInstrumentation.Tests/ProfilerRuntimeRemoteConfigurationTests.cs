@@ -24,9 +24,15 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 public class ProfilerRuntimeRemoteConfigurationTests
 {
     [Fact]
-    public void Apply_MapsCpuProfilerRemoteConfigurationToRuntimeConfiguration()
+    public void Apply_UsesStartupSamplingIntervalWhenCpuProfilerIsEnabledRemotely()
     {
-        ProfilerRuntimeConfiguration.Initialize(CreateSettings());
+        ProfilerRuntimeConfiguration.Initialize(
+            CreateSettings(
+                new NameValueCollection
+                {
+                    { ConfigurationKeys.Splunk.OpAmp.RemoteConfig, "true" },
+                    { ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, "4321" }
+                }));
 
         ProfilerRuntimeConfiguration.Apply(
             CreateConfiguration(
@@ -61,11 +67,40 @@ public class ProfilerRuntimeRemoteConfigurationTests
                 }));
 
         Assert.True(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
-        Assert.Equal(1234u, ProfilerRuntimeConfiguration.Current.CpuProfilerCallStackInterval);
+        Assert.Equal(4321u, ProfilerRuntimeConfiguration.Current.CpuProfilerCallStackInterval);
     }
 
     [Fact]
-    public void Apply_UsesDefaultsForPresentEmptyCpuProfilerSection()
+    public void Apply_AlignsStartupSamplingIntervalWithSnapshotsWhenCpuProfilerIsEnabledRemotely()
+    {
+        ProfilerRuntimeConfiguration.Initialize(
+            CreateSettings(
+                new NameValueCollection
+                {
+                    { ConfigurationKeys.Splunk.OpAmp.RemoteConfig, "true" },
+                    { ConfigurationKeys.Splunk.Snapshots.Enabled, "true" },
+                    { ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, "300" }
+                }));
+
+        ProfilerRuntimeConfiguration.Apply(
+            CreateConfiguration(
+                new ProfilerConfiguration
+                {
+                    AlwaysOn = new AlwaysOn
+                    {
+                        CpuProfiler = new CpuProfiler
+                        {
+                            SamplingInterval = 1234
+                        }
+                    }
+                }));
+
+        Assert.True(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
+        Assert.Equal(9900u, ProfilerRuntimeConfiguration.Current.CpuProfilerCallStackInterval);
+    }
+
+    [Fact]
+    public void Apply_UsesStartupDefaultSamplingIntervalWhenCpuProfilerIsEnabledRemotely()
     {
         ProfilerRuntimeConfiguration.Initialize(CreateSettings());
 

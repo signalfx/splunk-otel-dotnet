@@ -28,7 +28,6 @@ public class OpAmpRemoteConfigurationListenerTests
             profiling:
               always_on:
                 cpu_profiler:
-                  sampling_interval: 1234
         """;
 
     [Fact]
@@ -47,7 +46,7 @@ public class OpAmpRemoteConfigurationListenerTests
 
         Assert.Equal(1, appliedCount);
         Assert.NotNull(appliedYaml);
-        Assert.Contains("sampling_interval: 1234", appliedYaml, StringComparison.Ordinal);
+        Assert.Contains("cpu_profiler:", appliedYaml, StringComparison.Ordinal);
         Assert.Collection(
             reports,
             report => AssertReport(report, configHash, RemoteConfigStatusCode.Applying),

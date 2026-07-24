@@ -29,11 +29,17 @@ public class EffectiveConfigReporterTests
     {
         var recorder = new EffectiveConfigRecorder(
             new EffectiveConfigStaticSettings(
-                new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()))),
+                new PluginSettings(
+                    new NameValueConfigurationSource(
+                        new NameValueCollection
+                        {
+                            [ConfigurationKeys.Splunk.OpAmp.RemoteConfig] = "true",
+                            [ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = "1234"
+                        }))),
             openTelemetrySdkDisabled: true);
         var reporter = EffectiveConfigReporter.CreateValidated(recorder, EffectiveProfilerFeatures.None);
 
-        reporter.UpdateProfilerState(EffectiveProfilerFeatures.Cpu, cpuProfilerCallStackInterval: 1234);
+        reporter.UpdateProfilerState(EffectiveProfilerFeatures.Cpu);
 
         var body = Encoding.UTF8.GetString(reporter.BuildCurrentPayload().Content.ToArray());
         Assert.Contains("SPLUNK_PROFILER_ENABLED=true", body, StringComparison.Ordinal);

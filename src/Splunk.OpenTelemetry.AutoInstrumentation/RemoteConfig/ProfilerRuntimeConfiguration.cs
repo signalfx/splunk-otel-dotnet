@@ -24,8 +24,7 @@ internal static class ProfilerRuntimeConfiguration
     private static readonly object Sync = new();
 
     private static ProfilerRuntimeSettings? _settings;
-    private static bool _snapshotsEnabled;
-    private static uint _snapshotsSamplingInterval;
+    private static uint _startupCpuProfilerCallStackInterval;
     private static bool _opAmpRemoteConfigurationEnabled;
 
     public static bool RuntimeConfigurationEnabled
@@ -60,10 +59,7 @@ internal static class ProfilerRuntimeConfiguration
         lock (Sync)
         {
             _settings = ProfilerRuntimeSettings.FromPluginSettings(settings);
-            _snapshotsEnabled = settings.SnapshotsEnabled;
-            _snapshotsSamplingInterval = settings.SnapshotsSamplingInterval == 0
-                ? Constants.DefaultSnapshotSamplingIntervalMs
-                : settings.SnapshotsSamplingInterval;
+            _startupCpuProfilerCallStackInterval = _settings.CpuProfilerCallStackInterval;
             _opAmpRemoteConfigurationEnabled = settings.OpAmpRemoteConfigEnabled;
         }
     }
@@ -85,10 +81,9 @@ internal static class ProfilerRuntimeConfiguration
                 throw new InvalidOperationException("Profiler runtime configuration has not been initialized.");
             }
 
-            var cpuProfiler = profilingConfig.AlwaysOn?.CpuProfiler;
-            var cpuProfilerEnabled = cpuProfiler != null;
+            var cpuProfilerEnabled = profilingConfig.AlwaysOn?.CpuProfiler != null;
             var cpuProfilerCallStackInterval = cpuProfilerEnabled
-                ? PluginSettings.GetFinalContinuousSamplingInterval((int)cpuProfiler!.SamplingInterval, _snapshotsEnabled, _snapshotsSamplingInterval)
+                ? _startupCpuProfilerCallStackInterval
                 : 0u;
 
             next = new ProfilerRuntimeSettings(

@@ -89,11 +89,10 @@ internal sealed class OpAmp
                 return;
             }
 
-            var profilerState = ResolveProfilerState();
+            var profilerFeatures = ResolveProfilerFeatures();
             var effectiveConfigReporter = EffectiveConfigReporter.CreateValidated(
                 recorder,
-                profilerState.Features,
-                profilerState.CpuProfilerCallStackInterval);
+                profilerFeatures);
 
             lock (_lifecycleLock)
             {
@@ -404,18 +403,15 @@ internal sealed class OpAmp
 
     private void RefreshProfilerState(EffectiveConfigReporter effectiveConfigReporter)
     {
-        var profilerState = ResolveProfilerState();
-        effectiveConfigReporter.UpdateProfilerState(
-            profilerState.Features,
-            profilerState.CpuProfilerCallStackInterval);
+        effectiveConfigReporter.UpdateProfilerState(ResolveProfilerFeatures());
     }
 
-    private (EffectiveProfilerFeatures Features, uint? CpuProfilerCallStackInterval) ResolveProfilerState()
+    private EffectiveProfilerFeatures ResolveProfilerFeatures()
     {
         var profilerFeatures = _profilerStateResolver();
         if (Volatile.Read(ref _remoteConfigurationEnabled) == 0)
         {
-            return (profilerFeatures, null);
+            return profilerFeatures;
         }
 
         try
@@ -425,11 +421,11 @@ internal sealed class OpAmp
                 ? profilerFeatures | EffectiveProfilerFeatures.Cpu
                 : profilerFeatures & ~EffectiveProfilerFeatures.Cpu;
 
-            return (profilerFeatures, runtimeSettings.CpuProfilerCallStackInterval);
+            return profilerFeatures;
         }
         catch (InvalidOperationException)
         {
-            return (profilerFeatures, null);
+            return profilerFeatures;
         }
     }
 }

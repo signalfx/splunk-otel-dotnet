@@ -65,8 +65,7 @@ internal sealed class EffectiveConfigSnapshot
         EffectiveProfilerFeatures profilerFeatures,
         IReadOnlyList<EffectiveOtlpEndpoint> traceEndpoints,
         IReadOnlyList<EffectiveOtlpEndpoint> metricEndpoints,
-        IReadOnlyList<EffectiveOtlpEndpoint> logEndpoints,
-        uint? cpuProfilerCallStackInterval = null)
+        IReadOnlyList<EffectiveOtlpEndpoint> logEndpoints)
     {
         return new EffectiveConfigSnapshot(
             fileBasedConfigFileName: staticSettings.FileBasedConfigFileName,
@@ -76,7 +75,7 @@ internal sealed class EffectiveConfigSnapshot
             cpuProfilerEnabled: (profilerFeatures & EffectiveProfilerFeatures.Cpu) != 0,
             memoryProfilerEnabled: (profilerFeatures & EffectiveProfilerFeatures.Memory) != 0,
             snapshotProfilerEnabled: (profilerFeatures & EffectiveProfilerFeatures.Snapshot) != 0,
-            cpuProfilerCallStackInterval: cpuProfilerCallStackInterval ?? staticSettings.CpuProfilerCallStackInterval,
+            cpuProfilerCallStackInterval: staticSettings.CpuProfilerCallStackInterval,
             snapshotSamplingInterval: staticSettings.SnapshotSamplingInterval);
     }
 

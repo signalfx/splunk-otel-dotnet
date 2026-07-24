@@ -44,6 +44,7 @@ internal class PluginSettings
         TraceResponseHeaderEnabled = source.GetBool(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled) ?? Constants.DefaultTraceResponseHeaderEnabled;
         var otlpEndpoint = source.GetString(ConfigurationKeys.OpenTelemetry.OtlpEndpoint);
         IsOtlpEndpointSet = !string.IsNullOrEmpty(otlpEndpoint);
+        OpAmpRemoteConfigEnabled = source.GetBool(ConfigurationKeys.Splunk.OpAmp.RemoteConfig) ?? false;
 
         SnapshotsEnabled = source.GetBool(ConfigurationKeys.Splunk.Snapshots.Enabled) ?? false;
         var snapshotInterval = source.GetInt32(ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs) ?? Constants.DefaultSnapshotSamplingIntervalMs;
@@ -54,7 +55,9 @@ internal class PluginSettings
 
         CpuProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled) ?? false;
         var callStackInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval) ?? Constants.DefaultSamplingInterval;
-        CpuProfilerCallStackInterval = CpuProfilerEnabled ? GetFinalContinuousSamplingInterval(callStackInterval, SnapshotsEnabled, SnapshotsSamplingInterval) : Constants.DefaultSamplingInterval;
+        CpuProfilerCallStackInterval = CpuProfilerEnabled || OpAmpRemoteConfigEnabled
+            ? GetFinalContinuousSamplingInterval(callStackInterval, SnapshotsEnabled, SnapshotsSamplingInterval)
+            : Constants.DefaultSamplingInterval;
 
 #if NET
         MemoryProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled) ?? Constants.DefaultHighResolutionTimer;
@@ -67,7 +70,6 @@ internal class PluginSettings
         ProfilerExportInterval = GetFinalExportInterval(exportInterval);
 
         ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
-        OpAmpRemoteConfigEnabled = source.GetBool(ConfigurationKeys.Splunk.OpAmp.RemoteConfig) ?? false;
     }
 
     internal PluginSettings(YamlRoot configuration, string? fileName = null)
@@ -124,6 +126,14 @@ internal class PluginSettings
             ProfilerHttpClientTimeout = profilingConfig.Exporter.OtlpLogHttp.ExportTimeout;
             ProfilerExportInterval = GetFinalExportInterval((int)profilingConfig.Exporter.OtlpLogHttp.ScheduleDelay);
             ProfilerLogsEndpoint = new Uri(profilingConfig.Exporter.OtlpLogHttp.Endpoint);
+        }
+
+        if (OpAmpRemoteConfigEnabled && !CpuProfilerEnabled)
+        {
+            CpuProfilerCallStackInterval = GetFinalContinuousSamplingInterval(
+                Constants.DefaultSamplingInterval,
+                SnapshotsEnabled,
+                SnapshotsSamplingInterval);
         }
     }
 
@@ -205,7 +215,7 @@ internal class PluginSettings
         return string.IsNullOrEmpty(fileName) ? Constants.DefaultFileBasedConfigFileName : fileName!;
     }
 
-    internal static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)
+    private static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)
     {
         var interval = callStackInterval < 0 ? Constants.DefaultSamplingInterval : (uint)callStackInterval;
         if (snapshotsEnabled)
