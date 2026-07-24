@@ -51,6 +51,72 @@ public class OpAmpReportingPumpTests
     }
 
     [Fact]
+    public async Task RemoteConfigStatusQueuedDuringFullStateSnapshotIsSentAfterFullState()
+    {
+        var resolverEntered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var releaseResolver = new ManualResetEventSlim();
+        var oldStatus = new RemoteConfigStatusReport([1], RemoteConfigStatusCode.Applied);
+        var newStatus = new RemoteConfigStatusReport([2], RemoteConfigStatusCode.Failed, "new status");
+        var requestProbe = new OpAmpHttpRequestProbe();
+        using var innerClient = new HttpClient(requestProbe);
+        using var client = CreateClient(innerClient, reportsRemoteConfigStatus: true);
+        var reportingPump = StartReporting(
+            client,
+            remoteConfigStatusResolver: () =>
+            {
+                resolverEntered.TrySetResult(true);
+                releaseResolver.Wait();
+                return oldStatus;
+            });
+
+        try
+        {
+            reportingPump.MarkInstrumentationInitialized();
+            await WaitForCompletionAsync(resolverEntered.Task);
+
+            var newStatusTask = reportingPump.SendRemoteConfigStatusAsync(newStatus);
+
+            Assert.False(newStatusTask.IsCompleted);
+            Assert.Equal(0, requestProbe.Count);
+
+            releaseResolver.Set();
+            await WaitForCompletionAsync(newStatusTask);
+            await requestProbe.WaitForCountAsync(2);
+        }
+        finally
+        {
+            releaseResolver.Set();
+            reportingPump.Stop();
+        }
+
+        var fullStateFrame = OpAmpRequestFrameInspector.Parse(requestProbe.GetRequestBody(1));
+        Assert.True(fullStateFrame.IsFullStateReport);
+        Assert.Equal("Applied", fullStateFrame.RemoteConfigStatus);
+
+        var statusFrame = OpAmpRequestFrameInspector.Parse(requestProbe.GetRequestBody(2));
+        Assert.False(statusFrame.IsFullStateReport);
+        Assert.Equal("Failed", statusFrame.RemoteConfigStatus);
+    }
+
+    [Fact]
+    public async Task RemoteConfigStatusDoesNotWaitForInstrumentationInitialization()
+    {
+        var requestProbe = new OpAmpHttpRequestProbe();
+        using var innerClient = new HttpClient(requestProbe);
+        using var client = CreateClient(innerClient, reportsRemoteConfigStatus: true);
+        var reportingPump = StartReporting(client);
+
+        await reportingPump.SendRemoteConfigStatusAsync(
+            new RemoteConfigStatusReport([1], RemoteConfigStatusCode.Applying));
+        await requestProbe.WaitForCountAsync(1);
+        reportingPump.Stop();
+
+        var statusFrame = OpAmpRequestFrameInspector.Parse(requestProbe.GetRequestBody(1));
+        Assert.False(statusFrame.IsFullStateReport);
+        Assert.Equal("Applying", statusFrame.RemoteConfigStatus);
+    }
+
+    [Fact]
     public async Task ILoggerEffectiveConfigChangesAfterInitialDeliveryAreBatchedIntoOneUpdate()
     {
         var batchDelay = ManuallyReleasedDelay.ForILoggerBatching();
@@ -338,14 +404,15 @@ public class OpAmpReportingPumpTests
         OpAmpClient client,
         EffectiveConfigReporter? reporter = null,
         Func<TimeSpan, CancellationToken, Task>? delayAsync = null,
-        TimeSpan? dispatchTimeout = null)
+        TimeSpan? dispatchTimeout = null,
+        Func<RemoteConfigStatusReport?>? remoteConfigStatusResolver = null)
     {
         var reportingPump = new OpAmpReportingPump(
             client,
             reporter,
             new OpAmpReportDispatcher(dispatchTimeout ?? DefaultDispatchTimeout),
             delayAsync ?? Task.Delay,
-            remoteConfigStatusResolver: null,
+            remoteConfigStatusResolver,
             instrumentationInitialized: false);
         reportingPump.Start();
         return reportingPump;
@@ -366,12 +433,15 @@ public class OpAmpReportingPumpTests
             bridgeLogEndpointResolver ?? (() => null));
     }
 
-    private static OpAmpClient CreateClient(HttpClient innerClient)
+    private static OpAmpClient CreateClient(
+        HttpClient innerClient,
+        bool reportsRemoteConfigStatus = false)
     {
         return new OpAmpClient(settings =>
         {
             settings.HttpClientFactory = () => innerClient;
             settings.EffectiveConfigurationReporting.EnableReporting = true;
+            settings.RemoteConfiguration.ReportsRemoteConfigStatus = reportsRemoteConfigStatus;
         });
     }
 

@@ -340,29 +340,25 @@ internal sealed class OpAmp
         }
     }
 
-    private async Task SendRemoteConfigStatusAsync(RemoteConfigStatusReport statusReport)
+    private Task SendRemoteConfigStatusAsync(RemoteConfigStatusReport statusReport)
     {
         try
         {
-            OpAmpClient? client;
+            OpAmpReportingPump? reportingPump;
             lock (_lifecycleLock)
             {
                 _remoteConfigStatus = statusReport;
-                client = _clientLifecycleState == ClientLifecycleState.Started
-                    ? _opAmpClient
+                reportingPump = _clientLifecycleState == ClientLifecycleState.Started
+                    ? _reportingPump
                     : null;
             }
 
-            if (client == null)
-            {
-                return;
-            }
-
-            await client.SendRemoteConfigStatusAsync(statusReport).ConfigureAwait(false);
+            return reportingPump?.SendRemoteConfigStatusAsync(statusReport) ?? Task.CompletedTask;
         }
         catch (Exception e)
         {
             Log.Warning($"Failed to report remote configuration status to OpAMP server: {e.Message}");
+            return Task.CompletedTask;
         }
     }
 

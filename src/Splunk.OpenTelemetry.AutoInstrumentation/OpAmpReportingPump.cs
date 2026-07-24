@@ -37,6 +37,7 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
     private readonly SemaphoreSlim _wakeSignal = new(0, 1);
     private readonly CancellationTokenSource _reportingCancellation = new();
     private readonly CancellationToken _reportingCancellationToken;
+    private readonly Queue<(RemoteConfigStatusReport Report, TaskCompletionSource<bool> Completion)> _remoteConfigStatusReports = new();
     private bool _started;
     private bool _instrumentationInitialized;
     private bool _fullStateReportPending;
@@ -81,6 +82,7 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
     private enum ReportingWorkKind
     {
         None,
+        RemoteConfigStatus,
         FullStateReport,
         ILoggerEffectiveConfigUpdate
     }
@@ -148,9 +150,27 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
         }
     }
 
+    public Task SendRemoteConfigStatusAsync(RemoteConfigStatusReport statusReport)
+    {
+        var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        lock (_lock)
+        {
+            if (_stopped)
+            {
+                return Task.CompletedTask;
+            }
+
+            _remoteConfigStatusReports.Enqueue((statusReport, completion));
+            SignalWorkerLocked();
+        }
+
+        return completion.Task;
+    }
+
     public void Stop()
     {
         bool unsubscribe;
+        List<TaskCompletionSource<bool>> droppedRemoteConfigStatusReports = [];
         lock (_lock)
         {
             if (_stopped)
@@ -161,8 +181,18 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
             _stopped = true;
             _fullStateReportPending = false;
             _iLoggerEffectiveConfigUpdatePending = false;
+            while (_remoteConfigStatusReports.Count > 0)
+            {
+                droppedRemoteConfigStatusReports.Add(_remoteConfigStatusReports.Dequeue().Completion);
+            }
+
             unsubscribe = _started;
             _started = false;
+        }
+
+        foreach (var completion in droppedRemoteConfigStatusReports)
+        {
+            completion.TrySetResult(true);
         }
 
         if (unsubscribe)
@@ -249,6 +279,9 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
 
         switch (work)
         {
+            case ReportingWorkKind.RemoteConfigStatus:
+                await SendRemoteConfigStatusAsync().ConfigureAwait(false);
+                break;
             case ReportingWorkKind.FullStateReport:
                 await SendFullStateReportAsync().ConfigureAwait(false);
                 break;
@@ -256,11 +289,29 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
                 await SendBatchedILoggerEffectiveConfigUpdateAsync().ConfigureAwait(false);
                 break;
         }
+
+        lock (_lock)
+        {
+            if (SelectNextWorkLocked() != ReportingWorkKind.None)
+            {
+                SignalWorkerLocked();
+            }
+        }
     }
 
     private ReportingWorkKind SelectNextWorkLocked()
     {
-        if (_stopped || !_instrumentationInitialized)
+        if (_stopped)
+        {
+            return ReportingWorkKind.None;
+        }
+
+        if (_remoteConfigStatusReports.Count > 0)
+        {
+            return ReportingWorkKind.RemoteConfigStatus;
+        }
+
+        if (!_instrumentationInitialized)
         {
             return ReportingWorkKind.None;
         }
@@ -276,6 +327,32 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
         }
 
         return ReportingWorkKind.None;
+    }
+
+    private async Task SendRemoteConfigStatusAsync()
+    {
+        (RemoteConfigStatusReport Report, TaskCompletionSource<bool> Completion) pendingReport;
+        lock (_lock)
+        {
+            if (_stopped || _remoteConfigStatusReports.Count == 0)
+            {
+                return;
+            }
+
+            pendingReport = _remoteConfigStatusReports.Dequeue();
+        }
+
+        try
+        {
+            await _reportDispatcher.DispatchRemoteConfigStatusAsync(
+                _client,
+                pendingReport.Report,
+                _reportingCancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            pendingReport.Completion.TrySetResult(true);
+        }
     }
 
     private async Task SendFullStateReportAsync()
