@@ -14,6 +14,8 @@
 // limitations under the License.
 // </copyright>
 
+using System.Collections.Specialized;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
@@ -24,20 +26,53 @@ public class NativeContinuousProfilerConfiguratorTests
     public void NativeMethodContract_UsesAllFiveUpstreamArguments()
     {
         var method = NativeContinuousProfilerConfigurator.FindConfigureNativeContinuousProfilerMethod(typeof(NativeMethodsStub));
-        var settings = new ProfilerRuntimeSettings(
-            cpuProfilerEnabled: true,
-            cpuProfilerCallStackInterval: 123u,
-            allocationSamplingEnabled: true,
-            maxMemorySamplesPerMinute: 456u,
-            selectedThreadSamplingInterval: 78u);
+        var startupSettings = new PluginSettings(
+            new NameValueConfigurationSource(
+                new NameValueCollection
+                {
+                    [ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled] = "true",
+                    [ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = "156",
+                    [ConfigurationKeys.Splunk.Snapshots.Enabled] = "true",
+                    [ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs] = "78",
+#if NET
+                    [ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled] = "true",
+                    [ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples] = "123"
+#endif
+                }));
+        var state = new ProfilerRemoteConfigState(cpuProfilerEnabled: true);
+
+#if NET
+        object?[] expectedArguments = [true, 156u, true, 123u, 78u];
+#else
+        object?[] expectedArguments = [true, 156u, false, 0u, 78u];
+#endif
 
         Assert.NotNull(method);
         Assert.Equal(
             [typeof(bool), typeof(uint), typeof(bool), typeof(uint), typeof(uint)],
             method.GetParameters().Select(parameter => parameter.ParameterType));
         Assert.Equal(
-            [true, 123u, true, 456u, 78u],
-            NativeContinuousProfilerConfigurator.CreateConfigureNativeContinuousProfilerArguments(settings));
+            expectedArguments,
+            NativeContinuousProfilerConfigurator.CreateConfigureNativeContinuousProfilerArguments(startupSettings, state));
+    }
+
+    [Fact]
+    public void NativeConfiguration_DisablesOnlyRuntimeConfigurableCpuProfiler()
+    {
+        var startupSettings = new PluginSettings(
+            new NameValueConfigurationSource(
+                new NameValueCollection
+                {
+                    [ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled] = "true",
+                    [ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = "123"
+                }));
+
+        var arguments = NativeContinuousProfilerConfigurator.CreateConfigureNativeContinuousProfilerArguments(
+            startupSettings,
+            new ProfilerRemoteConfigState(cpuProfilerEnabled: false));
+
+        Assert.False((bool)arguments[0]!);
+        Assert.Equal(0u, arguments[1]);
     }
 
     private static class NativeMethodsStub

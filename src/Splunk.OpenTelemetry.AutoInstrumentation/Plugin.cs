@@ -199,19 +199,19 @@ public class Plugin
     /// <returns>(threadSamplingEnabled, threadSamplingInterval, allocationSamplingEnabled, maxMemorySamplesPerMinute, exportInterval, continuousProfilerExporter)</returns>
     public Tuple<bool, uint, bool, uint, TimeSpan, TimeSpan, object> GetContinuousProfilerConfiguration()
     {
-        var runtimeSettings = ProfilerRuntimeConfiguration.Current;
-        var threadSamplingEnabled = ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled || runtimeSettings.CpuProfilerEnabled;
-        var threadSamplingInterval = runtimeSettings.CpuProfilerCallStackInterval;
+        var remoteConfigState = ProfilerRuntimeConfiguration.Current;
+        var threadSamplingEnabled = ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled || remoteConfigState.CpuProfilerEnabled;
+        var threadSamplingInterval = PluginSettingsHelper.GetFinalContinuousSamplingInterval(Settings);
 #if NET
         var allocationSamplingEnabled = Settings.MemoryProfilerEnabled;
-        var maxMemorySamplesPerMinute = Settings.MemoryProfilerMaxMemorySamplesPerMinute;
+        var maxMemorySamplesPerMinute = PluginSettingsHelper.GetFinalMaxMemorySamples(Settings);
 #else
         // Allocation sampling is not supported on .NET Framework
         var allocationSamplingEnabled = false;
         var maxMemorySamplesPerMinute = 0u;
 #endif
-        var exportInterval = TimeSpan.FromMilliseconds(Settings.ProfilerExportInterval);
-        var exportTimeout = TimeSpan.FromMilliseconds(Settings.ProfilerHttpClientTimeout);
+        var exportInterval = TimeSpan.FromMilliseconds(PluginSettingsHelper.GetFinalExportInterval(Settings.ProfilerExportInterval));
+        var exportTimeout = TimeSpan.FromMilliseconds(PluginSettingsHelper.GetFinalExportTimeout(Settings.ProfilerHttpClientTimeout));
 
         var pprofInOtlpLogsExporter = GetPprofInOtlpLogsExporter();
         ProfilerRuntimeConfiguration.ApplyToExporter(pprofInOtlpLogsExporter);
@@ -227,7 +227,7 @@ public class Plugin
     {
         if (Settings.SnapshotsEnabled)
         {
-            var frequentSamplingInterval = Settings.SnapshotsSamplingInterval;
+            var frequentSamplingInterval = PluginSettingsHelper.GetFinalSnapshotSamplingInterval(Settings.SnapshotsSamplingInterval);
             var pprofInOtlpLogsExporter = GetPprofInOtlpLogsExporter();
             pprofInOtlpLogsExporter.SampleProcessor.SelectedSamplingPeriod = frequentSamplingInterval;
             var exportInterval = GetSampleExportInterval();
@@ -324,12 +324,12 @@ public class Plugin
 
     private static TimeSpan GetSampleExportTimeout()
     {
-        return TimeSpan.FromMilliseconds(Settings.ProfilerHttpClientTimeout);
+        return TimeSpan.FromMilliseconds(PluginSettingsHelper.GetFinalExportTimeout(Settings.ProfilerHttpClientTimeout));
     }
 
     private static TimeSpan GetSampleExportInterval()
     {
-        return TimeSpan.FromMilliseconds(Settings.ProfilerExportInterval);
+        return TimeSpan.FromMilliseconds(PluginSettingsHelper.GetFinalExportInterval(Settings.ProfilerExportInterval));
     }
 
     private static PprofInOtlpLogsExporter GetPprofInOtlpLogsExporter()

@@ -23,9 +23,8 @@ internal static class ProfilerRuntimeConfiguration
 {
     private static readonly object Sync = new();
 
-    private static ProfilerRuntimeSettings? _settings;
-    private static uint _startupCpuProfilerCallStackInterval;
-    private static bool _opAmpRemoteConfigurationEnabled;
+    private static PluginSettings? _startupSettings;
+    private static ProfilerRemoteConfigState? _state;
 
     public static bool RuntimeConfigurationEnabled
     {
@@ -33,34 +32,54 @@ internal static class ProfilerRuntimeConfiguration
         {
             lock (Sync)
             {
-                return _opAmpRemoteConfigurationEnabled;
+                return GetStartupSettings().OpAmpRemoteConfigEnabled;
             }
         }
     }
 
-    public static ProfilerRuntimeSettings Current
+    public static ProfilerRemoteConfigState Current
     {
         get
         {
             lock (Sync)
             {
-                if (_settings == null)
-                {
-                    throw new InvalidOperationException("Profiler runtime configuration has not been initialized.");
-                }
+                return GetState();
+            }
+        }
+    }
 
-                return _settings;
+    internal static uint StartupCpuProfilerCallStackInterval
+    {
+        get
+        {
+            lock (Sync)
+            {
+                return PluginSettingsHelper.GetFinalContinuousSamplingInterval(GetStartupSettings());
+            }
+        }
+    }
+
+    internal static uint CurrentCpuProfilerCallStackInterval
+    {
+        get
+        {
+            lock (Sync)
+            {
+                return GetState().CpuProfilerEnabled
+                    ? PluginSettingsHelper.GetFinalContinuousSamplingInterval(GetStartupSettings())
+                    : 0u;
             }
         }
     }
 
     public static void Initialize(PluginSettings settings)
     {
+        settings = settings ?? throw new ArgumentNullException(nameof(settings));
+
         lock (Sync)
         {
-            _settings = ProfilerRuntimeSettings.FromPluginSettings(settings);
-            _startupCpuProfilerCallStackInterval = _settings.CpuProfilerCallStackInterval;
-            _opAmpRemoteConfigurationEnabled = settings.OpAmpRemoteConfigEnabled;
+            _startupSettings = settings;
+            _state = new ProfilerRemoteConfigState(settings.CpuProfilerEnabled);
         }
     }
 
@@ -72,55 +91,71 @@ internal static class ProfilerRuntimeConfiguration
             return;
         }
 
-        ProfilerRuntimeSettings next;
+        PluginSettings startupSettings;
+        ProfilerRemoteConfigState next;
 
         lock (Sync)
         {
-            if (_settings == null)
-            {
-                throw new InvalidOperationException("Profiler runtime configuration has not been initialized.");
-            }
-
             var cpuProfilerEnabled = profilingConfig.AlwaysOn?.CpuProfiler != null;
-            var cpuProfilerCallStackInterval = cpuProfilerEnabled
-                ? _startupCpuProfilerCallStackInterval
-                : 0u;
-
-            next = new ProfilerRuntimeSettings(
-                cpuProfilerEnabled,
-                cpuProfilerCallStackInterval,
-                _settings.AllocationSamplingEnabled,
-                _settings.MaxMemorySamplesPerMinute,
-                _settings.SelectedThreadSamplingInterval);
-
-            _settings = next;
+            startupSettings = GetStartupSettings();
+            next = new ProfilerRemoteConfigState(cpuProfilerEnabled);
+            _state = next;
         }
 
-        ApplyToExporter(next);
-        NativeContinuousProfilerConfigurator.Configure(next);
+        ApplyToExporter(startupSettings, next);
+        NativeContinuousProfilerConfigurator.Configure(startupSettings, next);
     }
 
     public static void ApplyCurrentToNative()
     {
-        NativeContinuousProfilerConfigurator.Configure(Current);
+        var (startupSettings, state) = GetConfigurationSnapshot();
+        NativeContinuousProfilerConfigurator.Configure(startupSettings, state);
     }
 
     public static void ApplyToExporter(PprofInOtlpLogsExporter exporter)
     {
-        ApplyToExporter(Current, exporter);
+        var (startupSettings, state) = GetConfigurationSnapshot();
+        ApplyToExporter(startupSettings, state, exporter);
     }
 
-    private static void ApplyToExporter(ProfilerRuntimeSettings settings)
+    private static void ApplyToExporter(
+        PluginSettings startupSettings,
+        ProfilerRemoteConfigState state)
     {
         var exporter = Plugin.TryGetPprofInOtlpLogsExporter();
         if (exporter != null)
         {
-            ApplyToExporter(settings, exporter);
+            ApplyToExporter(startupSettings, state, exporter);
         }
     }
 
-    private static void ApplyToExporter(ProfilerRuntimeSettings settings, PprofInOtlpLogsExporter exporter)
+    private static void ApplyToExporter(
+        PluginSettings startupSettings,
+        ProfilerRemoteConfigState state,
+        PprofInOtlpLogsExporter exporter)
     {
-        exporter.SampleProcessor.ContinuousSamplingPeriod = settings.CpuProfilerCallStackInterval;
+        exporter.SampleProcessor.ContinuousSamplingPeriod = state.CpuProfilerEnabled
+            ? PluginSettingsHelper.GetFinalContinuousSamplingInterval(startupSettings)
+            : 0u;
+    }
+
+    private static (PluginSettings StartupSettings, ProfilerRemoteConfigState State) GetConfigurationSnapshot()
+    {
+        lock (Sync)
+        {
+            return (GetStartupSettings(), GetState());
+        }
+    }
+
+    private static PluginSettings GetStartupSettings()
+    {
+        return _startupSettings
+            ?? throw new InvalidOperationException("Profiler runtime configuration has not been initialized.");
+    }
+
+    private static ProfilerRemoteConfigState GetState()
+    {
+        return _state
+            ?? throw new InvalidOperationException("Profiler runtime configuration has not been initialized.");
     }
 }

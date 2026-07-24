@@ -416,8 +416,8 @@ internal sealed class OpAmp
 
         try
         {
-            var runtimeSettings = ProfilerRuntimeConfiguration.Current;
-            profilerFeatures = runtimeSettings.CpuProfilerEnabled
+            var remoteConfigState = ProfilerRuntimeConfiguration.Current;
+            profilerFeatures = remoteConfigState.CpuProfilerEnabled
                 ? profilerFeatures | EffectiveProfilerFeatures.Cpu
                 : profilerFeatures & ~EffectiveProfilerFeatures.Cpu;
 

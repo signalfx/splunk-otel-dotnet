@@ -24,7 +24,9 @@ internal static class NativeContinuousProfilerConfigurator
     private static readonly ILogger Log = new Logger();
     private static readonly Lazy<MethodInfo?> ConfigureNativeContinuousProfilerMethod = new(ResolveConfigureNativeContinuousProfilerMethod);
 
-    public static void Configure(ProfilerRuntimeSettings settings)
+    public static void Configure(
+        PluginSettings startupSettings,
+        ProfilerRemoteConfigState state)
     {
         var method = ConfigureNativeContinuousProfilerMethod.Value;
         if (method == null)
@@ -35,7 +37,7 @@ internal static class NativeContinuousProfilerConfigurator
 
         try
         {
-            method.Invoke(null, CreateConfigureNativeContinuousProfilerArguments(settings));
+            method.Invoke(null, CreateConfigureNativeContinuousProfilerArguments(startupSettings, state));
         }
         catch (Exception ex)
         {
@@ -53,15 +55,31 @@ internal static class NativeContinuousProfilerConfigurator
             modifiers: null);
     }
 
-    internal static object?[] CreateConfigureNativeContinuousProfilerArguments(ProfilerRuntimeSettings settings)
+    internal static object?[] CreateConfigureNativeContinuousProfilerArguments(
+        PluginSettings startupSettings,
+        ProfilerRemoteConfigState state)
     {
+#if NET
+        var allocationSamplingEnabled = startupSettings.MemoryProfilerEnabled;
+        var maxMemorySamplesPerMinute = PluginSettingsHelper.GetFinalMaxMemorySamples(startupSettings);
+#else
+        const bool allocationSamplingEnabled = false;
+        const uint maxMemorySamplesPerMinute = 0;
+#endif
+        var cpuProfilerCallStackInterval = state.CpuProfilerEnabled
+            ? PluginSettingsHelper.GetFinalContinuousSamplingInterval(startupSettings)
+            : 0u;
+        var selectedThreadSamplingInterval = startupSettings.SnapshotsEnabled
+            ? PluginSettingsHelper.GetFinalSnapshotSamplingInterval(startupSettings.SnapshotsSamplingInterval)
+            : 0u;
+
         return
         [
-            settings.CpuProfilerEnabled,
-            settings.CpuProfilerCallStackInterval,
-            settings.AllocationSamplingEnabled,
-            settings.MaxMemorySamplesPerMinute,
-            settings.SelectedThreadSamplingInterval
+            state.CpuProfilerEnabled,
+            cpuProfilerCallStackInterval,
+            allocationSamplingEnabled,
+            maxMemorySamplesPerMinute,
+            selectedThreadSamplingInterval
         ];
     }
 

@@ -48,28 +48,28 @@ internal class PluginSettings
 
         SnapshotsEnabled = source.GetBool(ConfigurationKeys.Splunk.Snapshots.Enabled) ?? false;
         var snapshotInterval = source.GetInt32(ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs) ?? Constants.DefaultSnapshotSamplingIntervalMs;
-        SnapshotsSamplingInterval = GetFinalSnapshotSamplingInterval(snapshotInterval);
+        SnapshotsSamplingInterval = PluginSettingsHelper.GetFinalSnapshotSamplingInterval(snapshotInterval);
         var configuredSelectionRate = source.GetDouble(ConfigurationKeys.Splunk.Snapshots.SelectionRate) ?? Constants.DefaultSnapshotSelectionRate;
-        SnapshotsSelectionRate = GetFinalSnapshotSelectionProbability(configuredSelectionRate);
+        SnapshotsSelectionRate = PluginSettingsHelper.GetFinalSnapshotSelectionProbability(configuredSelectionRate);
         HighResolutionTimerEnabled = source.GetBool(ConfigurationKeys.Splunk.Snapshots.HighResolutionTimerEnabled) ?? false;
 
         CpuProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled) ?? false;
         var callStackInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval) ?? Constants.DefaultSamplingInterval;
         CpuProfilerCallStackInterval = CpuProfilerEnabled || OpAmpRemoteConfigEnabled
-            ? GetFinalContinuousSamplingInterval(callStackInterval, SnapshotsEnabled, SnapshotsSamplingInterval)
+            ? PluginSettingsHelper.GetFinalContinuousSamplingInterval(callStackInterval, SnapshotsEnabled, SnapshotsSamplingInterval)
             : Constants.DefaultSamplingInterval;
 
 #if NET
         MemoryProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled) ?? Constants.DefaultHighResolutionTimer;
         var maxMemorySamplesPerMinute = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples) ?? Constants.DefaultMaxMemorySamples;
-        MemoryProfilerMaxMemorySamplesPerMinute = GetFinalMaxMemorySamples(maxMemorySamplesPerMinute);
+        MemoryProfilerMaxMemorySamplesPerMinute = PluginSettingsHelper.GetFinalMaxMemorySamples(maxMemorySamplesPerMinute);
 #endif
         var httpClientTimeout = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportTimeout) ?? Constants.DefaultProfilerExportTimeout;
-        ProfilerHttpClientTimeout = (uint)httpClientTimeout;
+        ProfilerHttpClientTimeout = PluginSettingsHelper.GetFinalExportTimeout(httpClientTimeout);
         var exportInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportInterval) ?? Constants.DefaultProfilerExportInterval;
-        ProfilerExportInterval = GetFinalExportInterval(exportInterval);
+        ProfilerExportInterval = PluginSettingsHelper.GetFinalExportInterval(exportInterval);
 
-        ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
+        ProfilerLogsEndpoint = PluginSettingsHelper.GetProfilerLogsEndpoint(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
     }
 
     internal PluginSettings(YamlRoot configuration, string? fileName = null)
@@ -100,9 +100,9 @@ internal class PluginSettings
             {
                 SnapshotsEnabled = true;
                 HighResolutionTimerEnabled = profilingConfig.Callgraphs.HighResolutionTimerEnabled;
-                SnapshotsSamplingInterval = GetFinalSnapshotSamplingInterval((int)profilingConfig.Callgraphs.SamplingInterval);
+                SnapshotsSamplingInterval = PluginSettingsHelper.GetFinalSnapshotSamplingInterval(profilingConfig.Callgraphs.SamplingInterval);
                 var configuredSelectionRate = profilingConfig.Callgraphs.SelectionProbability;
-                SnapshotsSelectionRate = GetFinalSnapshotSelectionProbability(configuredSelectionRate);
+                SnapshotsSelectionRate = PluginSettingsHelper.GetFinalSnapshotSelectionProbability(configuredSelectionRate);
             }
 
             if (profilingConfig.AlwaysOn != null)
@@ -111,26 +111,26 @@ internal class PluginSettings
                 {
                     CpuProfilerEnabled = true;
                     var callStackInterval = profilingConfig.AlwaysOn.CpuProfiler.SamplingInterval;
-                    CpuProfilerCallStackInterval = GetFinalContinuousSamplingInterval((int)callStackInterval, SnapshotsEnabled, SnapshotsSamplingInterval);
+                    CpuProfilerCallStackInterval = PluginSettingsHelper.GetFinalContinuousSamplingInterval(callStackInterval, SnapshotsEnabled, SnapshotsSamplingInterval);
                 }
 
 #if NET
                 if (profilingConfig.AlwaysOn.MemoryProfiler != null)
                 {
                     MemoryProfilerEnabled = true;
-                    MemoryProfilerMaxMemorySamplesPerMinute = GetFinalMaxMemorySamples((int)profilingConfig.AlwaysOn.MemoryProfiler.MaxMemorySamples);
+                    MemoryProfilerMaxMemorySamplesPerMinute = PluginSettingsHelper.GetFinalMaxMemorySamples(profilingConfig.AlwaysOn.MemoryProfiler.MaxMemorySamples);
                 }
 #endif
             }
 
-            ProfilerHttpClientTimeout = profilingConfig.Exporter.OtlpLogHttp.ExportTimeout;
-            ProfilerExportInterval = GetFinalExportInterval((int)profilingConfig.Exporter.OtlpLogHttp.ScheduleDelay);
+            ProfilerHttpClientTimeout = PluginSettingsHelper.GetFinalExportTimeout(profilingConfig.Exporter.OtlpLogHttp.ExportTimeout);
+            ProfilerExportInterval = PluginSettingsHelper.GetFinalExportInterval(profilingConfig.Exporter.OtlpLogHttp.ScheduleDelay);
             ProfilerLogsEndpoint = new Uri(profilingConfig.Exporter.OtlpLogHttp.Endpoint);
         }
 
         if (OpAmpRemoteConfigEnabled && !CpuProfilerEnabled)
         {
-            CpuProfilerCallStackInterval = GetFinalContinuousSamplingInterval(
+            CpuProfilerCallStackInterval = PluginSettingsHelper.GetFinalContinuousSamplingInterval(
                 Constants.DefaultSamplingInterval,
                 SnapshotsEnabled,
                 SnapshotsSamplingInterval);
@@ -167,9 +167,9 @@ internal class PluginSettings
 
     public Uri ProfilerLogsEndpoint { get; } = new Uri(Constants.DefaultProfilerLogsEndpoint);
 
-    public uint ProfilerHttpClientTimeout { get; } = Constants.DefaultProfilerExportTimeout;
+    public uint ProfilerHttpClientTimeout { get; }
 
-    public uint ProfilerExportInterval { get; } = Constants.DefaultProfilerExportInterval;
+    public uint ProfilerExportInterval { get; }
 
     public bool OpAmpRemoteConfigEnabled { get; }
 
@@ -177,7 +177,7 @@ internal class PluginSettings
     {
         if (IsYamlConfigEnabled)
         {
-            var fileName = ResolveFileBasedConfigFileName();
+            var fileName = PluginSettingsHelper.ResolveFileBasedConfigFileName();
 
             var splunkConfiguration = YamlConfigurationParser.ParseFile(fileName);
             if (splunkConfiguration != null)
@@ -202,92 +202,5 @@ internal class PluginSettings
         };
 
         return new PluginSettings(configurationSource);
-    }
-
-    internal static string ResolveFileBasedConfigFileName()
-    {
-        var fileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName);
-        return ResolveFileBasedConfigFileName(fileName);
-    }
-
-    internal static string ResolveFileBasedConfigFileName(string? fileName)
-    {
-        return string.IsNullOrEmpty(fileName) ? Constants.DefaultFileBasedConfigFileName : fileName!;
-    }
-
-    private static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)
-    {
-        var interval = callStackInterval < 0 ? Constants.DefaultSamplingInterval : (uint)callStackInterval;
-        if (snapshotsEnabled)
-        {
-            var finalContinuousSamplingInterval = (interval / snapshotsSamplingInterval) * snapshotsSamplingInterval;
-            if (finalContinuousSamplingInterval != interval)
-            {
-                Log.Warning($"Adjusting continuous profiler call stack interval from {interval}ms to {finalContinuousSamplingInterval}ms to be aligned with snapshot sampling interval of {snapshotsSamplingInterval}ms.");
-            }
-
-            return finalContinuousSamplingInterval;
-        }
-
-        return interval;
-    }
-
-#if NET
-    private static uint GetFinalMaxMemorySamples(int maxMemorySamplesPerMinute)
-    {
-        if (maxMemorySamplesPerMinute < 0 || maxMemorySamplesPerMinute > 200)
-        {
-            return Constants.DefaultMaxMemorySamples;
-        }
-
-        return (uint)maxMemorySamplesPerMinute;
-    }
-#endif
-
-    private static uint GetFinalExportInterval(int exportInterval)
-    {
-        if (exportInterval < 500)
-        {
-            return Constants.DefaultProfilerExportInterval;
-        }
-
-        return (uint)exportInterval;
-    }
-
-    private static uint GetFinalSnapshotSamplingInterval(int snapshotsSamplingInterval)
-    {
-        if (snapshotsSamplingInterval <= 0)
-        {
-            return Constants.DefaultSnapshotSamplingIntervalMs;
-        }
-
-        return (uint)snapshotsSamplingInterval;
-    }
-
-    private static double GetFinalSnapshotSelectionProbability(double configuredSelectionRate)
-    {
-        return configuredSelectionRate switch
-        {
-            <= 0 or double.NaN => Constants.DefaultSnapshotSelectionRate,
-            > Constants.MaxSnapshotSelectionRate => Constants.MaxSnapshotSelectionRate,
-            _ => configuredSelectionRate
-        };
-    }
-
-    private static Uri GetProfilerLogsEndpoints(IConfigurationSource source, Uri? otlpFallback)
-    {
-        var profilerLogsEndpoint = source.GetString(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint);
-
-        if (string.IsNullOrEmpty(profilerLogsEndpoint))
-        {
-            if (otlpFallback == null)
-            {
-                return new Uri(Constants.DefaultProfilerLogsEndpoint);
-            }
-
-            return otlpFallback.ToString().EndsWith("v1/logs") ? otlpFallback : new Uri(otlpFallback, "v1/logs");
-        }
-
-        return new Uri(profilerLogsEndpoint);
     }
 }
