@@ -24,6 +24,9 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 internal sealed class OpAmpRemoteConfigurationListener : IOpAmpListener<RemoteConfigMessage>
 {
     private static readonly ILogger Log = new Logger();
+    private static readonly Encoding StrictUtf8 = new UTF8Encoding(
+        encoderShouldEmitUTF8Identifier: false,
+        throwOnInvalidBytes: true);
 
     private readonly Action _onApplied;
     private readonly Func<RemoteConfigStatusReport, Task> _reportStatusAsync;
@@ -85,7 +88,7 @@ internal sealed class OpAmpRemoteConfigurationListener : IOpAmpListener<RemoteCo
                 return;
             }
 
-            var yaml = Encoding.UTF8.GetString(body);
+            var yaml = StrictUtf8.GetString(body);
             _applyYaml(yaml);
             _onApplied();
             ReportStatus(configHash, RemoteConfigStatusCode.Applied);

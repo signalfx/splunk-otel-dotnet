@@ -15,6 +15,7 @@
 // </copyright>
 
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration.Parser;
 
@@ -53,9 +54,18 @@ internal static class YamlConfigurationParser
             throw new MissingMethodException(parserType.FullName, $"{methodName}<T>(string)");
         }
 
-        var yamlRoot = parseYaml
-            .MakeGenericMethod(typeof(YamlRoot))
-            .Invoke(null, new object[] { argument });
+        object? yamlRoot;
+        try
+        {
+            yamlRoot = parseYaml
+                .MakeGenericMethod(typeof(YamlRoot))
+                .Invoke(null, new object[] { argument });
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException != null)
+        {
+            ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+            throw;
+        }
 
         if (yamlRoot == null)
         {
