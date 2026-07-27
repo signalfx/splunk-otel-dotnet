@@ -31,7 +31,7 @@ internal static class PluginSettingsHelper
 
     public static string ResolveFileBasedConfigFileName(string? fileName)
     {
-        return string.IsNullOrEmpty(fileName) ? Constants.DefaultFileBasedConfigFileName : fileName;
+        return string.IsNullOrEmpty(fileName) ? Constants.DefaultFileBasedConfigFileName : fileName!;
     }
 
     public static uint GetFinalContinuousSamplingInterval(long callStackInterval)
