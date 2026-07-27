@@ -291,8 +291,14 @@ public class OpAmpReportingPumpTests
     public async Task TimedOutInitialFullStateReportIsRetriedByAFullStateRequest()
     {
         var failedRequestCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondRequestObserved = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var requestProbe = new OpAmpHttpRequestProbe(onRequest: async (requestNumber, cancellationToken) =>
         {
+            if (requestNumber == 2)
+            {
+                secondRequestObserved.TrySetResult(true);
+            }
+
             if (requestNumber != 1)
             {
                 return;
@@ -313,14 +319,26 @@ public class OpAmpReportingPumpTests
             client,
             CreateReporter(CreateRecorder()),
             dispatchTimeout: TimeSpan.FromMilliseconds(50));
-        reportingPump.MarkInstrumentationInitialized();
 
-        await requestProbe.WaitForCountAsync(1);
-        await WaitForCompletionAsync(failedRequestCompleted.Task);
+        try
+        {
+            reportingPump.MarkInstrumentationInitialized();
 
-        reportingPump.HandleMessage(CreateFlagsMessage(ServerSentFlags.ReportFullState));
-        await requestProbe.WaitForCountAsync(2);
-        reportingPump.Stop();
+            await requestProbe.WaitForCountAsync(1);
+            await WaitForCompletionAsync(failedRequestCompleted.Task);
+
+            var retryBeforeFullStateRequest = await Task.WhenAny(
+                secondRequestObserved.Task,
+                Task.Delay(TimeSpan.FromMilliseconds(200)));
+            Assert.NotSame(secondRequestObserved.Task, retryBeforeFullStateRequest);
+
+            reportingPump.HandleMessage(CreateFlagsMessage(ServerSentFlags.ReportFullState));
+            await WaitForCompletionAsync(secondRequestObserved.Task);
+        }
+        finally
+        {
+            reportingPump.Stop();
+        }
     }
 
     [Fact]

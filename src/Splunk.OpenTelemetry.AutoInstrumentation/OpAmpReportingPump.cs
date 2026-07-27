@@ -277,22 +277,30 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
             work = SelectNextWorkLocked();
         }
 
+        var deferFailedWorkRetry = false;
         switch (work)
         {
             case ReportingWorkKind.RemoteConfigStatus:
                 await SendRemoteConfigStatusAsync().ConfigureAwait(false);
                 break;
             case ReportingWorkKind.FullStateReport:
-                await SendFullStateReportAsync().ConfigureAwait(false);
+                deferFailedWorkRetry = await SendFullStateReportAsync().ConfigureAwait(false);
                 break;
             case ReportingWorkKind.ILoggerEffectiveConfigUpdate:
-                await SendBatchedILoggerEffectiveConfigUpdateAsync().ConfigureAwait(false);
+                deferFailedWorkRetry =
+                    await SendBatchedILoggerEffectiveConfigUpdateAsync().ConfigureAwait(false);
                 break;
         }
 
         lock (_lock)
         {
-            if (SelectNextWorkLocked() != ReportingWorkKind.None)
+            var nextWork = SelectNextWorkLocked();
+
+            // A failed work item remains pending, but must wait for another reporting event
+            // instead of waking itself in a tight retry loop. Concurrent events already queue
+            // their own wake-up and are not affected by skipping this signal.
+            if (nextWork != ReportingWorkKind.None &&
+                (!deferFailedWorkRetry || nextWork != work))
             {
                 SignalWorkerLocked();
             }
@@ -355,11 +363,11 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
         }
     }
 
-    private async Task SendFullStateReportAsync()
+    private async Task<bool> SendFullStateReportAsync()
     {
         if (!await WaitForFullStateReportCooldownAsync().ConfigureAwait(false))
         {
-            return;
+            return false;
         }
 
         bool claimedILoggerEffectiveConfigUpdate;
@@ -367,7 +375,7 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
         {
             if (_stopped)
             {
-                return;
+                return false;
             }
 
             _fullStateReportPending = false;
@@ -385,12 +393,13 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
         var cooldownTask = clientAccepted
             ? CreateFullStateReportCooldownTask()
             : Task.CompletedTask;
+        var deferFailedWorkRetry = false;
 
         lock (_lock)
         {
             if (_stopped)
             {
-                return;
+                return false;
             }
 
             if (clientAccepted)
@@ -404,16 +413,19 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
                 if (result == OpAmpDispatchResult.Failed)
                 {
                     _fullStateReportPending = true;
+                    deferFailedWorkRetry = true;
                 }
             }
         }
+
+        return deferFailedWorkRetry;
     }
 
-    private async Task SendBatchedILoggerEffectiveConfigUpdateAsync()
+    private async Task<bool> SendBatchedILoggerEffectiveConfigUpdateAsync()
     {
         if (!await WaitForILoggerEffectiveConfigBatchDelayAsync().ConfigureAwait(false))
         {
-            return;
+            return false;
         }
 
         EffectiveConfigReporter effectiveConfigReporter;
@@ -425,16 +437,17 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
                 !_iLoggerEffectiveConfigUpdatePending ||
                 _effectiveConfigReporter == null)
             {
-                return;
+                return false;
             }
 
             effectiveConfigReporter = _effectiveConfigReporter;
             claimedILoggerEffectiveConfigUpdate = ClaimPendingILoggerEffectiveConfigUpdateLocked();
         }
 
-        await DispatchClaimedEffectiveConfigAsync(
+        var result = await DispatchClaimedEffectiveConfigAsync(
             effectiveConfigReporter,
             claimedILoggerEffectiveConfigUpdate).ConfigureAwait(false);
+        return result == OpAmpDispatchResult.Failed;
     }
 
     private async Task<OpAmpDispatchResult> DispatchClaimedEffectiveConfigAsync(
@@ -450,8 +463,6 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
         {
             if (!_stopped && result != OpAmpDispatchResult.ClientAccepted)
             {
-                // Keep the update pending, but wait for another reporting event to wake the worker
-                // instead of retrying a persistent failure in a hot loop.
                 RestorePendingILoggerEffectiveConfigUpdateLocked(claimedILoggerEffectiveConfigUpdate);
             }
         }
