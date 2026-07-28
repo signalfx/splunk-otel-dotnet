@@ -117,11 +117,6 @@ internal sealed class OpAmp
         }
 
         Volatile.Write(ref _remoteConfigurationEnabled, 1);
-        lock (_lifecycleLock)
-        {
-            _remoteConfigStatus = new([0], RemoteConfigStatusCode.Unset);
-        }
-
         settings.RemoteConfiguration.AcceptsRemoteConfig = true;
         settings.RemoteConfiguration.ReportsRemoteConfigStatus = true;
     }

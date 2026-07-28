@@ -324,24 +324,6 @@ public class SmokeTests : TestHelper, IDisposable
 
     [Fact]
     [Trait("Category", "EndToEnd")]
-    public void InitialOpAmpFullStateReportIncludesUnsetRemoteConfigStatusWhenRemoteConfigIsEnabled()
-    {
-        using var opAmpServer = new MockOpAmpServer(Output);
-
-        SetEnvironmentVariable("OTEL_SDK_DISABLED", "true");
-        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
-        SetEnvironmentVariable(ConfigurationKeys.Splunk.OpAmp.RemoteConfig, "true");
-
-        opAmpServer.Expect(
-            frame => frame.AgentDescription != null &&
-                     frame.RemoteConfigStatus?.Status == RemoteConfigStatuses.Unset,
-            "Initial full state contains an unset remote configuration status");
-
-        RunTestApplicationAndAssertOpAmp(opAmpServer);
-    }
-
-    [Fact]
-    [Trait("Category", "EndToEnd")]
     public void LostEffectiveConfigIsRecoveredAfterHeartbeatSequenceGap()
     {
         using var opAmpServer = new MockOpAmpServer(Output);
