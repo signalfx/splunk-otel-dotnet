@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using OpenTelemetry;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
@@ -24,20 +23,20 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
 {
     private const int SnapshotLocalRootLimit = 50;
-    private static readonly int CleanUpPeriodMs = GetCleanUpPeriodMs();
     private static readonly TimeSpan DefaultTimeToLive = TimeSpan.FromMinutes(15);
     private static readonly ILogger Log = new Logger();
 
+    private readonly object _lock = new();
     private readonly SnapshotFilter _snapshotFilter;
     private readonly ISnapshotSelector _snapshotSelector;
-    private readonly ConcurrentDictionary<(ActivitySpanId, ActivityTraceId), DateTimeOffset> _localRootSpans = new();
+    private readonly Dictionary<(ActivitySpanId SpanId, ActivityTraceId TraceId), DateTimeOffset> _localRootSpans = new();
     private readonly Timer _timer;
 
     public SnapshotSelectingProcessor(SnapshotFilter snapshotFilter, ISnapshotSelector snapshotSelector)
     {
         _snapshotFilter = snapshotFilter;
         _snapshotSelector = snapshotSelector;
-        _timer = new Timer(Clean, null, CleanUpPeriodMs, CleanUpPeriodMs);
+        _timer = new Timer(Clean, null, DefaultTimeToLive, DefaultTimeToLive);
     }
 
     public override void OnStart(Activity data)
@@ -52,27 +51,68 @@ internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
             return;
         }
 
-        if (_localRootSpans.Count > SnapshotLocalRootLimit)
-        {
-            Log.Warning("Too many traces selected for snapshotting.");
-            return;
-        }
-
-        data.MarkLoud();
-        _snapshotFilter.Add(data.TraceId);
         var cacheKey = (data.SpanId, data.TraceId);
-        if (!_localRootSpans.TryAdd(cacheKey, DateTimeOffset.UtcNow + DefaultTimeToLive))
+        lock (_lock)
         {
-            Log.Warning("Local root span already registered.");
+            if (_localRootSpans.ContainsKey(cacheKey))
+            {
+                Log.Warning("Local root span already registered.");
+                return;
+            }
+
+            if (_localRootSpans.Count >= SnapshotLocalRootLimit)
+            {
+                Log.Warning("Too many traces selected for snapshotting.");
+                return;
+            }
+
+            _snapshotFilter.Add(data.TraceId);
+            _localRootSpans.Add(cacheKey, DateTimeOffset.UtcNow + DefaultTimeToLive);
+            data.MarkLoud();
         }
     }
 
     public override void OnEnd(Activity data)
     {
-        var cacheKey = (data.SpanId, data.TraceId);
-        if (_localRootSpans.TryRemove(cacheKey, out _))
+        if (!data.IsLocalRoot())
         {
-            _snapshotFilter.Remove(data.TraceId);
+            return;
+        }
+
+        if (data.GetTagItem(SnapshotConstants.SplunkSnapshotProfilingAttributeName) is not true)
+        {
+            return;
+        }
+
+        var cacheKey = (data.SpanId, data.TraceId);
+        lock (_lock)
+        {
+            if (_localRootSpans.Remove(cacheKey))
+            {
+                _snapshotFilter.Remove(data.TraceId);
+            }
+        }
+    }
+
+    internal void Clean(DateTimeOffset now)
+    {
+        lock (_lock)
+        {
+            var expiredSpans = new List<(ActivitySpanId SpanId, ActivityTraceId TraceId)>();
+
+            foreach (var localRootSpan in _localRootSpans)
+            {
+                if (now >= localRootSpan.Value)
+                {
+                    expiredSpans.Add(localRootSpan.Key);
+                }
+            }
+
+            foreach (var cacheKey in expiredSpans)
+            {
+                _localRootSpans.Remove(cacheKey);
+                _snapshotFilter.Remove(cacheKey.TraceId);
+            }
         }
     }
 
@@ -82,21 +122,8 @@ internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
         return true;
     }
 
-    private static int GetCleanUpPeriodMs()
-    {
-        return Convert.ToInt32(DefaultTimeToLive.TotalMilliseconds);
-    }
-
     private void Clean(object? state)
     {
-        var now = DateTimeOffset.UtcNow;
-        foreach (var kvp in _localRootSpans)
-        {
-            if (now > kvp.Value)
-            {
-                _localRootSpans.TryRemove(kvp.Key, out _);
-                _snapshotFilter.Remove(kvp.Key.Item2);
-            }
-        }
+        Clean(DateTimeOffset.UtcNow);
     }
 }
