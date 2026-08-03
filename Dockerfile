@@ -13,7 +13,7 @@
 #  - For auto-instrumentation by container injection, the Linux command cp is
 #    used and must be available in the image.
 
-FROM busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d AS downloader
+FROM busybox:1.38.0@sha256:dc2d74b28e4cf8984fa52af1f39bc7c3d9c73760b41a74d629f5d11b1ab28616 AS downloader
 
 ARG RELEASE_VER
 
@@ -27,7 +27,7 @@ RUN unzip splunk-opentelemetry-dotnet-linux-glibc-x64.zip &&\
     rm splunk-opentelemetry-dotnet-linux-glibc-x64.zip splunk-opentelemetry-dotnet-linux-musl-x64.zip &&\
     chmod -R go+r .
 
-FROM busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d
+FROM busybox:1.38.0@sha256:dc2d74b28e4cf8984fa52af1f39bc7c3d9c73760b41a74d629f5d11b1ab28616
 
 LABEL org.opencontainers.image.source="https://github.com/signalfx/splunk-otel-dotnet"
 LABEL org.opencontainers.image.description="Splunk Distribution of OpenTelemetry .NET"
