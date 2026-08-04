@@ -79,11 +79,6 @@ internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
             return;
         }
 
-        if (data.GetTagItem(SnapshotConstants.SplunkSnapshotProfilingAttributeName) is not true)
-        {
-            return;
-        }
-
         var cacheKey = (data.SpanId, data.TraceId);
         lock (_lock)
         {
