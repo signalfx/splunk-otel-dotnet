@@ -7,9 +7,9 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.15.0...HEAD)
 
-### Changed
+### Added
 
-- Effective configuration reports now include the snapshot selection probability.
+- Support for snapshot selection probability in the effective configuration.
 
 ## [1.15.0](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.15.0)
 

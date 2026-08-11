@@ -57,11 +57,6 @@ resolved OTLP endpoints for active providers, plus active Splunk profiling
 settings. Environment variable templates and omitted YAML defaults are reported
 as their final evaluated values.
 
-When snapshot profiling is active, the YAML representation reports its
-sampling interval as `distribution.splunk.profiling.callgraphs.sampling_interval`
-and final selection probability as
-`distribution.splunk.profiling.callgraphs.selection_probability`.
-
 Endpoint hosts and paths are not redacted and must not contain secrets.
 
 Endpoints that cannot be represented as absolute HTTP or HTTPS URIs cause
