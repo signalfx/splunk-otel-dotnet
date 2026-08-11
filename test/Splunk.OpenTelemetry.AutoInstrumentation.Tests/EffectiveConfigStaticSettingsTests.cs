@@ -29,17 +29,20 @@ public class EffectiveConfigStaticSettingsTests
         var configuration = new NameValueCollection
         {
             { ConfigurationKeys.Splunk.Snapshots.Enabled, "true" },
-            { ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, "5000" }
+            { ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, "5000" },
+            { ConfigurationKeys.Splunk.Snapshots.SelectionRate, "0.25" }
         };
         var settings = new PluginSettings(new NameValueConfigurationSource(configuration));
         var effectiveSettings = new EffectiveConfigStaticSettings(settings);
 
         settings.SnapshotsEnabled = false;
         settings.SnapshotsSamplingInterval = 1000;
+        settings.SnapshotsSelectionRate = 0.5;
 
         Assert.Null(effectiveSettings.FileBasedConfigFileName);
         Assert.Equal(10000U, effectiveSettings.CpuProfilerCallStackInterval);
         Assert.Equal(5000U, effectiveSettings.SnapshotSamplingInterval);
+        Assert.Equal(0.25, effectiveSettings.SnapshotSelectionProbability);
     }
 
     [Fact]

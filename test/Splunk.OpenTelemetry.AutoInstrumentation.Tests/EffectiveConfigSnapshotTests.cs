@@ -37,6 +37,7 @@ public class EffectiveConfigSnapshotTests
         Assert.True(snapshot.CpuProfilerEnabled);
         Assert.False(snapshot.MemoryProfilerEnabled);
         Assert.True(snapshot.SnapshotProfilerEnabled);
+        Assert.Equal(0.25, snapshot.SnapshotSelectionProbability);
     }
 
     [Fact]
@@ -88,7 +89,12 @@ public class EffectiveConfigSnapshotTests
 
     private static EffectiveConfigStaticSettings CreateStaticSettings()
     {
+        var configuration = new NameValueCollection
+        {
+            { ConfigurationKeys.Splunk.Snapshots.SelectionRate, "0.25" }
+        };
+
         return new EffectiveConfigStaticSettings(
-            new PluginSettings(new NameValueConfigurationSource(new NameValueCollection())));
+            new PluginSettings(new NameValueConfigurationSource(configuration)));
     }
 }

@@ -41,6 +41,7 @@ The properties body contains the final values for:
 - `SPLUNK_PROFILER_MEMORY_ENABLED`
 - `SPLUNK_SNAPSHOT_PROFILER_ENABLED`
 - `SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL`
+- `SPLUNK_SNAPSHOT_SELECTION_PROBABILITY`
 - `SPLUNK_PROFILER_CALL_STACK_INTERVAL`
 - `OTEL_CONFIG_FILE`
 
@@ -55,6 +56,11 @@ The YAML body is a filtered effective representation of the active configuration
 resolved OTLP endpoints for active providers, plus active Splunk profiling
 settings. Environment variable templates and omitted YAML defaults are reported
 as their final evaluated values.
+
+When snapshot profiling is active, the YAML representation reports its
+sampling interval as `distribution.splunk.profiling.callgraphs.sampling_interval`
+and final selection probability as
+`distribution.splunk.profiling.callgraphs.selection_probability`.
 
 Endpoint hosts and paths are not redacted and must not contain secrets.
 

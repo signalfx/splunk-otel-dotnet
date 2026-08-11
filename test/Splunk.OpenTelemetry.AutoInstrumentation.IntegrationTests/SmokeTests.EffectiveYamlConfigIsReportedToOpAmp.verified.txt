@@ -20,3 +20,4 @@ distribution:
         memory_profiler: 
       callgraphs:
         sampling_interval: 5000
+        selection_probability: 0.01
