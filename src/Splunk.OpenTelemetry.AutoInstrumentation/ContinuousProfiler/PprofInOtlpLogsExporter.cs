@@ -22,12 +22,14 @@ internal class PprofInOtlpLogsExporter
 {
     private readonly ISampleExporter _sampleExporter;
     private readonly NativeFormatParser _nativeFormatParser;
+    private readonly Func<bool> _cpuProfilerEnabled;
 
-    public PprofInOtlpLogsExporter(SampleProcessor sampleProcessor, ISampleExporter sampleExporter, NativeFormatParser nativeFormatParser)
+    public PprofInOtlpLogsExporter(SampleProcessor sampleProcessor, ISampleExporter sampleExporter, NativeFormatParser nativeFormatParser, Func<bool>? cpuProfilerEnabled = null)
     {
         SampleProcessor = sampleProcessor;
         _sampleExporter = sampleExporter;
         _nativeFormatParser = nativeFormatParser;
+        _cpuProfilerEnabled = cpuProfilerEnabled ?? (() => true);
     }
 
     public SampleProcessor SampleProcessor { get; }
@@ -69,10 +71,13 @@ internal class PprofInOtlpLogsExporter
     {
         if (threadSamples != null)
         {
-            var logRecord = SampleProcessor.ProcessThreadSamples(threadSamples);
-            if (logRecord != null)
+            if (_cpuProfilerEnabled())
             {
-                _sampleExporter.Export(logRecord, cancellationToken);
+                var logRecord = SampleProcessor.ProcessThreadSamples(threadSamples);
+                if (logRecord != null)
+                {
+                    _sampleExporter.Export(logRecord, cancellationToken);
+                }
             }
 
             var snapshots = ExtractSnapshots(threadSamples);

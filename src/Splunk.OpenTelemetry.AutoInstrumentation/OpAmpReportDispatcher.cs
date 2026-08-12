@@ -79,9 +79,37 @@ internal sealed class OpAmpReportDispatcher
         }
     }
 
+    public async Task<OpAmpDispatchResult> DispatchRemoteConfigStatusAsync(
+        OpAmpClient client,
+        RemoteConfigStatusReport statusReport,
+        CancellationToken sessionCancellationToken)
+    {
+        try
+        {
+            sessionCancellationToken.ThrowIfCancellationRequested();
+
+            await DispatchWithTimeoutAsync(
+                cancellationToken => client.SendRemoteConfigStatusAsync(
+                    statusReport,
+                    cancellationToken),
+                sessionCancellationToken).ConfigureAwait(false);
+            return OpAmpDispatchResult.ClientAccepted;
+        }
+        catch (OperationCanceledException) when (sessionCancellationToken.IsCancellationRequested)
+        {
+            return OpAmpDispatchResult.Canceled;
+        }
+        catch (Exception ex)
+        {
+            Log.Warning($"Failed to report remote configuration status to OpAMP server: {ex.Message}");
+            return OpAmpDispatchResult.Failed;
+        }
+    }
+
     public async Task<OpAmpDispatchResult> DispatchFullStateReportAsync(
         OpAmpClient client,
         EffectiveConfigReporter? effectiveConfigReporter,
+        RemoteConfigStatusReport? remoteConfigStatus,
         CancellationToken sessionCancellationToken)
     {
         if (sessionCancellationToken.IsCancellationRequested)
@@ -89,7 +117,10 @@ internal sealed class OpAmpReportDispatcher
             return OpAmpDispatchResult.Canceled;
         }
 
-        var report = new FullStateReport();
+        var report = new FullStateReport
+        {
+            RemoteConfigStatus = remoteConfigStatus
+        };
         var result = OpAmpDispatchResult.ClientAccepted;
         if (effectiveConfigReporter != null)
         {

@@ -1,4 +1,4 @@
-﻿// <copyright file="YamlRoot.cs" company="Splunk Inc.">
+// <copyright file="Features.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +16,7 @@
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 
-internal class YamlRoot
+internal class Features
 {
-    public Distribution? Distribution { get; set; }
-
-    public InstrumentationDevelopment? InstrumentationDevelopment { get; set; }
-
-    public OpampDevelopment? OpampDevelopment { get; set; }
+    public object? RemoteConfig { get; set; }
 }

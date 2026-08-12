@@ -42,6 +42,19 @@ internal sealed class OpAmpRequestFrameInspector
 
     public bool HasEffectiveConfig => GetPropertyValue(_frame, "EffectiveConfig") != null;
 
+    public bool HasRemoteConfigStatus => GetPropertyValue(_frame, "RemoteConfigStatus") != null;
+
+    public string? RemoteConfigStatus
+    {
+        get
+        {
+            var remoteConfigStatus = GetPropertyValue(_frame, "RemoteConfigStatus");
+            return remoteConfigStatus == null
+                ? null
+                : GetPropertyValue(remoteConfigStatus, "Status")?.ToString();
+        }
+    }
+
     public static OpAmpRequestFrameInspector Parse(byte[] requestBody)
     {
         var frame = ParseAgentToServerMethod.Invoke(AgentToServerParser, [requestBody])!;
