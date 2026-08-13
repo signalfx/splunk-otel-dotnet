@@ -73,6 +73,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
         [Theory]
         [InlineData("40", "1000", 1000u)]
         [InlineData("30", "1000", 990u)]
+        [InlineData("40", "10", 40u)]
         public void SamplingIntervals_HaveToBeAligned(string snapshotSamplingInterval, string configuredContinuousProfilingSamplingInterval, uint finalSamplingInterval)
         {
             var settings = new PluginSettings(new NameValueConfigurationSource(

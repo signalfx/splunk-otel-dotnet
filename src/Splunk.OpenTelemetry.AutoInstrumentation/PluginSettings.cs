@@ -206,6 +206,11 @@ internal class PluginSettings
         if (snapshotsEnabled)
         {
             var finalContinuousSamplingInterval = (interval / snapshotsSamplingInterval) * snapshotsSamplingInterval;
+            if (interval > 0 && finalContinuousSamplingInterval == 0)
+            {
+                finalContinuousSamplingInterval = snapshotsSamplingInterval;
+            }
+
             if (finalContinuousSamplingInterval != interval)
             {
                 Log.Warning($"Adjusting continuous profiler call stack interval from {interval}ms to {finalContinuousSamplingInterval}ms to be aligned with snapshot sampling interval of {snapshotsSamplingInterval}ms.");
