@@ -19,3 +19,4 @@ distribution:
           sampling_interval: 10000
       callgraphs:
         sampling_interval: 5000
+        selection_probability: 0.01

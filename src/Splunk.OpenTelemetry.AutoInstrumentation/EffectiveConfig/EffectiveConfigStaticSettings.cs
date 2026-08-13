@@ -23,6 +23,7 @@ internal sealed class EffectiveConfigStaticSettings
         FileBasedConfigFileName = settings.FileBasedConfigFileName;
         CpuProfilerCallStackInterval = settings.CpuProfilerCallStackInterval;
         SnapshotSamplingInterval = settings.SnapshotsSamplingInterval;
+        SnapshotSelectionProbability = settings.SnapshotsSelectionRate;
     }
 
     public string? FileBasedConfigFileName { get; }
@@ -30,4 +31,6 @@ internal sealed class EffectiveConfigStaticSettings
     public uint CpuProfilerCallStackInterval { get; }
 
     public uint SnapshotSamplingInterval { get; }
+
+    public double SnapshotSelectionProbability { get; }
 }
