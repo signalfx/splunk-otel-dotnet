@@ -28,7 +28,7 @@ internal sealed class OpAmpReportingPump : IOpAmpListener<FlagsMessage>
     private static readonly TimeSpan FullStateReportCooldown = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan ILoggerEffectiveConfigBatchDelay = TimeSpan.FromSeconds(1);
 
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly OpAmpClient _client;
     private readonly EffectiveConfigReporter? _effectiveConfigReporter;
     private readonly OpAmpReportDispatcher _reportDispatcher;

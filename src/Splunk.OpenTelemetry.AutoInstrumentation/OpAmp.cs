@@ -29,7 +29,7 @@ internal sealed class OpAmp
 {
     private static readonly ILogger Log = new Logger();
 
-    private readonly object _lifecycleLock = new();
+    private readonly Lock _lifecycleLock = new();
     private readonly Lazy<EffectiveConfigRecorder?> _effectiveConfigRecorder;
     private readonly Func<EffectiveProfilerFeatures> _profilerStateResolver;
     private EffectiveConfigReporter? _effectiveConfigReporter;
