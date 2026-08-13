@@ -20,6 +20,32 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
 public class LoggerTests
 {
+    [Theory]
+    [InlineData("OTEL_EXPORTER_OTLP_HEADERS")]
+    [InlineData("OTEL_EXPORTER_OTLP_TRACES_HEADERS")]
+    [InlineData("OTEL_EXPORTER_OTLP_METRICS_HEADERS")]
+    [InlineData("OTEL_EXPORTER_OTLP_LOGS_HEADERS")]
+    public void ConfigurationLoggingHidesOtlpHeaders(string variableName)
+    {
+        const string secret = "authorization=Bearer%20super-secret-token";
+        var previousValue = Environment.GetEnvironmentVariable(variableName);
+        var logger = Substitute.For<ILogger>();
+
+        try
+        {
+            Environment.SetEnvironmentVariable(variableName, secret);
+
+            logger.LogConfigurationSetup();
+
+            logger.Received().Debug(Arg.Is<string>(message => message.Contains($"{variableName}=<hidden>")));
+            logger.DidNotReceive().Debug(Arg.Is<string>(message => message.Contains(secret)));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(variableName, previousValue);
+        }
+    }
+
     [Fact]
     public void ConstructorDoesNotThrowExceptionWhenReflectionFails()
     {

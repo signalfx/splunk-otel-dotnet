@@ -187,6 +187,8 @@ public class SmokeTests : TestHelper, IDisposable
             SetEnvironmentVariable($"OTEL_{item}_VALUE", "this is secret!");
         }
 
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_HEADERS", "authorization=Bearer%20super-secret-token");
+
         try
         {
             RunTestApplication(TestSettingsWithDefaultArgs());
