@@ -26,7 +26,7 @@ internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
     private static readonly TimeSpan DefaultTimeToLive = TimeSpan.FromMinutes(15);
     private static readonly ILogger Log = new Logger();
 
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly SnapshotFilter _snapshotFilter;
     private readonly ISnapshotSelector _snapshotSelector;
     private readonly Dictionary<(ActivitySpanId SpanId, ActivityTraceId TraceId), DateTimeOffset> _localRootSpans = new();
