@@ -37,7 +37,8 @@ public class EffectiveConfigPayloadBuilderTests
 #endif
             snapshotProfilerEnabled: true,
             cpuProfilerCallStackInterval: 10000,
-            snapshotSamplingInterval: 5000);
+            snapshotSamplingInterval: 5000,
+            snapshotSelectionProbability: 0.25);
 
         var payload = EffectiveConfigPayloadBuilder.Build(snapshot);
 
@@ -58,6 +59,7 @@ public class EffectiveConfigPayloadBuilderTests
 #endif
                 ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "true",
                 ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "5000",
+                ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.25",
                 ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
                 ["OTEL_CONFIG_FILE"] = "null"
             });
@@ -77,6 +79,7 @@ public class EffectiveConfigPayloadBuilderTests
             ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "40",
+            ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.01",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
             ["OTEL_CONFIG_FILE"] = "null"
         });
@@ -185,7 +188,8 @@ public class EffectiveConfigPayloadBuilderTests
         bool memoryProfilerEnabled = false,
         bool snapshotProfilerEnabled = false,
         uint cpuProfilerCallStackInterval = 10000,
-        uint snapshotSamplingInterval = 40)
+        uint snapshotSamplingInterval = 40,
+        double snapshotSelectionProbability = 0.01)
     {
         return new EffectiveConfigSnapshot(
             fileBasedConfigFileName: null,
@@ -196,7 +200,8 @@ public class EffectiveConfigPayloadBuilderTests
             memoryProfilerEnabled: memoryProfilerEnabled,
             snapshotProfilerEnabled: snapshotProfilerEnabled,
             cpuProfilerCallStackInterval: cpuProfilerCallStackInterval,
-            snapshotSamplingInterval: snapshotSamplingInterval);
+            snapshotSamplingInterval: snapshotSamplingInterval,
+            snapshotSelectionProbability: snapshotSelectionProbability);
     }
 
     private static string GetBody(EffectiveConfigFile file)
