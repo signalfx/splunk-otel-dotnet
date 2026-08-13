@@ -72,39 +72,39 @@ public abstract class TestHelper
     internal void SetExporter(MockSpansCollector collector)
     {
         SetEnvironmentVariable("OTEL_TRACES_EXPORTER", "otlp");
-        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://localhost:{collector.Port}");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", collector.BaseAddress.AbsoluteUri);
     }
 
     internal void SetFileBasedExporter(MockSpansCollector collector)
     {
-        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", $"http://localhost:{collector.Port}/v1/traces");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", new Uri(collector.BaseAddress, "/v1/traces").AbsoluteUri);
     }
 
     internal void SetExporter(MockMetricsCollector collector)
     {
         SetEnvironmentVariable("OTEL_METRICS_EXPORTER", "otlp");
-        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://localhost:{collector.Port}");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", collector.BaseAddress.AbsoluteUri);
     }
 
     internal void SetFileBasedExporter(MockMetricsCollector collector)
     {
-        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", $"http://localhost:{collector.Port}/v1/metrics");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", new Uri(collector.BaseAddress, "/v1/metrics").AbsoluteUri);
     }
 
     internal void SetExporter(MockLogsCollector collector)
     {
         SetEnvironmentVariable("OTEL_LOGS_EXPORTER", "otlp");
-        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://localhost:{collector.Port}");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", collector.BaseAddress.AbsoluteUri);
     }
 
     internal void SetFileBasedExporter(MockLogsCollector collector)
     {
-        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", $"http://localhost:{collector.Port}/v1/logs");
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", new Uri(collector.BaseAddress, "/v1/logs").AbsoluteUri);
     }
 
     internal void SetExporter(MockContinuousProfilerCollector collector)
     {
-        SetEnvironmentVariable("SPLUNK_PROFILER_LOGS_ENDPOINT", $"http://localhost:{collector.Port}/v1/logs");
+        SetEnvironmentVariable("SPLUNK_PROFILER_LOGS_ENDPOINT", new Uri(collector.BaseAddress, "/v1/logs").AbsoluteUri);
     }
 
     internal void EnableBytecodeInstrumentation()

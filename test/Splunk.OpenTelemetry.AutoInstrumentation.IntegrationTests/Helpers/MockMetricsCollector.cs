@@ -47,9 +47,14 @@ internal sealed class MockMetricsCollector : IDisposable
         _listener = new(output, HandleHttpRequests, host, "/v1/metrics/");
 #else
         _listener = new(output, nameof(MockMetricsCollector), new PathHandler(HandleHttpRequests, "/v1/metrics"), MockCollectorHealthZ.CreateHealthZHandler());
-        MockCollectorHealthZ.WarmupHealthZEndpoint(output, host, Port);
+        MockCollectorHealthZ.WarmupHealthZEndpoint(output, _listener.BaseAddress);
 #endif
     }
+
+    /// <summary>
+    /// Gets the address that this collector is bound to.
+    /// </summary>
+    public Uri BaseAddress { get => _listener.BaseAddress; }
 
     /// <summary>
     /// Gets the TCP port that this collector is listening on.

@@ -27,7 +27,8 @@ internal sealed class EffectiveConfigSnapshot
         bool memoryProfilerEnabled,
         bool snapshotProfilerEnabled,
         uint cpuProfilerCallStackInterval,
-        uint snapshotSamplingInterval)
+        uint snapshotSamplingInterval,
+        double snapshotSelectionProbability)
     {
         FileBasedConfigFileName = fileBasedConfigFileName;
         TraceEndpoints = CopyEndpoints(traceEndpoints);
@@ -38,6 +39,7 @@ internal sealed class EffectiveConfigSnapshot
         SnapshotProfilerEnabled = snapshotProfilerEnabled;
         CpuProfilerCallStackInterval = cpuProfilerCallStackInterval;
         SnapshotSamplingInterval = snapshotSamplingInterval;
+        SnapshotSelectionProbability = snapshotSelectionProbability;
     }
 
     public bool IsFileBasedConfig => FileBasedConfigFileName != null;
@@ -60,6 +62,8 @@ internal sealed class EffectiveConfigSnapshot
 
     public uint SnapshotSamplingInterval { get; }
 
+    public double SnapshotSelectionProbability { get; }
+
     public static EffectiveConfigSnapshot Create(
         EffectiveConfigStaticSettings staticSettings,
         EffectiveProfilerFeatures profilerFeatures,
@@ -76,7 +80,8 @@ internal sealed class EffectiveConfigSnapshot
             memoryProfilerEnabled: (profilerFeatures & EffectiveProfilerFeatures.Memory) != 0,
             snapshotProfilerEnabled: (profilerFeatures & EffectiveProfilerFeatures.Snapshot) != 0,
             cpuProfilerCallStackInterval: staticSettings.CpuProfilerCallStackInterval,
-            snapshotSamplingInterval: staticSettings.SnapshotSamplingInterval);
+            snapshotSamplingInterval: staticSettings.SnapshotSamplingInterval,
+            snapshotSelectionProbability: staticSettings.SnapshotSelectionProbability);
     }
 
     private static IReadOnlyList<EffectiveOtlpEndpoint> CopyEndpoints(IReadOnlyList<EffectiveOtlpEndpoint> endpoints)

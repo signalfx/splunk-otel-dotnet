@@ -48,9 +48,14 @@ internal sealed class MockSpansCollector : IDisposable
         _listener = new TestHttpServer(output, HandleHttpRequests, host, "/v1/traces/");
 #else
         _listener = new TestHttpServer(output, nameof(MockSpansCollector), new PathHandler(HandleHttpRequests, "/v1/traces"), MockCollectorHealthZ.CreateHealthZHandler());
-        MockCollectorHealthZ.WarmupHealthZEndpoint(output, host, Port);
+        MockCollectorHealthZ.WarmupHealthZEndpoint(output, _listener.BaseAddress);
 #endif
     }
+
+    /// <summary>
+    /// Gets the address that this collector is bound to.
+    /// </summary>
+    public Uri BaseAddress { get => _listener.BaseAddress; }
 
     /// <summary>
     /// Gets the TCP port that this collector is listening on.

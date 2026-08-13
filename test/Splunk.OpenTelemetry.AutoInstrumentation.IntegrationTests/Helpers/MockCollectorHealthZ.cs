@@ -36,15 +36,16 @@ internal class MockCollectorHealthZ
         return new PathHandler(HandleHealthZRequests, "/healthz");
     }
 
-    public static void WarmupHealthZEndpoint(ITestOutputHelper output, string host, int port)
+    public static void WarmupHealthZEndpoint(ITestOutputHelper output, Uri baseAddress)
     {
-        var healthZUrl = new Uri($"http://{host}:{port}/healthz");
+        var healthZUrl = new Uri(baseAddress, "/healthz");
         const int maxAttempts = 10;
+        Exception? lastException = null;
         for (var i = 1; i <= maxAttempts; ++i)
         {
             try
             {
-                var response = HttpClient.GetAsync(healthZUrl).Result;
+                using var response = HttpClient.GetAsync(healthZUrl).GetAwaiter().GetResult();
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     return;
@@ -52,12 +53,15 @@ internal class MockCollectorHealthZ
             }
             catch (Exception e)
             {
-                output.WriteLine($"Exception while calling {healthZUrl}: {e.Message}. Attempt {i} of {maxAttempts}.");
+                lastException = e;
+                output.WriteLine($"Exception while calling {healthZUrl}: {e.GetType().Name}: {e.Message}. Attempt {i} of {maxAttempts}.");
             }
 
             if (i == maxAttempts)
             {
-                throw new InvalidOperationException($"Failed to warm up healthz endpoint at {healthZUrl} after {maxAttempts} attempts.");
+                throw new InvalidOperationException(
+                    $"Failed to warm up healthz endpoint at {healthZUrl} after {maxAttempts} attempts.",
+                    lastException);
             }
         }
     }
