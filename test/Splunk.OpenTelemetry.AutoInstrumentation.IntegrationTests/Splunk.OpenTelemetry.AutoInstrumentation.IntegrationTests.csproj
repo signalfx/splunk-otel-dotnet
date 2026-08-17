@@ -16,7 +16,7 @@
     <PackageReference Include="SSH.NET" Version="2026.0.0" /> <!-- needed to fix https://github.com/advisories/GHSA-q939-rpr3-3284, remove when Testcontainers is updated -->
     <PackageReference Include="System.Collections.Immutable" Version="10.0.9" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.9" />
-    <PackageReference Include="Testcontainers" Version="4.13.0" />
+    <PackageReference Include="Testcontainers" Version="4.14.0" />
     <PackageReference Include="Verify.Xunit" Version="31.12.5" />
     <PackageReference Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>
