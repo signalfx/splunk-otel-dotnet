@@ -58,7 +58,9 @@ fi
 test -z "$OTEL_DOTNET_AUTO_HOME" && OTEL_DOTNET_AUTO_HOME="$HOME/.splunk-otel-dotnet"
 test -z "$VERSION" && VERSION="v{{VERSION}}"
 
-DOWNLOAD_DIR="${DOWNLOAD_DIR:=${TMPDIR:=$(mktemp -d)}}"
+if [ -z "${DOWNLOAD_DIR:-}" ]; then
+  DOWNLOAD_DIR="$(mktemp -d "${TMPDIR:-/tmp}/splunk-otel-dotnet.XXXXXX")"
+fi
 
 RELEASES_URL="https://github.com/signalfx/splunk-otel-dotnet/releases"
 ARCHIVE="splunk-opentelemetry-dotnet-$OS_TYPE.zip"
