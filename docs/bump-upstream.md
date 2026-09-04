@@ -15,6 +15,9 @@
    - [`splunk-otel-dotnet-install.sh.template`](../script-templates/splunk-otel-dotnet-install.sh.template)
    - [`Splunk.OTel.DotNet.psm1.template`](../script-templates/Splunk.OTel.DotNet.psm1.template)
 
+1. Update [`dotnet-install.sh`](../scripts/dotnet-install.sh) based onthe upstream version.
+   Upstream has script updating this script montly.
+
 1. Update [compatibility Matrix data](../tools/MatrixHelper) for
 
     - dependency:
