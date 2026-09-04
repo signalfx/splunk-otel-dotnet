@@ -13,6 +13,7 @@ BUILD_PROJECT_FILE="$SCRIPT_DIR/build/_build.csproj"
 TEMP_DIRECTORY="$SCRIPT_DIR//.nuke/temp"
 
 DOTNET_GLOBAL_FILE="$SCRIPT_DIR//global.json"
+DOTNET_INSTALL_FILE_DEFAULT="$SCRIPT_DIR/scripts/dotnet-install.sh"
 DOTNET_INSTALL_URL="https://dot.net/v1/dotnet-install.sh"
 DOTNET_CHANNEL="STS"
 
@@ -32,12 +33,14 @@ if [ -x "$(command -v dotnet)" ] && dotnet --version &>/dev/null; then
     DOTNET_EXE="$(command -v dotnet)"
     export DOTNET_EXE
 else
-    # Download install script
-    DOTNET_INSTALL_FILE="$TEMP_DIRECTORY/dotnet-install.sh"
-    mkdir -p "$TEMP_DIRECTORY"
-    curl -Lsfo "$DOTNET_INSTALL_FILE" "$DOTNET_INSTALL_URL"
-    chmod +x "$DOTNET_INSTALL_FILE"
-
+    # Use local install script (preferred) or explicit override
+    DOTNET_INSTALL_FILE="${DOTNET_INSTALL_FILE:-$DOTNET_INSTALL_FILE_DEFAULT}"
+    if [[ ! -f "$DOTNET_INSTALL_FILE" ]]; then
+        echo "dotnet installer script not found: $DOTNET_INSTALL_FILE" >&2
+        echo "Place a trusted copy at scripts/dotnet-install.sh (or set DOTNET_INSTALL_FILE)." >&2
+        echo "Reference URL for obtaining the script: $DOTNET_INSTALL_URL" >&2
+        exit 1
+    fi
     # If global.json exists, load expected version
     if [[ -f "$DOTNET_GLOBAL_FILE" ]]; then
         DOTNET_VERSION=$(FirstJsonValue "version" "$(cat "$DOTNET_GLOBAL_FILE")")
@@ -49,9 +52,9 @@ else
     # Install by channel or version
     DOTNET_DIRECTORY="$TEMP_DIRECTORY/dotnet-unix"
     if [[ -z ${DOTNET_VERSION+x} ]]; then
-        "$DOTNET_INSTALL_FILE" --install-dir "$DOTNET_DIRECTORY" --channel "$DOTNET_CHANNEL" --no-path
+        bash "$DOTNET_INSTALL_FILE" --install-dir "$DOTNET_DIRECTORY" --channel "$DOTNET_CHANNEL" --no-path
     else
-        "$DOTNET_INSTALL_FILE" --install-dir "$DOTNET_DIRECTORY" --version "$DOTNET_VERSION" --no-path
+        bash "$DOTNET_INSTALL_FILE" --install-dir "$DOTNET_DIRECTORY" --version "$DOTNET_VERSION" --no-path
     fi
     export DOTNET_EXE="$DOTNET_DIRECTORY/dotnet"
     export PATH="$DOTNET_DIRECTORY:$PATH"
