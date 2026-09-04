@@ -9,6 +9,7 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Added
 
+- GitHub artifact attestations for release assets.
 - Support for snapshot selection probability in the effective configuration.
 
 ## [1.15.0](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.15.0)

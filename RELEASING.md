@@ -24,6 +24,7 @@ No changes in the code are needed to correctly version this package.
 1. Publish a release in GitHub:
 
    - Use a draft created by `create-release` GitHub job in `ci` workflow.
+   - Confirm that the `Attest release files` step succeeded.
    - Use the [CHANGELOG.md](CHANGELOG.md) content in the description.
    - Ensure that following flags under the are correctly set
       - `Set as a pre-release`
