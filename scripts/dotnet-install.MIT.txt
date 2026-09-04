@@ -29,7 +29,7 @@ Source repository: https://github.com/dotnet/install-scripts
 Source revision: 47940ac9fc30a2f2dd19167165d0bb0774625f67
 Source paths: src/dotnet-install.sh and src/dotnet-install.ps1
 
-SHA-256 checksums of the vendored files:
+SHA-256 checksums of the vendored files after LF normalization:
 
   dotnet-install.sh  082f7685e156738a1b2e2ed8381a621870d4ce8e8c59278034556f05c186eb2e
-  dotnet-install.ps1 e8b873e18a81e5c4cd8ab69d84dac8fead291d50b3c44633cd7fddad709a13d6
+  dotnet-install.ps1 718a265ca5ae2acee0fc1e8b5146e32a8d535f8d666e3f7c875d9606c3753987
