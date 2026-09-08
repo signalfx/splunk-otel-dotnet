@@ -84,7 +84,7 @@ function Assert-Release-Version([string]$Version) {
     }
 }
 
-function Assert-Splunk-Release-Asset([string]$GitHubCLIPath, [string]$Version, [string]$Path) {
+function Assert-OpenTelemetry-Release-Asset([string]$GitHubCLIPath, [string]$Version, [string]$Path) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
         throw "Could not find release asset '$Path'."
     }
@@ -469,7 +469,7 @@ function Install-OpenTelemetryCore() {
         $archivePath = Get-OpenTelemetry-Archive $version $LocalPath $downloadDir
 
         if (-not $SkipReleaseVerification) {
-            Assert-Splunk-Release-Asset $githubCLIPath $version $archivePath
+            Assert-OpenTelemetry-Release-Asset $githubCLIPath $version $archivePath
         }
 
         try {
@@ -582,8 +582,8 @@ function Update-OpenTelemetryCore() {
         $archivePath = Download-OpenTelemetry $newestInstallVersion $updateDir
 
         if (-not $SkipReleaseVerification) {
-            Assert-Splunk-Release-Asset $githubCLIPath $newestInstallVersion $modulePath
-            Assert-Splunk-Release-Asset $githubCLIPath $newestInstallVersion $archivePath
+            Assert-OpenTelemetry-Release-Asset $githubCLIPath $newestInstallVersion $modulePath
+            Assert-OpenTelemetry-Release-Asset $githubCLIPath $newestInstallVersion $archivePath
         }
 
         Uninstall-OpenTelemetryCore
