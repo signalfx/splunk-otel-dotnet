@@ -5,10 +5,9 @@ No changes in the code are needed to correctly version this package.
 
 > [!IMPORTANT]
 > [GitHub immutable releases](https://docs.github.com/code-security/concepts/supply-chain-security/immutable-releases)
-> are enabled for this repository. There will be no possibility to change
-> artifacts when you publish release.
-> Following internal documentation is crucial before publishing release on
-> GitHub.
+> are enabled for this repository. Release artifacts cannot be changed after
+> you publish a release. Follow the internal documentation before publishing
+> a release on GitHub.
 
 1. Update the [CHANGELOG.md](CHANGELOG.md) with the new release.
 
