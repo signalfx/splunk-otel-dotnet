@@ -10,10 +10,12 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 ### Added
 
 - GitHub artifact attestations for release assets.
-- Immutable release and artifact attestation verification for PowerShell
-  installation and updates. The GitHub CLI is required by default; use
-  `-SkipReleaseVerification` with `Install-OpenTelemetryCore` or
-  `Update-OpenTelemetryCore` to explicitly skip verification.
+- Immutable release and artifact attestation verification for the PowerShell
+  installation and update commands and the shell installer. The GitHub CLI is
+  required by default; use `-SkipReleaseVerification` with
+  `Install-OpenTelemetryCore` or `Update-OpenTelemetryCore`, or set
+  `SKIP_RELEASE_VERIFICATION=true` for the shell installer, to explicitly skip
+  verification.
 - Support for snapshot selection probability in the effective configuration.
 
 ## [1.15.0](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.15.0)
