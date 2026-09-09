@@ -34,7 +34,12 @@ jobs:
       - run: brew install coreutils
         if: ${{ runner.os == 'macOS' }}
       - name: Create test directory
-        run: sudo mkdir -p ${{ matrix.log-dir }} && sudo chmod a+rw- ${{ matrix.log-dir }}
+        env:
+          LOG_DIR: ${{ matrix.log-dir }}
+        run: |
+          sudo mkdir -p "$LOG_DIR"
+          sudo chown "$(id -u):$(id -g)" "$LOG_DIR"
+          chmod 0700 "$LOG_DIR"
         if: ${{ runner.os != 'Windows' }}
       - name: Test the Shell scripts from README.md
         shell: bash
@@ -167,7 +172,12 @@ jobs:
             9.0.316
             10.0.302
       - name: Create test directory
-        run: sudo mkdir -p /var/log/opentelemetry/dotnet && sudo chmod a+rw- /var/log/opentelemetry/dotnet
+        env:
+          LOG_DIR: /var/log/opentelemetry/dotnet
+        run: |
+          sudo mkdir -p "$LOG_DIR"
+          sudo chown "$(id -u):$(id -g)" "$LOG_DIR"
+          chmod 0700 "$LOG_DIR"
       - name: Download NuGet Artifacts from build-nuget-package job
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:

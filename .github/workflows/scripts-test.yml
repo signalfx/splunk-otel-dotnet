@@ -70,7 +70,12 @@ jobs:
       - run: brew install coreutils
         if: ${{ runner.os == 'macOS' }}
       - name: Create test directory
-        run: sudo mkdir -p ${{ matrix.log-dir }} && sudo chmod a+rw- ${{ matrix.log-dir }}
+        env:
+          LOG_DIR: ${{ matrix.log-dir }}
+        run: |
+          sudo mkdir -p "$LOG_DIR"
+          sudo chown "$(id -u):$(id -g)" "$LOG_DIR"
+          chmod 0700 "$LOG_DIR"
         if: ${{ runner.os != 'Windows' }}
       - name: Test the Shell scripts from README.md
         shell: bash
