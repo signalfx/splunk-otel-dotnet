@@ -60,11 +60,14 @@ internal sealed class OpAmpReportDispatcher
             sessionCancellationToken.ThrowIfCancellationRequested();
             var effectiveConfigFile = effectiveConfigReporter.BuildCurrentPayload();
 
-            // Completion means the pinned client accepted the dispatch call. It does not acknowledge server receipt.
+            // Flush completion means the client has no queued data or active flush. It does not acknowledge
+            // that the server applied the reported configuration.
             await DispatchWithTimeoutAsync(
-                cancellationToken => client.SendEffectiveConfigAsync(
-                [effectiveConfigFile],
-                cancellationToken),
+                cancellationToken =>
+                {
+                    client.SendEffectiveConfig([effectiveConfigFile]);
+                    return client.FlushAsync(cancellationToken);
+                },
                 sessionCancellationToken).ConfigureAwait(false);
             return OpAmpDispatchResult.ClientAccepted;
         }
@@ -107,9 +110,15 @@ internal sealed class OpAmpReportDispatcher
 
         try
         {
-            // The pinned client reports completion of the public dispatch call, not server acknowledgement.
+            // Flush completion means the client has no queued data or active flush, not server acknowledgement.
             // Ordinary transport failures are handled internally and recover through OpAMP sequence/full-state flow.
-            await DispatchWithTimeoutAsync(cancellationToken => client.SendFullStateReportAsync(report, cancellationToken), sessionCancellationToken).ConfigureAwait(false);
+            await DispatchWithTimeoutAsync(
+                cancellationToken =>
+                {
+                    client.SendFullStateReport(report);
+                    return client.FlushAsync(cancellationToken);
+                },
+                sessionCancellationToken).ConfigureAwait(false);
             return result;
         }
         catch (OperationCanceledException) when (sessionCancellationToken.IsCancellationRequested)
