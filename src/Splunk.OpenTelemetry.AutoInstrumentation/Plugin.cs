@@ -16,6 +16,11 @@
 
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using OpenTelemetry.AutoInstrumentation.PluginApi;
+using OpenTelemetry.AutoInstrumentation.PluginApi.ContinuousProfiling;
+using OpenTelemetry.AutoInstrumentation.PluginApi.OpAmp;
+using OpenTelemetry.AutoInstrumentation.PluginApi.SelectiveSampling;
+using OpenTelemetry.AutoInstrumentation.PluginApi.Telemetry;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -40,7 +45,21 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 /// <summary>
 /// Splunk OTel plugin
 /// </summary>
-public class Plugin
+public class Plugin :
+    IPlugin,
+    ITelemetryPlugin,
+    IOpAmpPlugin,
+    IContinuousProfilerPlugin,
+    ISelectiveSamplerPlugin,
+    IConfigureMetricsOptions<OtlpExporterOptions>,
+    IConfigureTracesOptions<OtlpExporterOptions>,
+    IConfigureLogsOptions<OtlpExporterOptions>,
+    IConfigureLogsOptions<OpenTelemetryLoggerOptions>,
+#if NETFRAMEWORK
+    IConfigureTracesOptions<AspNetTraceInstrumentationOptions>
+#else
+    IConfigureTracesOptions<AspNetCoreTraceInstrumentationOptions>
+#endif
 {
 #pragma warning disable SA1401
     internal static Func<PluginSettings> DefaultSettingsFactory = PluginSettings.FromDefaultSources;
@@ -194,8 +213,8 @@ public class Plugin
     /// <summary>
     /// Configure Continuous Profiler.
     /// </summary>
-    /// <returns>(threadSamplingEnabled, threadSamplingInterval, allocationSamplingEnabled, maxMemorySamplesPerMinute, exportInterval, continuousProfilerExporter)</returns>
-    public Tuple<bool, uint, bool, uint, TimeSpan, TimeSpan, object> GetContinuousProfilerConfiguration()
+    /// <returns>Continuous profiler configuration.</returns>
+    public ContinuousProfilerConfiguration GetFirstContinuousProfilerConfiguration()
     {
         var threadSamplingEnabled = Settings.CpuProfilerEnabled;
         var threadSamplingInterval = Settings.CpuProfilerCallStackInterval;
@@ -213,14 +232,23 @@ public class Plugin
         var pprofInOtlpLogsExporter = GetPprofInOtlpLogsExporter();
         pprofInOtlpLogsExporter.SampleProcessor.ContinuousSamplingPeriod = threadSamplingInterval;
 
-        return Tuple.Create(threadSamplingEnabled, threadSamplingInterval, allocationSamplingEnabled, maxMemorySamplesPerMinute, exportInterval, exportTimeout, (object)pprofInOtlpLogsExporter);
+        return new ContinuousProfilerConfiguration
+        {
+            ThreadSamplingEnabled = threadSamplingEnabled,
+            ThreadSamplingInterval = threadSamplingInterval,
+            AllocationSamplingEnabled = allocationSamplingEnabled,
+            MaxMemorySamplesPerMinute = maxMemorySamplesPerMinute,
+            ExportInterval = exportInterval,
+            ExportTimeout = exportTimeout,
+            Exporter = pprofInOtlpLogsExporter
+        };
     }
 
     /// <summary>
     /// Returns selective sampling configuration.
     /// </summary>
-    /// <returns>(frequentSamplingInterval, exportInterval, exportTimeout, pprofInOtlpLogsExporter) or null.</returns>
-    public Tuple<uint, TimeSpan, TimeSpan, object?>? GetSelectiveSamplingConfiguration()
+    /// <returns>Selective sampling configuration or null.</returns>
+    public SelectiveSamplerConfiguration? GetFirstSelectiveSamplingConfiguration()
     {
         if (Settings.SnapshotsEnabled)
         {
@@ -229,7 +257,13 @@ public class Plugin
             pprofInOtlpLogsExporter.SampleProcessor.SelectedSamplingPeriod = frequentSamplingInterval;
             var exportInterval = GetSampleExportInterval();
             var exportTimeout = GetSampleExportTimeout();
-            return Tuple.Create(frequentSamplingInterval, exportInterval, exportTimeout, (object)pprofInOtlpLogsExporter)!;
+            return new SelectiveSamplerConfiguration
+            {
+                SamplingInterval = frequentSamplingInterval,
+                ExportInterval = exportInterval,
+                ExportTimeout = exportTimeout,
+                Exporter = pprofInOtlpLogsExporter
+            };
         }
 
         return null;
@@ -247,6 +281,36 @@ public class Plugin
             builder.AddProcessor(new SnapshotSelectingProcessor(SnapshotFilter.Instance, new TraceIdBasedSnapshotSelector(Settings.SnapshotsSelectionRate)));
         }
 
+        return builder;
+    }
+
+    /// <summary>
+    /// Preserve the configured meter provider builder before upstream configuration.
+    /// </summary>
+    /// <param name="builder">MeterProviderBuilder instance to customize.</param>
+    /// <returns>MeterProviderBuilder instance for chaining.</returns>
+    public MeterProviderBuilder BeforeConfigureMeterProvider(MeterProviderBuilder builder)
+    {
+        return builder;
+    }
+
+    /// <summary>
+    /// Preserve the configured tracer provider builder after upstream configuration.
+    /// </summary>
+    /// <param name="builder">TracerProviderBuilder instance to customize.</param>
+    /// <returns>TracerProviderBuilder instance for chaining.</returns>
+    public TracerProviderBuilder AfterConfigureTracerProvider(TracerProviderBuilder builder)
+    {
+        return builder;
+    }
+
+    /// <summary>
+    /// Preserve the configured meter provider builder after upstream configuration.
+    /// </summary>
+    /// <param name="builder">MeterProviderBuilder instance to customize.</param>
+    /// <returns>MeterProviderBuilder instance for chaining.</returns>
+    public MeterProviderBuilder AfterConfigureMeterProvider(MeterProviderBuilder builder)
+    {
         return builder;
     }
 

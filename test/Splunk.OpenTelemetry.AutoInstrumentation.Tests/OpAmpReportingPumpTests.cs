@@ -224,23 +224,7 @@ public class OpAmpReportingPumpTests
     [Fact]
     public async Task TimedOutInitialFullStateReportIsRetriedByAFullStateRequest()
     {
-        var failedRequestCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var requestProbe = new OpAmpHttpRequestProbe(onRequest: async (requestNumber, cancellationToken) =>
-        {
-            if (requestNumber != 1)
-            {
-                return;
-            }
-
-            try
-            {
-                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
-            }
-            finally
-            {
-                failedRequestCompleted.TrySetResult(true);
-            }
-        });
+        var requestProbe = new OpAmpHttpRequestProbe(blockFirstRequest: true);
         using var innerClient = new HttpClient(requestProbe);
         using var client = CreateClient(innerClient);
         var reportingPump = StartReporting(
@@ -250,9 +234,10 @@ public class OpAmpReportingPumpTests
         reportingPump.MarkInstrumentationInitialized();
 
         await requestProbe.WaitForCountAsync(1);
-        await WaitForCompletionAsync(failedRequestCompleted.Task);
+        await Task.Delay(TimeSpan.FromMilliseconds(200));
 
         reportingPump.HandleMessage(CreateFlagsMessage(ServerSentFlags.ReportFullState));
+        requestProbe.ReleaseFirstRequest();
         await requestProbe.WaitForCountAsync(2);
         reportingPump.Stop();
     }
@@ -311,14 +296,15 @@ public class OpAmpReportingPumpTests
     }
 
     [Fact]
-    public async Task StopCancelsInFlightFullStateReportWithoutWaiting()
+    public async Task StopDoesNotWaitForInFlightFullStateReport()
     {
-        var cancellationObserved = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var requestCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var requestProbe = new OpAmpHttpRequestProbe(
-            onRequest: (_, cancellationToken) =>
+            blockFirstRequest: true,
+            onRequest: (_, _) =>
             {
-                cancellationToken.Register(() => cancellationObserved.TrySetResult(true));
-                return Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                requestCompleted.TrySetResult(true);
+                return Task.CompletedTask;
             });
         using var innerClient = new HttpClient(requestProbe);
         using var client = CreateClient(innerClient);
@@ -331,7 +317,8 @@ public class OpAmpReportingPumpTests
 
         Assert.Same(stopTask, completedTask);
         await stopTask;
-        await WaitForCompletionAsync(cancellationObserved.Task);
+        requestProbe.ReleaseFirstRequest();
+        await WaitForCompletionAsync(requestCompleted.Task);
     }
 
     private static OpAmpReportingPump StartReporting(
