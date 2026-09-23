@@ -281,15 +281,16 @@ public class OpAmpTests
     }
 
     [Fact]
-    public async Task StopClientReportingCancelsInFlightInitialReportWithoutWaiting()
+    public async Task StopClientReportingDoesNotWaitForInFlightInitialReport()
     {
-        var cancellationObserved = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var requestCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var opAmp = CreateOpAmp();
         var requestProbe = new OpAmpHttpRequestProbe(
-            onRequest: (_, cancellationToken) =>
+            blockFirstRequest: true,
+            onRequest: (_, _) =>
             {
-                cancellationToken.Register(() => cancellationObserved.TrySetResult(true));
-                return Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                requestCompleted.TrySetResult(true);
+                return Task.CompletedTask;
             });
         using var innerClient = new HttpClient(requestProbe);
         using var client = CreateClient(innerClient, opAmp.ConfigureEffectiveConfigReporting);
@@ -302,7 +303,8 @@ public class OpAmpTests
 
         Assert.Same(stopTask, completedTask);
         await stopTask;
-        await WaitForCompletionAsync(cancellationObserved.Task);
+        requestProbe.ReleaseFirstRequest();
+        await WaitForCompletionAsync(requestCompleted.Task);
     }
 
     [Fact]
