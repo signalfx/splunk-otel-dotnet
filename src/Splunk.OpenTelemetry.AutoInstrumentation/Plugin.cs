@@ -32,6 +32,7 @@ using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.Helpers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
+using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 
 #if NETFRAMEWORK
@@ -83,6 +84,7 @@ public class Plugin :
     /// </summary>
     public Plugin()
     {
+        ProfilerRuntimeConfiguration.Initialize(Settings);
         _metrics = new Metrics(Settings);
         _traces = new Traces(Settings);
         _sdk = new Sdk();
@@ -119,7 +121,7 @@ public class Plugin :
     /// <returns>>Returns <see cref="ResourceBuilder"/> for chaining.</returns>
     public ResourceBuilder ConfigureResource(ResourceBuilder builder)
     {
-        var resource = ResourceConfigurator.Configure(builder, Settings);
+        ResourceConfigurator.Configure(builder, Settings);
         return builder;
     }
 
@@ -166,7 +168,7 @@ public class Plugin :
     public void ConfigureOpAmpOptions(OpAmpClientSettings settings)
     {
         _opAmpConfigurationHookInvoked = true;
-        _opAmp.ConfigureEffectiveConfigReporting(settings);
+        _opAmp.ConfigureOptions(settings, Settings);
     }
 
     /// <summary>
@@ -216,21 +218,22 @@ public class Plugin :
     /// <returns>Continuous profiler configuration.</returns>
     public ContinuousProfilerConfiguration GetFirstContinuousProfilerConfiguration()
     {
-        var threadSamplingEnabled = Settings.CpuProfilerEnabled;
-        var threadSamplingInterval = Settings.CpuProfilerCallStackInterval;
+        var remoteConfigState = ProfilerRuntimeConfiguration.Current;
+        var threadSamplingEnabled = ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled || remoteConfigState.CpuProfilerEnabled;
+        var threadSamplingInterval = PluginSettingsHelper.GetFinalContinuousSamplingInterval(Settings);
 #if NET
         var allocationSamplingEnabled = Settings.MemoryProfilerEnabled;
-        var maxMemorySamplesPerMinute = Settings.MemoryProfilerMaxMemorySamplesPerMinute;
+        var maxMemorySamplesPerMinute = PluginSettingsHelper.GetFinalMaxMemorySamples(Settings);
 #else
         // Allocation sampling is not supported on .NET Framework
         var allocationSamplingEnabled = false;
         var maxMemorySamplesPerMinute = 0u;
 #endif
-        var exportInterval = TimeSpan.FromMilliseconds(Settings.ProfilerExportInterval);
-        var exportTimeout = TimeSpan.FromMilliseconds(Settings.ProfilerHttpClientTimeout);
+        var exportInterval = TimeSpan.FromMilliseconds(PluginSettingsHelper.GetFinalExportInterval(Settings.ProfilerExportInterval));
+        var exportTimeout = TimeSpan.FromMilliseconds(PluginSettingsHelper.GetFinalExportTimeout(Settings.ProfilerHttpClientTimeout));
 
         var pprofInOtlpLogsExporter = GetPprofInOtlpLogsExporter();
-        pprofInOtlpLogsExporter.SampleProcessor.ContinuousSamplingPeriod = threadSamplingInterval;
+        ProfilerRuntimeConfiguration.ApplyToExporter(pprofInOtlpLogsExporter);
 
         return new ContinuousProfilerConfiguration
         {
@@ -252,7 +255,7 @@ public class Plugin :
     {
         if (Settings.SnapshotsEnabled)
         {
-            var frequentSamplingInterval = Settings.SnapshotsSamplingInterval;
+            var frequentSamplingInterval = PluginSettingsHelper.GetFinalSnapshotSamplingInterval(Settings.SnapshotsSamplingInterval);
             var pprofInOtlpLogsExporter = GetPprofInOtlpLogsExporter();
             pprofInOtlpLogsExporter.SampleProcessor.SelectedSamplingPeriod = frequentSamplingInterval;
             var exportInterval = GetSampleExportInterval();
@@ -337,12 +340,22 @@ public class Plugin :
     /// </summary>
     public void Initialized()
     {
+        if (ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled)
+        {
+            ProfilerRuntimeConfiguration.ApplyCurrentToNative();
+        }
+
         // Upstream invokes this hook even when OpAMP is disabled. On .NET Framework, entering the
         // OpAMP lifecycle path eagerly loads the client assembly, so only enter it after configuration.
         if (_opAmpConfigurationHookInvoked)
         {
             MarkOpAmpInstrumentationInitialized();
         }
+    }
+
+    internal static PprofInOtlpLogsExporter? TryGetPprofInOtlpLogsExporter()
+    {
+        return _pprofInOtlpLogsExporter;
     }
 
     private static void EnableHighResTimer()
@@ -375,12 +388,12 @@ public class Plugin :
 
     private static TimeSpan GetSampleExportTimeout()
     {
-        return TimeSpan.FromMilliseconds(Settings.ProfilerHttpClientTimeout);
+        return TimeSpan.FromMilliseconds(PluginSettingsHelper.GetFinalExportTimeout(Settings.ProfilerHttpClientTimeout));
     }
 
     private static TimeSpan GetSampleExportInterval()
     {
-        return TimeSpan.FromMilliseconds(Settings.ProfilerExportInterval);
+        return TimeSpan.FromMilliseconds(PluginSettingsHelper.GetFinalExportInterval(Settings.ProfilerExportInterval));
     }
 
     private static PprofInOtlpLogsExporter GetPprofInOtlpLogsExporter()
@@ -391,7 +404,11 @@ public class Plugin :
 
     private static PprofInOtlpLogsExporter CreatePprofInOtlpLogsExporter()
     {
-        return new PprofInOtlpLogsExporter(new SampleProcessor(), new SampleExporter(new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint)), new NativeFormatParser(Settings.SnapshotsEnabled));
+        return new PprofInOtlpLogsExporter(
+            new SampleProcessor(),
+            new SampleExporter(new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint)),
+            new NativeFormatParser(Settings.SnapshotsEnabled),
+            () => ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

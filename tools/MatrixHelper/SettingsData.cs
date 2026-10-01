@@ -143,6 +143,7 @@ internal static class SettingsData
             // OpAmp
             new("OTEL_DOTNET_AUTO_OPAMP_ENABLED", "Enables OpAMP client.", "false", "boolean", OpAmpCategory),
             new("OTEL_DOTNET_AUTO_OPAMP_SERVER_URL", "OpAMP server url.", "https://localhost:4320/v1/opamp", "string", OpAmpCategory),
+            new("SPLUNK_OPAMP_REMOTE_CONFIG", "Enables OpAMP remote configuration for CPU profiler enablement. Requires OpAMP to be enabled.", "false", "boolean", OpAmpCategory),
             new("OTEL_DOTNET_AUTO_OPAMP_MAX_PENDING_CUSTOM_MESSAGES", "Maximum number of custom messages that may wait to be sent.", "2048", "int", OpAmpCategory),
             new("OTEL_DOTNET_AUTO_OPAMP_MAX_PENDING_CUSTOM_MESSAGE_BYTES", "Maximum aggregate size, in bytes, of pending custom message payloads.", "67108864", "int", OpAmpCategory),
         };
