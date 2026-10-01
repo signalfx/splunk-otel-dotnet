@@ -38,7 +38,8 @@ public class EffectiveYamlSerializerTests
             memoryProfilerEnabled: false,
             snapshotProfilerEnabled: false,
             cpuProfilerCallStackInterval: 10000,
-            snapshotSamplingInterval: 40));
+            snapshotSamplingInterval: 40,
+            snapshotSelectionProbability: 0.01));
         var expected = EffectiveYamlSerializer.Serialize(
             config,
             EffectiveConfigLimits.MaxFileContentSizeBytes);

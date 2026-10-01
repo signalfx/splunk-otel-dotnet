@@ -68,9 +68,15 @@ public class TestHttpServer : IDisposable
                 .Get<IServerAddressesFeature>()!
                 .Addresses
                 .First();
-        Port = int.Parse(address.Split(':').Last());
+        BaseAddress = new Uri(address);
+        Port = BaseAddress.Port;
         WriteOutput($"Listening on: {string.Join(',', pathHandlers.Select(handler => $"{address}{handler.Path}"))}");
     }
+
+    /// <summary>
+    /// Gets the address that this listener is bound to.
+    /// </summary>
+    public Uri BaseAddress { get; }
 
     /// <summary>
     /// Gets the TCP port that this listener is listening on.

@@ -189,7 +189,7 @@ internal sealed class EffectiveYamlConfig
         public EffectiveAlwaysOnProfilingConfig? AlwaysOn { get; set; }
 
         [EffectiveYamlProperty("callgraphs", 1)]
-        public EffectiveSamplingIntervalConfig? Callgraphs { get; set; }
+        public EffectiveCallgraphsConfig? Callgraphs { get; set; }
 
         public static EffectiveProfilingConfig? Create(EffectiveConfigSnapshot snapshot)
         {
@@ -215,7 +215,11 @@ internal sealed class EffectiveYamlConfig
             {
                 AlwaysOn = alwaysOn,
                 Callgraphs = snapshot.SnapshotProfilerEnabled
-                    ? new EffectiveSamplingIntervalConfig { SamplingInterval = snapshot.SnapshotSamplingInterval }
+                    ? new EffectiveCallgraphsConfig
+                    {
+                        SamplingInterval = snapshot.SnapshotSamplingInterval,
+                        SelectionProbability = snapshot.SnapshotSelectionProbability
+                    }
                     : null
             };
         }
@@ -237,6 +241,15 @@ internal sealed class EffectiveYamlConfig
     {
         [EffectiveYamlProperty("sampling_interval", 0)]
         public uint SamplingInterval { get; set; }
+    }
+
+    internal sealed class EffectiveCallgraphsConfig
+    {
+        [EffectiveYamlProperty("sampling_interval", 0)]
+        public uint SamplingInterval { get; set; }
+
+        [EffectiveYamlProperty("selection_probability", 1)]
+        public double SelectionProbability { get; set; }
     }
 
     internal sealed class EffectiveMemoryProfilerConfig

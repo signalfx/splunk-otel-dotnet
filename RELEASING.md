@@ -3,6 +3,12 @@
 Versioning is using [MinVer](https://github.com/adamralph/minver).
 No changes in the code are needed to correctly version this package.
 
+> [!IMPORTANT]
+> [GitHub immutable releases](https://docs.github.com/code-security/concepts/supply-chain-security/immutable-releases)
+> are enabled for this repository. Release artifacts cannot be changed after
+> you publish a release. Follow the internal documentation before publishing
+> a release on GitHub.
+
 1. Update the [CHANGELOG.md](CHANGELOG.md) with the new release.
 
 1. Create a pull request on GitHub with the changes described in the changelog.
@@ -21,9 +27,12 @@ No changes in the code are needed to correctly version this package.
 
    After you've pushed the git tag, a `ci` GitHub workflow starts.
 
+1. Update internal repository. Follow internal documentation.
+
 1. Publish a release in GitHub:
 
    - Use a draft created by `create-release` GitHub job in `ci` workflow.
+   - Confirm that the `Attest release files` step succeeded.
    - Use the [CHANGELOG.md](CHANGELOG.md) content in the description.
    - Ensure that following flags under the are correctly set
       - `Set as a pre-release`
@@ -39,10 +48,6 @@ No changes in the code are needed to correctly version this package.
 1. Ask [o11y-docs team](https://github.com/orgs/splunk/teams/o11y-docs)
     1. to execute [update metadata workflow](https://github.com/splunk/o11y-gdi-metadata/actions/workflows/update-metadata.yaml)
        to update matrix in [o11y-gdi-metadata repository](https://github.com/splunk/o11y-gdi-metadata/tree/main/apm/splunk-otel-dotnet),
-    1. to publish necessary updates to the [documentation](https://github.com/splunk/public-o11y-docs).
-
-1. Update version in [tracing-examples](https://github.com/signalfx/tracing-examples):
-    1. [automatic](https://github.com/signalfx/tracing-examples/blob/main/opentelemetry-tracing/opentelemetry-dotnet/automatic/aspnetcore-and-mongodb/InstrumentContainer/Dockerfile)
-    1. [log example](https://github.com/signalfx/tracing-examples/edit/main/opentelemetry-tracing/opentelemetry-dotnet/log-trace-correlation/Dockerfile)
-
-1. Update internal repository. Follow internal documentation.
+    1. to publish necessary updates to the [documentation](https://github.com/splunk/public-o11y-docs),
+       including verification of the downloaded PowerShell module before
+       `Import-Module` and the `-SkipReleaseVerification` opt-out.

@@ -27,14 +27,19 @@ jobs:
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: | 
-            8.0.420
-            9.0.313
-            10.0.203
+            8.0.423
+            9.0.316
+            10.0.302
       - run: ./build.cmd Workflow
       - run: brew install coreutils
         if: ${{ runner.os == 'macOS' }}
       - name: Create test directory
-        run: sudo mkdir -p ${{ matrix.log-dir }} && sudo chmod a+rw- ${{ matrix.log-dir }}
+        env:
+          LOG_DIR: ${{ matrix.log-dir }}
+        run: |
+          sudo mkdir -p "$LOG_DIR"
+          sudo chown "$(id -u):$(id -g)" "$LOG_DIR"
+          chmod 0700 "$LOG_DIR"
         if: ${{ runner.os != 'Windows' }}
       - name: Test the Shell scripts from README.md
         shell: bash
@@ -138,9 +143,9 @@ jobs:
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: | 
-            8.0.420
-            9.0.313
-            10.0.203
+            8.0.423
+            9.0.316
+            10.0.302
       - run: ./build.cmd NuGetWorkflow
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -163,11 +168,16 @@ jobs:
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: | 
-            8.0.420
-            9.0.313
-            10.0.203
+            8.0.423
+            9.0.316
+            10.0.302
       - name: Create test directory
-        run: sudo mkdir -p /var/log/opentelemetry/dotnet && sudo chmod a+rw- /var/log/opentelemetry/dotnet
+        env:
+          LOG_DIR: /var/log/opentelemetry/dotnet
+        run: |
+          sudo mkdir -p "$LOG_DIR"
+          sudo chown "$(id -u):$(id -g)" "$LOG_DIR"
+          chmod 0700 "$LOG_DIR"
       - name: Download NuGet Artifacts from build-nuget-package job
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -179,10 +189,13 @@ jobs:
   create-release:
     if: github.ref_type == 'tag'
     name: Create GitHub release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: [ build, container-build, build-nuget-package, test-nuget-package ]
     permissions:
+      attestations: write # for actions/attest to create release attestations
+      artifact-metadata: write # for artifact metadata required by release attestations
       contents: write
+      id-token: write # for OIDC-based artifact attestations
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -198,9 +211,19 @@ jobs:
       - run: cp bin-windows-2022/InstallationScripts/splunk-otel-dotnet-install.sh ./splunk-otel-dotnet-install.sh
       - run: cp bin-windows-2022/InstallationScripts/Splunk.OTel.DotNet.psm1 ./Splunk.OTel.DotNet.psm1
       - run: cp bin-windows-2022/Matrix/splunk-otel-dotnet-metadata.yaml ./splunk-otel-dotnet-metadata.yaml
-      - name: Calculate checksum
-        run: sha256sum ./*.zip ./nuget-package/*.nupkg ./splunk-otel-dotnet-install.sh ./Splunk.OTel.DotNet.psm1 >> checksum.txt
+      - name: Calculate checksums
+        run: sha256sum ./*.zip ./nuget-package/*.nupkg ./splunk-otel-dotnet-install.sh ./Splunk.OTel.DotNet.psm1 >> checksums.txt
+      - name: Attest release files
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            ./*.zip
+            ./nuget-package/*.nupkg
+            ./splunk-otel-dotnet-install.sh
+            ./Splunk.OTel.DotNet.psm1
+            ./checksums.txt
+            ./splunk-otel-dotnet-metadata.yaml
       - name: Create Release
-        run: gh release create ${{ github.ref_name }} --title ${{ github.ref_name }} --verify-tag --draft ./*.zip ./nuget-package/*.nupkg ./splunk-otel-dotnet-install.sh ./Splunk.OTel.DotNet.psm1 checksum.txt ./splunk-otel-dotnet-metadata.yaml
+        run: gh release create ${{ github.ref_name }} --title ${{ github.ref_name }} --verify-tag --draft ./*.zip ./nuget-package/*.nupkg ./splunk-otel-dotnet-install.sh ./Splunk.OTel.DotNet.psm1 checksums.txt ./splunk-otel-dotnet-metadata.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

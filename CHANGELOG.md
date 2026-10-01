@@ -5,7 +5,34 @@ All notable changes to this component are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.15.0...HEAD)
+## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.16.0...HEAD)
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [1.16.0](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.16.0)
+
+This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.17.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.17.0).
+
+### Added
+
+- GitHub artifact attestations for release assets.
+- Immutable release and artifact attestation verification for the PowerShell
+  installation and update commands and the shell installer. The GitHub CLI is
+  required by default; use `-SkipReleaseVerification` with
+  `Install-OpenTelemetryCore` or `Update-OpenTelemetryCore`, or set
+  `SKIP_RELEASE_VERIFICATION=true` for the shell installer, to explicitly skip
+  verification.
+- Support for snapshot selection probability in the effective configuration.
 
 ### Added
 

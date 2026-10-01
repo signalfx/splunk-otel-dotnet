@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0.316-bookworm-slim@sha256:ee0d20fbc3dfc60ae2d9d9115a9b750c18576a47f24073119dd09d93e072cb89
+FROM mcr.microsoft.com/dotnet/sdk:9.0.318-bookworm-slim@sha256:01fabc4758d1d74e39eda700c8463dae6241a61481f973683692ddcb59a5eeb7
 # There is no official base image for .NET SDK 10+ on Debian, so install .NET10 via dotnet-install
 
 
@@ -21,8 +21,8 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
     && echo "SHA256: $(sha256sum dotnet-install.sh)" \
     && echo "082f7685e156738a1b2e2ed8381a621870d4ce8e8c59278034556f05c186eb2e  dotnet-install.sh" | sha256sum -c \
     && chmod +x ./dotnet-install.sh \
-    && ./dotnet-install.sh -v 10.0.203 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh -v 8.0.420 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh -v 10.0.302 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh -v 8.0.423 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
 WORKDIR /project

@@ -37,6 +37,7 @@ public class TestHttpServer : IDisposable
         _requestHandler = requestHandler;
 
         Port = TcpPortProvider.GetOpenPort();
+        BaseAddress = new UriBuilder("http", host, Port).Uri;
 
         _listener = new HttpListener();
         _listener.Start();
@@ -47,6 +48,11 @@ public class TestHttpServer : IDisposable
         _listenerThread = new Thread(HandleHttpRequests);
         _listenerThread.Start();
     }
+
+    /// <summary>
+    /// Gets the address that this listener is bound to.
+    /// </summary>
+    public Uri BaseAddress { get; }
 
     /// <summary>
     /// Gets the TCP port that this listener is listening on.

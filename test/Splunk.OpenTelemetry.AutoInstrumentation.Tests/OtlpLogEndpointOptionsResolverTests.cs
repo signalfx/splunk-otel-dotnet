@@ -71,7 +71,7 @@ public class OtlpLogEndpointOptionsResolverTests
     }
 
     [Fact]
-    public void ResolveEndpoint_ReportsBatchWhenSdkIgnoresSimpleProcessorType()
+    public void ResolveEndpoint_ReportsSimpleProcessorType()
     {
         var options = new OtlpExporterOptions
         {
@@ -83,7 +83,8 @@ public class OtlpLogEndpointOptionsResolverTests
         AssertEndpoint(
             OtlpLogEndpointOptionsResolver.ResolveEndpoint(options),
             "http://collector:4318/v1/logs",
-            EffectiveOtlpExporterType.HttpProtobuf);
+            EffectiveOtlpExporterType.HttpProtobuf,
+            EffectiveOtlpPipelineType.Simple);
     }
 
     [Fact]

@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0.302-alpine3.23@sha256:d8ee39817ca03a3757288e83c37ed73cc969a286c603b827c7cbe33add1c2d1c
+FROM mcr.microsoft.com/dotnet/sdk:10.0.401-alpine3.23@sha256:3f9c03432d664163a90d20e3ed0a3784d0aa82c1b9cbd1a7dd4609fede95669e
 
 # renovate: datasource=repology depName=cmake
 ENV CMAKE_VERSION="4.1.3-r0"
@@ -41,8 +41,8 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
     && echo "SHA256: $(sha256sum dotnet-install.sh)" \
     && echo "082f7685e156738a1b2e2ed8381a621870d4ce8e8c59278034556f05c186eb2e  dotnet-install.sh" | sha256sum -c \
     && chmod +x ./dotnet-install.sh \
-    && ./dotnet-install.sh -v 9.0.313 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh -v 8.0.420 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh -v 9.0.316 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh -v 8.0.423 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
 WORKDIR /project

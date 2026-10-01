@@ -71,9 +71,7 @@ internal static class OtlpLogEndpointOptionsResolver
         return processorType switch
         {
             ExportProcessorType.Batch => EffectiveOtlpPipelineType.Batch,
-            // OpenTelemetry .NET currently ignores Simple on OtlpExporterOptions for logs and constructs a batch processor.
-            // Remove this normalization when the SDK dependency includes https://github.com/open-telemetry/opentelemetry-dotnet/issues/7281.
-            ExportProcessorType.Simple => EffectiveOtlpPipelineType.Batch,
+            ExportProcessorType.Simple => EffectiveOtlpPipelineType.Simple,
             _ => throw new InvalidOperationException(
                 $"The active OTLP logs exporter uses unsupported processor type {processorType}.")
         };

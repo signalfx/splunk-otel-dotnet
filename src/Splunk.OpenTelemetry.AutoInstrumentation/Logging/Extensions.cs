@@ -23,7 +23,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 internal static class Extensions
 {
-    private const string SecretPattern = "(?:^|_)(API|TOKEN|SECRET|KEY|PASSWORD|PASS|PWD|HEADER|CREDENTIALS)(?:_|$)";
+    private const string SecretPattern = "(?:^|_)(API|TOKEN|SECRET|KEY|PASSWORD|PASS|PWD|HEADERS?|CREDENTIALS)(?:_|$)";
     private static readonly ICollection<string> RelevantPrefixes = ["DOTNET_", "COR_", "CORECLR_", "OTEL_", "SPLUNK_"];
 
     private static readonly Regex SecretRegex;

@@ -58,9 +58,14 @@ public class MockContinuousProfilerCollector : IDisposable
         _listener = new(output, HandleHttpRequests, host, "/v1/logs/");
 #else
         _listener = new(output, nameof(MockContinuousProfilerCollector), new PathHandler(HandleHttpRequests, "/v1/logs"), MockCollectorHealthZ.CreateHealthZHandler());
-        MockCollectorHealthZ.WarmupHealthZEndpoint(output, host, Port);
+        MockCollectorHealthZ.WarmupHealthZEndpoint(output, _listener.BaseAddress);
 #endif
     }
+
+    /// <summary>
+    /// Gets the address that this collector is bound to.
+    /// </summary>
+    public Uri BaseAddress { get => _listener.BaseAddress; }
 
     /// <summary>
     /// Gets the TCP port that this collector is listening on.

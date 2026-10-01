@@ -187,6 +187,8 @@ public class SmokeTests : TestHelper, IDisposable
             SetEnvironmentVariable($"OTEL_{item}_VALUE", "this is secret!");
         }
 
+        SetEnvironmentVariable("OTEL_EXPORTER_OTLP_HEADERS", "authorization=Bearer%20super-secret-token");
+
         try
         {
             RunTestApplication(TestSettingsWithDefaultArgs());
@@ -244,6 +246,7 @@ public class SmokeTests : TestHelper, IDisposable
         SetEnvironmentVariable("SPLUNK_PROFILER_CALL_STACK_INTERVAL", "10000");
         SetEnvironmentVariable("SPLUNK_SNAPSHOT_PROFILER_ENABLED", "true");
         SetEnvironmentVariable("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL", "5000");
+        SetEnvironmentVariable("SPLUNK_SNAPSHOT_SELECTION_PROBABILITY", "0.25");
 
         EnableBytecodeInstrumentation();
         EnableDefaultExporters();
@@ -268,6 +271,7 @@ public class SmokeTests : TestHelper, IDisposable
 #endif
             ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "true",
             ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "5000",
+            ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.25",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
             ["OTEL_CONFIG_FILE"] = "null"
         };
@@ -299,6 +303,7 @@ public class SmokeTests : TestHelper, IDisposable
             ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "40",
+            ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.01",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
             ["OTEL_CONFIG_FILE"] = "null"
         };
@@ -341,6 +346,7 @@ public class SmokeTests : TestHelper, IDisposable
             ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "40",
+            ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.01",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
             ["OTEL_CONFIG_FILE"] = "null"
         };
@@ -403,6 +409,7 @@ public class SmokeTests : TestHelper, IDisposable
             ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "40",
+            ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.01",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
             ["OTEL_CONFIG_FILE"] = "null"
         };
@@ -441,6 +448,7 @@ public class SmokeTests : TestHelper, IDisposable
             ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "5000",
+            ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.01",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
             ["OTEL_CONFIG_FILE"] = "null"
         };
@@ -517,6 +525,7 @@ public class SmokeTests : TestHelper, IDisposable
             ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "40",
+            ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.01",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
             ["OTEL_CONFIG_FILE"] = "null"
         };
@@ -555,6 +564,7 @@ public class SmokeTests : TestHelper, IDisposable
             ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "40",
+            ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.01",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
             ["OTEL_CONFIG_FILE"] = "null"
         };

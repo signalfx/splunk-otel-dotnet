@@ -22,7 +22,7 @@ internal sealed class EffectiveProviderEndpointTracker<TProvider>
 {
     private static readonly ILogger Log = new Logger();
 
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly List<EffectiveOtlpEndpoint> _endpoints = [];
     private readonly Func<TProvider, IReadOnlyList<EffectiveOtlpEndpoint>> _endpointResolver;
     private bool _resolutionFailed;

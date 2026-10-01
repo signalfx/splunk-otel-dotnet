@@ -24,7 +24,7 @@ internal sealed class EffectiveLogEndpointTracker
 {
     private static readonly ILogger Log = new Logger();
 
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly List<EffectiveOtlpEndpoint> _endpoints = [];
     private readonly HashSet<EffectiveOtlpEndpoint> _endpointSet = [];
     private readonly Func<IReadOnlyList<EffectiveOtlpEndpoint>?> _bridgeLogEndpointResolver;

@@ -130,11 +130,35 @@ public class EffectiveYamlConfigTests
             config.Distribution!.Splunk!.Profiling!.AlwaysOn);
     }
 
+    [Fact]
+    public void Create_IncludesCallgraphSettingsWhenSnapshotProfilerIsEnabled()
+    {
+        var config = EffectiveYamlConfig.Create(CreateSnapshot(
+            snapshotProfilerEnabled: true,
+            snapshotSamplingInterval: 5000,
+            snapshotSelectionProbability: 0.25));
+
+        var callgraphs = config.Distribution!.Splunk!.Profiling!.Callgraphs!;
+        Assert.Equal(5000U, callgraphs.SamplingInterval);
+        Assert.Equal(0.25, callgraphs.SelectionProbability);
+    }
+
+    [Fact]
+    public void Create_OmitsCallgraphSettingsWhenSnapshotProfilerIsDisabled()
+    {
+        var config = EffectiveYamlConfig.Create(CreateSnapshot());
+
+        Assert.Null(config.Distribution);
+    }
+
     private static EffectiveConfigSnapshot CreateSnapshot(
         IReadOnlyList<EffectiveOtlpEndpoint>? traceEndpoints = null,
         IReadOnlyList<EffectiveOtlpEndpoint>? metricEndpoints = null,
         bool cpuProfilerEnabled = false,
-        bool memoryProfilerEnabled = false)
+        bool memoryProfilerEnabled = false,
+        bool snapshotProfilerEnabled = false,
+        uint snapshotSamplingInterval = 40,
+        double snapshotSelectionProbability = 0.01)
     {
         return new EffectiveConfigSnapshot(
             fileBasedConfigFileName: "stable.yaml",
@@ -143,8 +167,9 @@ public class EffectiveYamlConfigTests
             logEndpoints: [],
             cpuProfilerEnabled: cpuProfilerEnabled,
             memoryProfilerEnabled: memoryProfilerEnabled,
-            snapshotProfilerEnabled: false,
+            snapshotProfilerEnabled: snapshotProfilerEnabled,
             cpuProfilerCallStackInterval: 10000,
-            snapshotSamplingInterval: 40);
+            snapshotSamplingInterval: snapshotSamplingInterval,
+            snapshotSelectionProbability: snapshotSelectionProbability);
     }
 }

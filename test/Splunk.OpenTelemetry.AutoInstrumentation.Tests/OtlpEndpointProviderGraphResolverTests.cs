@@ -272,7 +272,6 @@ public class OtlpEndpointProviderGraphResolverTests
         var endpointResolvedFromProvider = Assert.Single(
             OtlpEndpointProviderGraphResolver.ResolveLogEndpoints(provider));
 
-        // This detects when the fix for https://github.com/open-telemetry/opentelemetry-dotnet/issues/7281 reaches the pinned SDK.
         Assert.Equal(endpointResolvedFromProvider, endpointResolvedFromOptions);
     }
 

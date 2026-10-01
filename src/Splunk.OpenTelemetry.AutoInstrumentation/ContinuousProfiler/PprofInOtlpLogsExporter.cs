@@ -14,11 +14,13 @@
 // limitations under the License.
 // </copyright>
 
+using OpenTelemetry.AutoInstrumentation.PluginApi.ContinuousProfiling;
+using OpenTelemetry.AutoInstrumentation.PluginApi.SelectiveSampling;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
 
-internal class PprofInOtlpLogsExporter
+internal class PprofInOtlpLogsExporter : IContinuousProfilerExporter, ISelectiveSamplerExporter
 {
     private readonly ISampleExporter _sampleExporter;
     private readonly NativeFormatParser _nativeFormatParser;

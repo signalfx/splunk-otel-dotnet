@@ -19,8 +19,8 @@ produce a fresh full-state report.
 Configure the OpAMP client through the OpenTelemetry .NET auto-instrumentation
 OpAMP options:
 
-- [Environment variables](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.16.0/docs/config.md#opamp-client)
-- [File-based configuration](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.16.0/docs/file-based-configuration.md#opamp)
+- [Environment variables](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.17.0/docs/config.md#opamp-client)
+- [File-based configuration](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.17.0/docs/file-based-configuration.md#opamp)
 
 ## Effective configuration
 
@@ -37,6 +37,7 @@ The properties body contains the final values for:
 - `SPLUNK_PROFILER_MEMORY_ENABLED`
 - `SPLUNK_SNAPSHOT_PROFILER_ENABLED`
 - `SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL`
+- `SPLUNK_SNAPSHOT_SELECTION_PROBABILITY`
 - `SPLUNK_PROFILER_CALL_STACK_INTERVAL`
 - `OTEL_CONFIG_FILE`
 
@@ -101,7 +102,7 @@ distribution:
 ### Runtime behavior
 
 Profiling remote configuration only works when the
-[.NET CLR Profiler](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.16.0/docs/config.md#net-clr-profiler)
+[.NET CLR Profiler](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.17.0/docs/config.md#net-clr-profiler)
 is enabled before the process starts. Without the .NET CLR Profiler, profiling
 does not run, and remote configuration cannot enable or configure the .NET CLR
 Profiler at runtime.
