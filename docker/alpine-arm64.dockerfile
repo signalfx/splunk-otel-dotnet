@@ -18,6 +18,10 @@ ENV PROTOBUF_DEV_VERSION="31.1-r1"
 ENV GRPC_VERSION="1.76.0-r2"
 # renovate: datasource=repology depName=grpc-plugins
 ENV GRPC_PLUGINS_VERSION="1.76.0-r2"
+# Update the GitHub CLI version and architecture-specific checksum together.
+ENV GITHUB_CLI_VERSION="2.101.0"
+ENV GITHUB_CLI_ARCH="arm64"
+ENV GITHUB_CLI_SHA256="b57e8063f18862647c9d22727c32e9da1b963f8bf9db648fe123a6975695640f"
 
 RUN apk update \
     && apk upgrade \
@@ -31,6 +35,12 @@ RUN apk update \
         protobuf-dev="${PROTOBUF_DEV_VERSION}" \
         grpc="${GRPC_VERSION}" \
         grpc-plugins="${GRPC_PLUGINS_VERSION}"
+
+RUN curl -sSfL "https://github.com/cli/cli/releases/download/v${GITHUB_CLI_VERSION}/gh_${GITHUB_CLI_VERSION}_linux_${GITHUB_CLI_ARCH}.tar.gz" --output /tmp/gh.tar.gz \
+    && echo "${GITHUB_CLI_SHA256}  /tmp/gh.tar.gz" | sha256sum -c \
+    && tar -xzf /tmp/gh.tar.gz -C /tmp \
+    && mv "/tmp/gh_${GITHUB_CLI_VERSION}_linux_${GITHUB_CLI_ARCH}/bin/gh" /usr/local/bin/gh \
+    && rm -rf /tmp/gh.tar.gz "/tmp/gh_${GITHUB_CLI_VERSION}_linux_${GITHUB_CLI_ARCH}"
 
 ENV IsAlpine=true
 ENV PROTOBUF_PROTOC=/usr/bin/protoc

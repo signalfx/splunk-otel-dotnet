@@ -1,9 +1,12 @@
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
+using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
+using Serilog;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 partial class Build : NukeBuild
@@ -20,6 +23,16 @@ partial class Build : NukeBuild
 
     [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
     readonly string OpenTelemetryAutoInstrumentationVersion = OpenTelemetryAutoInstrumentationDefaultVersion;
+
+    [Parameter("Skip OpenTelemetry AutoInstrumentation release and artifact attestation verification. Local builds only.")]
+    readonly bool SkipOpenTelemetryAutoInstrumentationVerification;
+
+    const string OpenTelemetryAutoInstrumentationRepository = "open-telemetry/opentelemetry-dotnet-instrumentation";
+    const string OpenTelemetryAutoInstrumentationReleaseWorkflow = OpenTelemetryAutoInstrumentationRepository + "/.github/workflows/release.yml";
+    static readonly Version MinimumGitHubCliVersion = new(2, 93, 0);
+    static readonly Regex ReleaseVersionRegex = new(
+        @"^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$",
+        RegexOptions.CultureInvariant);
 
     readonly AbsolutePath OpenTelemetryDistributionFolder = RootDirectory / "OpenTelemetryDistribution";
 
@@ -50,10 +63,12 @@ partial class Build : NukeBuild
     Target DownloadAutoInstrumentationDistribution => _ => _
         .Executes(async () =>
         {
+            AssertValidOpenTelemetryAutoInstrumentationVersion();
+
             var fileName = GetOTelAutoInstrumentationFileName();
 
             var uri =
-                $"https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/{OpenTelemetryAutoInstrumentationVersion}/{fileName}";
+                $"https://github.com/{OpenTelemetryAutoInstrumentationRepository}/releases/download/{OpenTelemetryAutoInstrumentationVersion}/{fileName}";
 
             await HttpTasks.HttpDownloadFileAsync(uri, RootDirectory / fileName, clientConfigurator: httpClient =>
             {
@@ -62,8 +77,40 @@ partial class Build : NukeBuild
             });
         });
 
+    Target VerifyAutoInstrumentationDistribution => _ => _
+        .DependsOn(DownloadAutoInstrumentationDistribution)
+        .Executes(() =>
+        {
+            AssertValidOpenTelemetryAutoInstrumentationVersion();
+
+            if (SkipOpenTelemetryAutoInstrumentationVerification)
+            {
+                if (!IsLocalBuild)
+                {
+                    throw new InvalidOperationException("OpenTelemetry AutoInstrumentation verification cannot be skipped on CI builds.");
+                }
+
+                Log.Warning("OpenTelemetry AutoInstrumentation release and artifact attestation verification is skipped.");
+                return;
+            }
+
+            AssertSupportedGitHubCliVersion();
+
+            var archivePath = RootDirectory / GetOTelAutoInstrumentationFileName();
+
+            ProcessTasks.StartProcess(
+                    "gh",
+                    $"release verify-asset {OpenTelemetryAutoInstrumentationVersion} \"{archivePath}\" --repo {OpenTelemetryAutoInstrumentationRepository}")
+                .AssertZeroExitCode();
+
+            ProcessTasks.StartProcess(
+                    "gh",
+                    $"attestation verify \"{archivePath}\" --repo {OpenTelemetryAutoInstrumentationRepository} --signer-workflow {OpenTelemetryAutoInstrumentationReleaseWorkflow} --source-ref refs/tags/{OpenTelemetryAutoInstrumentationVersion}")
+                .AssertZeroExitCode();
+        });
+
     Target UnpackAutoInstrumentationDistribution => _ => _
-        .After(DownloadAutoInstrumentationDistribution)
+        .DependsOn(VerifyAutoInstrumentationDistribution)
         .After(Clean)
         .Executes(() =>
         {
@@ -110,6 +157,37 @@ partial class Build : NukeBuild
         }
 
         return fileName;
+    }
+
+    void AssertValidOpenTelemetryAutoInstrumentationVersion()
+    {
+        if (!ReleaseVersionRegex.IsMatch(OpenTelemetryAutoInstrumentationVersion))
+        {
+            throw new InvalidOperationException(
+                $"Invalid OpenTelemetry AutoInstrumentation version '{OpenTelemetryAutoInstrumentationVersion}'. Expected vMAJOR.MINOR.PATCH or vMAJOR.MINOR.PATCH-PRERELEASE.");
+        }
+    }
+
+    static void AssertSupportedGitHubCliVersion()
+    {
+        var process = ProcessTasks.StartProcess("gh", "--version", logOutput: false)
+            .AssertZeroExitCode();
+        var versionOutput = process.Output.Select(output => output.Text).FirstOrDefault() ?? string.Empty;
+        var versionParts = versionOutput.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        if (versionParts.Length < 3 ||
+            versionParts[0] != "gh" ||
+            versionParts[1] != "version" ||
+            !Version.TryParse(versionParts[2], out var version))
+        {
+            throw new InvalidOperationException($"Unable to determine the installed GitHub CLI version from: {versionOutput}");
+        }
+
+        if (version.CompareTo(MinimumGitHubCliVersion) < 0)
+        {
+            throw new InvalidOperationException(
+                $"GitHub CLI {MinimumGitHubCliVersion} or newer is required for secure release verification. Installed version: {version}.");
+        }
     }
 
     Target AddSplunkPlugins => _ => _
@@ -237,6 +315,7 @@ Copyright The OpenTelemetry Authors under Apache License Version 2.0
         .DependsOn(SerializeMatrix)
         .DependsOn(BuildInstallationScripts)
         .DependsOn(DownloadAutoInstrumentationDistribution)
+        .DependsOn(VerifyAutoInstrumentationDistribution)
         .DependsOn(UnpackAutoInstrumentationDistribution)
         .DependsOn(Compile)
         .DependsOn(AddSplunkPlugins)

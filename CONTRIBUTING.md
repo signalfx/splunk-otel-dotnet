@@ -76,6 +76,25 @@ request](https://help.github.com/articles/creating-a-pull-request/).
 Before your contribution can be accepted, you will be asked to sign our
 [Splunk Contributor License Agreement (CLA)](https://github.com/splunk/cla-agreement/blob/main/CLA.md).
 
+## Building the distribution
+
+The full `Workflow` target downloads an OpenTelemetry .NET Auto-Instrumentation
+release archive and verifies both its immutable GitHub release and artifact
+attestation before extracting it. Install [GitHub CLI](https://cli.github.com/)
+version 2.93.0 or newer and authenticate it with `gh auth login`, or provide an
+appropriate `GH_TOKEN`.
+
+Run the full workflow with:
+
+```powershell
+.\build.cmd Workflow
+```
+
+For local testing of a legacy upstream release that has no release attestation,
+verification can be explicitly disabled with
+`--skip-open-telemetry-auto-instrumentation-verification`. This option is
+rejected on CI builds and should not be used for release artifacts.
+
 ## Finding contributions to work on
 
 Looking at the existing issues is a great way to find something to contribute

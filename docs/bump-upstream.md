@@ -1,5 +1,13 @@
 # Upstream bump process
 
+1. Confirm that the target OpenTelemetry .NET Auto-Instrumentation release is
+   immutable and that its distribution archives have GitHub artifact
+   attestations. The expected signer is
+   `open-telemetry/opentelemetry-dotnet-instrumentation/.github/workflows/release.yml`
+   and the attestation source ref must be the exact release tag. If the upstream
+   signer workflow changes, review the change before updating the corresponding
+   constant in [`Build.cs`](../build/Build.cs).
+
 1. Update the OpenTelemetry .NET AutoInstrumentation version in the following files:
 
    - [`build/Build.cs`](../build/Build.cs)
@@ -41,3 +49,7 @@
         - stability.
 
 1. Update the [GitHub workflows](../.github/workflows) on changes in upstream.
+
+1. Run `Workflow` without the verification opt-out on every supported platform.
+   The build must pass both immutable-release and artifact-attestation
+   verification before any upstream archive is extracted.
