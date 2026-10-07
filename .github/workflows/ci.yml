@@ -72,7 +72,7 @@ jobs:
           ./test/test-applications/integrations/TestApplication.HttpServer/bin/Release/net8.0/TestApplication.HttpServer.exe
           if (-not $?) { throw "dotnet help returned exit code: $LASTEXITCODE" }
           if (Test-Path $log_path) { throw "Log file exists. Instrumentation unregister failed." }
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: bin-${{ matrix.machine }}
           path: |
@@ -143,7 +143,7 @@ jobs:
           ./test/test-applications/integrations/TestApplication.HttpServer/bin/Release/net8.0/publish/TestApplication.HttpServer
             test "$(ls -A /home/user/opentelemetry/log )"
         '
-    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       if: ${{ job.status != 'cancelled' }}
       with:
         name: bin-${{ matrix.base-image }}
@@ -163,7 +163,7 @@ jobs:
             9.0.316
             10.0.302
       - run: ./build.cmd NuGetWorkflow
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: nuget-package
           path: NuGetPackage/
