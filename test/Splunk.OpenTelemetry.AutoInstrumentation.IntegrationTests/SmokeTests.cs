@@ -315,6 +315,7 @@ public class SmokeTests : TestHelper, IDisposable
                 var configMap = frame.EffectiveConfig?.ConfigMap?.ConfigMap;
                 return frame.AgentDescription != null &&
                        frame.Health != null &&
+                       frame.RemoteConfigStatus == null &&
                        ReportsEffectiveConfigCapability(frame) &&
                        configMap != null &&
                        configMap.TryGetValue("environment", out var configFile) &&

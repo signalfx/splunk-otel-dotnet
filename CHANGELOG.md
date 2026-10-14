@@ -34,6 +34,10 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.17.0
   verification.
 - Support for snapshot selection probability in the effective configuration.
 
+### Added
+
+- Experimental support for OpAMP remote configuration for CPU profiling.
+
 ## [1.15.0](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.15.0)
 
 This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.16.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.16.0).
