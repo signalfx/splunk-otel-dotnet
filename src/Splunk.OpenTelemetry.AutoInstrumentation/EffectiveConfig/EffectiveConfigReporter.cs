@@ -21,7 +21,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 internal sealed class EffectiveConfigReporter
 {
     private readonly EffectiveConfigRecorder _recorder;
-    private readonly EffectiveProfilerFeatures _profilerFeatures;
+    private volatile EffectiveProfilerFeatures _profilerFeatures;
 
     private EffectiveConfigReporter(
         EffectiveConfigRecorder recorder,
@@ -38,6 +38,11 @@ internal sealed class EffectiveConfigReporter
         recorder.ValidateCompatibility();
         EffectiveConfigPayloadBuilder.Validate(recorder.CreateSnapshot(profilerFeatures));
         return new EffectiveConfigReporter(recorder, profilerFeatures);
+    }
+
+    public void UpdateProfilerState(EffectiveProfilerFeatures profilerFeatures)
+    {
+        _profilerFeatures = profilerFeatures;
     }
 
     internal EffectiveConfigFile BuildCurrentPayload()
