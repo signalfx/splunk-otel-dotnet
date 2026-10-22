@@ -16,15 +16,16 @@
 FROM busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e AS downloader
 
 ARG RELEASE_VER
+ARG ARCHIVE_ARCH
 
 WORKDIR /autoinstrumentation
 
-ADD https://github.com/signalfx/splunk-otel-dotnet/releases/download/$RELEASE_VER/splunk-opentelemetry-dotnet-linux-glibc-x64.zip .
-ADD https://github.com/signalfx/splunk-otel-dotnet/releases/download/$RELEASE_VER/splunk-opentelemetry-dotnet-linux-musl-x64.zip .
+ADD https://github.com/signalfx/splunk-otel-dotnet/releases/download/$RELEASE_VER/splunk-opentelemetry-dotnet-linux-glibc-$ARCHIVE_ARCH.zip .
+ADD https://github.com/signalfx/splunk-otel-dotnet/releases/download/$RELEASE_VER/splunk-opentelemetry-dotnet-linux-musl-$ARCHIVE_ARCH.zip .
 
-RUN unzip splunk-opentelemetry-dotnet-linux-glibc-x64.zip &&\
-    unzip splunk-opentelemetry-dotnet-linux-musl-x64.zip "linux-musl-x64/*" -d . &&\
-    rm splunk-opentelemetry-dotnet-linux-glibc-x64.zip splunk-opentelemetry-dotnet-linux-musl-x64.zip &&\
+RUN unzip splunk-opentelemetry-dotnet-linux-glibc-$ARCHIVE_ARCH.zip &&\
+    unzip splunk-opentelemetry-dotnet-linux-musl-$ARCHIVE_ARCH.zip "linux-musl-$ARCHIVE_ARCH/*" -d . &&\
+    rm splunk-opentelemetry-dotnet-linux-glibc-$ARCHIVE_ARCH.zip splunk-opentelemetry-dotnet-linux-musl-$ARCHIVE_ARCH.zip &&\
     chmod -R go+r .
 
 FROM busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
