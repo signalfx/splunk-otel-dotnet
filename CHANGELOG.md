@@ -11,6 +11,11 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Changed
 
+- **Breaking change:** Span, span-event, and span-link attribute counts, span event
+  counts, and span link counts now use the OpenTelemetry default of `128`, as
+  required by GDI specification 1.10.0. Previously, counts were unlimited except
+  for span links, which defaulted to `1000`.
+
 ### Deprecated
 
 ### Removed
