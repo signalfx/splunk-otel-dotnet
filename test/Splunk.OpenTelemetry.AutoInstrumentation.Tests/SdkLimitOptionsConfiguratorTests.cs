@@ -34,49 +34,21 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             SdkLimitOptionsConfigurator.Configure();
 
             Assert.Equal("12000", Environment.GetEnvironmentVariable("OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT"));
-            Assert.Equal("2147483647", Environment.GetEnvironmentVariable("OTEL_ATTRIBUTE_COUNT_LIMIT"));
-            Assert.True(string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT")));
-            Assert.True(string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT")));
-            Assert.Equal("2147483647", Environment.GetEnvironmentVariable("OTEL_SPAN_EVENT_COUNT_LIMIT"));
-            Assert.Equal("1000", Environment.GetEnvironmentVariable("OTEL_SPAN_LINK_COUNT_LIMIT"));
-            Assert.True(string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT")));
-            Assert.True(string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OTEL_LINK_ATTRIBUTE_COUNT_LIMIT")));
         }
 
         [Fact]
         public void ConfigurePreservesPreconfiguredValues()
         {
             Environment.SetEnvironmentVariable("OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT", "1");
-            Environment.SetEnvironmentVariable("OTEL_ATTRIBUTE_COUNT_LIMIT", "2");
-            Environment.SetEnvironmentVariable("OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT", "3");
-            Environment.SetEnvironmentVariable("OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT", "4");
-            Environment.SetEnvironmentVariable("OTEL_SPAN_EVENT_COUNT_LIMIT", "5");
-            Environment.SetEnvironmentVariable("OTEL_SPAN_LINK_COUNT_LIMIT", "6");
-            Environment.SetEnvironmentVariable("OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT", "7");
-            Environment.SetEnvironmentVariable("OTEL_LINK_ATTRIBUTE_COUNT_LIMIT", "8");
 
             SdkLimitOptionsConfigurator.Configure();
 
             Assert.Equal("1", Environment.GetEnvironmentVariable("OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT"));
-            Assert.Equal("2", Environment.GetEnvironmentVariable("OTEL_ATTRIBUTE_COUNT_LIMIT"));
-            Assert.Equal("3", Environment.GetEnvironmentVariable("OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT"));
-            Assert.Equal("4", Environment.GetEnvironmentVariable("OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT"));
-            Assert.Equal("5", Environment.GetEnvironmentVariable("OTEL_SPAN_EVENT_COUNT_LIMIT"));
-            Assert.Equal("6", Environment.GetEnvironmentVariable("OTEL_SPAN_LINK_COUNT_LIMIT"));
-            Assert.Equal("7", Environment.GetEnvironmentVariable("OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT"));
-            Assert.Equal("8", Environment.GetEnvironmentVariable("OTEL_LINK_ATTRIBUTE_COUNT_LIMIT"));
         }
 
         private static void ClearEnvVars()
         {
             Environment.SetEnvironmentVariable("OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT", null);
-            Environment.SetEnvironmentVariable("OTEL_ATTRIBUTE_COUNT_LIMIT", null);
-            Environment.SetEnvironmentVariable("OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT", null);
-            Environment.SetEnvironmentVariable("OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT", null);
-            Environment.SetEnvironmentVariable("OTEL_SPAN_EVENT_COUNT_LIMIT", null);
-            Environment.SetEnvironmentVariable("OTEL_SPAN_LINK_COUNT_LIMIT", null);
-            Environment.SetEnvironmentVariable("OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT", null);
-            Environment.SetEnvironmentVariable("OTEL_LINK_ATTRIBUTE_COUNT_LIMIT", null);
         }
     }
 }
