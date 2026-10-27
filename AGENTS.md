@@ -43,6 +43,10 @@ unless the task is explicitly about vendored code.
 configuration behavior, telemetry conventions, and profiling semantics;
 document intentional differences.
 - Keep implementation, docs, YAML fixtures, and smoke tests in sync.
+- Keep `tools/MatrixHelper/*Data.cs` in sync with code and dependency changes,
+including upstream upgrades. After metadata changes, run
+`.\build.cmd SerializeMatrix` and verify
+`bin/Matrix/splunk-otel-dotnet-metadata.yaml` matches the shipped distribution.
 - Keep generated distribution structure snapshots intentional;
 update verified files only when packaging output really changed.
 
@@ -85,4 +89,5 @@ the parent spec the GDI spec extends.
 - [ ] `dotnet format --verify-no-changes` is clean.
 - [ ] Docs / YAML fixtures / verified snapshots updated
 if behavior or packaging changed.
+- [ ] Metadata sources and regenerated YAML reflect affected code/dependencies.
 - [ ] No edits under `Vendors/` unless task requires it.
