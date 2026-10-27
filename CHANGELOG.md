@@ -11,6 +11,8 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.18.0
 
 ### Added
 
+- Experimental support for OpAMP remote configuration for CPU profiling.
+
 ### Changed
 
 - **Breaking change:** Span, span-event, and span-link attribute counts, span event
@@ -58,10 +60,6 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.17.0
   `SKIP_RELEASE_VERIFICATION=true` for the shell installer, to explicitly skip
   verification.
 - Support for snapshot selection probability in the effective configuration.
-
-### Added
-
-- Experimental support for OpAMP remote configuration for CPU profiling.
 
 ## [1.15.0](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.15.0)
 
