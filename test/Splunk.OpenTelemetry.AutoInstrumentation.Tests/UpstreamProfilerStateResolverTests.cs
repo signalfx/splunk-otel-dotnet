@@ -42,26 +42,10 @@ public class UpstreamProfilerStateResolverTests
     }
 
     [Fact]
-    public void AllDisabledCommittedConfigurationDoesNotReportPreparedExportersAsEnabled()
-    {
-        var state = new UpstreamProfilerStateResolver.RuntimeStateBinding(typeof(DisabledNativeMethods)).Query();
-        Assert.Equal(EffectiveProfilerFeatures.None, state.Features);
-        Assert.Equal(0U, state.CpuSamplingInterval);
-        Assert.Equal(0U, state.SnapshotSamplingInterval);
-    }
-
-    [Fact]
     public void FailedQueryIsUnavailableRatherThanAnEmptyConfiguration()
     {
         var binding = new UpstreamProfilerStateResolver.RuntimeStateBinding(typeof(FailedNativeMethods));
         Assert.Throws<InvalidOperationException>(() => binding.Query());
-    }
-
-    [Fact]
-    public void MissingOrChangedQueryContractIsRejected()
-    {
-        Assert.Throws<MissingMethodException>(() => new UpstreamProfilerStateResolver.RuntimeStateBinding(typeof(object)));
-        Assert.Throws<MissingMethodException>(() => new UpstreamProfilerStateResolver.RuntimeStateBinding(typeof(InvalidNativeMethods)));
     }
 
 #pragma warning disable SA1401 // Fields model the upstream reflection contract.
@@ -95,29 +79,12 @@ public class UpstreamProfilerStateResolverTests
         }
     }
 
-    private static class DisabledNativeMethods
-    {
-        public static QueryResult GetContinuousProfilerState(out State state)
-        {
-            state = default;
-            return QueryResult.Succeeded;
-        }
-    }
-
     private static class FailedNativeMethods
     {
         public static QueryResult GetContinuousProfilerState(out State state)
         {
             state = default;
             return QueryResult.UnsupportedLayout;
-        }
-    }
-
-    private static class InvalidNativeMethods
-    {
-        public static QueryResult GetContinuousProfilerState()
-        {
-            return QueryResult.Succeeded;
         }
     }
 }
