@@ -8,21 +8,20 @@ Effective configuration reporting is enabled when OpAMP is enabled and the
 active configuration passes startup validation. Automatic SDK setup is required;
 `OTEL_SDK_DISABLED=true` remains supported as a valid no-op SDK configuration.
 
-After automatic instrumentation initializes, the plugin sends one full-state
-report. When effective configuration reporting is enabled, that report contains
-the current effective configuration together with the agent description,
-capabilities, and health supplied by the OpAMP client. Later server requests
-produce a fresh full-state report.
+See the [upstream OpAMP plugin documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/plugins.md#opamp)
+for reporting behavior, plugin selection, and client lifecycle.
+Remote configuration is available through the opt-in Splunk feature described
+below.
 
 ## OpAMP client configuration
 
 Configure the OpAMP client through the OpenTelemetry .NET auto-instrumentation
 OpAMP options:
 
-- [Environment variables](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.17.0/docs/config.md#opamp-client)
-- [File-based configuration](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.17.0/docs/file-based-configuration.md#opamp)
+- [Environment variables](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/config.md#opamp-client)
+- [File-based configuration](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/file-based-configuration.md#opamp)
 
-## Effective configuration
+## Effective configuration contents
 
 When instrumentation is configured without file-based configuration, the OpAMP
 effective configuration contains one file named `environment` with content type
@@ -43,6 +42,9 @@ The properties body contains the final values for:
 
 For .NET Framework applications, `SPLUNK_PROFILER_MEMORY_ENABLED` is always
 reported as `false` because memory profiling is not supported on .NET Framework.
+Profiler enablement and active sampling intervals come from the upstream
+runtime sampler's committed configuration. Inactive features retain their
+configured interval defaults in the environment representation.
 
 When instrumentation is configured with file-based configuration, the OpAMP
 effective configuration contains one file named after the configured YAML file
@@ -102,7 +104,7 @@ distribution:
 ### Runtime behavior
 
 Profiling remote configuration only works when the
-[.NET CLR Profiler](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.17.0/docs/config.md#net-clr-profiler)
+[.NET CLR Profiler](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/config.md#net-clr-profiler)
 is enabled before the process starts. Without the .NET CLR Profiler, profiling
 does not run, and remote configuration cannot enable or configure the .NET CLR
 Profiler at runtime.
@@ -111,7 +113,8 @@ Enabling remote configuration initializes the continuous profiling pipeline at
 startup so that CPU profiling can be enabled later at runtime. This setup occurs
 even when CPU profiling is initially disabled and includes the
 `PprofInOtlpLogsExporter`, the upstream `BufferProcessor`, and its background
-export thread. On .NET Framework, it also starts the profiler canary thread.
+export thread. On .NET Framework, the profiler canary thread starts when native
+thread sampling is enabled.
 Native CPU sample collection remains disabled until CPU profiling is enabled,
 but the initialized pipeline can still add CPU, memory, and thread overhead.
 Leave remote configuration disabled when runtime profiler activation is not

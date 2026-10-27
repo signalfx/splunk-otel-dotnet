@@ -15,7 +15,11 @@
 // </copyright>
 #if NET
 
+using System.IO.Compression;
 using Splunk.OpenTelemetry.AutoInstrumentation.ContinuousProfiler;
+using Splunk.OpenTelemetry.AutoInstrumentation.Pprof.Proto.Profile;
+using Splunk.OpenTelemetry.AutoInstrumentation.Proto.Logs.V1;
+using Splunk.OpenTelemetry.AutoInstrumentation.Vendors.ProtoBuf;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 {
@@ -31,7 +35,7 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             ];
             var exporter = new PprofInOtlpLogsExporter(new SampleProcessor(), testExporter, new NativeFormatParser(true));
 
-            exporter.ExportThreadSamplesCore(threadSamples, CancellationToken.None);
+            exporter.ExportThreadSamplesCore(threadSamples, 1000, CancellationToken.None);
 
             var exportedRecords = testExporter.Records;
             Assert.Equal(2, exportedRecords.Count);
@@ -57,13 +61,40 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
                 new ThreadSample(new ThreadSample.Time(100), 2, 2, 2, "sample_thread_2", 1, false)
             ];
             var exporter = new PprofInOtlpLogsExporter(new SampleProcessor(), testExporter, new NativeFormatParser(true));
-            exporter.ExportThreadSamplesCore(threadSamples, CancellationToken.None);
+            exporter.ExportThreadSamplesCore(threadSamples, 1000, CancellationToken.None);
 
             var exportedRecords = testExporter.Records;
             Assert.Single(exportedRecords);
 
             // For continuous profiling samples, `profiling.instrumentation.source` attribute can be omitted.
             Assert.All(exportedRecords, lr => Assert.DoesNotContain(lr.Attributes, kv => kv.Key == "profiling.instrumentation.source"));
+        }
+
+        [Fact]
+        public void CpuPeriodsComeFromEachBatchAndDoNotChangeSnapshotPeriods()
+        {
+            var testExporter = new TestSampleExporter();
+            var processor = new SampleProcessor { SelectedSamplingPeriod = 40 };
+            var exporter = new PprofInOtlpLogsExporter(processor, testExporter, new NativeFormatParser(true));
+            List<ThreadSample> samples =
+            [
+                new ThreadSample(new ThreadSample.Time(100), 1, 1, 1, "selected", 1, true) { Frames = { "frame" } }
+            ];
+
+            exporter.ExportThreadSamplesCore(samples, 1000, CancellationToken.None);
+            exporter.ExportThreadSamplesCore(samples, 2500, CancellationToken.None);
+            exporter.ExportThreadSamplesCore(samples, 1000, CancellationToken.None);
+
+            var periods = testExporter.Records.Select(ReadProfile).Select(profile =>
+                Assert.Single(Assert.Single(profile.Samples).Labels, label => profile.StringTables[(int)label.Key] == "source.event.period").Num).ToArray();
+            Assert.Equal(new long[] { 1000, 40, 2500, 40, 1000, 40 }, periods);
+        }
+
+        private static Profile ReadProfile(LogRecord record)
+        {
+            using var stream = new MemoryStream(Convert.FromBase64String(record.Body.StringValue));
+            using var gzip = new GZipStream(stream, CompressionMode.Decompress);
+            return Serializer.Deserialize<Profile>(gzip);
         }
     }
 }

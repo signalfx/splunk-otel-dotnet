@@ -29,7 +29,7 @@ public class EffectiveConfigSnapshotTests
         const EffectiveProfilerFeatures profilerFeatures = EffectiveProfilerFeatures.Cpu | EffectiveProfilerFeatures.Snapshot;
         var snapshot = EffectiveConfigSnapshot.Create(
             CreateStaticSettings(),
-            profilerFeatures,
+            new EffectiveProfilerState(profilerFeatures, 2500, 100),
             [],
             [],
             []);
@@ -37,6 +37,8 @@ public class EffectiveConfigSnapshotTests
         Assert.True(snapshot.CpuProfilerEnabled);
         Assert.False(snapshot.MemoryProfilerEnabled);
         Assert.True(snapshot.SnapshotProfilerEnabled);
+        Assert.Equal(2500U, snapshot.CpuProfilerCallStackInterval);
+        Assert.Equal(100U, snapshot.SnapshotSamplingInterval);
         Assert.Equal(0.25, snapshot.SnapshotSelectionProbability);
     }
 
@@ -46,10 +48,12 @@ public class EffectiveConfigSnapshotTests
         var staticSettings = new EffectiveConfigStaticSettings(
             new PluginSettings(new YamlRoot(), "stable.yaml"));
 
-        var snapshot = EffectiveConfigSnapshot.Create(staticSettings, EffectiveProfilerFeatures.None, [], [], []);
+        var snapshot = EffectiveConfigSnapshot.Create(staticSettings, EffectiveProfilerState.None, [], [], []);
 
         Assert.True(snapshot.IsFileBasedConfig);
         Assert.Equal("stable.yaml", snapshot.FileBasedConfigFileName);
+        Assert.Equal(staticSettings.CpuProfilerCallStackInterval, snapshot.CpuProfilerCallStackInterval);
+        Assert.Equal(staticSettings.SnapshotSamplingInterval, snapshot.SnapshotSamplingInterval);
     }
 
     [Fact]
@@ -73,7 +77,7 @@ public class EffectiveConfigSnapshotTests
         var expectedLogEndpoints = logEndpoints.ToArray();
         var snapshot = EffectiveConfigSnapshot.Create(
             CreateStaticSettings(),
-            EffectiveProfilerFeatures.None,
+            EffectiveProfilerState.None,
             traceEndpoints,
             metricEndpoints,
             logEndpoints);

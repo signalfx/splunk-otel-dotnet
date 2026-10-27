@@ -15,77 +15,68 @@
 // </copyright>
 
 using System.Reflection;
-using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 internal static class NativeContinuousProfilerConfigurator
 {
-    private static readonly ILogger Log = new Logger();
-    private static readonly Lazy<MethodInfo?> ConfigureNativeContinuousProfilerMethod = new(ResolveConfigureNativeContinuousProfilerMethod);
+    private static readonly Lazy<RuntimeConfigurationBinding> Binding = new(() => new RuntimeConfigurationBinding(
+        Type.GetType("OpenTelemetry.AutoInstrumentation.NativeMethods, OpenTelemetry.AutoInstrumentation", throwOnError: true)!));
 
     public static void Configure(
         PluginSettings startupSettings,
         ProfilerRemoteConfigState state)
     {
-        var method = ConfigureNativeContinuousProfilerMethod.Value;
-        if (method == null)
-        {
-            Log.Warning("Could not resolve native continuous profiler reconfiguration method.");
-            return;
-        }
-
-        try
-        {
-            method.Invoke(null, CreateConfigureNativeContinuousProfilerArguments(startupSettings, state));
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to reconfigure native continuous profiler.");
-        }
+        Binding.Value.Configure(startupSettings, state);
     }
 
-    internal static MethodInfo? FindConfigureNativeContinuousProfilerMethod(Type? nativeMethodsType)
+    // Bind the upstream managed wrapper so it owns the native ABI and structure sizes.
+    internal sealed class RuntimeConfigurationBinding
     {
-        return nativeMethodsType?.GetMethod(
-            "ConfigureNativeContinuousProfiler",
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static,
-            binder: null,
-            types: [typeof(bool), typeof(uint), typeof(bool), typeof(uint), typeof(uint)],
-            modifiers: null);
-    }
+        private readonly MethodInfo _apply;
+        private readonly ConstructorInfo _configuration;
+        private readonly object _controlPlaneAuthority;
 
-    internal static object?[] CreateConfigureNativeContinuousProfilerArguments(
-        PluginSettings startupSettings,
-        ProfilerRemoteConfigState state)
-    {
+        public RuntimeConfigurationBinding(Type nativeMethodsType)
+        {
+            _apply = nativeMethodsType.GetMethod(
+                "ApplyContinuousProfilerConfiguration",
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+                ?? throw new MissingMethodException(nativeMethodsType.FullName, "ApplyContinuousProfilerConfiguration");
+            var parameters = _apply.GetParameters();
+            if (!_apply.ReturnType.IsEnum || parameters.Length != 3 || !parameters[1].ParameterType.IsEnum ||
+                !parameters[2].IsOut || !parameters[2].ParameterType.IsByRef)
+            {
+                throw new MissingMethodException("The upstream continuous profiler configuration method has an unsupported signature.");
+            }
+
+            _configuration = parameters[0].ParameterType.GetConstructor([typeof(uint), typeof(uint), typeof(uint)])
+                ?? throw new MissingMethodException(parameters[0].ParameterType.FullName, ".ctor(uint, uint, uint)");
+            _controlPlaneAuthority = Enum.Parse(parameters[1].ParameterType, "ControlPlane");
+        }
+
+        public void Configure(PluginSettings startupSettings, ProfilerRemoteConfigState state)
+        {
+            var cpuSamplingInterval = state.CpuProfilerEnabled
+                ? PluginSettingsHelper.GetFinalContinuousSamplingInterval(startupSettings)
+                : 0u;
+            var snapshotSamplingInterval = startupSettings.SnapshotsEnabled
+                ? PluginSettingsHelper.GetFinalSnapshotSamplingInterval(startupSettings.SnapshotsSamplingInterval)
+                : 0u;
 #if NET
-        var allocationSamplingEnabled = startupSettings.MemoryProfilerEnabled;
-        var maxMemorySamplesPerMinute = PluginSettingsHelper.GetFinalMaxMemorySamples(startupSettings);
+            var maxMemorySamplesPerMinute = startupSettings.MemoryProfilerEnabled
+                ? PluginSettingsHelper.GetFinalMaxMemorySamples(startupSettings)
+                : 0u;
 #else
-        const bool allocationSamplingEnabled = false;
-        const uint maxMemorySamplesPerMinute = 0;
+            const uint maxMemorySamplesPerMinute = 0;
 #endif
-        var cpuProfilerCallStackInterval = state.CpuProfilerEnabled
-            ? PluginSettingsHelper.GetFinalContinuousSamplingInterval(startupSettings)
-            : 0u;
-        var selectedThreadSamplingInterval = startupSettings.SnapshotsEnabled
-            ? PluginSettingsHelper.GetFinalSnapshotSamplingInterval(startupSettings.SnapshotsSamplingInterval)
-            : 0u;
-
-        return
-        [
-            state.CpuProfilerEnabled,
-            cpuProfilerCallStackInterval,
-            allocationSamplingEnabled,
-            maxMemorySamplesPerMinute,
-            selectedThreadSamplingInterval
-        ];
-    }
-
-    private static MethodInfo? ResolveConfigureNativeContinuousProfilerMethod()
-    {
-        var nativeMethodsType = Type.GetType("OpenTelemetry.AutoInstrumentation.NativeMethods, OpenTelemetry.AutoInstrumentation");
-        return FindConfigureNativeContinuousProfilerMethod(nativeMethodsType);
+            var configuration = _configuration.Invoke([cpuSamplingInterval, snapshotSamplingInterval, maxMemorySamplesPerMinute]);
+            object?[] arguments = [configuration, _controlPlaneAuthority, null];
+            var result = _apply.Invoke(null, arguments);
+            if (result?.ToString() is not ("Applied" or "NoChange"))
+            {
+                throw new InvalidOperationException($"The upstream continuous profiler configuration failed: {result}.");
+            }
+        }
     }
 }

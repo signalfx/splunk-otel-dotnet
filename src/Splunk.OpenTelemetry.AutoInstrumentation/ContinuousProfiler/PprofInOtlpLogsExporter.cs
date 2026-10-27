@@ -24,22 +24,20 @@ internal class PprofInOtlpLogsExporter : IContinuousProfilerExporter, ISelective
 {
     private readonly ISampleExporter _sampleExporter;
     private readonly NativeFormatParser _nativeFormatParser;
-    private readonly Func<bool> _cpuProfilerEnabled;
 
-    public PprofInOtlpLogsExporter(SampleProcessor sampleProcessor, ISampleExporter sampleExporter, NativeFormatParser nativeFormatParser, Func<bool>? cpuProfilerEnabled = null)
+    public PprofInOtlpLogsExporter(SampleProcessor sampleProcessor, ISampleExporter sampleExporter, NativeFormatParser nativeFormatParser)
     {
         SampleProcessor = sampleProcessor;
         _sampleExporter = sampleExporter;
         _nativeFormatParser = nativeFormatParser;
-        _cpuProfilerEnabled = cpuProfilerEnabled ?? (() => true);
     }
 
     public SampleProcessor SampleProcessor { get; }
 
-    public void ExportThreadSamples(byte[] buffer, int read, CancellationToken cancellationToken)
+    public void ExportThreadSamples(byte[] buffer, int read, uint samplingInterval, CancellationToken cancellationToken)
     {
         var threadSamples = _nativeFormatParser.ParseThreadSamples(buffer, read);
-        ExportThreadSamplesCore(threadSamples, cancellationToken);
+        ExportThreadSamplesCore(threadSamples, samplingInterval, cancellationToken);
     }
 
     public void ExportAllocationSamples(byte[] buffer, int read, CancellationToken cancellationToken)
@@ -69,17 +67,14 @@ internal class PprofInOtlpLogsExporter : IContinuousProfilerExporter, ISelective
     // Internal for testing.
     // Preferably, NativeFormatParser would live in upstream repository, and this method would be called
     // by the upstream infrastructure, instead of `ExportThreadSamples` method.
-    internal void ExportThreadSamplesCore(List<ThreadSample>? threadSamples, CancellationToken cancellationToken)
+    internal void ExportThreadSamplesCore(List<ThreadSample>? threadSamples, uint samplingInterval, CancellationToken cancellationToken)
     {
         if (threadSamples != null)
         {
-            if (_cpuProfilerEnabled())
+            var logRecord = SampleProcessor.ProcessThreadSamples(threadSamples, samplingInterval);
+            if (logRecord != null)
             {
-                var logRecord = SampleProcessor.ProcessThreadSamples(threadSamples);
-                if (logRecord != null)
-                {
-                    _sampleExporter.Export(logRecord, cancellationToken);
-                }
+                _sampleExporter.Export(logRecord, cancellationToken);
             }
 
             var snapshots = ExtractSnapshots(threadSamples);

@@ -37,19 +37,24 @@ internal sealed class MockOpAmpServer : IDisposable
 {
     private readonly ITestOutputHelper _output;
     private readonly TestHttpServer _listener;
+    private readonly Func<AgentToServer, AgentRemoteConfig?>? _remoteConfiguration;
 
     private readonly List<Expectation> _expectations = new();
     private readonly BlockingCollection<AgentToServer> _frames = new(10);
     private readonly object _effectiveConfigFramesLock = new();
     private readonly List<EffectiveConfigFrameSnapshot> _effectiveConfigFrames = [];
     private readonly ManualResetEventSlim _effectiveConfigReceived = new(false);
-    private long _lastAcceptedSequenceNum;
-    private int _rejectNextEffectiveConfig;
-    private int _requestFullStateOnSequenceGap;
+    private long _firstResponseFlags;
 
-    public MockOpAmpServer(ITestOutputHelper output, string host = "localhost")
+    public MockOpAmpServer(
+        ITestOutputHelper output,
+        string host = "localhost",
+        ServerToAgentFlags firstResponseFlags = 0,
+        Func<AgentToServer, AgentRemoteConfig?>? remoteConfiguration = null)
     {
         _output = output;
+        _remoteConfiguration = remoteConfiguration;
+        _firstResponseFlags = unchecked((long)firstResponseFlags);
 #if NETFRAMEWORK
         _listener = new TestHttpServer(output, HandleHttpRequests, host, "/v1/opamp/");
 #else
@@ -61,12 +66,6 @@ internal sealed class MockOpAmpServer : IDisposable
     /// Gets the TCP port that this collector is listening on.
     /// </summary>
     public int Port => _listener.Port;
-
-    public void RejectNextEffectiveConfigAndRequestFullStateOnSequenceGap()
-    {
-        Interlocked.Exchange(ref _rejectNextEffectiveConfig, 1);
-        Interlocked.Exchange(ref _requestFullStateOnSequenceGap, 1);
-    }
 
     public void Expect(Func<AgentToServer, bool>? predicate = null, string? description = null)
     {
@@ -172,13 +171,6 @@ internal sealed class MockOpAmpServer : IDisposable
             Assert.Equal(contentType, file.ContentType);
             Assert.False(string.IsNullOrWhiteSpace(file.Body));
         });
-
-        var duplicatePayloads = files
-            .GroupBy(file => file.Body, StringComparer.Ordinal)
-            .Where(group => group.Count() > 1)
-            .Select(group => group.Key)
-            .ToArray();
-        Assert.Empty(duplicatePayloads);
 
         var finalPayload = frames
             .OrderBy(frame => frame.SequenceNum)
@@ -288,20 +280,11 @@ internal sealed class MockOpAmpServer : IDisposable
     private byte[] GenerateResponse(AgentToServer frame)
     {
         var content = "This is a mock server frame for testing purposes.";
-        var flags = 0UL;
-        var previousSequenceNum = unchecked((ulong)Interlocked.Exchange(
-            ref _lastAcceptedSequenceNum,
-            unchecked((long)frame.SequenceNum)));
-        if (Volatile.Read(ref _requestFullStateOnSequenceGap) != 0 &&
-            previousSequenceNum != 0 &&
-            frame.SequenceNum != previousSequenceNum + 1)
-        {
-            flags |= (ulong)ServerToAgentFlags.ReportFullState;
-        }
-
+        var flags = unchecked((ulong)Interlocked.Exchange(ref _firstResponseFlags, 0));
         var responseFrame = new ServerToAgent
         {
             InstanceUid = frame.InstanceUid,
+            Capabilities = (ulong)(ServerCapabilities.AcceptsStatus | ServerCapabilities.AcceptsEffectiveConfig),
             Flags = flags,
             CustomMessage = new CustomMessage
             {
@@ -310,32 +293,19 @@ internal sealed class MockOpAmpServer : IDisposable
             },
         };
 
-        return responseFrame.ToByteArray();
-    }
-
-    private bool ShouldReject(AgentToServer frame)
-    {
-        if (frame.EffectiveConfig == null ||
-            Interlocked.CompareExchange(ref _rejectNextEffectiveConfig, 0, 1) != 1)
+        if (_remoteConfiguration != null)
         {
-            return false;
+            responseFrame.Capabilities |= (ulong)ServerCapabilities.OffersRemoteConfig;
+            responseFrame.RemoteConfig = _remoteConfiguration(frame);
         }
 
-        WriteOutput($"Rejecting effective config frame with sequence number {frame.SequenceNum}.");
-        return true;
+        return responseFrame.ToByteArray();
     }
 
 #if NETFRAMEWORK
     private void HandleHttpRequests(HttpListenerContext ctx)
     {
         var frame = AgentToServer.Parser.ParseFrom(ctx.Request.InputStream);
-        if (ShouldReject(frame))
-        {
-            ctx.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
-            ctx.Response.OutputStream.Close();
-            return;
-        }
-
         RecordEffectiveConfigFrame(frame);
         _frames.Add(frame);
 
@@ -352,13 +322,6 @@ internal sealed class MockOpAmpServer : IDisposable
         var frame = await ProcessReceiveAsync(ctx.Request).ConfigureAwait(false);
         if (frame == null)
         {
-            return;
-        }
-
-        if (ShouldReject(frame))
-        {
-            ctx.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
-            await ctx.Response.CompleteAsync().ConfigureAwait(false);
             return;
         }
 

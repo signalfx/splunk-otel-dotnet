@@ -7,9 +7,34 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.16.0...HEAD)
 
+This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.18.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.18.0).
+
 ### Added
 
 ### Changed
+
+- **Breaking change:** Span, span-event, and span-link attribute counts, span event
+  counts, and span link counts now use the OpenTelemetry default of `128`, as
+  required by GDI specification 1.10.0. Previously, counts were unlimited except
+  for span links, which defaulted to `1000`.
+  This mitigates resource exhaustion from unbounded telemetry collections;
+  attributes, events, and links beyond their respective limits are dropped.
+  To retain higher counts, explicitly configure the corresponding
+  `OTEL_*_COUNT_LIMIT` variables. Existing explicit values are preserved.
+  The following example restores the previous effective defaults, using
+  `2147483647` for the previous .NET representation of unlimited counts:
+
+  ```text
+  OTEL_ATTRIBUTE_COUNT_LIMIT=2147483647
+  OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT=2147483647
+  OTEL_SPAN_EVENT_COUNT_LIMIT=2147483647
+  OTEL_SPAN_LINK_COUNT_LIMIT=1000
+  OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT=2147483647
+  OTEL_LINK_ATTRIBUTE_COUNT_LIMIT=2147483647
+  ```
+
+  Higher limits increase memory usage and the risk of resource exhaustion;
+  choose limits appropriate for your workload.
 
 ### Deprecated
 

@@ -122,12 +122,12 @@ internal static class SettingsData
             new("OTEL_DOTNET_AUTO_LOGS_{INSTRUMENTATION}_INSTRUMENTATION_ENABLED", "Activates or deactivates a specific log instrumentation, where `{INSTRUMENTATION}` is the case-sensitive name of the instrumentation. Overrides `OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED`. Inherits the value of the `OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED` environment variable. Can’t be set using the web.config or app.config files. See Supported libraries for a complete list of supported instrumentations and their names.", string.Empty, "boolean", InstrumentationCategory),
 
             // OTLP
-            new("OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT", "Maximum length of strings for attribute values. Values larger than the limit are truncated. Default value is `1200`. Empty values are treated as infinity.", "1200", "int", OTLPCategory),
+            new("OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT", "Maximum length of strings for attribute values. Values larger than the limit are truncated. Default value is `12000`.", "12000", "int", OTLPCategory),
             new("OTEL_ATTRIBUTE_COUNT_LIMIT", "Maximum allowed span attribute count. Default value is `128`.", "128", "int", OTLPCategory),
             new("OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT", "Maximum allowed attribute value size. Not applicable for metrics.", string.Empty, "int", OTLPCategory),
-            new("OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT", "Maximum number of attributes per span. Default value is unlimited.", string.Empty, "int", OTLPCategory),
-            new("OTEL_SPAN_EVENT_COUNT_LIMIT", "Maximum number of events per span. Default value is unlimited.", string.Empty, "int", OTLPCategory),
-            new("OTEL_SPAN_LINK_COUNT_LIMIT", "Maximum number of links per span. Default value is `1000`.", "1000", "int", OTLPCategory),
+            new("OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT", "Maximum number of attributes per span. Default value is `128`.", "128", "int", OTLPCategory),
+            new("OTEL_SPAN_EVENT_COUNT_LIMIT", "Maximum number of events per span. Default value is `128`.", "128", "int", OTLPCategory),
+            new("OTEL_SPAN_LINK_COUNT_LIMIT", "Maximum number of links per span. Default value is `128`.", "128", "int", OTLPCategory),
             new("OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT", "Maximum allowed attribute per span event count. Default value is `128`.", "128", "int", OTLPCategory),
             new("OTEL_LINK_ATTRIBUTE_COUNT_LIMIT", "Maximum allowed attribute per span link count. Default value is `128`.", "128", "int", OTLPCategory),
             new("OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT", "Maximum allowed log record attribute value size.", string.Empty, "int", OTLPCategory),

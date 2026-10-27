@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using OpenTelemetry.AutoInstrumentation.PluginApi;
 using OpenTelemetry.AutoInstrumentation.PluginApi.ContinuousProfiling;
@@ -24,7 +23,7 @@ using OpenTelemetry.AutoInstrumentation.PluginApi.Telemetry;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
-using OpenTelemetry.OpAmp.Client;
+using OpenTelemetry.OpAmp.Client.Messages;
 using OpenTelemetry.OpAmp.Client.Settings;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -49,7 +48,8 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation;
 public class Plugin :
     IPlugin,
     ITelemetryPlugin,
-    IOpAmpPlugin,
+    IProvideEffectiveConfig,
+    IProvideRemoteConfigStatus,
     IContinuousProfilerPlugin,
     ISelectiveSamplerPlugin,
     IConfigureMetricsOptions<OtlpExporterOptions>,
@@ -77,7 +77,6 @@ public class Plugin :
     private readonly Traces _traces;
     private readonly Sdk _sdk;
     private readonly OpAmp _opAmp;
-    private bool _opAmpConfigurationHookInvoked;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Plugin"/> class.
@@ -167,17 +166,41 @@ public class Plugin :
     /// <param name="settings">OpAMP client settings.</param>
     public void ConfigureOpAmpOptions(OpAmpClientSettings settings)
     {
-        _opAmpConfigurationHookInvoked = true;
         _opAmp.ConfigureOptions(settings, Settings);
     }
 
     /// <summary>
-    /// Called when the OpAMP client has been initialized.
+    /// Retains the OpAMP client before it starts.
     /// </summary>
     /// <param name="client">OpAMP client.</param>
-    public void AfterOpAmpClientStarted(OpAmpClient client)
+    public void ConfigureOpAmpClient(IOpAmpClient client)
     {
-        _opAmp.OnClientStarted(client);
+        _opAmp.ConfigureClient(client);
+    }
+
+    /// <summary>
+    /// Called when the OpAMP client's start operation completes.
+    /// </summary>
+    public void AfterOpAmpClientStarted()
+    {
+    }
+
+    /// <summary>
+    /// Gets the current effective configuration for OpAMP reporting.
+    /// </summary>
+    /// <returns>The complete effective configuration.</returns>
+    public IReadOnlyCollection<EffectiveConfigFile> GetEffectiveConfig()
+    {
+        return _opAmp.GetEffectiveConfig();
+    }
+
+    /// <summary>
+    /// Gets the status of the last received remote configuration.
+    /// </summary>
+    /// <returns>The current remote configuration status, if available.</returns>
+    public RemoteConfigStatusReport? GetRemoteConfigStatus()
+    {
+        return _opAmp.GetRemoteConfigStatus();
     }
 
     /// <summary>
@@ -219,8 +242,8 @@ public class Plugin :
     public ContinuousProfilerConfiguration GetFirstContinuousProfilerConfiguration()
     {
         var remoteConfigState = ProfilerRuntimeConfiguration.Current;
-        var threadSamplingEnabled = ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled || remoteConfigState.CpuProfilerEnabled;
-        var threadSamplingInterval = PluginSettingsHelper.GetFinalContinuousSamplingInterval(Settings);
+        var threadSamplingEnabled = remoteConfigState.CpuProfilerEnabled;
+        var threadSamplingInterval = ProfilerRuntimeConfiguration.StartupCpuProfilerCallStackInterval;
 #if NET
         var allocationSamplingEnabled = Settings.MemoryProfilerEnabled;
         var maxMemorySamplesPerMinute = PluginSettingsHelper.GetFinalMaxMemorySamples(Settings);
@@ -233,7 +256,6 @@ public class Plugin :
         var exportTimeout = TimeSpan.FromMilliseconds(PluginSettingsHelper.GetFinalExportTimeout(Settings.ProfilerHttpClientTimeout));
 
         var pprofInOtlpLogsExporter = GetPprofInOtlpLogsExporter();
-        ProfilerRuntimeConfiguration.ApplyToExporter(pprofInOtlpLogsExporter);
 
         return new ContinuousProfilerConfiguration
         {
@@ -340,22 +362,6 @@ public class Plugin :
     /// </summary>
     public void Initialized()
     {
-        if (ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled)
-        {
-            ProfilerRuntimeConfiguration.ApplyCurrentToNative();
-        }
-
-        // Upstream invokes this hook even when OpAMP is disabled. On .NET Framework, entering the
-        // OpAMP lifecycle path eagerly loads the client assembly, so only enter it after configuration.
-        if (_opAmpConfigurationHookInvoked)
-        {
-            MarkOpAmpInstrumentationInitialized();
-        }
-    }
-
-    internal static PprofInOtlpLogsExporter? TryGetPprofInOtlpLogsExporter()
-    {
-        return _pprofInOtlpLogsExporter;
     }
 
     private static void EnableHighResTimer()
@@ -407,13 +413,6 @@ public class Plugin :
         return new PprofInOtlpLogsExporter(
             new SampleProcessor(),
             new SampleExporter(new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint)),
-            new NativeFormatParser(Settings.SnapshotsEnabled),
-            () => ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private void MarkOpAmpInstrumentationInitialized()
-    {
-        _opAmp.MarkInstrumentationInitialized();
+            new NativeFormatParser(Settings.SnapshotsEnabled));
     }
 }

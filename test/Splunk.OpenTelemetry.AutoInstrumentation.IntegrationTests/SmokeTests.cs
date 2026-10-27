@@ -287,9 +287,9 @@ public class SmokeTests : TestHelper, IDisposable
 
     [Fact]
     [Trait("Category", "EndToEnd")]
-    public void InitialOpAmpFullStateReportIncludesCurrentEffectiveConfigAndClientState()
+    public void FirstServerResponseCanRequestFullStateIncludingCurrentEffectiveConfig()
     {
-        using var opAmpServer = new MockOpAmpServer(Output);
+        using var opAmpServer = new MockOpAmpServer(Output, firstResponseFlags: ServerToAgentFlags.ReportFullState);
 
         SetEnvironmentVariable("OTEL_SDK_DISABLED", "true");
         SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
@@ -318,60 +318,20 @@ public class SmokeTests : TestHelper, IDisposable
                        frame.RemoteConfigStatus == null &&
                        ReportsEffectiveConfigCapability(frame) &&
                        configMap != null &&
+                       configMap.Count == 1 &&
                        configMap.TryGetValue("environment", out var configFile) &&
                        configFile.ContentType == ExpectedEnvVarConfigContentType &&
                        EnvironmentConfigPayloadMatches(configFile.Body.ToStringUtf8(), expectedPayload);
             },
-            "Initial full state contains agent description, capabilities, health, and current effective config");
-
-        RunTestApplicationAndAssertOpAmp(opAmpServer);
-    }
-
-    [Fact]
-    [Trait("Category", "EndToEnd")]
-    public void LostEffectiveConfigIsRecoveredAfterHeartbeatSequenceGap()
-    {
-        using var opAmpServer = new MockOpAmpServer(Output);
-
-        SetEnvironmentVariable("OTEL_SDK_DISABLED", "true");
-        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
-        opAmpServer.RejectNextEffectiveConfigAndRequestFullStateOnSequenceGap();
-
-        var expectedPayload = new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = "none",
-            ["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"] = "none",
-            ["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"] = "none",
-            ["SPLUNK_PROFILER_ENABLED"] = "false",
-            ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
-            ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
-            ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "40",
-            ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.01",
-            ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
-            ["OTEL_CONFIG_FILE"] = "null"
-        };
-
-        opAmpServer.Expect(ReportsEffectiveConfigCapability, "Reports effective config capability");
-        opAmpServer.Expect(
-            frame =>
-            {
-                var configMap = frame.EffectiveConfig?.ConfigMap?.ConfigMap;
-                return frame.AgentDescription != null &&
-                       frame.Health != null &&
-                       ReportsEffectiveConfigCapability(frame) &&
-                       configMap != null &&
-                       configMap.TryGetValue("environment", out var configFile) &&
-                       configFile.ContentType == ExpectedEnvVarConfigContentType &&
-                       EnvironmentConfigPayloadMatches(configFile.Body.ToStringUtf8(), expectedPayload);
-            },
-            "Full state recovers the effective config rejected before the heartbeat sequence gap");
+            "First-response full-state request includes agent description, capabilities, health, and current effective config");
 
         RunTestApplicationAndAssertOpAmp(opAmpServer);
 
-        opAmpServer.AssertEffectiveConfigPayloads(
+        var payload = opAmpServer.AssertEffectiveConfigPayloads(
             "environment",
             ExpectedEnvVarConfigContentType,
             payload => EnvironmentConfigPayloadMatches(payload, expectedPayload));
+        AssertEnvironmentConfigPayload(payload, expectedPayload);
     }
 
     [Fact]
@@ -389,38 +349,6 @@ public class SmokeTests : TestHelper, IDisposable
         RunTestApplicationAndAssertOpAmp(
             opAmpServer,
             () => opAmpServer.AssertNoEffectiveConfigFrames());
-    }
-
-    [Fact]
-    [Trait("Category", "EndToEnd")]
-    public void EffectiveConfigReportsNoEndpointsWhenSdkIsDisabled()
-    {
-        using var opAmpServer = new MockOpAmpServer(Output);
-
-        SetEnvironmentVariable("OTEL_SDK_DISABLED", "true");
-        SetEnvironmentVariable("SKIP_TELEMETRY_EMISSION", "true");
-
-        var expectedPayload = new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = "none",
-            ["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"] = "none",
-            ["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"] = "none",
-            ["SPLUNK_PROFILER_ENABLED"] = "false",
-            ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
-            ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
-            ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "40",
-            ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.01",
-            ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
-            ["OTEL_CONFIG_FILE"] = "null"
-        };
-
-        var payload = RunTestApplicationAndAssertEffectiveConfig(
-            opAmpServer,
-            payload => EnvironmentConfigPayloadMatches(payload, expectedPayload),
-            "environment",
-            ExpectedEnvVarConfigContentType);
-
-        AssertEnvironmentConfigPayload(payload, expectedPayload);
     }
 
 #if NET

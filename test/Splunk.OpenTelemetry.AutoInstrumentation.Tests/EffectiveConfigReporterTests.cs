@@ -37,12 +37,18 @@ public class EffectiveConfigReporterTests
                             [ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = "1234"
                         }))),
             openTelemetrySdkDisabled: true);
-        var reporter = EffectiveConfigReporter.CreateValidated(recorder, EffectiveProfilerFeatures.None);
+        var state = EffectiveProfilerState.None;
+        var reporter = EffectiveConfigReporter.CreateValidated(recorder, () => state);
 
-        reporter.UpdateProfilerState(EffectiveProfilerFeatures.Cpu);
+        state = new EffectiveProfilerState(EffectiveProfilerFeatures.Cpu, 4321, 0);
 
         var body = Encoding.UTF8.GetString(reporter.BuildCurrentPayload().Content.ToArray());
         Assert.Contains("SPLUNK_PROFILER_ENABLED=true", body, StringComparison.Ordinal);
+        Assert.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=4321", body, StringComparison.Ordinal);
+
+        state = EffectiveProfilerState.None;
+        body = Encoding.UTF8.GetString(reporter.BuildCurrentPayload().Content.ToArray());
+        Assert.Contains("SPLUNK_PROFILER_ENABLED=false", body, StringComparison.Ordinal);
         Assert.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=1234", body, StringComparison.Ordinal);
     }
 
@@ -55,7 +61,7 @@ public class EffectiveConfigReporterTests
                 new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()))),
             openTelemetrySdkDisabled: false,
             () => null);
-        var reporter = EffectiveConfigReporter.CreateValidated(recorder, EffectiveProfilerFeatures.None);
+        var reporter = EffectiveConfigReporter.CreateValidated(recorder, () => EffectiveProfilerState.None);
         recorder.MarkOpenTelemetryLoggerConfigured();
         Assert.True(recorder.CaptureLogExporterOptions(new OtlpExporterOptions
         {

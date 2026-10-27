@@ -22,10 +22,34 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
 public class NativeContinuousProfilerConfiguratorTests
 {
-    [Fact]
-    public void NativeMethodContract_UsesAllFiveUpstreamArguments()
+    public enum ApplyResult
     {
-        var method = NativeContinuousProfilerConfigurator.FindConfigureNativeContinuousProfilerMethod(typeof(NativeMethodsStub));
+        /// <summary>The runtime configuration was committed.</summary>
+        Applied,
+
+        /// <summary>The requested configuration was already active.</summary>
+        NoChange,
+
+        /// <summary>The runtime rejected the requested configuration.</summary>
+        RejectedInvalidConfiguration,
+
+        /// <summary>The runtime could not activate profiling.</summary>
+        ActivationFailed,
+
+        /// <summary>The runtime is shutting down.</summary>
+        ShuttingDown
+    }
+
+    private enum Authority
+    {
+        Seed = 1,
+        ControlPlane = 2
+    }
+
+    [Fact]
+    public void NativeConfiguration_UsesControlPlaneAndPreservesStartupNonCpuSettings()
+    {
+        var binding = new NativeContinuousProfilerConfigurator.RuntimeConfigurationBinding(typeof(NativeMethodsStub));
         var startupSettings = new PluginSettings(
             new NameValueConfigurationSource(
                 new NameValueCollection
@@ -39,21 +63,18 @@ public class NativeContinuousProfilerConfiguratorTests
                     [ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples] = "123"
 #endif
                 }));
-        var state = new ProfilerRemoteConfigState(cpuProfilerEnabled: true);
+        NativeMethodsStub.Result = ApplyResult.Applied;
 
+        binding.Configure(startupSettings, new ProfilerRemoteConfigState(cpuProfilerEnabled: true));
+
+        Assert.Equal(Authority.ControlPlane, NativeMethodsStub.LastAuthority);
+        Assert.Equal(156u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
+        Assert.Equal(78u, NativeMethodsStub.LastConfiguration.SnapshotSamplingInterval);
 #if NET
-        object?[] expectedArguments = [true, 156u, true, 123u, 78u];
+        Assert.Equal(123u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
 #else
-        object?[] expectedArguments = [true, 156u, false, 0u, 78u];
+        Assert.Equal(0u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
 #endif
-
-        Assert.NotNull(method);
-        Assert.Equal(
-            [typeof(bool), typeof(uint), typeof(bool), typeof(uint), typeof(uint)],
-            method.GetParameters().Select(parameter => parameter.ParameterType));
-        Assert.Equal(
-            expectedArguments,
-            NativeContinuousProfilerConfigurator.CreateConfigureNativeContinuousProfilerArguments(startupSettings, state));
     }
 
     [Fact]
@@ -64,26 +85,94 @@ public class NativeContinuousProfilerConfiguratorTests
                 new NameValueCollection
                 {
                     [ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled] = "true",
-                    [ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = "123"
+                    [ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = "156",
+                    [ConfigurationKeys.Splunk.Snapshots.Enabled] = "true",
+                    [ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs] = "78",
+#if NET
+                    [ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled] = "true",
+                    [ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples] = "123"
+#endif
                 }));
+        var binding = new NativeContinuousProfilerConfigurator.RuntimeConfigurationBinding(typeof(NativeMethodsStub));
+        NativeMethodsStub.Result = ApplyResult.Applied;
 
-        var arguments = NativeContinuousProfilerConfigurator.CreateConfigureNativeContinuousProfilerArguments(
-            startupSettings,
-            new ProfilerRemoteConfigState(cpuProfilerEnabled: false));
+        binding.Configure(startupSettings, new ProfilerRemoteConfigState(cpuProfilerEnabled: false));
 
-        Assert.False((bool)arguments[0]!);
-        Assert.Equal(0u, arguments[1]);
+        Assert.Equal(0u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
+        Assert.Equal(78u, NativeMethodsStub.LastConfiguration.SnapshotSamplingInterval);
+#if NET
+        Assert.Equal(123u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
+#else
+        Assert.Equal(0u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
+#endif
+    }
+
+    [Fact]
+    public void NativeConfiguration_AcceptsUnchangedConfiguration()
+    {
+        var binding = new NativeContinuousProfilerConfigurator.RuntimeConfigurationBinding(typeof(NativeMethodsStub));
+        var startupSettings = new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        NativeMethodsStub.Result = ApplyResult.NoChange;
+
+        binding.Configure(startupSettings, new ProfilerRemoteConfigState(cpuProfilerEnabled: false));
+
+        Assert.Equal(0u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
+        Assert.Equal(0u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
+    }
+
+    [Theory]
+    [InlineData(ApplyResult.RejectedInvalidConfiguration)]
+    [InlineData(ApplyResult.ActivationFailed)]
+    [InlineData(ApplyResult.ShuttingDown)]
+    public void NativeConfiguration_RejectsFailedApplyResults(ApplyResult result)
+    {
+        var binding = new NativeContinuousProfilerConfigurator.RuntimeConfigurationBinding(typeof(NativeMethodsStub));
+        var startupSettings = new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        NativeMethodsStub.Result = result;
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            binding.Configure(startupSettings, new ProfilerRemoteConfigState(cpuProfilerEnabled: true)));
+
+        Assert.Contains(result.ToString(), exception.Message, StringComparison.Ordinal);
+    }
+
+    private readonly struct RuntimeConfiguration
+    {
+        public RuntimeConfiguration(uint cpuSamplingInterval, uint snapshotSamplingInterval, uint maxMemorySamplesPerMinute)
+        {
+            CpuSamplingInterval = cpuSamplingInterval;
+            SnapshotSamplingInterval = snapshotSamplingInterval;
+            MaxMemorySamplesPerMinute = maxMemorySamplesPerMinute;
+        }
+
+        public uint CpuSamplingInterval { get; }
+
+        public uint SnapshotSamplingInterval { get; }
+
+        public uint MaxMemorySamplesPerMinute { get; }
+    }
+
+    private readonly struct RuntimeState
+    {
     }
 
     private static class NativeMethodsStub
     {
-        public static void ConfigureNativeContinuousProfiler(
-            bool threadSamplingEnabled,
-            uint threadSamplingInterval,
-            bool allocationSamplingEnabled,
-            uint maxMemorySamplesPerMinute,
-            uint selectedThreadSamplingInterval)
+        public static ApplyResult Result { get; set; }
+
+        public static RuntimeConfiguration LastConfiguration { get; private set; }
+
+        public static Authority LastAuthority { get; private set; }
+
+        public static ApplyResult ApplyContinuousProfilerConfiguration(
+            RuntimeConfiguration configuration,
+            Authority authority,
+            out RuntimeState state)
         {
+            LastConfiguration = configuration;
+            LastAuthority = authority;
+            state = default;
+            return Result;
         }
     }
 }

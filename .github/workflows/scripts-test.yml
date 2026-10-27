@@ -120,6 +120,8 @@ jobs:
     runs-on: ${{ matrix.machine }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Test the Shell scripts from README.md in Docker container
         env:
           GH_TOKEN: ${{ github.token }}
@@ -136,6 +138,7 @@ jobs:
             --source-ref "refs/tags/${RELEASE_TAG_NAME}"
           docker build -t mybuildimage -f "./docker/${{ matrix.base-image }}.dockerfile" .
           docker run \
+            --env GH_TOKEN \
             --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project \
             --mount type=bind,source="${installer_path}",target=/tmp/splunk-otel-dotnet-install.sh,readonly \
             --rm mybuildimage /bin/sh -c '
@@ -145,8 +148,7 @@ jobs:
             dotnet new console
             dotnet publish /p:TreatWarningsAsErrors=false -f net10.0 -c Release
             cp /tmp/splunk-otel-dotnet-install.sh ./splunk-otel-dotnet-install.sh
-            # Archive verification is exercised by the hosted-runner job; the minimal test image does not include GitHub CLI.
-            SKIP_RELEASE_VERIFICATION=true sh ./splunk-otel-dotnet-install.sh
+            sh ./splunk-otel-dotnet-install.sh
               test "$(ls -A "$HOME/.splunk-otel-dotnet")"
             curl -sSfL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/instrument.sh -O
             . ./instrument.sh

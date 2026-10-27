@@ -23,6 +23,48 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
 public class ProfilerRuntimeRemoteConfigurationTests
 {
+    [Theory]
+    [InlineData(false, 0u)]
+    [InlineData(true, (uint)Constants.DefaultSamplingInterval)]
+    public void StartupSamplingInterval_PreparesCpuExportsOnlyWhenRemoteConfigurationIsEnabledForYamlWithoutProfiling(
+        bool remoteConfigurationEnabled,
+        uint expectedSamplingInterval)
+    {
+        ProfilerRuntimeConfiguration.Initialize(new PluginSettings(new YamlRoot
+        {
+            OpampDevelopment = new OpampDevelopment
+            {
+                Features = new Features
+                {
+                    RemoteConfig = remoteConfigurationEnabled ? new object() : null
+                }
+            }
+        }));
+
+        Assert.False(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
+        Assert.Equal(expectedSamplingInterval, ProfilerRuntimeConfiguration.StartupCpuProfilerCallStackInterval);
+    }
+
+    [Theory]
+    [InlineData(false, false, 0u)]
+    [InlineData(false, true, 1234u)]
+    [InlineData(true, false, 1234u)]
+    [InlineData(true, true, 1234u)]
+    public void StartupSamplingInterval_PreparesCpuExportsWhenCpuProfilingOrRemoteConfigurationIsEnabled(
+        bool cpuProfilerEnabled,
+        bool remoteConfigurationEnabled,
+        uint expectedSamplingInterval)
+    {
+        ProfilerRuntimeConfiguration.Initialize(CreateSettings(new NameValueCollection
+        {
+            [ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled] = cpuProfilerEnabled.ToString(),
+            [ConfigurationKeys.Splunk.OpAmp.RemoteConfig] = remoteConfigurationEnabled.ToString(),
+            [ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = "1234"
+        }));
+
+        Assert.Equal(expectedSamplingInterval, ProfilerRuntimeConfiguration.StartupCpuProfilerCallStackInterval);
+    }
+
     [Fact]
     public void PluginSettingsHelper_UsesExporterDefaultsWhenYamlOmitsProfiling()
     {
@@ -59,7 +101,7 @@ public class ProfilerRuntimeRemoteConfigurationTests
                     { ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, "4321" }
                 }));
 
-        ProfilerRuntimeConfiguration.Apply(
+        ApplyConfiguration(
             CreateConfiguration(
                 new ProfilerConfiguration
                 {
@@ -111,7 +153,7 @@ public class ProfilerRuntimeRemoteConfigurationTests
                     { ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, snapshotSamplingInterval }
                 }));
 
-        ProfilerRuntimeConfiguration.Apply(
+        ApplyConfiguration(
             CreateConfiguration(
                 new ProfilerConfiguration
                 {
@@ -136,7 +178,7 @@ public class ProfilerRuntimeRemoteConfigurationTests
     {
         ProfilerRuntimeConfiguration.Initialize(CreateSettings());
 
-        ProfilerRuntimeConfiguration.Apply(
+        ApplyConfiguration(
             CreateConfiguration(
                 new ProfilerConfiguration
                 {
@@ -161,7 +203,7 @@ public class ProfilerRuntimeRemoteConfigurationTests
                     { ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, "1234" }
                 }));
 
-        ProfilerRuntimeConfiguration.Apply(
+        ApplyConfiguration(
             CreateConfiguration(
                 new ProfilerConfiguration
                 {
@@ -183,7 +225,7 @@ public class ProfilerRuntimeRemoteConfigurationTests
                     { ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval, "1234" }
                 }));
 
-        ProfilerRuntimeConfiguration.Apply(new YamlRoot());
+        ApplyConfiguration(new YamlRoot());
 
         Assert.True(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
         Assert.Equal(1234u, ProfilerRuntimeConfiguration.CurrentCpuProfilerCallStackInterval);
@@ -204,7 +246,7 @@ public class ProfilerRuntimeRemoteConfigurationTests
         var startupSettings = CreateSettings(settings);
         ProfilerRuntimeConfiguration.Initialize(startupSettings);
 
-        ProfilerRuntimeConfiguration.Apply(
+        ApplyConfiguration(
             CreateConfiguration(
                 new ProfilerConfiguration
                 {
@@ -231,6 +273,51 @@ public class ProfilerRuntimeRemoteConfigurationTests
         Assert.True(startupSettings.MemoryProfilerEnabled);
         Assert.Equal(137u, startupSettings.MemoryProfilerMaxMemorySamplesPerMinute);
 #endif
+    }
+
+    [Fact]
+    public void Apply_KeepsPreviousStateWhenNativeConfigurationFails()
+    {
+        ProfilerRuntimeConfiguration.Initialize(CreateSettings());
+        var configuration = CreateConfiguration(new ProfilerConfiguration
+        {
+            AlwaysOn = new AlwaysOn { CpuProfiler = new CpuProfiler() }
+        });
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            ProfilerRuntimeConfiguration.Apply(configuration, (_, _) => throw new InvalidOperationException("ActivationFailed")));
+
+        Assert.Equal("ActivationFailed", exception.Message);
+        Assert.False(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
+        Assert.Equal(0u, ProfilerRuntimeConfiguration.CurrentCpuProfilerCallStackInterval);
+    }
+
+    [Fact]
+    public void Apply_CommitsStateAfterNativeConfigurationSucceeds()
+    {
+        var settings = CreateSettings();
+        ProfilerRuntimeConfiguration.Initialize(settings);
+        var configuration = CreateConfiguration(new ProfilerConfiguration
+        {
+            AlwaysOn = new AlwaysOn { CpuProfiler = new CpuProfiler() }
+        });
+        var nativeConfigurationApplied = false;
+
+        ProfilerRuntimeConfiguration.Apply(configuration, (startupSettings, state) =>
+        {
+            Assert.Same(settings, startupSettings);
+            Assert.True(state.CpuProfilerEnabled);
+            Assert.False(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
+            nativeConfigurationApplied = true;
+        });
+
+        Assert.True(nativeConfigurationApplied);
+        Assert.True(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
+    }
+
+    private static void ApplyConfiguration(YamlRoot configuration)
+    {
+        ProfilerRuntimeConfiguration.Apply(configuration, (_, _) => { });
     }
 
     private static PluginSettings CreateSettings(NameValueCollection? configuration = null)

@@ -15,15 +15,14 @@
 // </copyright>
 
 using System.Collections.Specialized;
-#if NET
-using System.Net.Http;
+using System.Text;
+using OpenTelemetry.AutoInstrumentation.PluginApi.OpAmp;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
-using OpenTelemetry.OpAmp.Client;
-using OpenTelemetry.Trace;
-using static Splunk.OpenTelemetry.AutoInstrumentation.Tests.OpAmpTestHelpers;
-#endif
+using OpenTelemetry.OpAmp.Client.Listeners;
+using OpenTelemetry.OpAmp.Client.Messages;
 using OpenTelemetry.OpAmp.Client.Settings;
+using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
@@ -70,394 +69,504 @@ public class OpAmpTests
     }
 
     [Fact]
-    public void ConfigureEffectiveConfigReporting_EnablesEffectiveConfigReportingAfterSuccessfulPreflight()
+    public void ConfigureClient_DoesNotSubscribeWhenRemoteConfigurationIsDisabled()
+    {
+        var opAmp = CreateConfiguredOpAmp();
+        var client = new TestOpAmpClient();
+
+        opAmp.ConfigureClient(client);
+
+        Assert.Equal(0, client.SubscriptionCount);
+        Assert.Null(opAmp.GetRemoteConfigStatus());
+    }
+
+    [Fact]
+    public void ConfigureClient_SubscribesBeforeStartupOnlyOnceAndIgnoresReplacementClients()
+    {
+        var opAmp = CreateRemoteConfiguredOpAmp();
+        var client = new TestOpAmpClient();
+        var replacement = new TestOpAmpClient();
+
+        opAmp.ConfigureClient(client);
+        opAmp.ConfigureClient(client);
+        opAmp.ConfigureClient(replacement);
+
+        Assert.Equal(1, client.SubscriptionCount);
+        Assert.NotNull(client.RemoteConfigurationListener);
+        Assert.Equal(0, replacement.SubscriptionCount);
+        Assert.Null(opAmp.GetRemoteConfigStatus());
+    }
+
+    [Fact]
+    public void RemoteConfigurationStatusGetterCompletesDuringNotificationsAndKeepsStableSnapshots()
+    {
+        var opAmp = CreateRemoteConfiguredOpAmp();
+        var reports = new List<RemoteConfigStatusReport>();
+        var client = new TestOpAmpClient(onRemoteNotify: () =>
+        {
+            var getter = Task.Run(opAmp.GetRemoteConfigStatus);
+            Assert.True(getter.Wait(TimeSpan.FromSeconds(5)), "The status getter was blocked by the notification caller.");
+            reports.Add(Assert.IsType<RemoteConfigStatusReport>(getter.GetAwaiter().GetResult()));
+        });
+        opAmp.ConfigureClient(client);
+        var configHash = new byte[] { 1, 2, 3 };
+
+        Assert.IsType<OpAmpRemoteConfigurationListener>(client.RemoteConfigurationListener)
+            .HandleRemoteConfiguration(configHash, contentType: null, body: null);
+
+        Assert.Collection(
+            reports,
+            report => Assert.Equal(RemoteConfigStatusCode.Applying, report.Status),
+            report => Assert.Equal(RemoteConfigStatusCode.Applied, report.Status));
+        Assert.Equal(new byte[] { 1, 2, 3 }, reports[0].LastRemoteConfigHash.ToArray());
+        Assert.Same(reports[1], opAmp.GetRemoteConfigStatus());
+        Assert.Equal(2, client.RemoteNotificationCount);
+    }
+
+    [Fact]
+    public void RemoteConfigurationCleanupUnsubscribesOnceAndPreventsLateBindingOrNotifications()
+    {
+        var opAmp = CreateRemoteConfiguredOpAmp();
+        var client = new TestOpAmpClient();
+        opAmp.ConfigureClient(client);
+        var listener = Assert.IsType<OpAmpRemoteConfigurationListener>(client.RemoteConfigurationListener);
+        listener.HandleRemoteConfiguration(new byte[] { 1 }, contentType: null, body: null);
+        var statusBeforeStop = opAmp.GetRemoteConfigStatus();
+
+        opAmp.StopClientReporting();
+        opAmp.StopClientReporting();
+        opAmp.ConfigureClient(client);
+        listener.HandleRemoteConfiguration(new byte[] { 2 }, contentType: null, body: null);
+
+        Assert.Equal(1, client.SubscriptionCount);
+        Assert.Equal(1, client.UnsubscriptionCount);
+        Assert.Equal(2, client.RemoteNotificationCount);
+        Assert.NotNull(statusBeforeStop);
+        Assert.Equal(RemoteConfigStatusCode.Applied, statusBeforeStop.Status);
+        Assert.Equal(new byte[] { 1 }, statusBeforeStop.LastRemoteConfigHash.ToArray());
+    }
+
+    [Fact]
+    public void SuccessfulPreflightEnablesEffectiveConfigReporting()
     {
         var settings = new OpAmpClientSettings();
-        var opAmp = CreateOpAmp();
-
-        opAmp.ConfigureEffectiveConfigReporting(settings);
+        CreateOpAmp().ConfigureEffectiveConfigReporting(settings);
 
         Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
     }
 
-    [Fact]
-    public void ConfigureEffectiveConfigReporting_DoesNotEnableReporting_WhenAutomaticSdkSetupIsDisabled()
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public void DisabledOpAmpOrAutomaticSdkSetupDoesNotCreateRecorder(bool opAmpEnabled, bool sdkSetupEnabled)
     {
-        var settings = new OpAmpClientSettings();
         var recorderCreated = false;
         var opAmp = CreateOpAmp(
-            effectiveConfigRecorderFactory: () =>
+            recorderFactory: () =>
             {
                 recorderCreated = true;
                 return CreateRecorder();
             },
-            sdkSetupEnabledResolver: () => false);
-
+            opAmpEnabled: opAmpEnabled,
+            sdkSetupEnabled: sdkSetupEnabled);
+        var settings = new OpAmpClientSettings();
         opAmp.ConfigureEffectiveConfigReporting(settings);
 
         Assert.False(settings.EffectiveConfigurationReporting.EnableReporting);
         Assert.False(recorderCreated);
+        Assert.Throws<InvalidOperationException>(() => opAmp.GetEffectiveConfig());
     }
 
-    [Fact]
-    public void ConfigureEffectiveConfigReporting_DoesNotCreateRecorderOrEnableReporting_WhenOpAmpIsDisabled()
-    {
-        var recorderCreated = false;
-        var settings = new OpAmpClientSettings();
-        var opAmp = CreateOpAmp(
-            effectiveConfigRecorderFactory: () =>
-            {
-                recorderCreated = true;
-                return CreateRecorder();
-            },
-            opAmpEnabledResolver: () => false);
-
-        opAmp.ConfigureEffectiveConfigReporting(settings);
-
-        Assert.False(recorderCreated);
-        Assert.False(settings.EffectiveConfigurationReporting.EnableReporting);
-    }
-
-    [Fact]
-    public void ConfigureEffectiveConfigReporting_DoesNotEnableReporting_WhenProfilerStateResolutionFails()
-    {
-        var settings = new OpAmpClientSettings();
-        var opAmp = CreateOpAmp(
-            profilerStateResolver: () => throw new MissingMemberException("profiler state"));
-
-        opAmp.ConfigureEffectiveConfigReporting(settings);
-
-        Assert.False(settings.EffectiveConfigurationReporting.EnableReporting);
-    }
-
-    [Fact]
-    public void ConfigureEffectiveConfigReporting_DoesNotEnableReporting_WhenCurrentPayloadCannotBeBuilt()
-    {
-        var settings = new OpAmpClientSettings();
-        var recorder = new EffectiveConfigRecorder(
-            CreateStaticSettings(),
-            openTelemetrySdkDisabled: false,
-            () =>
-            [
-                EffectiveOtlpEndpoint.Http("http://first-logs-collector:4318/v1/logs"),
-                EffectiveOtlpEndpoint.Http("http://second-logs-collector:4318/v1/logs")
-            ]);
-        var opAmp = CreateOpAmp(() => recorder);
-
-        opAmp.ConfigureEffectiveConfigReporting(settings);
-
-        Assert.False(settings.EffectiveConfigurationReporting.EnableReporting);
-    }
-
-    [Fact]
-    public void ConfigureEffectiveConfigReporting_EnablesReporting_WhenSdkIsDisabled()
-    {
-        var settings = new OpAmpClientSettings();
-        var recorder = new EffectiveConfigRecorder(
-            CreateStaticSettings(),
-            openTelemetrySdkDisabled: true,
-            () => throw new MissingMemberException("provider graph"));
-        var opAmp = CreateOpAmp(() => recorder);
-
-        opAmp.ConfigureEffectiveConfigReporting(settings);
-
-        Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
-    }
-
-#if NET
     [Fact]
     public void MarkOpenTelemetryLoggerConfigured_DoesNotCreateRecorder_WhenOpAmpIsDisabled()
     {
-        AssertRecordingHookDoesNotCreateRecorder(static opAmp => opAmp.MarkOpenTelemetryLoggerConfigured());
+        AssertRecordingHookDoesNotCreateRecorder(opAmp => opAmp.MarkOpenTelemetryLoggerConfigured());
     }
 
     [Fact]
     public void RecordLogExporterOptions_DoesNotCreateRecorder_WhenOpAmpIsDisabled()
     {
-        AssertRecordingHookDoesNotCreateRecorder(static opAmp =>
-            opAmp.RecordLogExporterOptions(new OtlpExporterOptions()));
+        AssertRecordingHookDoesNotCreateRecorder(opAmp => opAmp.RecordLogExporterOptions(CreateLogOptions()));
     }
 
     [Fact]
     public void RecordTraceProviderEndpoints_DoesNotCreateRecorder_WhenOpAmpIsDisabled()
     {
-        AssertRecordingHookDoesNotCreateRecorder(static opAmp =>
+        AssertRecordingHookDoesNotCreateRecorder(opAmp =>
         {
-            using var tracerProvider = global::OpenTelemetry.Sdk.CreateTracerProviderBuilder().Build();
-            opAmp.RecordTraceProviderEndpoints(tracerProvider);
+            using var traces = global::OpenTelemetry.Sdk.CreateTracerProviderBuilder().Build();
+            opAmp.RecordTraceProviderEndpoints(traces);
         });
     }
 
     [Fact]
     public void RecordMetricProviderEndpoints_DoesNotCreateRecorder_WhenOpAmpIsDisabled()
     {
-        AssertRecordingHookDoesNotCreateRecorder(static opAmp =>
+        AssertRecordingHookDoesNotCreateRecorder(opAmp =>
         {
-            using var meterProvider = global::OpenTelemetry.Sdk.CreateMeterProviderBuilder().Build();
-            opAmp.RecordMetricProviderEndpoints(meterProvider);
+            using var metrics = global::OpenTelemetry.Sdk.CreateMeterProviderBuilder().Build();
+            opAmp.RecordMetricProviderEndpoints(metrics);
         });
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task InitialFullStateReportIsSentOnce_WhenReadinessSignalsArriveInEitherOrder(
-        bool instrumentationInitializedFirst)
-    {
-        var opAmp = CreateOpAmp();
-        var requestProbe = new OpAmpHttpRequestProbe();
-        using var innerClient = new HttpClient(requestProbe);
-        using var client = CreateClient(innerClient, opAmp.ConfigureEffectiveConfigReporting);
-
-        if (instrumentationInitializedFirst)
-        {
-            opAmp.MarkInstrumentationInitialized();
-            opAmp.OnClientStarted(client);
-        }
-        else
-        {
-            opAmp.OnClientStarted(client);
-            opAmp.MarkInstrumentationInitialized();
-        }
-
-        await requestProbe.WaitForCountAsync(1);
-
-        opAmp.StopClientReporting();
-
-        Assert.Equal(1, requestProbe.Count);
-        Assert.True(OpAmpRequestFrameInspector.Parse(requestProbe.GetRequestBody(1)).IsFullStateReport);
-    }
-
     [Fact]
-    public async Task EffectiveConfigChangeBeforeInstrumentationInitializationIsIncludedInInitialFullStateReport()
+    public void ProfilerStateResolutionFailureDisablesReporting()
     {
-        var opAmp = CreateOpAmp();
-        var requestProbe = new OpAmpHttpRequestProbe();
-        using var innerClient = new HttpClient(requestProbe);
-        using var client = CreateClient(innerClient, opAmp.ConfigureEffectiveConfigReporting);
-        opAmp.OnClientStarted(client);
-
-        opAmp.MarkOpenTelemetryLoggerConfigured();
-        const string logsEndpoint = "http://logs-collector:4318/v1/logs";
-        opAmp.RecordLogExporterOptions(new OtlpExporterOptions
-        {
-            Protocol = OtlpExportProtocol.HttpProtobuf,
-            Endpoint = new Uri(logsEndpoint)
-        });
-
-        Assert.Equal(0, requestProbe.Count);
-
-        opAmp.MarkInstrumentationInitialized();
-        await requestProbe.WaitForCountAsync(1);
-
-        opAmp.StopClientReporting();
-
-        Assert.Equal(1, requestProbe.Count);
-        var requestFrame = OpAmpRequestFrameInspector.Parse(requestProbe.GetRequestBody(1));
-        Assert.True(requestFrame.IsFullStateReport);
-        Assert.Contains(
-            $"OTEL_EXPORTER_OTLP_LOGS_ENDPOINT={logsEndpoint}",
-            requestFrame.GetEffectiveConfigBody("environment"));
-    }
-
-    [Fact]
-    public async Task ConfigureEffectiveConfigReporting_DoesNotAdvertiseEffectiveConfig_WhenProviderGraphPreflightFails()
-    {
+        var opAmp = CreateOpAmp(profilerStateResolver: () => throw new InvalidOperationException("Unavailable profiler state."));
         var settings = new OpAmpClientSettings();
-        var providerGraphResolverCalled = false;
-        var recorder = new EffectiveConfigRecorder(
-            CreateStaticSettings(),
-            openTelemetrySdkDisabled: false,
-            () =>
-            {
-                providerGraphResolverCalled = true;
-                throw new MissingMemberException("provider graph");
-            });
-        var opAmp = CreateOpAmp(() => recorder);
-        var requestProbe = new OpAmpHttpRequestProbe();
-        using var innerClient = new HttpClient(requestProbe);
-
+        settings.EffectiveConfigurationReporting.EnableReporting = true;
         opAmp.ConfigureEffectiveConfigReporting(settings);
-        using var client = CreateClient(innerClient);
 
         Assert.False(settings.EffectiveConfigurationReporting.EnableReporting);
-        Assert.True(providerGraphResolverCalled);
+        Assert.Throws<InvalidOperationException>(() => opAmp.GetEffectiveConfig());
+    }
 
-        opAmp.OnClientStarted(client);
-        opAmp.MarkInstrumentationInitialized();
-        await requestProbe.WaitForCountAsync(1);
-        opAmp.MarkOpenTelemetryLoggerConfigured();
-        opAmp.RecordLogExporterOptions(new OtlpExporterOptions
+    [Fact]
+    public void InvalidProviderGraphDisablesReporting()
+    {
+        var resolverCalled = false;
+        var recorder = CreateRecorder(() =>
         {
-            Protocol = OtlpExportProtocol.HttpProtobuf,
-            Endpoint = new Uri("http://logs-collector:4318/v1/logs")
+            resolverCalled = true;
+            throw new InvalidOperationException("Unsupported provider graph.");
         });
-        opAmp.StopClientReporting();
+        var opAmp = CreateOpAmp(recorderFactory: () => recorder);
+        var settings = new OpAmpClientSettings();
+        opAmp.ConfigureEffectiveConfigReporting(settings);
 
-        Assert.Equal(1, requestProbe.Count);
-        var requestFrame = OpAmpRequestFrameInspector.Parse(requestProbe.GetRequestBody(1));
-        Assert.True(requestFrame.IsFullStateReport);
-        Assert.False(requestFrame.HasEffectiveConfig);
+        Assert.True(resolverCalled);
+        Assert.False(settings.EffectiveConfigurationReporting.EnableReporting);
     }
 
     [Fact]
-    public async Task DuplicateStartCallbackForSameClientIsNoOp()
+    public void InvalidPayloadDisablesReporting()
     {
-        var opAmp = CreateOpAmp();
-        var requestProbe = new OpAmpHttpRequestProbe();
-        using var innerClient = new HttpClient(requestProbe);
-        using var client = CreateClient(innerClient, opAmp.ConfigureEffectiveConfigReporting);
+        var recorder = CreateRecorder(() =>
+        [
+            EffectiveOtlpEndpoint.Http("http://first:4318/v1/logs"),
+            EffectiveOtlpEndpoint.Http("http://second:4318/v1/logs")
+        ]);
+        var opAmp = CreateOpAmp(recorderFactory: () => recorder);
+        var settings = new OpAmpClientSettings();
+        opAmp.ConfigureEffectiveConfigReporting(settings);
 
-        opAmp.OnClientStarted(client);
-        opAmp.OnClientStarted(client);
-
-        opAmp.MarkInstrumentationInitialized();
-        await requestProbe.WaitForCountAsync(1);
-        opAmp.StopClientReporting();
-
-        Assert.Equal(1, requestProbe.Count);
+        Assert.False(settings.EffectiveConfigurationReporting.EnableReporting);
     }
 
     [Fact]
-    public async Task StopClientReportingDoesNotWaitForInFlightInitialReport()
+    public void DisabledSdkIsAValidConfiguration()
     {
-        var requestCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var opAmp = CreateOpAmp();
-        var requestProbe = new OpAmpHttpRequestProbe(
-            blockFirstRequest: true,
-            onRequest: (_, _) =>
+        var recorder = new EffectiveConfigRecorder(CreateStaticSettings(), openTelemetrySdkDisabled: true);
+        var opAmp = CreateOpAmp(recorderFactory: () => recorder);
+        var settings = new OpAmpClientSettings();
+        opAmp.ConfigureEffectiveConfigReporting(settings);
+
+        Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
+        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=none", GetPayload(opAmp));
+    }
+
+    [Fact]
+    public void ChangesBeforeClientBindingAreAvailableWithoutAnInitialNotification()
+    {
+        var opAmp = CreateConfiguredOpAmp();
+        opAmp.MarkOpenTelemetryLoggerConfigured();
+        opAmp.RecordLogExporterOptions(CreateLogOptions());
+        var client = new TestOpAmpClient();
+        opAmp.ConfigureClient(client);
+
+        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://logs-collector:4318/v1/logs", GetPayload(opAmp));
+        Assert.Equal(0, client.NotificationCount);
+    }
+
+    [Fact]
+    public void ChangedILoggerEndpointsNotifyImmediatelyAndUnchangedEndpointsDoNotNotify()
+    {
+        var opAmp = CreateConfiguredOpAmp();
+        var client = new TestOpAmpClient();
+        opAmp.ConfigureClient(client);
+        opAmp.MarkOpenTelemetryLoggerConfigured();
+        Assert.Equal(0, client.NotificationCount);
+
+        opAmp.RecordLogExporterOptions(CreateLogOptions());
+        Assert.Equal(1, client.NotificationCount);
+
+        opAmp.RecordLogExporterOptions(CreateLogOptions());
+        Assert.Equal(1, client.NotificationCount);
+    }
+
+    [Fact]
+    public void ReturnedBuffersRemainStableAcrossLaterChangesAndReads()
+    {
+        var opAmp = CreateConfiguredOpAmp();
+        var first = Assert.Single(opAmp.GetEffectiveConfig());
+        var firstBytes = first.Content.ToArray();
+        opAmp.MarkOpenTelemetryLoggerConfigured();
+        opAmp.RecordLogExporterOptions(CreateLogOptions());
+        var second = Assert.Single(opAmp.GetEffectiveConfig());
+        var secondBytes = second.Content.ToArray();
+        var third = Assert.Single(opAmp.GetEffectiveConfig());
+
+        Assert.Equal(firstBytes, first.Content.ToArray());
+        Assert.NotEqual(Encoding.UTF8.GetString(firstBytes), Encoding.UTF8.GetString(secondBytes));
+        Assert.Equal(secondBytes, second.Content.ToArray());
+        Assert.Equal(secondBytes, third.Content.ToArray());
+    }
+
+    [Fact]
+    public void GetterReadsCurrentProfilerStateAndPropagatesLaterFailures()
+    {
+        var state = EffectiveProfilerState.None;
+        var fail = false;
+        var opAmp = CreateConfiguredOpAmp(() => fail ? throw new InvalidOperationException("Query failed.") : state);
+        Assert.Contains("SPLUNK_PROFILER_ENABLED=false", GetPayload(opAmp));
+        state = new EffectiveProfilerState(EffectiveProfilerFeatures.Cpu, 2500, 0);
+
+        Assert.Contains("SPLUNK_PROFILER_ENABLED=true", GetPayload(opAmp));
+        Assert.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=2500", GetPayload(opAmp));
+        fail = true;
+        Assert.Throws<InvalidOperationException>(() => opAmp.GetEffectiveConfig());
+    }
+
+    [Fact]
+    public void NotificationFailureDoesNotEscapeTheConfigurationHook()
+    {
+        var opAmp = CreateConfiguredOpAmp();
+        var client = new TestOpAmpClient(() => throw new ObjectDisposedException("client"));
+        opAmp.ConfigureClient(client);
+        opAmp.MarkOpenTelemetryLoggerConfigured();
+        opAmp.RecordLogExporterOptions(CreateLogOptions());
+
+        Assert.Equal(1, client.NotificationCount);
+        Assert.Contains("http://logs-collector:4318/v1/logs", GetPayload(opAmp));
+    }
+
+    [Fact]
+    public async Task NotificationAllowsAGetterOnAnotherThreadToCompleteBeforeReturning()
+    {
+        var opAmp = CreateConfiguredOpAmp();
+        opAmp.MarkOpenTelemetryLoggerConfigured();
+        Task<string>? getter = null;
+        var completedDuringNotification = false;
+        var client = new TestOpAmpClient(() =>
+        {
+            getter = Task.Run(() => GetPayload(opAmp));
+            completedDuringNotification = getter.Wait(TimeSpan.FromSeconds(5));
+        });
+        opAmp.ConfigureClient(client);
+
+        opAmp.RecordLogExporterOptions(CreateLogOptions());
+        Assert.True(completedDuringNotification, "The getter was blocked by the notification caller.");
+        Assert.NotNull(getter);
+        Assert.Contains("http://logs-collector:4318/v1/logs", await getter);
+    }
+
+    [Fact]
+    public async Task CleanupDoesNotWaitForAnInFlightGetterAndKeepsItsStateAvailable()
+    {
+        var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var release = new ManualResetEventSlim();
+        var block = false;
+        var opAmp = CreateConfiguredOpAmp(() =>
+        {
+            if (block)
             {
-                requestCompleted.TrySetResult(true);
-                return Task.CompletedTask;
-            });
-        using var innerClient = new HttpClient(requestProbe);
-        using var client = CreateClient(innerClient, opAmp.ConfigureEffectiveConfigReporting);
-        opAmp.OnClientStarted(client);
-        opAmp.MarkInstrumentationInitialized();
-        await requestProbe.WaitForCountAsync(1);
+                entered.TrySetResult(true);
+                Assert.True(release.Wait(TimeSpan.FromSeconds(5)));
+            }
 
-        var stopTask = Task.Run(opAmp.StopClientReporting);
-        var completedTask = await Task.WhenAny(stopTask, Task.Delay(TimeSpan.FromSeconds(1)));
+            return EffectiveProfilerState.None;
+        });
+        block = true;
+        var getter = Task.Run(opAmp.GetEffectiveConfig);
+        try
+        {
+            await CompletesAsync(entered.Task);
+            await CompletesAsync(Task.Run(opAmp.StopClientReporting));
+        }
+        finally
+        {
+            release.Set();
+        }
 
-        Assert.Same(stopTask, completedTask);
-        await stopTask;
-        requestProbe.ReleaseFirstRequest();
-        await WaitForCompletionAsync(requestCompleted.Task);
+        await CompletesAsync(getter);
+        Assert.Single(await getter);
     }
 
     [Fact]
-    public void StopClientReportingDoesNotThrow_WhenClientIsAlreadyDisposed()
+    public async Task CleanupDoesNotWaitForAnInFlightNotification()
     {
-        var opAmp = CreateOpAmp();
-        var requestProbe = new OpAmpHttpRequestProbe();
-        using var innerClient = new HttpClient(requestProbe);
-        using var client = CreateClient(innerClient);
-        opAmp.OnClientStarted(client);
-        client.Dispose();
+        var opAmp = CreateConfiguredOpAmp();
+        opAmp.MarkOpenTelemetryLoggerConfigured();
+        var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var release = new ManualResetEventSlim();
+        var releasedDuringNotification = false;
+        var client = new TestOpAmpClient(() =>
+        {
+            entered.TrySetResult(true);
+            releasedDuringNotification = release.Wait(TimeSpan.FromSeconds(5));
+        });
+        opAmp.ConfigureClient(client);
+        var notification = Task.Run(() => opAmp.RecordLogExporterOptions(CreateLogOptions()));
+        try
+        {
+            await CompletesAsync(entered.Task);
+            await CompletesAsync(Task.Run(opAmp.StopClientReporting));
+        }
+        finally
+        {
+            release.Set();
+        }
 
-        var exception = Record.Exception(opAmp.StopClientReporting);
-
-        Assert.Null(exception);
+        await CompletesAsync(notification);
+        Assert.True(releasedDuringNotification);
+        opAmp.RecordLogExporterOptions(CreateLogOptions("http://changed-after-stop:4318/v1/logs"));
+        Assert.Equal(1, client.NotificationCount);
     }
 
     [Fact]
-    public void OnClientStartedDoesNotThrow_WhenClientIsAlreadyDisposed()
+    public void CleanupIsIdempotentAndPreventsLateBindingOrNotification()
     {
-        var opAmp = CreateOpAmp();
-        var requestProbe = new OpAmpHttpRequestProbe();
-        using var innerClient = new HttpClient(requestProbe);
-        using var client = CreateClient(innerClient);
-        client.Dispose();
-
-        var exception = Record.Exception(() => opAmp.OnClientStarted(client));
-
-        Assert.Null(exception);
-    }
-
-    [Fact]
-    public void StopClientReportingPreventsLateInitialReport()
-    {
-        var opAmp = CreateOpAmp();
-        var requestProbe = new OpAmpHttpRequestProbe();
-        using var innerClient = new HttpClient(requestProbe);
-        using var client = CreateClient(innerClient, opAmp.ConfigureEffectiveConfigReporting);
-        opAmp.OnClientStarted(client);
+        var opAmp = CreateConfiguredOpAmp();
+        var client = new TestOpAmpClient();
+        opAmp.ConfigureClient(client);
+        opAmp.MarkOpenTelemetryLoggerConfigured();
+        opAmp.RecordLogExporterOptions(CreateLogOptions());
+        Assert.Equal(1, client.NotificationCount);
 
         opAmp.StopClientReporting();
-        opAmp.MarkInstrumentationInitialized();
-
-        Assert.Equal(0, requestProbe.Count);
-    }
-
-    [Fact]
-    public void StopClientReportingBeforeClientStartsPreventsLateStart()
-    {
-        var opAmp = CreateOpAmp();
-        var requestProbe = new OpAmpHttpRequestProbe();
-        using var innerClient = new HttpClient(requestProbe);
-        using var client = CreateClient(innerClient, opAmp.ConfigureEffectiveConfigReporting);
-
         opAmp.StopClientReporting();
-        opAmp.OnClientStarted(client);
-        opAmp.MarkInstrumentationInitialized();
+        opAmp.ConfigureClient(client);
+        opAmp.RecordLogExporterOptions(CreateLogOptions("http://changed-after-stop:4318/v1/logs"));
 
-        Assert.Equal(0, requestProbe.Count);
-    }
-#endif
-
-    private static OpAmp CreateOpAmp(
-        Func<EffectiveConfigRecorder>? effectiveConfigRecorderFactory = null,
-        Func<bool>? opAmpEnabledResolver = null,
-        Func<bool>? sdkSetupEnabledResolver = null,
-        Func<EffectiveProfilerFeatures>? profilerStateResolver = null)
-    {
-        return new OpAmp(
-            effectiveConfigRecorderFactory ?? CreateRecorder,
-            opAmpEnabledResolver ?? (() => true),
-            sdkSetupEnabledResolver ?? (() => true),
-            profilerStateResolver ?? (() => EffectiveProfilerFeatures.None));
+        Assert.Equal(1, client.NotificationCount);
     }
 
-    private static EffectiveConfigRecorder CreateRecorder()
-    {
-        return new EffectiveConfigRecorder(
-            CreateStaticSettings(),
-            openTelemetrySdkDisabled: false,
-            () => null);
-    }
-
-    private static EffectiveConfigStaticSettings CreateStaticSettings()
-    {
-        return new EffectiveConfigStaticSettings(
-            new PluginSettings(new NameValueConfigurationSource(new NameValueCollection())));
-    }
-
-#if NET
     private static void AssertRecordingHookDoesNotCreateRecorder(Action<OpAmp> invokeRecordingHook)
     {
         var recorderCreated = false;
         var opAmp = CreateOpAmp(
-            effectiveConfigRecorderFactory: () =>
+            recorderFactory: () =>
             {
                 recorderCreated = true;
                 return CreateRecorder();
             },
-            opAmpEnabledResolver: () => false);
+            opAmpEnabled: false);
 
         invokeRecordingHook(opAmp);
 
         Assert.False(recorderCreated);
     }
 
-    private static OpAmpClient CreateClient(
-        HttpClient innerClient,
-        Action<OpAmpClientSettings>? configure = null)
+    private static OpAmp CreateConfiguredOpAmp(Func<EffectiveProfilerState>? profilerStateResolver = null)
     {
-        return new OpAmpClient(settings =>
-        {
-            settings.HttpClientFactory = () => innerClient;
-            configure?.Invoke(settings);
-        });
+        var opAmp = CreateOpAmp(profilerStateResolver: profilerStateResolver);
+        opAmp.ConfigureEffectiveConfigReporting(new OpAmpClientSettings());
+        return opAmp;
     }
-#endif
+
+    private static OpAmp CreateRemoteConfiguredOpAmp()
+    {
+        var pluginSettings = new PluginSettings(new NameValueConfigurationSource(
+            new NameValueCollection
+            {
+                [ConfigurationKeys.Splunk.OpAmp.RemoteConfig] = "true"
+            }));
+        ProfilerRuntimeConfiguration.Initialize(pluginSettings);
+        var opAmp = CreateOpAmp();
+        opAmp.ConfigureOptions(new OpAmpClientSettings(), pluginSettings);
+        return opAmp;
+    }
+
+    private static OpAmp CreateOpAmp(
+        Func<EffectiveConfigRecorder>? recorderFactory = null,
+        bool opAmpEnabled = true,
+        bool sdkSetupEnabled = true,
+        Func<EffectiveProfilerState>? profilerStateResolver = null)
+    {
+        return new OpAmp(
+            recorderFactory ?? (() => CreateRecorder()),
+            () => opAmpEnabled,
+            () => sdkSetupEnabled,
+            profilerStateResolver ?? (() => EffectiveProfilerState.None));
+    }
+
+    private static EffectiveConfigRecorder CreateRecorder(Func<IReadOnlyList<EffectiveOtlpEndpoint>?>? bridgeResolver = null)
+    {
+        return new EffectiveConfigRecorder(CreateStaticSettings(), openTelemetrySdkDisabled: false, bridgeResolver ?? (() => null));
+    }
+
+    private static EffectiveConfigStaticSettings CreateStaticSettings()
+    {
+        return new EffectiveConfigStaticSettings(new PluginSettings(new NameValueConfigurationSource(new NameValueCollection())));
+    }
+
+    private static OtlpExporterOptions CreateLogOptions(string endpoint = "http://logs-collector:4318/v1/logs")
+    {
+        return new OtlpExporterOptions
+        {
+            Protocol = OtlpExportProtocol.HttpProtobuf,
+            Endpoint = new Uri(endpoint)
+        };
+    }
+
+    private static string GetPayload(OpAmp opAmp)
+    {
+        return Encoding.UTF8.GetString(Assert.Single(opAmp.GetEffectiveConfig()).Content.ToArray());
+    }
+
+    private static async Task CompletesAsync(Task task)
+    {
+        Assert.Same(task, await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(5))));
+        await task;
+    }
+
+    private sealed class TestOpAmpClient : IOpAmpClient
+    {
+        private readonly Action? _onNotify;
+        private readonly Action? _onRemoteNotify;
+        private int _notificationCount;
+        private int _remoteNotificationCount;
+
+        public TestOpAmpClient(Action? onNotify = null, Action? onRemoteNotify = null)
+        {
+            _onNotify = onNotify;
+            _onRemoteNotify = onRemoteNotify;
+        }
+
+        public int NotificationCount => Volatile.Read(ref _notificationCount);
+
+        public int RemoteNotificationCount => Volatile.Read(ref _remoteNotificationCount);
+
+        public int SubscriptionCount { get; private set; }
+
+        public int UnsubscriptionCount { get; private set; }
+
+        public OpAmpRemoteConfigurationListener? RemoteConfigurationListener { get; private set; }
+
+        public void NotifyEffectiveConfigChanged()
+        {
+            Interlocked.Increment(ref _notificationCount);
+            _onNotify?.Invoke();
+        }
+
+        public void NotifyRemoteConfigStatusChanged()
+        {
+            Interlocked.Increment(ref _remoteNotificationCount);
+            _onRemoteNotify?.Invoke();
+        }
+
+        public void Subscribe<T>(IOpAmpListener<T> listener)
+            where T : OpAmpMessage
+        {
+            SubscriptionCount++;
+            RemoteConfigurationListener = Assert.IsType<OpAmpRemoteConfigurationListener>(listener);
+        }
+
+        public void Unsubscribe<T>(IOpAmpListener<T> listener)
+            where T : OpAmpMessage
+        {
+            UnsubscriptionCount++;
+            Assert.Same(RemoteConfigurationListener, listener);
+        }
+    }
 }

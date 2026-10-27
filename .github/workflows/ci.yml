@@ -9,6 +9,9 @@ on:
 
 jobs:
   build:
+    permissions:
+      attestations: read # for gh attestation verify
+      contents: read # for actions/checkout and gh release verify-asset
     strategy:
       fail-fast: false
       matrix:
@@ -24,6 +27,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # fetching all, needed to correctly calculate version
+          persist-credentials: false
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: | 
@@ -31,6 +35,8 @@ jobs:
             9.0.316
             10.0.302
       - run: ./build.cmd Workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
       - run: brew install coreutils
         if: ${{ runner.os == 'macOS' }}
       - name: Create test directory
@@ -66,7 +72,7 @@ jobs:
           ./test/test-applications/integrations/TestApplication.HttpServer/bin/Release/net8.0/TestApplication.HttpServer.exe
           if (-not $?) { throw "dotnet help returned exit code: $LASTEXITCODE" }
           if (Test-Path $log_path) { throw "Log file exists. Instrumentation unregister failed." }
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: bin-${{ matrix.machine }}
           path: |
@@ -82,6 +88,9 @@ jobs:
           path: test-artifacts/
 
   container-build:
+    permissions:
+      attestations: read # for gh attestation verify
+      contents: read # for actions/checkout and gh release verify-asset
     strategy:
       fail-fast: false
       matrix:
@@ -104,6 +113,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0 # fetching all, needed to correctly calculate version
+        persist-credentials: false
     - name: Build Docker image
       run: |
         docker build \
@@ -111,8 +121,13 @@ jobs:
           --file "./docker/${{ matrix.base-image }}.dockerfile" \
           ./build
     - name: Build in Docker container
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
         docker run --rm \
+          -e GITHUB_ACTIONS \
+          -e GITHUB_REF_NAME \
+          -e GH_TOKEN \
           -e OS_TYPE=${{ matrix.os-type }} --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project \
           splunk-otel-dotnet/${{ matrix.base-image }} \
           /bin/sh -c 'git config --global --add safe.directory /project && ./build.sh Workflow'
@@ -128,7 +143,7 @@ jobs:
           ./test/test-applications/integrations/TestApplication.HttpServer/bin/Release/net8.0/publish/TestApplication.HttpServer
             test "$(ls -A /home/user/opentelemetry/log )"
         '
-    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       if: ${{ job.status != 'cancelled' }}
       with:
         name: bin-${{ matrix.base-image }}
@@ -140,6 +155,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # fetching all, needed to correctly calculate version
+          persist-credentials: false
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: | 
@@ -147,7 +163,7 @@ jobs:
             9.0.316
             10.0.302
       - run: ./build.cmd NuGetWorkflow
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: nuget-package
           path: NuGetPackage/
@@ -165,6 +181,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # fetching all, needed to correctly calculate version
+          persist-credentials: false
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: | 
@@ -179,7 +196,7 @@ jobs:
           sudo chown "$(id -u):$(id -g)" "$LOG_DIR"
           chmod 0700 "$LOG_DIR"
       - name: Download NuGet Artifacts from build-nuget-package job
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: nuget-package
           path: NuGetPackage/
@@ -199,7 +216,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: .
       - run: cp bin-alpine-x64/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-musl-x64.zip
