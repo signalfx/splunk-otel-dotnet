@@ -130,6 +130,8 @@ public class ContinuousProfilerTests : TestHelper
 
             ProfilerTestHelpers.AllShouldHaveBasicAttributes(logRecords, ProfilerTestHelpers.ConstantValuedAttributes("cpu"));
             ProfilerTestHelpers.ProfilesDoNotContainAnyValue(profiles);
+            Assert.All(profiles, profile => Assert.All(profile.Samples, sample =>
+                Assert.Equal(1000, Assert.Single(sample.Labels, label => profile.StringTables[(int)label.Key] == "source.event.period").Num)));
             ProfilerTestHelpers.RecordsContainFrameCountAttribute(logRecords);
             ProfilerTestHelpers.ResourceContainsExpectedAttributes(dataResourceLog.Resource, "TestApplication.ContinuousProfiler");
             ProfilerTestHelpers.HasNameAndVersionSet(instrumentationLibraryLogs.Scope);

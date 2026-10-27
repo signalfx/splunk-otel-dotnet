@@ -14,63 +14,101 @@
 // limitations under the License.
 // </copyright>
 
-using System.Collections;
 using System.Reflection;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 
 internal static class UpstreamProfilerStateResolver
 {
-    private const BindingFlags StaticNonPublicFlags = BindingFlags.Static | BindingFlags.NonPublic;
-    private const BindingFlags InstanceNonPublicFlags = BindingFlags.Instance | BindingFlags.NonPublic;
+    private const BindingFlags StaticFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+    private static readonly Lazy<bool> ProfilerEnabled = new(ResolveProfilerEnabled);
+    private static readonly Lazy<RuntimeStateBinding> Binding = new(() => new RuntimeStateBinding(
+        UpstreamInstrumentationResolver.GetInstrumentationType().Assembly.GetType(
+            "OpenTelemetry.AutoInstrumentation.NativeMethods", throwOnError: true)!));
 
-    public static EffectiveProfilerFeatures Resolve()
+    public static EffectiveProfilerState Resolve()
+    {
+        return ProfilerEnabled.Value ? Binding.Value.Query() : EffectiveProfilerState.None;
+    }
+
+    private static bool ResolveProfilerEnabled()
     {
         var instrumentationType = UpstreamInstrumentationResolver.GetInstrumentationType();
+        var settingsLazy = instrumentationType.GetProperty("GeneralSettings", StaticFlags)?.GetValue(null)
+            ?? throw new MissingMemberException(instrumentationType.FullName, "GeneralSettings");
+        var settings = settingsLazy.GetType().GetProperty("Value")?.GetValue(settingsLazy)
+            ?? throw new MissingMemberException(settingsLazy.GetType().FullName, "Value");
+        return settings.GetType().GetProperty("ProfilerEnabled")?.GetValue(settings) is bool enabled
+            ? enabled
+            : throw new MissingMemberException(settings.GetType().FullName, "ProfilerEnabled");
+    }
 
-        var sampleExporterField = instrumentationType.GetField("_sampleExporter", StaticNonPublicFlags)
-            ?? throw new MissingMemberException(instrumentationType.FullName, "_sampleExporter");
+    // Bind the upstream managed wrapper so it owns the native ABI, platform selection and structure sizes.
+    internal sealed class RuntimeStateBinding
+    {
+        private readonly MethodInfo _query;
+        private readonly FieldInfo _configuration;
+        private readonly FieldInfo _cpuInterval;
+        private readonly FieldInfo _snapshotInterval;
+        private readonly FieldInfo _allocationRate;
 
-        var sampleExporter = sampleExporterField.GetValue(null);
-        if (sampleExporter == null)
+        public RuntimeStateBinding(Type nativeMethodsType)
         {
-            return EffectiveProfilerFeatures.None;
-        }
-
-        var sampleExporterType = sampleExporter.GetType();
-        var bufferProcessor = sampleExporterType
-            .GetField("_bufferProcessor", InstanceNonPublicFlags)
-            ?.GetValue(sampleExporter)
-            ?? throw new MissingMemberException(sampleExporterType.FullName, "_bufferProcessor");
-
-        var bufferProcessorType = bufferProcessor.GetType();
-        var sampleHandlers = bufferProcessorType
-            .GetField("_sampleHandlers", InstanceNonPublicFlags)
-            ?.GetValue(bufferProcessor) as IDictionary
-            ?? throw new MissingMemberException(bufferProcessorType.FullName, "_sampleHandlers");
-
-        var profilerFeatures = EffectiveProfilerFeatures.None;
-
-        foreach (var sampleType in sampleHandlers.Keys)
-        {
-            switch (sampleType?.ToString())
+            _query = nativeMethodsType.GetMethod("GetContinuousProfilerState", StaticFlags)
+                ?? throw new MissingMethodException(nativeMethodsType.FullName, "GetContinuousProfilerState");
+            var parameters = _query.GetParameters();
+            if (!_query.ReturnType.IsEnum || parameters.Length != 1 || !parameters[0].IsOut || !parameters[0].ParameterType.IsByRef)
             {
-                case "Continuous":
-                    profilerFeatures |= EffectiveProfilerFeatures.Cpu;
-                    break;
-                case "Allocation":
-#if NET
-                    profilerFeatures |= EffectiveProfilerFeatures.Memory;
-#endif
-                    break;
-                case "SelectedThreads":
-                    profilerFeatures |= EffectiveProfilerFeatures.Snapshot;
-                    break;
+                throw new MissingMethodException("The upstream continuous profiler state query has an unsupported signature.");
             }
+
+            var stateType = parameters[0].ParameterType.GetElementType()!;
+            _configuration = stateType.GetField("CommittedConfiguration", BindingFlags.Instance | BindingFlags.Public)
+                ?? throw new MissingFieldException(stateType.FullName, "CommittedConfiguration");
+            _cpuInterval = GetConfigurationField("CpuSamplingIntervalMilliseconds");
+            _snapshotInterval = GetConfigurationField("SelectiveThreadSamplingIntervalMilliseconds");
+            _allocationRate = GetConfigurationField("MaxAllocationSamplesPerMinute");
         }
 
-        // These handlers prove that the managed export pipelines were registered.
-        // Upstream does not expose whether native sampler or EventPipe startup succeeded.
-        return profilerFeatures;
+        public EffectiveProfilerState Query()
+        {
+            object?[] arguments = [null];
+            var result = _query.Invoke(null, arguments);
+            if (result?.ToString() != "Succeeded")
+            {
+                throw new InvalidOperationException($"The upstream continuous profiler state query failed: {result}.");
+            }
+
+            var configuration = _configuration.GetValue(arguments[0])
+                ?? throw new InvalidOperationException("The upstream continuous profiler state was unavailable.");
+            var cpuInterval = (uint)_cpuInterval.GetValue(configuration)!;
+            var snapshotInterval = (uint)_snapshotInterval.GetValue(configuration)!;
+            var features = EffectiveProfilerFeatures.None;
+            if (cpuInterval != 0)
+            {
+                features |= EffectiveProfilerFeatures.Cpu;
+            }
+
+            if (snapshotInterval != 0)
+            {
+                features |= EffectiveProfilerFeatures.Snapshot;
+            }
+
+#if NET
+            if ((uint)_allocationRate.GetValue(configuration)! != 0)
+            {
+                features |= EffectiveProfilerFeatures.Memory;
+            }
+#endif
+            return new EffectiveProfilerState(features, cpuInterval, snapshotInterval);
+        }
+
+        private FieldInfo GetConfigurationField(string name)
+        {
+            var field = _configuration.FieldType.GetField(name, BindingFlags.Instance | BindingFlags.Public);
+            return field?.FieldType == typeof(uint)
+                ? field
+                : throw new MissingFieldException(_configuration.FieldType.FullName, name);
+        }
     }
 }

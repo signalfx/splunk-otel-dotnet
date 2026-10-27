@@ -8,22 +8,20 @@ Effective configuration reporting is enabled when OpAMP is enabled and the
 active configuration passes startup validation. Automatic SDK setup is required;
 `OTEL_SDK_DISABLED=true` remains supported as a valid no-op SDK configuration.
 
-After automatic instrumentation initializes, the plugin sends one full-state
-report. When effective configuration reporting is enabled, that report contains
-the current effective configuration together with the agent description,
-capabilities, and health supplied by the OpAMP client. Later server requests
-produce a fresh full-state report.
+See the [upstream OpAMP plugin documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/plugins.md#opamp)
+for reporting behavior, plugin selection, and client lifecycle.
+Remote configuration is not enabled by the Splunk plugin.
 
 ## Configuration
 
 ### Environment variables
 
-See the [docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.17.0/docs/config.md#opamp-client)
+See the [docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/config.md#opamp-client)
 for more details.
 
 ### File-based configuration
 
-See the [docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.17.0/docs/file-based-configuration.md#opamp)
+See the [docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/file-based-configuration.md#opamp)
 for more details.
 
 ## Effective configuration contents
@@ -47,6 +45,9 @@ The properties body contains the final values for:
 
 For .NET Framework applications, `SPLUNK_PROFILER_MEMORY_ENABLED` is always
 reported as `false` because memory profiling is not supported on .NET Framework.
+Profiler enablement and active sampling intervals come from the upstream
+runtime sampler's committed configuration. Inactive features retain their
+configured interval defaults in the environment representation.
 
 When instrumentation is configured with file-based configuration, the OpAMP
 effective configuration contains one file named after the configured YAML file

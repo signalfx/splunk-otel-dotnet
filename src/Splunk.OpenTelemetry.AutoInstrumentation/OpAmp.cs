@@ -14,9 +14,10 @@
 // limitations under the License.
 // </copyright>
 
+using OpenTelemetry.AutoInstrumentation.PluginApi.OpAmp;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
-using OpenTelemetry.OpAmp.Client;
+using OpenTelemetry.OpAmp.Client.Messages;
 using OpenTelemetry.OpAmp.Client.Settings;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
@@ -31,15 +32,14 @@ internal sealed class OpAmp
 
     private readonly Lock _lifecycleLock = new();
     private readonly Lazy<EffectiveConfigRecorder?> _effectiveConfigRecorder;
-    private readonly Func<EffectiveProfilerFeatures> _profilerStateResolver;
+    private readonly Func<EffectiveProfilerState> _profilerStateResolver;
     private EffectiveConfigReporter? _effectiveConfigReporter;
-    private bool _instrumentationInitialized;
-    private ClientLifecycleState _clientLifecycleState;
-    private OpAmpReportingPump? _reportingPump;
+    private IOpAmpClient? _client;
+    private bool _stopped;
 
     public OpAmp(EffectiveConfigStaticSettings staticSettings)
         : this(
-            CreateEffectiveConfigRecorderFactory(staticSettings),
+            () => new EffectiveConfigRecorder(staticSettings, OpenTelemetrySdkDisabledResolver.IsDisabled()),
             UpstreamOpAmpEnabledResolver.IsEnabled,
             UpstreamSdkSetupEnabledResolver.IsEnabled,
             UpstreamProfilerStateResolver.Resolve)
@@ -50,7 +50,7 @@ internal sealed class OpAmp
         Func<EffectiveConfigRecorder> effectiveConfigRecorderFactory,
         Func<bool> opAmpEnabledResolver,
         Func<bool> sdkSetupEnabledResolver,
-        Func<EffectiveProfilerFeatures> profilerStateResolver)
+        Func<EffectiveProfilerState> profilerStateResolver)
     {
         _effectiveConfigRecorder = new(() => TryCreateEffectiveConfigRecorder(
             effectiveConfigRecorderFactory,
@@ -59,15 +59,9 @@ internal sealed class OpAmp
         _profilerStateResolver = profilerStateResolver;
     }
 
-    private enum ClientLifecycleState
-    {
-        NotStarted,
-        Started,
-        Stopped
-    }
-
     public void ConfigureEffectiveConfigReporting(OpAmpClientSettings settings)
     {
+        settings.EffectiveConfigurationReporting.EnableReporting = false;
         try
         {
             var recorder = _effectiveConfigRecorder.Value;
@@ -76,22 +70,46 @@ internal sealed class OpAmp
                 return;
             }
 
-            var profilerFeatures = _profilerStateResolver();
-            var effectiveConfigReporter = EffectiveConfigReporter.CreateValidated(recorder, profilerFeatures);
-
+            var reporter = EffectiveConfigReporter.CreateValidated(recorder, _profilerStateResolver);
             lock (_lifecycleLock)
             {
-                _effectiveConfigReporter = effectiveConfigReporter;
-            }
+                if (_stopped)
+                {
+                    return;
+                }
 
-            settings.EffectiveConfigurationReporting.EnableReporting = true;
+                _effectiveConfigReporter = reporter;
+                settings.EffectiveConfigurationReporting.EnableReporting = true;
+            }
         }
         catch (Exception ex)
         {
-            Log.Error(
-                ex,
-                "Effective configuration reporting preflight failed. The capability will not be advertised.");
+            Log.Error(ex, "Effective configuration reporting preflight failed. The capability will not be advertised.");
         }
+    }
+
+    public void ConfigureClient(IOpAmpClient client)
+    {
+        lock (_lifecycleLock)
+        {
+            if (!_stopped && _client == null)
+            {
+                _client = client;
+            }
+        }
+    }
+
+    public IReadOnlyCollection<EffectiveConfigFile> GetEffectiveConfig()
+    {
+        EffectiveConfigReporter reporter;
+        lock (_lifecycleLock)
+        {
+            reporter = _effectiveConfigReporter
+                ?? throw new InvalidOperationException("Effective configuration reporting is unavailable.");
+        }
+
+        // A getter may overlap cleanup. Keep its reporter alive and build outside lifecycle locks.
+        return [reporter.BuildCurrentPayload()];
     }
 
     public void RecordLogExporterOptions(OtlpExporterOptions options)
@@ -120,82 +138,13 @@ internal sealed class OpAmp
         _effectiveConfigRecorder.Value?.CaptureMetricEndpoints(provider);
     }
 
-    public void OnClientStarted(OpAmpClient client)
-    {
-        OpAmpReportingPump reportingPump;
-        lock (_lifecycleLock)
-        {
-            if (_clientLifecycleState != ClientLifecycleState.NotStarted)
-            {
-                if (_clientLifecycleState == ClientLifecycleState.Started &&
-                    _reportingPump?.IsForClient(client) == true)
-                {
-                    Log.Warning("Ignoring a duplicate OpAMP client-started callback for the active client.");
-                }
-                else
-                {
-                    Log.Warning("Ignoring an unexpected replacement OpAMP client.");
-                }
-
-                return;
-            }
-
-            reportingPump = new OpAmpReportingPump(
-                client,
-                _effectiveConfigReporter,
-                _instrumentationInitialized);
-            _reportingPump = reportingPump;
-            _clientLifecycleState = ClientLifecycleState.Started;
-        }
-
-        try
-        {
-            reportingPump.Start();
-        }
-        catch (Exception ex)
-        {
-            reportingPump.Stop();
-            lock (_lifecycleLock)
-            {
-                if (ReferenceEquals(_reportingPump, reportingPump))
-                {
-                    _reportingPump = null;
-                    _clientLifecycleState = ClientLifecycleState.Stopped;
-                }
-            }
-
-            Log.Error(ex, "Failed to start OpAMP reporting. Automatic instrumentation will continue without reporting effective configuration or full state.");
-        }
-    }
-
     public void StopClientReporting()
     {
-        OpAmpReportingPump? reportingPump;
         lock (_lifecycleLock)
         {
-            if (_clientLifecycleState == ClientLifecycleState.Stopped)
-            {
-                return;
-            }
-
-            reportingPump = _reportingPump;
-            _reportingPump = null;
-            _clientLifecycleState = ClientLifecycleState.Stopped;
+            _stopped = true;
+            _client = null;
         }
-
-        reportingPump?.Stop();
-    }
-
-    public void MarkInstrumentationInitialized()
-    {
-        OpAmpReportingPump? reportingPump;
-        lock (_lifecycleLock)
-        {
-            _instrumentationInitialized = true;
-            reportingPump = _reportingPump;
-        }
-
-        reportingPump?.MarkInstrumentationInitialized();
     }
 
     private static EffectiveConfigRecorder? TryCreateEffectiveConfigRecorder(
@@ -212,36 +161,35 @@ internal sealed class OpAmp
 
             if (!sdkSetupEnabledResolver())
             {
-                Log.Warning(
-                    "Effective configuration reporting is unavailable because automatic SDK setup is disabled and application-owned providers cannot be inspected.");
+                Log.Warning("Effective configuration reporting is unavailable because automatic SDK setup is disabled and application-owned providers cannot be inspected.");
                 return null;
             }
 
             return effectiveConfigRecorderFactory();
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Log.Warning($"Could not create effective configuration reporter: {e.Message}");
+            Log.Warning($"Could not create effective configuration reporter: {ex.Message}");
             return null;
         }
     }
 
-    private static Func<EffectiveConfigRecorder> CreateEffectiveConfigRecorderFactory(
-        EffectiveConfigStaticSettings staticSettings)
-    {
-        return () => new EffectiveConfigRecorder(
-            staticSettings,
-            OpenTelemetrySdkDisabledResolver.IsDisabled());
-    }
-
     private void NotifyILoggerEffectiveConfigChanged()
     {
-        OpAmpReportingPump? reportingPump;
+        IOpAmpClient? client;
         lock (_lifecycleLock)
         {
-            reportingPump = _reportingPump;
+            client = _effectiveConfigReporter != null ? _client : null;
         }
 
-        reportingPump?.NotifyILoggerEffectiveConfigChanged();
+        // Notification may synchronously wait for a getter on another thread.
+        try
+        {
+            client?.NotifyEffectiveConfigChanged();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to notify the OpAMP client of an effective configuration change.");
+        }
     }
 }
