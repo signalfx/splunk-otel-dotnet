@@ -102,7 +102,7 @@ internal sealed class EffectiveConfigRecorder
         EffectiveConfigPayloadBuilder.ValidateCompatibility(_staticSettings.FileBasedConfigFileName != null);
     }
 
-    internal EffectiveConfigSnapshot CreateSnapshot(EffectiveProfilerFeatures profilerFeatures)
+    internal EffectiveConfigSnapshot CreateSnapshot(EffectiveProfilerState profilerState)
     {
         IReadOnlyList<EffectiveOtlpEndpoint> traceEndpoints = [];
         IReadOnlyList<EffectiveOtlpEndpoint> metricEndpoints = [];
@@ -117,7 +117,7 @@ internal sealed class EffectiveConfigRecorder
 
         return EffectiveConfigSnapshot.Create(
             _staticSettings,
-            profilerFeatures,
+            profilerState,
             traceEndpoints,
             metricEndpoints,
             logEndpoints);

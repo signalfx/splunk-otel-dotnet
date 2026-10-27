@@ -29,7 +29,7 @@ public class EffectiveConfigRecorderTests
         var endpoint = EffectiveOtlpEndpoint.Http("http://bridge-collector:4318/v1/logs");
         var recorder = CreateRecorder(() => [endpoint]);
 
-        var snapshot = recorder.CreateSnapshot(EffectiveProfilerFeatures.None);
+        var snapshot = recorder.CreateSnapshot(EffectiveProfilerState.None);
 
         Assert.Equal([endpoint], snapshot.LogEndpoints);
     }
@@ -42,7 +42,7 @@ public class EffectiveConfigRecorderTests
             openTelemetrySdkDisabled: true,
             () => throw new InvalidOperationException("The bridge resolver should not be called."));
 
-        var snapshot = recorder.CreateSnapshot(EffectiveProfilerFeatures.None);
+        var snapshot = recorder.CreateSnapshot(EffectiveProfilerState.None);
 
         Assert.Empty(snapshot.TraceEndpoints);
         Assert.Empty(snapshot.MetricEndpoints);
@@ -62,13 +62,13 @@ public class EffectiveConfigRecorderTests
 
         Assert.Equal(
             [beforePreflight],
-            recorder.CreateSnapshot(EffectiveProfilerFeatures.None).LogEndpoints);
+            recorder.CreateSnapshot(EffectiveProfilerState.None).LogEndpoints);
 
         Assert.True(recorder.CaptureLogExporterOptions(CreateLogExporterOptions(afterPreflight.Endpoint)));
 
         Assert.Equal(
             [beforePreflight, afterPreflight],
-            recorder.CreateSnapshot(EffectiveProfilerFeatures.None).LogEndpoints);
+            recorder.CreateSnapshot(EffectiveProfilerState.None).LogEndpoints);
     }
 
     private static EffectiveConfigRecorder CreateRecorder(

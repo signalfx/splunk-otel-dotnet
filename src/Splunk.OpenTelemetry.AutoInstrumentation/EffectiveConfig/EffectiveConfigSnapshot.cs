@@ -66,21 +66,27 @@ internal sealed class EffectiveConfigSnapshot
 
     public static EffectiveConfigSnapshot Create(
         EffectiveConfigStaticSettings staticSettings,
-        EffectiveProfilerFeatures profilerFeatures,
+        EffectiveProfilerState profilerState,
         IReadOnlyList<EffectiveOtlpEndpoint> traceEndpoints,
         IReadOnlyList<EffectiveOtlpEndpoint> metricEndpoints,
         IReadOnlyList<EffectiveOtlpEndpoint> logEndpoints)
     {
+        var cpuEnabled = (profilerState.Features & EffectiveProfilerFeatures.Cpu) != 0;
+        var snapshotsEnabled = (profilerState.Features & EffectiveProfilerFeatures.Snapshot) != 0;
         return new EffectiveConfigSnapshot(
             fileBasedConfigFileName: staticSettings.FileBasedConfigFileName,
             traceEndpoints: traceEndpoints,
             metricEndpoints: metricEndpoints,
             logEndpoints: logEndpoints,
-            cpuProfilerEnabled: (profilerFeatures & EffectiveProfilerFeatures.Cpu) != 0,
-            memoryProfilerEnabled: (profilerFeatures & EffectiveProfilerFeatures.Memory) != 0,
-            snapshotProfilerEnabled: (profilerFeatures & EffectiveProfilerFeatures.Snapshot) != 0,
-            cpuProfilerCallStackInterval: staticSettings.CpuProfilerCallStackInterval,
-            snapshotSamplingInterval: staticSettings.SnapshotSamplingInterval,
+            cpuProfilerEnabled: cpuEnabled,
+#if NET
+            memoryProfilerEnabled: (profilerState.Features & EffectiveProfilerFeatures.Memory) != 0,
+#else
+            memoryProfilerEnabled: false,
+#endif
+            snapshotProfilerEnabled: snapshotsEnabled,
+            cpuProfilerCallStackInterval: cpuEnabled ? profilerState.CpuSamplingInterval : staticSettings.CpuProfilerCallStackInterval,
+            snapshotSamplingInterval: snapshotsEnabled ? profilerState.SnapshotSamplingInterval : staticSettings.SnapshotSamplingInterval,
             snapshotSelectionProbability: staticSettings.SnapshotSelectionProbability);
     }
 

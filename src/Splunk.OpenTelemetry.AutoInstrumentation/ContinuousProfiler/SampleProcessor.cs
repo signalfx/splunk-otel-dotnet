@@ -33,7 +33,6 @@ internal class SampleProcessor
 #endif
     private readonly KeyValue _snapshotInstrumentationSource;
     private uint _selectedSamplingPeriod;
-    private uint _continuousSamplingPeriod;
 
     public SampleProcessor()
     {
@@ -45,26 +44,20 @@ internal class SampleProcessor
         _snapshotInstrumentationSource = GdiProfilingConventions.LogRecord.Attributes.InstrumentationSource("snapshot");
     }
 
-    public uint ContinuousSamplingPeriod
-    {
-        get => Volatile.Read(ref _continuousSamplingPeriod);
-        set => Volatile.Write(ref _continuousSamplingPeriod, value);
-    }
-
     public uint SelectedSamplingPeriod
     {
         get => Volatile.Read(ref _selectedSamplingPeriod);
         set => Volatile.Write(ref _selectedSamplingPeriod, value);
     }
 
-    public LogRecord? ProcessThreadSamples(List<ThreadSample>? threadSamples)
+    public LogRecord? ProcessThreadSamples(List<ThreadSample>? threadSamples, uint samplingInterval)
     {
         if (threadSamples == null || threadSamples.Count < 1)
         {
             return null;
         }
 
-        var cpuProfile = BuildCpuProfile(threadSamples, (long)ContinuousSamplingPeriod!);
+        var cpuProfile = BuildCpuProfile(threadSamples, samplingInterval);
         var totalFrameCount = CountFrames(threadSamples);
 
         return BuildLogRecord(cpuProfile, _profilingDataTypeCpu, totalFrameCount);
