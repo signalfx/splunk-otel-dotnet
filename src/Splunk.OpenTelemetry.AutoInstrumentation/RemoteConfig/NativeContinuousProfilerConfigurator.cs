@@ -58,7 +58,7 @@ internal static class NativeContinuousProfilerConfigurator
         public void Configure(PluginSettings startupSettings, ProfilerRemoteConfigState state)
         {
             var cpuSamplingInterval = state.CpuProfilerEnabled
-                ? PluginSettingsHelper.GetFinalContinuousSamplingInterval(startupSettings)
+                ? state.CpuProfilerCallStackInterval
                 : 0u;
             var snapshotSamplingInterval = startupSettings.SnapshotsEnabled
                 ? PluginSettingsHelper.GetFinalSnapshotSamplingInterval(startupSettings.SnapshotsSamplingInterval)

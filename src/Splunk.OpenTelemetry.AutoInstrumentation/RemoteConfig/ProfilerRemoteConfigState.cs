@@ -18,10 +18,13 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 internal sealed class ProfilerRemoteConfigState
 {
-    public ProfilerRemoteConfigState(bool cpuProfilerEnabled)
+    public ProfilerRemoteConfigState(bool cpuProfilerEnabled, uint cpuProfilerCallStackInterval)
     {
         CpuProfilerEnabled = cpuProfilerEnabled;
+        CpuProfilerCallStackInterval = cpuProfilerCallStackInterval;
     }
 
     public bool CpuProfilerEnabled { get; }
+
+    public uint CpuProfilerCallStackInterval { get; }
 }

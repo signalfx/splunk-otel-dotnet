@@ -67,8 +67,9 @@ internal static class ProfilerRuntimeConfiguration
         {
             lock (Sync)
             {
-                return GetState().CpuProfilerEnabled
-                    ? PluginSettingsHelper.GetFinalContinuousSamplingInterval(GetStartupSettings())
+                var state = GetState();
+                return state.CpuProfilerEnabled
+                    ? state.CpuProfilerCallStackInterval
                     : 0u;
             }
         }
@@ -81,7 +82,9 @@ internal static class ProfilerRuntimeConfiguration
         lock (Sync)
         {
             _startupSettings = settings;
-            _state = new ProfilerRemoteConfigState(settings.CpuProfilerEnabled);
+            _state = new ProfilerRemoteConfigState(
+                settings.CpuProfilerEnabled,
+                PluginSettingsHelper.GetFinalContinuousSamplingInterval(settings));
         }
     }
 
@@ -100,9 +103,15 @@ internal static class ProfilerRuntimeConfiguration
 
         lock (Sync)
         {
-            var cpuProfilerEnabled = profilingConfig.AlwaysOn?.CpuProfiler != null;
+            var cpuProfiler = profilingConfig.AlwaysOn?.CpuProfiler;
             var startupSettings = GetStartupSettings();
-            var next = new ProfilerRemoteConfigState(cpuProfilerEnabled);
+            var cpuSamplingInterval = cpuProfiler != null
+                ? PluginSettingsHelper.GetFinalContinuousSamplingInterval(
+                    cpuProfiler.SamplingInterval,
+                    startupSettings.SnapshotsEnabled,
+                    startupSettings.SnapshotsSamplingInterval)
+                : 0u;
+            var next = new ProfilerRemoteConfigState(cpuProfiler != null, cpuSamplingInterval);
             configureNative(startupSettings, next);
             _state = next;
         }

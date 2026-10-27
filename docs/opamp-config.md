@@ -99,6 +99,7 @@ distribution:
     profiling:
       always_on:
         cpu_profiler:
+          sampling_interval: 10000
 ```
 
 ### Runtime behavior
@@ -123,6 +124,9 @@ required.
 Supported at runtime:
 
 - `always_on.cpu_profiler`: enable or disable CPU profiling.
+- `always_on.cpu_profiler.sampling_interval`: change the CPU sampling interval in
+  milliseconds. If omitted, null, or zero, the default of `10000` ms is used.
 
-The CPU sampling interval is selected from the startup configuration and cannot
-be changed through remote configuration.
+When snapshots are enabled at startup, the CPU sampling interval is adjusted to
+a multiple of the snapshot sampling interval and is at least twice that interval.
+Snapshot and memory profiling settings retain their startup configuration.

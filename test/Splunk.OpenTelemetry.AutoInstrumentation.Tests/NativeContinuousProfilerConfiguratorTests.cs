@@ -65,10 +65,10 @@ public class NativeContinuousProfilerConfiguratorTests
                 }));
         NativeMethodsStub.Result = ApplyResult.Applied;
 
-        binding.Configure(startupSettings, new ProfilerRemoteConfigState(cpuProfilerEnabled: true));
+        binding.Configure(startupSettings, new ProfilerRemoteConfigState(cpuProfilerEnabled: true, cpuProfilerCallStackInterval: 312));
 
         Assert.Equal(Authority.ControlPlane, NativeMethodsStub.LastAuthority);
-        Assert.Equal(156u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
+        Assert.Equal(312u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
         Assert.Equal(78u, NativeMethodsStub.LastConfiguration.SnapshotSamplingInterval);
 #if NET
         Assert.Equal(123u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
@@ -96,7 +96,7 @@ public class NativeContinuousProfilerConfiguratorTests
         var binding = new NativeContinuousProfilerConfigurator.RuntimeConfigurationBinding(typeof(NativeMethodsStub));
         NativeMethodsStub.Result = ApplyResult.Applied;
 
-        binding.Configure(startupSettings, new ProfilerRemoteConfigState(cpuProfilerEnabled: false));
+        binding.Configure(startupSettings, new ProfilerRemoteConfigState(cpuProfilerEnabled: false, cpuProfilerCallStackInterval: 156));
 
         Assert.Equal(0u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
         Assert.Equal(78u, NativeMethodsStub.LastConfiguration.SnapshotSamplingInterval);
@@ -114,7 +114,7 @@ public class NativeContinuousProfilerConfiguratorTests
         var startupSettings = new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()));
         NativeMethodsStub.Result = ApplyResult.NoChange;
 
-        binding.Configure(startupSettings, new ProfilerRemoteConfigState(cpuProfilerEnabled: false));
+        binding.Configure(startupSettings, new ProfilerRemoteConfigState(cpuProfilerEnabled: false, cpuProfilerCallStackInterval: 0));
 
         Assert.Equal(0u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
         Assert.Equal(0u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
@@ -131,7 +131,7 @@ public class NativeContinuousProfilerConfiguratorTests
         NativeMethodsStub.Result = result;
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            binding.Configure(startupSettings, new ProfilerRemoteConfigState(cpuProfilerEnabled: true)));
+            binding.Configure(startupSettings, new ProfilerRemoteConfigState(cpuProfilerEnabled: true, cpuProfilerCallStackInterval: 1234)));
 
         Assert.Contains(result.ToString(), exception.Message, StringComparison.Ordinal);
     }
