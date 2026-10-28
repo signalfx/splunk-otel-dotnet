@@ -246,7 +246,7 @@ public class ProfilerRuntimeRemoteConfigurationTests
     }
 
     [Fact]
-    public void Apply_IgnoresPayloadWithoutProfilingConfig()
+    public void Apply_DisablesCpuProfilerWhenProfilingSectionIsOmitted()
     {
         ProfilerRuntimeConfiguration.Initialize(
             CreateSettings(
@@ -258,8 +258,8 @@ public class ProfilerRuntimeRemoteConfigurationTests
 
         ApplyConfiguration(new YamlRoot());
 
-        Assert.True(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
-        Assert.Equal(1234u, ProfilerRuntimeConfiguration.CurrentCpuProfilerCallStackInterval);
+        Assert.False(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
+        Assert.Equal(0u, ProfilerRuntimeConfiguration.CurrentCpuProfilerCallStackInterval);
     }
 
     [Fact]
