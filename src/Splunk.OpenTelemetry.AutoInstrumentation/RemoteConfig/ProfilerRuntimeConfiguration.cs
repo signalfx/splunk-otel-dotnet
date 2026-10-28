@@ -96,14 +96,10 @@ internal static class ProfilerRuntimeConfiguration
     internal static void Apply(YamlRoot? configuration, Action<PluginSettings, ProfilerRemoteConfigState> configureNative)
     {
         var profilingConfig = configuration?.Distribution?.Splunk?.Profiling;
-        if (profilingConfig == null)
-        {
-            return;
-        }
 
         lock (Sync)
         {
-            var cpuProfiler = profilingConfig.AlwaysOn?.CpuProfiler;
+            var cpuProfiler = profilingConfig?.AlwaysOn?.CpuProfiler;
             var startupSettings = GetStartupSettings();
             var cpuSamplingInterval = cpuProfiler != null
                 ? PluginSettingsHelper.GetFinalContinuousSamplingInterval(
