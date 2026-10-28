@@ -33,7 +33,7 @@ jobs:
           dotnet-version: | 
             8.0.427
             9.0.320
-            10.0.302
+            10.0.403
       - run: ./build.cmd Workflow
         env:
           GH_TOKEN: ${{ github.token }}
@@ -161,7 +161,7 @@ jobs:
           dotnet-version: | 
             8.0.427
             9.0.320
-            10.0.302
+            10.0.403
       - run: ./build.cmd NuGetWorkflow
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -187,7 +187,7 @@ jobs:
           dotnet-version: | 
             8.0.427
             9.0.320
-            10.0.302
+            10.0.403
       - name: Create test directory
         env:
           LOG_DIR: /var/log/opentelemetry/dotnet
