@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 
+using System.Diagnostics;
 using System.Text;
 using OpenTelemetry.OpAmp.Client.Listeners;
 using OpenTelemetry.OpAmp.Client.Messages;
@@ -23,7 +24,10 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 internal sealed class OpAmpRemoteConfigurationListener : IOpAmpListener<RemoteConfigMessage>
 {
+    private const int MaxApplicationAttempts = 3;
+
     private static readonly ILogger Log = new Logger();
+    private static readonly long RetryIntervalTicks = 30 * Stopwatch.Frequency;
     private static readonly Encoding StrictUtf8 = new UTF8Encoding(
         encoderShouldEmitUTF8Identifier: false,
         throwOnInvalidBytes: true);
@@ -31,9 +35,14 @@ internal sealed class OpAmpRemoteConfigurationListener : IOpAmpListener<RemoteCo
     private readonly Action _onApplied;
     private readonly Func<RemoteConfigStatusReport, Task> _reportStatusAsync;
     private readonly Action<string> _applyYaml;
-    private readonly object _configHashLock = new();
-    private readonly object _statusReportLock = new();
+    private readonly Func<long> _getTimestamp;
+    private readonly object _configurationLock = new();
     private string? _lastConfigHash;
+    private int _applicationAttempts;
+    private bool _handlingConfiguration;
+    private RemoteConfigStatusCode _lastStatus;
+    private string? _lastErrorMessage;
+    private long _lastStatusReportTimestamp;
     private Task _lastStatusReportTask = Task.CompletedTask;
 
     public OpAmpRemoteConfigurationListener(Action onApplied, Func<RemoteConfigStatusReport, Task> reportStatusAsync)
@@ -44,11 +53,13 @@ internal sealed class OpAmpRemoteConfigurationListener : IOpAmpListener<RemoteCo
     internal OpAmpRemoteConfigurationListener(
         Action onApplied,
         Func<RemoteConfigStatusReport, Task> reportStatusAsync,
-        Action<string> applyYaml)
+        Action<string> applyYaml,
+        Func<long>? getTimestamp = null)
     {
         _onApplied = onApplied;
         _reportStatusAsync = reportStatusAsync;
         _applyYaml = applyYaml;
+        _getTimestamp = getTimestamp ?? Stopwatch.GetTimestamp;
     }
 
     public void HandleMessage(RemoteConfigMessage message)
@@ -65,13 +76,63 @@ internal sealed class OpAmpRemoteConfigurationListener : IOpAmpListener<RemoteCo
 
     internal void HandleRemoteConfiguration(byte[] configHash, string? contentType, byte[]? body)
     {
-        try
+        lock (_configurationLock)
         {
-            if (IsKnownConfigHash(configHash))
+            if (_handlingConfiguration)
             {
                 return;
             }
 
+            var configHashKey = Convert.ToBase64String(configHash);
+            var sameConfiguration = configHashKey == _lastConfigHash;
+            if (sameConfiguration &&
+                (!_lastStatusReportTask.IsCompleted || _getTimestamp() - _lastStatusReportTimestamp < RetryIntervalTicks))
+            {
+                return;
+            }
+
+            if (!sameConfiguration)
+            {
+                _lastConfigHash = configHashKey;
+                _applicationAttempts = 0;
+            }
+
+            _handlingConfiguration = true;
+            try
+            {
+                if (sameConfiguration &&
+                    (_lastStatus == RemoteConfigStatusCode.Applied || _applicationAttempts >= MaxApplicationAttempts))
+                {
+                    // Queueing a status does not acknowledge delivery. Resubmit the cached result at a bounded rate.
+                    ReportStatus(configHash, _lastStatus, _lastErrorMessage);
+                    return;
+                }
+
+                _applicationAttempts++;
+                ApplyConfiguration(configHash, contentType, body);
+            }
+            finally
+            {
+                _handlingConfiguration = false;
+            }
+        }
+    }
+
+    private static bool IsYamlContentType(string? contentType)
+    {
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            return false;
+        }
+
+        var mediaType = contentType!.Split(';')[0].Trim();
+        return mediaType.Equals(RemoteConfiguration.RemoteConfigContentType, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void ApplyConfiguration(byte[] configHash, string? contentType, byte[]? body)
+    {
+        try
+        {
             ReportStatus(configHash, RemoteConfigStatusCode.Applying);
 
             if (body == null)
@@ -100,34 +161,12 @@ internal sealed class OpAmpRemoteConfigurationListener : IOpAmpListener<RemoteCo
         }
     }
 
-    private static bool IsYamlContentType(string? contentType)
-    {
-        if (string.IsNullOrWhiteSpace(contentType))
-        {
-            return false;
-        }
-
-        var mediaType = contentType!.Split(';')[0].Trim();
-        return mediaType.Equals(RemoteConfiguration.RemoteConfigContentType, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private bool IsKnownConfigHash(byte[] configHash)
-    {
-        var configHashKey = Convert.ToBase64String(configHash);
-        lock (_configHashLock)
-        {
-            if (configHashKey == _lastConfigHash)
-            {
-                return true;
-            }
-
-            _lastConfigHash = configHashKey;
-            return false;
-        }
-    }
-
     private void ReportStatus(byte[] configHash, RemoteConfigStatusCode status, string? errorMessage = null)
     {
+        _lastStatus = status;
+        _lastErrorMessage = errorMessage;
+        _lastStatusReportTimestamp = _getTimestamp();
+
         if (configHash.Length == 0)
         {
             Log.Warning("Cannot report OpAMP remote configuration status because the remote configuration hash is empty.");
@@ -135,10 +174,7 @@ internal sealed class OpAmpRemoteConfigurationListener : IOpAmpListener<RemoteCo
         }
 
         var statusReport = new RemoteConfigStatusReport(configHash, status, errorMessage);
-        lock (_statusReportLock)
-        {
-            _lastStatusReportTask = ReportStatusAfterPreviousAsync(_lastStatusReportTask, statusReport);
-        }
+        _lastStatusReportTask = ReportStatusAfterPreviousAsync(_lastStatusReportTask, statusReport);
     }
 
     private async Task ReportStatusAfterPreviousAsync(Task previousStatusReportTask, RemoteConfigStatusReport statusReport)
