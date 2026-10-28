@@ -1,23 +1,23 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0.401-alpine3.23@sha256:3f9c03432d664163a90d20e3ed0a3784d0aa82c1b9cbd1a7dd4609fede95669e
+FROM mcr.microsoft.com/dotnet/sdk:10.0.403-alpine3.24@sha256:cc02b814237a76c4735fb6eeee87181597b5e56f2ce458a435e527674d91f4d7
 
 # renovate: datasource=repology depName=cmake
-ENV CMAKE_VERSION="4.1.3-r0"
+ENV CMAKE_VERSION="4.2.3-r0"
 # renovate: datasource=repology depName=clang
-ENV CLANG_VERSION="21.1.2-r2"
+ENV CLANG_VERSION="22.1.3-r2"
 # renovate: datasource=repology depName=make
-ENV MAKE_VERSION="4.4.1-r3"
+ENV MAKE_VERSION="4.4.1-r4"
 # renovate: datasource=repology depName=bash
-ENV BASH_PACKAGE_VERSION="5.3.3-r1"
+ENV BASH_PACKAGE_VERSION="5.3.9-r1"
 # renovate: datasource=repology depName=alpine-sdk
-ENV ALPINE_SDK_VERSION="1.1-r0"
+ENV ALPINE_SDK_VERSION="1.1-r1"
 # renovate: datasource=repology depName=protobuf
 ENV PROTOBUF_VERSION="31.1-r1"
 # renovate: datasource=repology depName=protobuf-dev
 ENV PROTOBUF_DEV_VERSION="31.1-r1"
 # renovate: datasource=repology depName=grpc
-ENV GRPC_VERSION="1.76.0-r2"
+ENV GRPC_VERSION="1.78.1-r2"
 # renovate: datasource=repology depName=grpc-plugins
-ENV GRPC_PLUGINS_VERSION="1.76.0-r2"
+ENV GRPC_PLUGINS_VERSION="1.78.1-r2"
 # Update the GitHub CLI version and architecture-specific checksum together.
 ENV GITHUB_CLI_VERSION="2.101.0"
 ENV GITHUB_CLI_ARCH="arm64"
@@ -51,8 +51,8 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
     && echo "SHA256: $(sha256sum dotnet-install.sh)" \
     && echo "082f7685e156738a1b2e2ed8381a621870d4ce8e8c59278034556f05c186eb2e  dotnet-install.sh" | sha256sum -c \
     && chmod +x ./dotnet-install.sh \
-    && ./dotnet-install.sh -v 9.0.316 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh -v 8.0.423 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh -v 9.0.320 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh -v 8.0.427 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
 WORKDIR /project
