@@ -2,16 +2,23 @@
 #  - Download your dotnet auto-instrumentation artifacts to the `/autoinstrumentation` directory. This is required as when instrumenting the pod,
 #    one init container will be created to copy the files to your app's container.
 #  - Grant the necessary access to the files in the `/autoinstrumentation` directory.
-#  - Following environment variables are injected by the k8s operator to the application container to enable the .NET auto-instrumentation.
+#  - Following environment variables are injected to the application container to enable the .NET auto-instrumentation.
 #    CORECLR_ENABLE_PROFILING=1
 #    CORECLR_PROFILER={918728DD-259F-4A6A-AC2B-B85E1B658318}
-#    CORECLR_PROFILER_PATH=%InstallationLocation%/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so # for glibc based images
-#    CORECLR_PROFILER_PATH=%InstallationLocation%/linux-musl-x64/OpenTelemetry.AutoInstrumentation.Native.so # for musl based images
-#    DOTNET_STARTUP_HOOKS=%InstallationLocation%/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll 
+#    CORECLR_PROFILER_PATH=%InstallationLocation%/linux/OpenTelemetry.AutoInstrumentation.Native.so # for glibc based images
+#    CORECLR_PROFILER_PATH=%InstallationLocation%/linux-musl/OpenTelemetry.AutoInstrumentation.Native.so # for musl based images
+#    DOTNET_ADDITIONAL_DEPS=%InstallationLocation%/AdditionalDeps
+#    DOTNET_SHARED_STORE=%InstallationLocation%/store
+#    DOTNET_STARTUP_HOOKS=%InstallationLocation%/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
 #    OTEL_DOTNET_AUTO_HOME=%InstallationLocation%
 #    OTEL_DOTNET_AUTO_PLUGINS=Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation
 #  - For auto-instrumentation by container injection, the Linux command cp is
 #    used and must be available in the image.
+#  - This image is built for linux/amd64 and linux/arm64. The .NET Runtime Identifier (RID) specific
+#    artifact for the target platform is downloaded and exposed under the architecture-agnostic
+#    `linux`/`linux-musl` directories, with `linux-x64`/`linux-musl-x64` kept as symlinks for
+#    backward compatibility with the CORECLR_PROFILER_PATH values used before multi-arch support
+#    was added.
 
 FROM busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e AS downloader
 
@@ -26,6 +33,10 @@ ADD https://github.com/signalfx/splunk-otel-dotnet/releases/download/$RELEASE_VE
 RUN unzip splunk-opentelemetry-dotnet-linux-glibc-$ARCHIVE_ARCH.zip &&\
     unzip splunk-opentelemetry-dotnet-linux-musl-$ARCHIVE_ARCH.zip "linux-musl-$ARCHIVE_ARCH/*" -d . &&\
     rm splunk-opentelemetry-dotnet-linux-glibc-$ARCHIVE_ARCH.zip splunk-opentelemetry-dotnet-linux-musl-$ARCHIVE_ARCH.zip &&\
+    mv "linux-$ARCHIVE_ARCH" linux &&\
+    mv "linux-musl-$ARCHIVE_ARCH" linux-musl &&\
+    ln -s linux "linux-$ARCHIVE_ARCH" &&\
+    ln -s linux-musl "linux-musl-$ARCHIVE_ARCH" &&\
     chmod -R go+r .
 
 FROM busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
