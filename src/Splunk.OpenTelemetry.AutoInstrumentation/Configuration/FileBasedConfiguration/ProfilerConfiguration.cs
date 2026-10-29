@@ -27,4 +27,6 @@ internal class ProfilerConfiguration
     public AlwaysOn? AlwaysOn { get; set; }
 
     public CallGraphsConfiguration? Callgraphs { get; set; }
+
+    public bool NativeExportsResolutionEnabled { get; set; } = true;
 }

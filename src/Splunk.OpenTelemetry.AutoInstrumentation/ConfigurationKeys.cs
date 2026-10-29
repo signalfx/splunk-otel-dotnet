@@ -85,6 +85,13 @@ internal static class ConfigurationKeys
             /// Configuration key for Profiler exporter export interval (in ms). Defaults to 500 ms, which is also the minimum.
             /// </summary>
             public const string ProfilerExportInterval = "SPLUNK_PROFILER_EXPORT_INTERVAL";
+
+            /// <summary>
+            /// Configuration key for enabling native exports resolution in the continuous profiler.
+            /// Defaults to <c>true</c> When <c>false</c>, the profiler will not attempt to
+            /// resolve native frame exports during sample post-processing.
+            /// </summary>
+            public const string NativeExportsResolutionEnabled = "SPLUNK_PROFILER_NATIVE_EXPORTS_RESOLUTION_ENABLED";
         }
 
         public static class Snapshots
