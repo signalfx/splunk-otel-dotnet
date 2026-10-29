@@ -33,7 +33,7 @@ public class EffectiveConfigReporterTests
                 new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()))),
             openTelemetrySdkDisabled: false,
             () => null);
-        var reporter = EffectiveConfigReporter.CreateValidated(recorder, EffectiveProfilerFeatures.None);
+        var reporter = EffectiveConfigReporter.CreateValidated(recorder, () => EffectiveProfilerState.None);
         recorder.MarkOpenTelemetryLoggerConfigured();
         Assert.True(recorder.CaptureLogExporterOptions(new OtlpExporterOptions
         {
