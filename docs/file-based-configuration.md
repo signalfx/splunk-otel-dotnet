@@ -30,6 +30,14 @@ instrumentation must be configured using environment variables exclusively.
 - `SPLUNK_ACCESS_TOKEN`
 - `SPLUNK_REALM`
 
+## OpAMP remote configuration feature
+
+```yaml
+opamp/development:
+  features:
+    remote_config:
+```
+
 ## Trace Response Header configuration
 
 ```yaml

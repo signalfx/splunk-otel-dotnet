@@ -37,6 +37,7 @@ internal sealed class MockOpAmpServer : IDisposable
 {
     private readonly ITestOutputHelper _output;
     private readonly TestHttpServer _listener;
+    private readonly Func<AgentToServer, AgentRemoteConfig?>? _remoteConfiguration;
 
     private readonly List<Expectation> _expectations = new();
     private readonly BlockingCollection<AgentToServer> _frames = new(10);
@@ -48,9 +49,11 @@ internal sealed class MockOpAmpServer : IDisposable
     public MockOpAmpServer(
         ITestOutputHelper output,
         string host = "localhost",
-        ServerToAgentFlags firstResponseFlags = 0)
+        ServerToAgentFlags firstResponseFlags = 0,
+        Func<AgentToServer, AgentRemoteConfig?>? remoteConfiguration = null)
     {
         _output = output;
+        _remoteConfiguration = remoteConfiguration;
         _firstResponseFlags = unchecked((long)firstResponseFlags);
 #if NETFRAMEWORK
         _listener = new TestHttpServer(output, HandleHttpRequests, host, "/v1/opamp/");
@@ -289,6 +292,12 @@ internal sealed class MockOpAmpServer : IDisposable
                 Type = "Utf8String",
             },
         };
+
+        if (_remoteConfiguration != null)
+        {
+            responseFrame.Capabilities |= (ulong)ServerCapabilities.OffersRemoteConfig;
+            responseFrame.RemoteConfig = _remoteConfiguration(frame);
+        }
 
         return responseFrame.ToByteArray();
     }

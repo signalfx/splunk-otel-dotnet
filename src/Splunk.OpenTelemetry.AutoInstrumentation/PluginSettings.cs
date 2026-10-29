@@ -1,4 +1,4 @@
-// <copyright file="PluginSettings.cs" company="Splunk Inc.">
+﻿// <copyright file="PluginSettings.cs" company="Splunk Inc.">
 // Copyright Splunk Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +14,9 @@
 // limitations under the License.
 // </copyright>
 
-using System.Reflection;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration.Parser;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
@@ -44,29 +44,32 @@ internal class PluginSettings
         TraceResponseHeaderEnabled = source.GetBool(ConfigurationKeys.Splunk.TraceResponseHeaderEnabled) ?? Constants.DefaultTraceResponseHeaderEnabled;
         var otlpEndpoint = source.GetString(ConfigurationKeys.OpenTelemetry.OtlpEndpoint);
         IsOtlpEndpointSet = !string.IsNullOrEmpty(otlpEndpoint);
+        OpAmpRemoteConfigEnabled = source.GetBool(ConfigurationKeys.Splunk.OpAmp.RemoteConfig) ?? false;
 
         SnapshotsEnabled = source.GetBool(ConfigurationKeys.Splunk.Snapshots.Enabled) ?? false;
         var snapshotInterval = source.GetInt32(ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs) ?? Constants.DefaultSnapshotSamplingIntervalMs;
-        SnapshotsSamplingInterval = GetFinalSnapshotSamplingInterval(snapshotInterval);
+        SnapshotsSamplingInterval = PluginSettingsHelper.GetFinalSnapshotSamplingInterval(snapshotInterval);
         var configuredSelectionRate = source.GetDouble(ConfigurationKeys.Splunk.Snapshots.SelectionRate) ?? Constants.DefaultSnapshotSelectionRate;
-        SnapshotsSelectionRate = GetFinalSnapshotSelectionProbability(configuredSelectionRate);
+        SnapshotsSelectionRate = PluginSettingsHelper.GetFinalSnapshotSelectionProbability(configuredSelectionRate);
         HighResolutionTimerEnabled = source.GetBool(ConfigurationKeys.Splunk.Snapshots.HighResolutionTimerEnabled) ?? false;
 
         CpuProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled) ?? false;
         var callStackInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval) ?? Constants.DefaultSamplingInterval;
-        CpuProfilerCallStackInterval = CpuProfilerEnabled ? GetFinalContinuousSamplingInterval(callStackInterval, SnapshotsEnabled, SnapshotsSamplingInterval) : Constants.DefaultSamplingInterval;
+        CpuProfilerCallStackInterval = CpuProfilerEnabled || OpAmpRemoteConfigEnabled
+            ? PluginSettingsHelper.GetFinalContinuousSamplingInterval(callStackInterval, SnapshotsEnabled, SnapshotsSamplingInterval)
+            : Constants.DefaultSamplingInterval;
 
 #if NET
         MemoryProfilerEnabled = source.GetBool(ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled) ?? Constants.DefaultHighResolutionTimer;
         var maxMemorySamplesPerMinute = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples) ?? Constants.DefaultMaxMemorySamples;
-        MemoryProfilerMaxMemorySamplesPerMinute = GetFinalMaxMemorySamples(maxMemorySamplesPerMinute);
+        MemoryProfilerMaxMemorySamplesPerMinute = PluginSettingsHelper.GetFinalMaxMemorySamples(maxMemorySamplesPerMinute);
 #endif
         var httpClientTimeout = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportTimeout) ?? Constants.DefaultProfilerExportTimeout;
-        ProfilerHttpClientTimeout = (uint)httpClientTimeout;
+        ProfilerHttpClientTimeout = PluginSettingsHelper.GetFinalExportTimeout(httpClientTimeout);
         var exportInterval = source.GetInt32(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerExportInterval) ?? Constants.DefaultProfilerExportInterval;
-        ProfilerExportInterval = GetFinalExportInterval(exportInterval);
+        ProfilerExportInterval = PluginSettingsHelper.GetFinalExportInterval(exportInterval);
 
-        ProfilerLogsEndpoint = GetProfilerLogsEndpoints(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
+        ProfilerLogsEndpoint = PluginSettingsHelper.GetProfilerLogsEndpoint(source, otlpEndpoint == null ? null : new Uri(otlpEndpoint));
     }
 
     internal PluginSettings(YamlRoot configuration, string? fileName = null)
@@ -88,6 +91,8 @@ internal class PluginSettings
         TraceResponseHeaderEnabled = traceConfig?.Aspnetcore?.ResponseHeaderEnabled ?? Constants.DefaultTraceResponseHeaderEnabled;
 #endif
 
+        OpAmpRemoteConfigEnabled = configuration.OpampDevelopment?.Features?.RemoteConfig != null;
+
         var profilingConfig = configuration.Distribution?.Splunk?.Profiling;
         if (profilingConfig != null)
         {
@@ -95,9 +100,9 @@ internal class PluginSettings
             {
                 SnapshotsEnabled = true;
                 HighResolutionTimerEnabled = profilingConfig.Callgraphs.HighResolutionTimerEnabled;
-                SnapshotsSamplingInterval = GetFinalSnapshotSamplingInterval((int)profilingConfig.Callgraphs.SamplingInterval);
+                SnapshotsSamplingInterval = PluginSettingsHelper.GetFinalSnapshotSamplingInterval(profilingConfig.Callgraphs.SamplingInterval);
                 var configuredSelectionRate = profilingConfig.Callgraphs.SelectionProbability;
-                SnapshotsSelectionRate = GetFinalSnapshotSelectionProbability(configuredSelectionRate);
+                SnapshotsSelectionRate = PluginSettingsHelper.GetFinalSnapshotSelectionProbability(configuredSelectionRate);
             }
 
             if (profilingConfig.AlwaysOn != null)
@@ -106,21 +111,29 @@ internal class PluginSettings
                 {
                     CpuProfilerEnabled = true;
                     var callStackInterval = profilingConfig.AlwaysOn.CpuProfiler.SamplingInterval;
-                    CpuProfilerCallStackInterval = GetFinalContinuousSamplingInterval((int)callStackInterval, SnapshotsEnabled, SnapshotsSamplingInterval);
+                    CpuProfilerCallStackInterval = PluginSettingsHelper.GetFinalContinuousSamplingInterval(callStackInterval, SnapshotsEnabled, SnapshotsSamplingInterval);
                 }
 
 #if NET
                 if (profilingConfig.AlwaysOn.MemoryProfiler != null)
                 {
                     MemoryProfilerEnabled = true;
-                    MemoryProfilerMaxMemorySamplesPerMinute = GetFinalMaxMemorySamples((int)profilingConfig.AlwaysOn.MemoryProfiler.MaxMemorySamples);
+                    MemoryProfilerMaxMemorySamplesPerMinute = PluginSettingsHelper.GetFinalMaxMemorySamples(profilingConfig.AlwaysOn.MemoryProfiler.MaxMemorySamples);
                 }
 #endif
             }
 
-            ProfilerHttpClientTimeout = profilingConfig.Exporter.OtlpLogHttp.ExportTimeout;
-            ProfilerExportInterval = GetFinalExportInterval((int)profilingConfig.Exporter.OtlpLogHttp.ScheduleDelay);
+            ProfilerHttpClientTimeout = PluginSettingsHelper.GetFinalExportTimeout(profilingConfig.Exporter.OtlpLogHttp.ExportTimeout);
+            ProfilerExportInterval = PluginSettingsHelper.GetFinalExportInterval(profilingConfig.Exporter.OtlpLogHttp.ScheduleDelay);
             ProfilerLogsEndpoint = new Uri(profilingConfig.Exporter.OtlpLogHttp.Endpoint);
+        }
+
+        if (OpAmpRemoteConfigEnabled && !CpuProfilerEnabled)
+        {
+            CpuProfilerCallStackInterval = PluginSettingsHelper.GetFinalContinuousSamplingInterval(
+                Constants.DefaultSamplingInterval,
+                SnapshotsEnabled,
+                SnapshotsSamplingInterval);
         }
     }
 
@@ -158,13 +171,15 @@ internal class PluginSettings
 
     public uint ProfilerExportInterval { get; }
 
+    public bool OpAmpRemoteConfigEnabled { get; }
+
     public static PluginSettings FromDefaultSources()
     {
         if (IsYamlConfigEnabled)
         {
-            var fileName = ResolveFileBasedConfigFileName();
+            var fileName = PluginSettingsHelper.ResolveFileBasedConfigFileName();
 
-            var splunkConfiguration = LoadSplunkConfig(fileName);
+            var splunkConfiguration = YamlConfigurationParser.ParseFile(fileName);
             if (splunkConfiguration != null)
             {
                 return new PluginSettings(splunkConfiguration, fileName);
@@ -187,127 +202,5 @@ internal class PluginSettings
         };
 
         return new PluginSettings(configurationSource);
-    }
-
-    internal static string ResolveFileBasedConfigFileName()
-    {
-        var fileName = Environment.GetEnvironmentVariable(ConfigurationKeys.FileBasedConfiguration.FileName);
-        return ResolveFileBasedConfigFileName(fileName);
-    }
-
-    internal static string ResolveFileBasedConfigFileName(string? fileName)
-    {
-        return string.IsNullOrEmpty(fileName) ? Constants.DefaultFileBasedConfigFileName : fileName!;
-    }
-
-    private static uint GetFinalContinuousSamplingInterval(int callStackInterval, bool snapshotsEnabled, uint snapshotsSamplingInterval)
-    {
-        var interval = callStackInterval < 0 ? Constants.DefaultSamplingInterval : (uint)callStackInterval;
-        if (snapshotsEnabled)
-        {
-            var finalContinuousSamplingInterval = (interval / snapshotsSamplingInterval) * snapshotsSamplingInterval;
-            if (finalContinuousSamplingInterval != interval)
-            {
-                Log.Warning($"Adjusting continuous profiler call stack interval from {interval}ms to {finalContinuousSamplingInterval}ms to be aligned with snapshot sampling interval of {snapshotsSamplingInterval}ms.");
-            }
-
-            return finalContinuousSamplingInterval;
-        }
-
-        return interval;
-    }
-
-#if NET
-    private static uint GetFinalMaxMemorySamples(int maxMemorySamplesPerMinute)
-    {
-        if (maxMemorySamplesPerMinute < 0 || maxMemorySamplesPerMinute > 200)
-        {
-            return Constants.DefaultMaxMemorySamples;
-        }
-
-        return (uint)maxMemorySamplesPerMinute;
-    }
-#endif
-
-    private static uint GetFinalExportInterval(int exportInterval)
-    {
-        if (exportInterval < 500)
-        {
-            return Constants.DefaultProfilerExportInterval;
-        }
-
-        return (uint)exportInterval;
-    }
-
-    private static uint GetFinalSnapshotSamplingInterval(int snapshotsSamplingInterval)
-    {
-        if (snapshotsSamplingInterval <= 0)
-        {
-            return Constants.DefaultSnapshotSamplingIntervalMs;
-        }
-
-        return (uint)snapshotsSamplingInterval;
-    }
-
-    private static double GetFinalSnapshotSelectionProbability(double configuredSelectionRate)
-    {
-        return configuredSelectionRate switch
-        {
-            <= 0 or double.NaN => Constants.DefaultSnapshotSelectionRate,
-            > Constants.MaxSnapshotSelectionRate => Constants.MaxSnapshotSelectionRate,
-            _ => configuredSelectionRate
-        };
-    }
-
-    private static Uri GetProfilerLogsEndpoints(IConfigurationSource source, Uri? otlpFallback)
-    {
-        var profilerLogsEndpoint = source.GetString(ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerLogsEndpoint);
-
-        if (string.IsNullOrEmpty(profilerLogsEndpoint))
-        {
-            if (otlpFallback == null)
-            {
-                return new Uri(Constants.DefaultProfilerLogsEndpoint);
-            }
-
-            return otlpFallback.ToString().EndsWith("v1/logs") ? otlpFallback : new Uri(otlpFallback, "v1/logs");
-        }
-
-        return new Uri(profilerLogsEndpoint);
-    }
-
-    private static YamlRoot? LoadSplunkConfig(string fileName)
-    {
-        var parserType = Type.GetType("OpenTelemetry.AutoInstrumentation.Configurations.FileBasedConfiguration.Parser.Parser, OpenTelemetry.AutoInstrumentation");
-        if (parserType == null)
-        {
-            throw new Exception("Could not find Parser type for YAML configuration parsing.");
-        }
-
-        var parseYaml = parserType
-            .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
-            .FirstOrDefault(m =>
-                m.Name == "ParseYaml" &&
-                m.IsGenericMethodDefinition &&
-                m.GetParameters().Length == 1 &&
-                m.GetParameters()[0].ParameterType == typeof(string));
-
-        if (parseYaml == null)
-        {
-            throw new MissingMethodException(parserType.FullName, "ParseYaml<T>(string)");
-        }
-
-        var closed = parseYaml.MakeGenericMethod(typeof(YamlRoot));
-
-        var yamlRoot = closed.Invoke(null, new object[] { fileName });
-
-        if (yamlRoot == null)
-        {
-            return null;
-        }
-        else
-        {
-            return (YamlRoot)yamlRoot;
-        }
     }
 }

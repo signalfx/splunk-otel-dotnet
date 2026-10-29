@@ -10,19 +10,16 @@ active configuration passes startup validation. Automatic SDK setup is required;
 
 See the [upstream OpAMP plugin documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/plugins.md#opamp)
 for reporting behavior, plugin selection, and client lifecycle.
-Remote configuration is not enabled by the Splunk plugin.
+Remote configuration is available through the opt-in Splunk feature described
+below.
 
-## Configuration
+## OpAMP client configuration
 
-### Environment variables
+Configure the OpAMP client through the OpenTelemetry .NET auto-instrumentation
+OpAMP options:
 
-See the [docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/config.md#opamp-client)
-for more details.
-
-### File-based configuration
-
-See the [docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/file-based-configuration.md#opamp)
-for more details.
+- [Environment variables](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/config.md#opamp-client)
+- [File-based configuration](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/file-based-configuration.md#opamp)
 
 ## Effective configuration contents
 
@@ -70,3 +67,66 @@ exceeds this limit is rejected rather than truncated.
 File-based configuration may report multiple active OTLP endpoints per signal.
 The environment representation supports only one endpoint per signal; multiple
 active endpoints therefore cause effective-configuration resolution to fail.
+
+## Remote configuration
+
+Remote configuration is a Splunk OpAMP feature flag. Configure it through:
+
+- [Advanced Configuration](advanced-config.md) for the
+  `SPLUNK_OPAMP_REMOTE_CONFIG` environment variable.
+- [File-based Configuration](file-based-configuration.md) for
+  `opamp/development.features.remote_config`.
+
+Remote configuration is opt-in. When OpAMP and the remote configuration feature
+are enabled, the distribution advertises `AcceptsRemoteConfig` and
+`ReportsRemoteConfig` and listens for an OpAMP
+`AgentRemoteConfig.AgentConfigMap` entry named `splunk.remote.config` with
+content type `application/yaml`.
+
+The distribution reports remote configuration status for each new
+`AgentRemoteConfig.config_hash`. It sends `Applying` before processing the
+payload, then `Applied` after the payload is applied or `Failed` with an error
+message when the payload cannot be applied.
+
+After a remote configuration is applied, subsequent OpAMP effective
+configuration reports reflect the active CPU profiler runtime state.
+
+### Remote configuration payload
+
+```yaml
+distribution:
+  splunk:
+    profiling:
+      always_on:
+        cpu_profiler:
+          sampling_interval: 10000
+```
+
+### Runtime behavior
+
+Profiling remote configuration only works when the
+[.NET CLR Profiler](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/config.md#net-clr-profiler)
+is enabled before the process starts. Without the .NET CLR Profiler, profiling
+does not run, and remote configuration cannot enable or configure the .NET CLR
+Profiler at runtime.
+
+Enabling remote configuration initializes the continuous profiling pipeline at
+startup so that CPU profiling can be enabled later at runtime. This setup occurs
+even when CPU profiling is initially disabled and includes the
+`PprofInOtlpLogsExporter`, the upstream `BufferProcessor`, and its background
+export thread. On .NET Framework, the profiler canary thread starts when native
+thread sampling is enabled.
+Native CPU sample collection remains disabled until CPU profiling is enabled,
+but the initialized pipeline can still add CPU, memory, and thread overhead.
+Leave remote configuration disabled when runtime profiler activation is not
+required.
+
+Supported at runtime:
+
+- `always_on.cpu_profiler`: enable or disable CPU profiling.
+- `always_on.cpu_profiler.sampling_interval`: change the CPU sampling interval in
+  milliseconds. If omitted or zero, the default of `10000` ms is used.
+
+When snapshots are enabled at startup, the CPU sampling interval is adjusted to
+a multiple of the snapshot sampling interval and is at least twice that interval.
+Snapshot and memory profiling settings retain their startup configuration.

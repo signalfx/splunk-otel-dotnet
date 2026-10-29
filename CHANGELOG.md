@@ -11,6 +11,8 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.18.0
 
 ### Added
 
+- Experimental support for OpAMP remote configuration for CPU profiling.
+
 ### Changed
 
 - **Breaking change:** Span, span-event, and span-link attribute counts, span event
