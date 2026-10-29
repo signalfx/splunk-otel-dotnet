@@ -11,6 +11,8 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.18.0
 
 ### Added
 
+- Support for `arm64` in the Splunk OpenTelemetry Collector for Kubernetes.
+
 ### Changed
 
 - **Breaking change:** Span, span-event, and span-link attribute counts, span event
