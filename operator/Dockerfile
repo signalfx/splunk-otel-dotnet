@@ -20,7 +20,7 @@
 #    backward compatibility with the CORECLR_PROFILER_PATH values used before multi-arch support
 #    was added.
 
-FROM busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e AS downloader
+FROM busybox:1.38.0@sha256:a46257e06c82ad85242d0d38077d0a52d9896389ca60a1a59d3463db586e5fa4 AS downloader
 
 ARG RELEASE_VER
 ARG ARCHIVE_ARCH
@@ -39,7 +39,7 @@ RUN unzip splunk-opentelemetry-dotnet-linux-glibc-$ARCHIVE_ARCH.zip &&\
     ln -s linux-musl "linux-musl-$ARCHIVE_ARCH" &&\
     chmod -R go+r .
 
-FROM busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
+FROM busybox:1.38.0@sha256:a46257e06c82ad85242d0d38077d0a52d9896389ca60a1a59d3463db586e5fa4
 
 LABEL org.opencontainers.image.source="https://github.com/signalfx/splunk-otel-dotnet"
 LABEL org.opencontainers.image.description="Splunk Distribution of OpenTelemetry .NET"
