@@ -42,6 +42,10 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.18.0
 
 ### Fixed
 
+- Corrected the snapshot sampling interval key in OpAMP effective configuration
+  reporting from `SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL` to
+  `SPLUNK_SNAPSHOT_SAMPLING_INTERVAL`.
+
 ### Security
 
 ## [1.16.0](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.16.0)
