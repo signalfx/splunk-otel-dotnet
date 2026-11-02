@@ -25,6 +25,34 @@
       packageNameTemplate: "alpine_3_23/{{{depName}}}",
       versioningTemplate: "apk",
     },
+    {
+      customType: "regex",
+      description: "Update .NET SDK versions used by CI and build containers",
+      managerFilePatterns: [
+        "/^\\.github\\/workflows\\/(ci|dotnet-format|scripts-test)\\.yml$/",
+        "/^\\.gitlab-ci\\.yml$/",
+        "/^docker\\/(alpine-(x64|arm64)|debian-arm64)\\.dockerfile$/",
+      ],
+      matchStrings: [
+        "dotnet-version:[ \\t]+(?<currentValue>(?<sdkMajor>\\d+)\\.\\d+\\.\\d+)",
+        "(?:^|\\r?\\n)[ \\t]+(?<currentValue>(?<sdkMajor>\\d+)\\.\\d+\\.\\d+)[ \\t]*",
+        "dotnet\\/sdk:(?<currentValue>(?<sdkMajor>\\d+)\\.\\d+\\.\\d+)-noble",
+        "dotnet-install\\.sh -v (?<currentValue>(?<sdkMajor>\\d+)\\.\\d+\\.\\d+)",
+      ],
+      depNameTemplate: ".NET SDK {{{sdkMajor}}}",
+      packageNameTemplate: "dotnet-sdk",
+      datasourceTemplate: "dotnet-version",
+      versioningTemplate: "semver",
+    },
+  ],
+  packageRules: [
+    {
+      description: "Group .NET SDK updates and keep each SDK on its current major",
+      matchDatasources: ["dotnet-version"],
+      matchPackageNames: ["dotnet-sdk"],
+      allowedVersions: "<{{add major 1}}",
+      groupName: ".NET SDKs",
+    },
   ],
   prConcurrentLimit: 20,
 }
