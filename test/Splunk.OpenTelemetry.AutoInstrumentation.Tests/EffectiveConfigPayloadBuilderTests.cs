@@ -58,7 +58,7 @@ public class EffectiveConfigPayloadBuilderTests
                 ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
 #endif
                 ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "true",
-                ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "5000",
+                ["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"] = "5000",
                 ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.25",
                 ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
                 ["OTEL_CONFIG_FILE"] = "null"
@@ -78,7 +78,7 @@ public class EffectiveConfigPayloadBuilderTests
             ["SPLUNK_PROFILER_ENABLED"] = "false",
             ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
-            ["SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL"] = "40",
+            ["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"] = "40",
             ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.01",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
             ["OTEL_CONFIG_FILE"] = "null"

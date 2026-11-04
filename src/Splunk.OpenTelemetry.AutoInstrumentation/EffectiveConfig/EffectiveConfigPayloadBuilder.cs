@@ -108,7 +108,7 @@ internal static class EffectiveConfigPayloadBuilder
             ("SPLUNK_PROFILER_ENABLED", FormatBoolean(snapshot.CpuProfilerEnabled)),
             ("SPLUNK_PROFILER_MEMORY_ENABLED", FormatBoolean(snapshot.MemoryProfilerEnabled)),
             ("SPLUNK_SNAPSHOT_PROFILER_ENABLED", FormatBoolean(snapshot.SnapshotProfilerEnabled)),
-            ("SPLUNK_SNAPSHOT_PROFILER_SAMPLING_INTERVAL", FormatUInt(snapshot.SnapshotSamplingInterval)),
+            ("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL", FormatUInt(snapshot.SnapshotSamplingInterval)),
             ("SPLUNK_SNAPSHOT_SELECTION_PROBABILITY", FormatDouble(snapshot.SnapshotSelectionProbability)),
             ("SPLUNK_PROFILER_CALL_STACK_INTERVAL", FormatUInt(snapshot.CpuProfilerCallStackInterval)),
             ("OTEL_CONFIG_FILE", "null")
