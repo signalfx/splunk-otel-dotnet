@@ -180,6 +180,7 @@ public class Plugin :
     /// </summary>
     public void AfterOpAmpClientStarted()
     {
+        _opAmp.StartClientReporting();
     }
 
     /// <summary>

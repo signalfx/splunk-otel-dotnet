@@ -35,6 +35,7 @@ internal sealed class OpAmp
     private readonly Func<EffectiveProfilerState> _profilerStateResolver;
     private EffectiveConfigReporter? _effectiveConfigReporter;
     private IOpAmpClient? _client;
+    private bool _started;
     private bool _stopped;
 
     public OpAmp(EffectiveConfigStaticSettings staticSettings)
@@ -99,6 +100,21 @@ internal sealed class OpAmp
         }
     }
 
+    public void StartClientReporting()
+    {
+        lock (_lifecycleLock)
+        {
+            if (_stopped || _started || _client == null)
+            {
+                return;
+            }
+
+            _started = true;
+        }
+
+        NotifyEffectiveConfigChanged();
+    }
+
     public IReadOnlyCollection<EffectiveConfigFile> GetEffectiveConfig()
     {
         EffectiveConfigReporter reporter;
@@ -116,7 +132,7 @@ internal sealed class OpAmp
     {
         if (_effectiveConfigRecorder.Value?.CaptureLogExporterOptions(options) == true)
         {
-            NotifyILoggerEffectiveConfigChanged();
+            NotifyEffectiveConfigChanged();
         }
     }
 
@@ -124,7 +140,7 @@ internal sealed class OpAmp
     {
         if (_effectiveConfigRecorder.Value?.MarkOpenTelemetryLoggerConfigured() == true)
         {
-            NotifyILoggerEffectiveConfigChanged();
+            NotifyEffectiveConfigChanged();
         }
     }
 
@@ -174,15 +190,14 @@ internal sealed class OpAmp
         }
     }
 
-    private void NotifyILoggerEffectiveConfigChanged()
+    private void NotifyEffectiveConfigChanged()
     {
         IOpAmpClient? client;
         lock (_lifecycleLock)
         {
-            client = _effectiveConfigReporter != null ? _client : null;
+            client = _started && _effectiveConfigReporter != null ? _client : null;
         }
 
-        // Notification may synchronously wait for a getter on another thread.
         try
         {
             client?.NotifyEffectiveConfigChanged();

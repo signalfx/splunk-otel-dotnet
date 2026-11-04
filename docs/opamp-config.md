@@ -8,7 +8,7 @@ Effective configuration reporting is enabled when OpAMP is enabled and the
 active configuration passes startup validation. Automatic SDK setup is required;
 `OTEL_SDK_DISABLED=true` remains supported as a valid no-op SDK configuration.
 
-See the [upstream OpAMP plugin documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/plugins.md#opamp)
+See the [upstream OpAMP plugin documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.0/docs/plugins.md#opamp)
 for reporting behavior, plugin selection, and client lifecycle.
 Remote configuration is not enabled by the Splunk plugin.
 
@@ -16,12 +16,12 @@ Remote configuration is not enabled by the Splunk plugin.
 
 ### Environment variables
 
-See the [docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/config.md#opamp-client)
+See the [docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.0/docs/config.md#opamp-client)
 for more details.
 
 ### File-based configuration
 
-See the [docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/file-based-configuration.md#opamp)
+See the [docs](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.0/docs/file-based-configuration.md#opamp)
 for more details.
 
 ## Effective configuration contents
