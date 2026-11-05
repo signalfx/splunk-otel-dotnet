@@ -49,6 +49,14 @@ internal static class ConfigurationKeys
         /// </summary>
         public const string TraceResponseHeaderEnabled = "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED";
 
+        public static class OpAmp
+        {
+            /// <summary>
+            /// Configuration key for enabling OpAMP remote configuration.
+            /// </summary>
+            public const string RemoteConfig = "SPLUNK_OPAMP_REMOTE_CONFIG";
+        }
+
         public static class AlwaysOnProfiler
         {
             /// <summary>

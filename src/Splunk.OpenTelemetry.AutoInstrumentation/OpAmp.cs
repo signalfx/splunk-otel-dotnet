@@ -23,6 +23,7 @@ using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 using Splunk.OpenTelemetry.AutoInstrumentation.Logging;
+using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation;
 
@@ -33,8 +34,12 @@ internal sealed class OpAmp
     private readonly Lock _lifecycleLock = new();
     private readonly Lazy<EffectiveConfigRecorder?> _effectiveConfigRecorder;
     private readonly Func<EffectiveProfilerState> _profilerStateResolver;
+    private readonly OpAmpRemoteConfigurationListener _remoteConfigurationListener;
     private EffectiveConfigReporter? _effectiveConfigReporter;
     private IOpAmpClient? _client;
+    private RemoteConfigStatusReport? _remoteConfigStatus;
+    private bool _remoteConfigurationEnabled;
+    private bool _remoteConfigurationSubscribed;
     private bool _started;
     private bool _stopped;
 
@@ -58,6 +63,22 @@ internal sealed class OpAmp
             opAmpEnabledResolver,
             sdkSetupEnabledResolver));
         _profilerStateResolver = profilerStateResolver;
+        _remoteConfigurationListener = new OpAmpRemoteConfigurationListener(NotifyEffectiveConfigChanged, ReportRemoteConfigStatusAsync);
+    }
+
+    public void ConfigureOptions(OpAmpClientSettings settings, PluginSettings pluginSettings)
+    {
+        lock (_lifecycleLock)
+        {
+            _remoteConfigurationEnabled = !_stopped && pluginSettings.OpAmpRemoteConfigEnabled;
+            if (_remoteConfigurationEnabled)
+            {
+                settings.RemoteConfiguration.AcceptsRemoteConfig = true;
+                settings.RemoteConfiguration.ReportsRemoteConfigStatus = true;
+            }
+        }
+
+        ConfigureEffectiveConfigReporting(settings);
     }
 
     public void ConfigureEffectiveConfigReporting(OpAmpClientSettings settings)
@@ -91,12 +112,50 @@ internal sealed class OpAmp
 
     public void ConfigureClient(IOpAmpClient client)
     {
+        bool subscribe;
         lock (_lifecycleLock)
         {
-            if (!_stopped && _client == null)
+            if (_stopped || _client != null)
             {
-                _client = client;
+                return;
             }
+
+            _client = client;
+            subscribe = _remoteConfigurationEnabled;
+        }
+
+        if (!subscribe)
+        {
+            return;
+        }
+
+        try
+        {
+            client.Subscribe(_remoteConfigurationListener);
+        }
+        catch
+        {
+            TryUnsubscribeRemoteConfiguration(client);
+            throw;
+        }
+
+        lock (_lifecycleLock)
+        {
+            if (!_stopped && ReferenceEquals(_client, client))
+            {
+                _remoteConfigurationSubscribed = true;
+                return;
+            }
+        }
+
+        TryUnsubscribeRemoteConfiguration(client);
+    }
+
+    public RemoteConfigStatusReport? GetRemoteConfigStatus()
+    {
+        lock (_lifecycleLock)
+        {
+            return _remoteConfigStatus;
         }
     }
 
@@ -156,10 +215,18 @@ internal sealed class OpAmp
 
     public void StopClientReporting()
     {
+        IOpAmpClient? client;
         lock (_lifecycleLock)
         {
             _stopped = true;
+            client = _remoteConfigurationSubscribed ? _client : null;
+            _remoteConfigurationSubscribed = false;
             _client = null;
+        }
+
+        if (client != null)
+        {
+            TryUnsubscribeRemoteConfiguration(client);
         }
     }
 
@@ -187,6 +254,43 @@ internal sealed class OpAmp
         {
             Log.Warning($"Could not create effective configuration reporter: {ex.Message}");
             return null;
+        }
+    }
+
+    private Task ReportRemoteConfigStatusAsync(RemoteConfigStatusReport status)
+    {
+        IOpAmpClient? client;
+        lock (_lifecycleLock)
+        {
+            _remoteConfigStatus = status;
+            client = _client;
+        }
+
+        try
+        {
+            client?.NotifyRemoteConfigStatusChanged();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to notify the OpAMP client of a remote configuration status change.");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void TryUnsubscribeRemoteConfiguration(IOpAmpClient client)
+    {
+        try
+        {
+            client.Unsubscribe(_remoteConfigurationListener);
+        }
+        catch (ObjectDisposedException)
+        {
+            // Forced shutdown may dispose the client before plugin cleanup completes.
+        }
+        catch (Exception ex)
+        {
+            Log.Warning($"Failed to unsubscribe from OpAMP remote configuration: {ex.Message}");
         }
     }
 
