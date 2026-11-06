@@ -63,7 +63,7 @@ jobs:
             log-dir: "/c/ProgramData/OpenTelemetry .NET AutoInstrumentation/logs"
           - machine: ubuntu-22.04
             log-dir: "/var/log/opentelemetry/dotnet"
-          - machine: macos-14
+          - machine: macos-15
             log-dir: "/var/log/opentelemetry/dotnet"
     runs-on: ${{ matrix.machine }}
     steps:
