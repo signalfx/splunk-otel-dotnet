@@ -32,6 +32,8 @@ public class OpAmpRemoteConfigurationListenerTests
     [InlineData("distribution:\n  splunk:\n    profiling:\n      always_on:\n        cpu_profiler:\n          sampling_interval: invalid\n")]
     [InlineData("distribution:\n  splunk:\n    profiling:\n      callgraphs:\n        sampling_interval: invalid\n")]
     [InlineData("distribution:\n  splunk:\n    profiling:\n      callgraphs:\n        selection_probability: invalid\n")]
+    [InlineData("distribution:\n  splunk:\n    profiling:\n      callgraphs:\n        sampling_interval: null\n")]
+    [InlineData("distribution:\n  splunk:\n    profiling:\n      callgraphs:\n        selection_probability: null\n")]
     public void InvalidYamlIsNotRetriedAndNewConfigurationCanBeApplied(string invalidYaml)
     {
         var assemblyPath = Path.Combine(
@@ -86,8 +88,8 @@ public class OpAmpRemoteConfigurationListenerTests
     }
 
     [Theory]
+    [InlineData("callgraphs:", 40u, 0.01)]
     [InlineData("callgraphs: {}", 40u, 0.01)]
-    [InlineData("callgraphs:\n        sampling_interval: null\n        selection_probability: null", 40u, 0.01)]
     [InlineData("callgraphs:\n        sampling_interval: 80\n        selection_probability: 0.75", 40u, 0.75)]
     public void CallgraphsUseFileBasedYamlParserAndKeepStartupSamplingInterval(string callgraphs, uint expectedInterval, double expectedProbability)
     {
