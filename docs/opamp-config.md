@@ -130,8 +130,8 @@ Supported at runtime:
   it, including when it was enabled at startup.
 - `callgraphs.selection_probability`: change the probability of selecting new
   traces. If omitted or null, the default of `0.01` is used. Values are normalized
-  using the same rules as file-based configuration: nonpositive or NaN values use
-  the default, and values above `1.0` are capped at `1.0`.
+  using the same rules as file-based configuration: zero, negative, or NaN values
+  use the default, and values above `1.0` are capped at `1.0`.
 
 The Callgraph sampling interval retains its startup value, including when
 Callgraphs are initially disabled. Configure it before startup using
