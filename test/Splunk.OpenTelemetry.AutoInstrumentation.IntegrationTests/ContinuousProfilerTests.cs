@@ -142,6 +142,138 @@ public class ContinuousProfilerTests : TestHelper
         Assert.All(samplingIntervals, interval => Assert.Contains(interval, new long[] { 1000, 2000 }));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RemoteConfigurationEnablesUpdatesAndDisablesCallgraphsWithoutChangingSamplingInterval(bool isFileBased)
+    {
+        EnableBytecodeInstrumentation();
+        if (isFileBased)
+        {
+            EnableFileBasedConfig("configRemoteProfiler.yaml");
+        }
+        else
+        {
+            SetEnvironmentVariable("SPLUNK_OPAMP_REMOTE_CONFIG", "true");
+            SetEnvironmentVariable("SPLUNK_PROFILER_EXPORT_INTERVAL", "1000");
+            SetEnvironmentVariable("OTEL_DOTNET_AUTO_OPAMP_ENABLED", "true");
+            SetEnvironmentVariable("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL", "80");
+        }
+
+        SetEnvironmentVariable("LONG_RUNNING", "true");
+        using var logsCollector = new MockContinuousProfilerCollector(Output);
+        SetExporter(logsCollector);
+        var snapshotSamplingInterval = isFileBased ? 40 : 80;
+        var configurations = new[]
+        {
+            CreateRemoteCallgraphConfiguration(1, 40),
+            CreateRemoteCallgraphConfiguration(2, 300, selectionProbability: 0.75),
+            CreateRemoteCallgraphConfiguration(3, null)
+        };
+        var applied = new bool[configurations.Length];
+        var effective = new bool[configurations.Length];
+        var stage = 0;
+        var lastAppliedConfigHash = ByteString.Empty;
+        var effectiveBody = string.Empty;
+        var startupConfigurationReported = false;
+        using var opAmpServer = new MockOpAmpServer(Output, remoteConfiguration: frame =>
+        {
+            if (frame.RemoteConfigStatus?.Status == RemoteConfigStatuses.Applied)
+            {
+                lastAppliedConfigHash = frame.RemoteConfigStatus.LastRemoteConfigHash;
+            }
+
+            if (frame.EffectiveConfig?.ConfigMap?.ConfigMap.Values.SingleOrDefault() is { } file)
+            {
+                effectiveBody = file.Body.ToStringUtf8().Replace("\r\n", "\n") + "\n";
+                if (lastAppliedConfigHash.IsEmpty)
+                {
+                    startupConfigurationReported |= isFileBased
+                        ? effectiveBody.Contains("sampling_interval: 1234\n") && !effectiveBody.Contains("callgraphs:")
+                        : effectiveBody.Contains("SPLUNK_PROFILER_ENABLED=false\n") && effectiveBody.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=false\n");
+                }
+            }
+
+            if (!startupConfigurationReported)
+            {
+                return null;
+            }
+
+            if (stage < 2 && lastAppliedConfigHash.Equals(configurations[stage].ConfigHash))
+            {
+                var probability = stage == 0 ? "1" : "0.75";
+                var intervalReported = isFileBased
+                    ? effectiveBody.Contains($"sampling_interval: {snapshotSamplingInterval}\n") && effectiveBody.Contains($"selection_probability: {probability}\n")
+                    : effectiveBody.Split('\n').Contains($"SPLUNK_SNAPSHOT_SAMPLING_INTERVAL={snapshotSamplingInterval}") && effectiveBody.Split('\n').Contains($"SPLUNK_SNAPSHOT_SELECTION_PROBABILITY={probability}");
+                if (intervalReported && SpinWait.SpinUntil(
+                    () => GetCpuSamplingIntervals(logsCollector.GetAllLogs(), snapshots: true).Contains(snapshotSamplingInterval),
+                    TestTimeout.Expectation))
+                {
+                    stage++;
+                }
+            }
+
+            return configurations[stage];
+        });
+        SetEnvironmentVariable("OTEL_DOTNET_AUTO_OPAMP_SERVER_URL", $"http://localhost:{opAmpServer.Port}/v1/opamp");
+        opAmpServer.Expect(
+            frame =>
+            {
+                if (frame.RemoteConfigStatus?.Status == RemoteConfigStatuses.Applied)
+                {
+                    for (var i = 0; i < configurations.Length; i++)
+                    {
+                        applied[i] |= frame.RemoteConfigStatus.LastRemoteConfigHash.Equals(configurations[i].ConfigHash);
+                    }
+                }
+
+                if (frame.EffectiveConfig?.ConfigMap?.ConfigMap.Values.SingleOrDefault() is { } file)
+                {
+                    var body = file.Body.ToStringUtf8().Replace("\r\n", "\n") + "\n";
+                    if (isFileBased)
+                    {
+                        effective[0] |= body.Contains("sampling_interval: 40\n") && body.Contains("selection_probability: 1\n");
+                        effective[1] |= body.Contains("sampling_interval: 40\n") && body.Contains("selection_probability: 0.75\n");
+                        effective[2] |= effective[1] && !body.Contains("callgraphs:") && body.Contains("sampling_interval: 1000\n");
+                    }
+                    else
+                    {
+                        var properties = body.Split('\n');
+                        effective[0] |= properties.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=true") && properties.Contains("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=80") && properties.Contains("SPLUNK_SNAPSHOT_SELECTION_PROBABILITY=1") && properties.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=960");
+                        effective[1] |= properties.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=true") && properties.Contains("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=80") && properties.Contains("SPLUNK_SNAPSHOT_SELECTION_PROBABILITY=0.75") && properties.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=960");
+                        effective[2] |= effective[1] && properties.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=false") && properties.Contains("SPLUNK_PROFILER_ENABLED=true");
+                    }
+                }
+
+                return startupConfigurationReported && applied.All(value => value) && effective.All(value => value);
+            },
+            "Remote Callgraph enablement, probability update and disablement preserve the startup sampling interval");
+
+        using var process = StartTestApplication();
+        Assert.NotNull(process);
+        using var helper = new ProcessHelper(process);
+        try
+        {
+            opAmpServer.AssertExpectations(TimeSpan.FromTicks(3 * TestTimeout.Expectation.Ticks));
+            Assert.False(process.HasExited, "The application exited before all remote Callgraph transitions completed.");
+        }
+        finally
+        {
+            if (!process.HasExited)
+            {
+                process.Kill();
+            }
+
+            Assert.True(process.WaitForExit((int)TestTimeout.ProcessExit.TotalMilliseconds));
+            helper.Drain(TimeSpan.FromSeconds(5));
+            Output.WriteResult(helper);
+        }
+
+        var intervals = GetCpuSamplingIntervals(logsCollector.GetAllLogs(), snapshots: true).ToArray();
+        Assert.NotEmpty(intervals);
+        Assert.All(intervals, interval => Assert.Equal(snapshotSamplingInterval, interval));
+    }
+
 #if NET
     [Theory]
     [InlineData(false)]
@@ -255,10 +387,16 @@ public class ContinuousProfilerTests : TestHelper
         Assert.True(stackTraceForClassHierarchyCount > 0, "At least one stack trace containing class hierarchy should be reported.");
     }
 
-    private static IEnumerable<long> GetCpuSamplingIntervals(ExportLogsServiceRequest[] logsData)
+    private static IEnumerable<long> GetCpuSamplingIntervals(ExportLogsServiceRequest[] logsData, bool snapshots = false)
     {
         foreach (var record in logsData.SelectMany(data => data.ResourceLogs).SelectMany(resource => resource.ScopeLogs).SelectMany(scope => scope.LogRecords))
         {
+            var isSnapshot = record.Attributes.Any(attribute => attribute.Key == "profiling.instrumentation.source" && attribute.Value.StringValue == "snapshot");
+            if (isSnapshot != snapshots)
+            {
+                continue;
+            }
+
             using var memoryStream = new MemoryStream(Convert.FromBase64String(record.Body.StringValue));
             using var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
             var profile = Vendors.ProtoBuf.Serializer.Deserialize<Profile>(gzipStream);
@@ -270,11 +408,27 @@ public class ContinuousProfilerTests : TestHelper
         }
     }
 
+    private static AgentRemoteConfig CreateRemoteCallgraphConfiguration(byte hash, uint? samplingInterval, double selectionProbability = 1.0)
+    {
+        var yaml = "distribution:\n  splunk:\n    profiling:\n      always_on:\n        cpu_profiler:\n          sampling_interval: 1000\n";
+        if (samplingInterval.HasValue)
+        {
+            yaml += FormattableString.Invariant($"      callgraphs:\n        sampling_interval: {samplingInterval}\n        selection_probability: {selectionProbability}\n");
+        }
+
+        return CreateRemoteConfiguration(hash, yaml);
+    }
+
     private static AgentRemoteConfig CreateRemoteCpuConfiguration(bool enabled, byte hash, uint samplingInterval = 10000)
     {
         var yaml = enabled
             ? $"distribution:\n  splunk:\n    profiling:\n      always_on:\n        cpu_profiler:\n          sampling_interval: {samplingInterval}\n"
             : "distribution:\n  splunk:\n    profiling: {}\n";
+        return CreateRemoteConfiguration(hash, yaml);
+    }
+
+    private static AgentRemoteConfig CreateRemoteConfiguration(byte hash, string yaml)
+    {
         var configuration = new AgentRemoteConfig
         {
             ConfigHash = ByteString.CopyFrom([hash]),

@@ -87,7 +87,7 @@ internal sealed class EffectiveConfigSnapshot
             snapshotProfilerEnabled: snapshotsEnabled,
             cpuProfilerCallStackInterval: cpuEnabled ? profilerState.CpuSamplingInterval : staticSettings.CpuProfilerCallStackInterval,
             snapshotSamplingInterval: snapshotsEnabled ? profilerState.SnapshotSamplingInterval : staticSettings.SnapshotSamplingInterval,
-            snapshotSelectionProbability: staticSettings.SnapshotSelectionProbability);
+            snapshotSelectionProbability: profilerState.SnapshotSelectionProbability ?? staticSettings.SnapshotSelectionProbability);
     }
 
     private static IReadOnlyList<EffectiveOtlpEndpoint> CopyEndpoints(IReadOnlyList<EffectiveOtlpEndpoint> endpoints)

@@ -11,7 +11,7 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.18.0
 
 ### Added
 
-- Experimental support for OpAMP remote configuration for CPU profiling.
+- Experimental support for OpAMP remote configuration for CPU profiling and callgraphs.
 
 ### Changed
 

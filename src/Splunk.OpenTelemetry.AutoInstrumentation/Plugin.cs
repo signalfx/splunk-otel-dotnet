@@ -243,7 +243,7 @@ public class Plugin :
     public ContinuousProfilerConfiguration GetFirstContinuousProfilerConfiguration()
     {
         var remoteConfigState = ProfilerRuntimeConfiguration.Current;
-        var threadSamplingEnabled = remoteConfigState.CpuProfilerEnabled;
+        var threadSamplingEnabled = remoteConfigState.CpuProfilerEnabled && !Settings.OpAmpRemoteConfigEnabled;
         var threadSamplingInterval = ProfilerRuntimeConfiguration.StartupCpuProfilerCallStackInterval;
 #if NET
         var allocationSamplingEnabled = Settings.MemoryProfilerEnabled;
@@ -276,13 +276,17 @@ public class Plugin :
     /// <returns>Selective sampling configuration or null.</returns>
     public SelectiveSamplerConfiguration? GetFirstSelectiveSamplingConfiguration()
     {
-        if (Settings.SnapshotsEnabled)
+        if (Settings.SnapshotsEnabled || Settings.OpAmpRemoteConfigEnabled)
         {
             var frequentSamplingInterval = PluginSettingsHelper.GetFinalSnapshotSamplingInterval(Settings.SnapshotsSamplingInterval);
             var pprofInOtlpLogsExporter = GetPprofInOtlpLogsExporter();
-            pprofInOtlpLogsExporter.SampleProcessor.SelectedSamplingPeriod = frequentSamplingInterval;
             var exportInterval = GetSampleExportInterval();
             var exportTimeout = GetSampleExportTimeout();
+            if (Settings.OpAmpRemoteConfigEnabled)
+            {
+                NativeContinuousProfilerConfigurator.ConfigureStartup(Settings, ProfilerRuntimeConfiguration.Current);
+            }
+
             return new SelectiveSamplerConfiguration
             {
                 SamplingInterval = frequentSamplingInterval,
@@ -302,9 +306,9 @@ public class Plugin :
     /// <returns>TracerProviderBuilder instance for chaining.</returns>
     public TracerProviderBuilder BeforeConfigureTracerProvider(TracerProviderBuilder builder)
     {
-        if (Settings.SnapshotsEnabled)
+        if (Settings.SnapshotsEnabled || Settings.OpAmpRemoteConfigEnabled)
         {
-            builder.AddProcessor(new SnapshotSelectingProcessor(SnapshotFilter.Instance, new TraceIdBasedSnapshotSelector(Settings.SnapshotsSelectionRate)));
+            builder.AddProcessor(new SnapshotSelectingProcessor(SnapshotFilter.Instance, new RuntimeSnapshotSelector()));
         }
 
         return builder;
@@ -411,9 +415,12 @@ public class Plugin :
 
     private static PprofInOtlpLogsExporter CreatePprofInOtlpLogsExporter()
     {
+        var parser = Settings.OpAmpRemoteConfigEnabled
+            ? new NativeFormatParser(() => ProfilerRuntimeConfiguration.Current.SnapshotsEnabled)
+            : new NativeFormatParser(Settings.SnapshotsEnabled);
         return new PprofInOtlpLogsExporter(
-            new SampleProcessor(),
+            new SampleProcessor { SelectedSamplingPeriod = PluginSettingsHelper.GetFinalSnapshotSamplingInterval(Settings.SnapshotsSamplingInterval) },
             new SampleExporter(new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint)),
-            new NativeFormatParser(Settings.SnapshotsEnabled));
+            parser);
     }
 }

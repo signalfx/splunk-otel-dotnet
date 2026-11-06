@@ -36,16 +36,7 @@ internal static class ProfilerRuntimeConfiguration
         }
     }
 
-    public static ProfilerRemoteConfigState Current
-    {
-        get
-        {
-            lock (Sync)
-            {
-                return GetState();
-            }
-        }
-    }
+    public static ProfilerRemoteConfigState Current => GetState();
 
     internal static uint StartupCpuProfilerCallStackInterval
     {
@@ -65,13 +56,10 @@ internal static class ProfilerRuntimeConfiguration
     {
         get
         {
-            lock (Sync)
-            {
-                var state = GetState();
-                return state.CpuProfilerEnabled
-                    ? state.CpuProfilerCallStackInterval
-                    : 0u;
-            }
+            var state = Current;
+            return state.CpuProfilerEnabled
+                ? state.CpuProfilerCallStackInterval
+                : 0u;
         }
     }
 
@@ -82,9 +70,7 @@ internal static class ProfilerRuntimeConfiguration
         lock (Sync)
         {
             _startupSettings = settings;
-            _state = new ProfilerRemoteConfigState(
-                settings.CpuProfilerEnabled,
-                PluginSettingsHelper.GetFinalContinuousSamplingInterval(settings));
+            Volatile.Write(ref _state, new ProfilerRemoteConfigState(settings));
         }
     }
 
@@ -93,23 +79,23 @@ internal static class ProfilerRuntimeConfiguration
         Apply(configuration, NativeContinuousProfilerConfigurator.Configure);
     }
 
-    internal static void Apply(YamlRoot? configuration, Action<PluginSettings, ProfilerRemoteConfigState> configureNative)
+    internal static T ReadCurrent<T>(Func<ProfilerRemoteConfigState, T> read)
     {
-        var profilingConfig = configuration?.Distribution?.Splunk?.Profiling;
-
+        // Keep combined native and managed reads consistent with configuration transitions.
         lock (Sync)
         {
-            var cpuProfiler = profilingConfig?.AlwaysOn?.CpuProfiler;
+            return read(GetState());
+        }
+    }
+
+    internal static void Apply(YamlRoot? configuration, Action<PluginSettings, ProfilerRemoteConfigState> configureNative)
+    {
+        lock (Sync)
+        {
             var startupSettings = GetStartupSettings();
-            var cpuSamplingInterval = cpuProfiler != null
-                ? PluginSettingsHelper.GetFinalContinuousSamplingInterval(
-                    cpuProfiler.SamplingInterval,
-                    startupSettings.SnapshotsEnabled,
-                    startupSettings.SnapshotsSamplingInterval)
-                : 0u;
-            var next = new ProfilerRemoteConfigState(cpuProfiler != null, cpuSamplingInterval);
+            var next = ProfilerRemoteConfigState.FromRemoteConfiguration(configuration, startupSettings);
             configureNative(startupSettings, next);
-            _state = next;
+            Volatile.Write(ref _state, next);
         }
     }
 
@@ -121,7 +107,7 @@ internal static class ProfilerRuntimeConfiguration
 
     private static ProfilerRemoteConfigState GetState()
     {
-        return _state
+        return Volatile.Read(ref _state)
             ?? throw new InvalidOperationException("Profiler runtime configuration has not been initialized.");
     }
 }
