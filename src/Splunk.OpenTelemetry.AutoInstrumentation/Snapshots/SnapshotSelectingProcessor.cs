@@ -31,6 +31,7 @@ internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
     private readonly ISnapshotSelector _snapshotSelector;
     private readonly Dictionary<(ActivitySpanId SpanId, ActivityTraceId TraceId), DateTimeOffset> _localRootSpans = new();
     private readonly Timer _timer;
+    private int _activeSelectionCount;
 
     public SnapshotSelectingProcessor(SnapshotFilter snapshotFilter, ISnapshotSelector snapshotSelector)
     {
@@ -68,13 +69,14 @@ internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
 
             _snapshotFilter.Add(data.TraceId);
             _localRootSpans.Add(cacheKey, DateTimeOffset.UtcNow + DefaultTimeToLive);
+            Volatile.Write(ref _activeSelectionCount, _localRootSpans.Count);
             data.MarkLoud();
         }
     }
 
     public override void OnEnd(Activity data)
     {
-        if (!data.IsLocalRoot())
+        if (!data.IsLocalRoot() || Volatile.Read(ref _activeSelectionCount) == 0)
         {
             return;
         }
@@ -84,6 +86,7 @@ internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
         {
             if (_localRootSpans.Remove(cacheKey))
             {
+                Volatile.Write(ref _activeSelectionCount, _localRootSpans.Count);
                 _snapshotFilter.Remove(data.TraceId);
             }
         }
@@ -91,6 +94,11 @@ internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
 
     internal void Clean(DateTimeOffset now)
     {
+        if (Volatile.Read(ref _activeSelectionCount) == 0)
+        {
+            return;
+        }
+
         lock (_lock)
         {
             var expiredSpans = new List<(ActivitySpanId SpanId, ActivityTraceId TraceId)>();
@@ -106,6 +114,7 @@ internal class SnapshotSelectingProcessor : BaseProcessor<Activity>
             foreach (var cacheKey in expiredSpans)
             {
                 _localRootSpans.Remove(cacheKey);
+                Volatile.Write(ref _activeSelectionCount, _localRootSpans.Count);
                 _snapshotFilter.Remove(cacheKey.TraceId);
             }
         }
