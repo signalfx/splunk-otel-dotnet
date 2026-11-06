@@ -43,6 +43,21 @@ public class EffectiveConfigSnapshotTests
     }
 
     [Fact]
+    public void Create_ReportsRuntimeSnapshotSelectionProbability()
+    {
+        var snapshot = EffectiveConfigSnapshot.Create(
+            CreateStaticSettings(),
+            new EffectiveProfilerState(EffectiveProfilerFeatures.Snapshot, 0, 80, snapshotSelectionProbability: 0.75),
+            [],
+            [],
+            []);
+
+        Assert.True(snapshot.SnapshotProfilerEnabled);
+        Assert.Equal(80u, snapshot.SnapshotSamplingInterval);
+        Assert.Equal(0.75, snapshot.SnapshotSelectionProbability);
+    }
+
+    [Fact]
     public void Create_CopiesFileBasedStaticSettings()
     {
         var staticSettings = new EffectiveConfigStaticSettings(

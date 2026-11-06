@@ -15,9 +15,11 @@
 // </copyright>
 
 using System.Collections.Specialized;
+using System.Diagnostics;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
+using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
@@ -137,14 +139,17 @@ public class ProfilerRuntimeRemoteConfigurationTests
                 }));
 
         Assert.True(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
-        Assert.Equal(1234u, ProfilerRuntimeConfiguration.CurrentCpuProfilerCallStackInterval);
+        Assert.Equal(1200u, ProfilerRuntimeConfiguration.CurrentCpuProfilerCallStackInterval);
         Assert.Equal(4321u, ProfilerRuntimeConfiguration.StartupCpuProfilerCallStackInterval);
+        Assert.True(ProfilerRuntimeConfiguration.Current.SnapshotsEnabled);
+        Assert.Equal(300u, ProfilerRuntimeConfiguration.Current.SnapshotsSamplingInterval);
+        Assert.Equal(0.5, ProfilerRuntimeConfiguration.Current.SnapshotsSelectionRate);
     }
 
     [Theory]
     [InlineData("300", 1200u)]
     [InlineData("6000", 12000u)]
-    public void Apply_AlignsRemoteSamplingIntervalWithStartupSnapshots(
+    public void Apply_AlignsRemoteCpuIntervalWithRemoteSnapshots(
         string snapshotSamplingInterval,
         uint expectedCpuSamplingInterval)
     {
@@ -154,13 +159,17 @@ public class ProfilerRuntimeRemoteConfigurationTests
                 {
                     { ConfigurationKeys.Splunk.OpAmp.RemoteConfig, "true" },
                     { ConfigurationKeys.Splunk.Snapshots.Enabled, "true" },
-                    { ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, snapshotSamplingInterval }
+                    { ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs, "40" }
                 }));
 
         ApplyConfiguration(
             CreateConfiguration(
                 new ProfilerConfiguration
                 {
+                    Callgraphs = new CallGraphsConfiguration
+                    {
+                        SamplingInterval = uint.Parse(snapshotSamplingInterval)
+                    },
                     AlwaysOn = new AlwaysOn
                     {
                         CpuProfiler = new CpuProfiler
@@ -289,15 +298,12 @@ public class ProfilerRuntimeRemoteConfigurationTests
                             MaxMemorySamples = 123
                         }
 #endif
-                    },
-                    Callgraphs = new CallGraphsConfiguration
-                    {
-                        SamplingInterval = 300
                     }
                 }));
 
         Assert.False(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
         Assert.Equal(0u, ProfilerRuntimeConfiguration.CurrentCpuProfilerCallStackInterval);
+        Assert.False(ProfilerRuntimeConfiguration.Current.SnapshotsEnabled);
         Assert.True(startupSettings.SnapshotsEnabled);
         Assert.Equal(40u, startupSettings.SnapshotsSamplingInterval);
 #if NET
@@ -353,6 +359,78 @@ public class ProfilerRuntimeRemoteConfigurationTests
         Assert.True(nativeConfigurationApplied);
         Assert.True(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
         Assert.Equal(1234u, ProfilerRuntimeConfiguration.CurrentCpuProfilerCallStackInterval);
+    }
+
+    [Theory]
+    [InlineData(0u, 0.0, 40u, 0.01)]
+    [InlineData(uint.MaxValue, double.NaN, 40u, 0.01)]
+    [InlineData(80u, 2.0, 80u, 1.0)]
+    [InlineData(300u, 0.75, 300u, 0.75)]
+    public void Apply_NormalizesCallgraphsUsingFileBasedSettings(
+        uint interval,
+        double probability,
+        uint expectedInterval,
+        double expectedProbability)
+    {
+        ProfilerRuntimeConfiguration.Initialize(CreateSettings());
+
+        ApplyConfiguration(CreateConfiguration(new ProfilerConfiguration
+        {
+            Callgraphs = new CallGraphsConfiguration { SamplingInterval = interval, SelectionProbability = probability }
+        }));
+
+        var state = ProfilerRuntimeConfiguration.Current;
+        Assert.False(state.CpuProfilerEnabled);
+        Assert.True(state.SnapshotsEnabled);
+        Assert.Equal(expectedInterval, state.SnapshotsSamplingInterval);
+        Assert.Equal(expectedProbability, state.SnapshotsSelectionRate);
+    }
+
+    [Fact]
+    public void Apply_UpdatesTraceSelectionAndSamplingPeriodOnlyAfterNativeCommit()
+    {
+        ProfilerRuntimeConfiguration.Initialize(CreateSettings());
+        var selector = new RuntimeSnapshotSelector();
+        var processor = new ContinuousProfiler.SampleProcessor(() => ProfilerRuntimeConfiguration.Current.SnapshotsSamplingInterval);
+        var context = new ActivityContext(
+            ActivityTraceId.CreateFromString("00000000000000000000000008000000".AsSpan()),
+            ActivitySpanId.CreateRandom(),
+            ActivityTraceFlags.Recorded);
+        Assert.False(selector.Select(context));
+
+        ApplyConfiguration(CreateConfiguration(new ProfilerConfiguration
+        {
+            Callgraphs = new CallGraphsConfiguration { SamplingInterval = 80, SelectionProbability = 0.25 }
+        }));
+        Assert.False(selector.Select(context));
+        Assert.Equal(80u, processor.SelectedSamplingPeriod);
+
+        ApplyConfiguration(CreateConfiguration(new ProfilerConfiguration
+        {
+            Callgraphs = new CallGraphsConfiguration { SamplingInterval = 300, SelectionProbability = 0.75 }
+        }));
+        Assert.True(selector.Select(context));
+        Assert.Equal(300u, processor.SelectedSamplingPeriod);
+        var committed = ProfilerRuntimeConfiguration.Current;
+
+        var rejected = CreateConfiguration(new ProfilerConfiguration
+        {
+            Callgraphs = new CallGraphsConfiguration { SamplingInterval = 40, SelectionProbability = 0.01 }
+        });
+        Assert.Throws<InvalidOperationException>(() =>
+            ProfilerRuntimeConfiguration.Apply(rejected, (_, _) => throw new InvalidOperationException("ActivationFailed")));
+
+        Assert.Same(committed, ProfilerRuntimeConfiguration.Current);
+        Assert.True(selector.Select(context));
+        Assert.Equal(300u, processor.SelectedSamplingPeriod);
+
+        ApplyConfiguration(CreateConfiguration(new ProfilerConfiguration { Callgraphs = new CallGraphsConfiguration() }));
+        Assert.Equal(40u, processor.SelectedSamplingPeriod);
+        Assert.Equal(0.01, ProfilerRuntimeConfiguration.Current.SnapshotsSelectionRate);
+
+        ApplyConfiguration(new YamlRoot());
+        Assert.False(ProfilerRuntimeConfiguration.Current.SnapshotsEnabled);
+        Assert.False(selector.Select(context));
     }
 
     private static void ApplyConfiguration(YamlRoot configuration)

@@ -82,9 +82,7 @@ internal static class ProfilerRuntimeConfiguration
         lock (Sync)
         {
             _startupSettings = settings;
-            _state = new ProfilerRemoteConfigState(
-                settings.CpuProfilerEnabled,
-                PluginSettingsHelper.GetFinalContinuousSamplingInterval(settings));
+            _state = new ProfilerRemoteConfigState(settings);
         }
     }
 
@@ -93,21 +91,21 @@ internal static class ProfilerRuntimeConfiguration
         Apply(configuration, NativeContinuousProfilerConfigurator.Configure);
     }
 
+    internal static T ReadCurrent<T>(Func<ProfilerRemoteConfigState, T> read)
+    {
+        lock (Sync)
+        {
+            return read(GetState());
+        }
+    }
+
     internal static void Apply(YamlRoot? configuration, Action<PluginSettings, ProfilerRemoteConfigState> configureNative)
     {
-        var profilingConfig = configuration?.Distribution?.Splunk?.Profiling;
+        var next = new ProfilerRemoteConfigState(new PluginSettings(configuration ?? new YamlRoot()));
 
         lock (Sync)
         {
-            var cpuProfiler = profilingConfig?.AlwaysOn?.CpuProfiler;
             var startupSettings = GetStartupSettings();
-            var cpuSamplingInterval = cpuProfiler != null
-                ? PluginSettingsHelper.GetFinalContinuousSamplingInterval(
-                    cpuProfiler.SamplingInterval,
-                    startupSettings.SnapshotsEnabled,
-                    startupSettings.SnapshotsSamplingInterval)
-                : 0u;
-            var next = new ProfilerRemoteConfigState(cpuProfiler != null, cpuSamplingInterval);
             configureNative(startupSettings, next);
             _state = next;
         }

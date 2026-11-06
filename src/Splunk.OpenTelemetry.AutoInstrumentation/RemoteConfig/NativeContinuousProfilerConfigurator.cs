@@ -30,12 +30,18 @@ internal static class NativeContinuousProfilerConfigurator
         Binding.Value.Configure(startupSettings, state);
     }
 
+    public static void ConfigureStartup(PluginSettings settings, ProfilerRemoteConfigState state)
+    {
+        Binding.Value.Configure(settings, state, seed: true);
+    }
+
     // Bind the upstream managed wrapper so it owns the native ABI and structure sizes.
     internal sealed class RuntimeConfigurationBinding
     {
         private readonly MethodInfo _apply;
         private readonly ConstructorInfo _configuration;
         private readonly object _controlPlaneAuthority;
+        private readonly object _seedAuthority;
 
         public RuntimeConfigurationBinding(Type nativeMethodsType)
         {
@@ -53,15 +59,16 @@ internal static class NativeContinuousProfilerConfigurator
             _configuration = parameters[0].ParameterType.GetConstructor([typeof(uint), typeof(uint), typeof(uint)])
                 ?? throw new MissingMethodException(parameters[0].ParameterType.FullName, ".ctor(uint, uint, uint)");
             _controlPlaneAuthority = Enum.Parse(parameters[1].ParameterType, "ControlPlane");
+            _seedAuthority = Enum.Parse(parameters[1].ParameterType, "Seed");
         }
 
-        public void Configure(PluginSettings startupSettings, ProfilerRemoteConfigState state)
+        public void Configure(PluginSettings startupSettings, ProfilerRemoteConfigState state, bool seed = false)
         {
             var cpuSamplingInterval = state.CpuProfilerEnabled
                 ? state.CpuProfilerCallStackInterval
                 : 0u;
-            var snapshotSamplingInterval = startupSettings.SnapshotsEnabled
-                ? PluginSettingsHelper.GetFinalSnapshotSamplingInterval(startupSettings.SnapshotsSamplingInterval)
+            var snapshotSamplingInterval = state.SnapshotsEnabled
+                ? state.SnapshotsSamplingInterval
                 : 0u;
 #if NET
             var maxMemorySamplesPerMinute = startupSettings.MemoryProfilerEnabled
@@ -71,9 +78,11 @@ internal static class NativeContinuousProfilerConfigurator
             const uint maxMemorySamplesPerMinute = 0;
 #endif
             var configuration = _configuration.Invoke([cpuSamplingInterval, snapshotSamplingInterval, maxMemorySamplesPerMinute]);
-            object?[] arguments = [configuration, _controlPlaneAuthority, null];
+            object?[] arguments = [configuration, seed ? _seedAuthority : _controlPlaneAuthority, null];
             var result = _apply.Invoke(null, arguments);
-            if (result?.ToString() is not ("Applied" or "NoChange"))
+            var resultName = result?.ToString();
+            if (resultName is not ("Applied" or "NoChange") &&
+                !(seed && resultName is "IgnoredSeedAlreadyCommitted" or "IgnoredLowerAuthority"))
             {
                 throw new InvalidOperationException($"The upstream continuous profiler configuration failed: {result}.");
             }

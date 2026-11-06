@@ -14,17 +14,31 @@
 // limitations under the License.
 // </copyright>
 
+using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 internal sealed class ProfilerRemoteConfigState
 {
-    public ProfilerRemoteConfigState(bool cpuProfilerEnabled, uint cpuProfilerCallStackInterval)
+    public ProfilerRemoteConfigState(PluginSettings settings)
     {
-        CpuProfilerEnabled = cpuProfilerEnabled;
-        CpuProfilerCallStackInterval = cpuProfilerCallStackInterval;
+        CpuProfilerEnabled = settings.CpuProfilerEnabled;
+        CpuProfilerCallStackInterval = PluginSettingsHelper.GetFinalContinuousSamplingInterval(settings);
+        SnapshotsEnabled = settings.SnapshotsEnabled;
+        SnapshotsSamplingInterval = PluginSettingsHelper.GetFinalSnapshotSamplingInterval(settings.SnapshotsSamplingInterval);
+        SnapshotsSelectionRate = PluginSettingsHelper.GetFinalSnapshotSelectionProbability(settings.SnapshotsSelectionRate);
+        SnapshotSelector = new TraceIdBasedSnapshotSelector(SnapshotsSelectionRate);
     }
 
     public bool CpuProfilerEnabled { get; }
 
     public uint CpuProfilerCallStackInterval { get; }
+
+    public bool SnapshotsEnabled { get; }
+
+    public uint SnapshotsSamplingInterval { get; }
+
+    public double SnapshotsSelectionRate { get; }
+
+    public ISnapshotSelector SnapshotSelector { get; }
 }

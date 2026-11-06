@@ -30,10 +30,16 @@ internal class NativeFormatParser
 
     private static readonly UnicodeEncoding UnicodeEncoding = new();
     private readonly bool _snapshotsEnabled;
+    private readonly Func<bool>? _snapshotsEnabledResolver;
 
     public NativeFormatParser(bool snapshotsEnabled)
     {
         _snapshotsEnabled = snapshotsEnabled;
+    }
+
+    public NativeFormatParser(Func<bool> snapshotsEnabledResolver)
+    {
+        _snapshotsEnabledResolver = snapshotsEnabledResolver;
     }
 
     /// <summary>
@@ -43,113 +49,16 @@ internal class NativeFormatParser
     /// <param name="read">how much of the buffer is actually used</param>
     public List<ThreadSample>? ParseThreadSamples(byte[] buffer, int read)
     {
-        uint batchThreadIndex = 0;
-        var samples = new List<ThreadSample>();
-        long sampleStartMillis = 0;
-
-        var position = 0;
-
-        // common for samples in a batch
-        var codeDictionary = new Dictionary<int, string>();
-
-        try
+        var snapshotsEnabled = _snapshotsEnabledResolver?.Invoke() ?? _snapshotsEnabled;
+        if (_snapshotsEnabledResolver == null)
         {
-            while (position < read)
-            {
-                var operationCode = buffer[position];
-                position++;
-                if (operationCode == OpCodes.StartBatch)
-                {
-                    var version = ReadInt(buffer, ref position);
-                    if (version != 1)
-                    {
-                        return null; // not able to parse
-                    }
-
-                    sampleStartMillis = ReadInt64(buffer, ref position);
-
-                    if (Log.IsDebugEnabled)
-                    {
-                        const long unixEpochInTicks = 621355968000000000; // = DateTimeOffset.FromUnixTimeMilliseconds(0).Ticks
-                        var sampleStart = new DateTime((sampleStartMillis * TimeSpan.TicksPerMillisecond) + unixEpochInTicks).ToLocalTime();
-                        Log.Debug($"Parsing thread samples captured at {sampleStart.ToLongDateString()} {sampleStart.ToLongTimeString()}");
-                    }
-                }
-                else if (operationCode == OpCodes.StartSample)
-                {
-                    var threadName = ReadString(buffer, ref position);
-                    var traceIdHigh = ReadInt64(buffer, ref position);
-                    var traceIdLow = ReadInt64(buffer, ref position);
-                    var spanId = ReadInt64(buffer, ref position);
-
-                    var selectedForFrequentSampling = false;
-
-                    if (_snapshotsEnabled)
-                    {
-                        selectedForFrequentSampling = buffer[position++] == 1;
-                    }
-
-                    var threadIndex = batchThreadIndex++;
-
-                    var code = ReadShort(buffer, ref position);
-                    if (code == 0)
-                    {
-                        // Empty stack, skip this sample.
-                        continue;
-                    }
-
-                    var threadSample = new ThreadSample(
-                        timestamp: new ThreadSample.Time(sampleStartMillis),
-                        spanId: spanId,
-                        traceIdHigh: traceIdHigh,
-                        traceIdLow: traceIdLow,
-                        threadName: threadName,
-                        threadIndex: threadIndex,
-                        selectedForFrequentSampling);
-
-                    ReadStackFrames(code, threadSample, codeDictionary, buffer, ref position);
-
-                    if (threadName == BackgroundThreadName)
-                    {
-                        // TODO add configuration option to include the sampler thread. By default remove it.
-                        continue;
-                    }
-
-                    samples.Add(threadSample);
-                }
-                else if (operationCode == OpCodes.EndBatch)
-                {
-                    // end batch, nothing here
-                }
-                else if (operationCode == OpCodes.BatchStats)
-                {
-                    var microsSuspended = ReadInt(buffer, ref position);
-                    var numThreads = ReadInt(buffer, ref position);
-                    var totalFrames = ReadInt(buffer, ref position);
-                    var numCacheMisses = ReadInt(buffer, ref position);
-
-                    if (Log.IsDebugEnabled)
-                    {
-                        Log.Debug($"CLR was suspended for {microsSuspended} microseconds to collect a thread sample batch: threads={numThreads} frames={totalFrames} misses={numCacheMisses}");
-                    }
-                }
-                else
-                {
-                    position = read + 1;
-
-                    if (Log.IsDebugEnabled)
-                    {
-                        Log.Debug($"Not expected operation code while parsing thread stack trace: '{operationCode}'. Operation will be ignored.");
-                    }
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "Unexpected error while parsing thread samples.");
+            return ParseThreadSamples(buffer, read, snapshotsEnabled, logErrors: true);
         }
 
-        return samples;
+        // Version 1 CPU batches include an extra byte only while selective sampling is enabled.
+        // A queued batch may have been captured before the latest runtime configuration change.
+        return ParseThreadSamples(buffer, read, snapshotsEnabled, logErrors: false)
+            ?? ParseThreadSamples(buffer, read, !snapshotsEnabled, logErrors: true);
     }
 
 #if NET
@@ -279,6 +188,123 @@ internal class NativeFormatParser
         }
 
         return selectiveSamplerSamples;
+    }
+
+    private static List<ThreadSample>? ParseThreadSamples(byte[] buffer, int read, bool snapshotsEnabled, bool logErrors)
+    {
+        uint batchThreadIndex = 0;
+        var samples = new List<ThreadSample>();
+        long sampleStartMillis = 0;
+
+        var position = 0;
+
+        // common for samples in a batch
+        var codeDictionary = new Dictionary<int, string>();
+
+        try
+        {
+            while (position < read)
+            {
+                var operationCode = buffer[position];
+                position++;
+                if (operationCode == OpCodes.StartBatch)
+                {
+                    var version = ReadInt(buffer, ref position);
+                    if (version != 1)
+                    {
+                        return null; // not able to parse
+                    }
+
+                    sampleStartMillis = ReadInt64(buffer, ref position);
+
+                    if (Log.IsDebugEnabled)
+                    {
+                        const long unixEpochInTicks = 621355968000000000; // = DateTimeOffset.FromUnixTimeMilliseconds(0).Ticks
+                        var sampleStart = new DateTime((sampleStartMillis * TimeSpan.TicksPerMillisecond) + unixEpochInTicks).ToLocalTime();
+                        Log.Debug($"Parsing thread samples captured at {sampleStart.ToLongDateString()} {sampleStart.ToLongTimeString()}");
+                    }
+                }
+                else if (operationCode == OpCodes.StartSample)
+                {
+                    var threadName = ReadString(buffer, ref position);
+                    var traceIdHigh = ReadInt64(buffer, ref position);
+                    var traceIdLow = ReadInt64(buffer, ref position);
+                    var spanId = ReadInt64(buffer, ref position);
+
+                    var selectedForFrequentSampling = false;
+
+                    if (snapshotsEnabled)
+                    {
+                        var selected = buffer[position++];
+                        if (selected > 1)
+                        {
+                            throw new FormatException("Invalid selective sampling flag in a CPU sample.");
+                        }
+
+                        selectedForFrequentSampling = selected == 1;
+                    }
+
+                    var threadIndex = batchThreadIndex++;
+
+                    var code = ReadShort(buffer, ref position);
+                    if (code == 0)
+                    {
+                        // Empty stack, skip this sample.
+                        continue;
+                    }
+
+                    var threadSample = new ThreadSample(
+                        timestamp: new ThreadSample.Time(sampleStartMillis),
+                        spanId: spanId,
+                        traceIdHigh: traceIdHigh,
+                        traceIdLow: traceIdLow,
+                        threadName: threadName,
+                        threadIndex: threadIndex,
+                        selectedForFrequentSampling);
+
+                    ReadStackFrames(code, threadSample, codeDictionary, buffer, ref position);
+
+                    if (threadName == BackgroundThreadName)
+                    {
+                        // TODO add configuration option to include the sampler thread. By default remove it.
+                        continue;
+                    }
+
+                    samples.Add(threadSample);
+                }
+                else if (operationCode == OpCodes.EndBatch)
+                {
+                    // end batch, nothing here
+                }
+                else if (operationCode == OpCodes.BatchStats)
+                {
+                    var microsSuspended = ReadInt(buffer, ref position);
+                    var numThreads = ReadInt(buffer, ref position);
+                    var totalFrames = ReadInt(buffer, ref position);
+                    var numCacheMisses = ReadInt(buffer, ref position);
+
+                    if (Log.IsDebugEnabled)
+                    {
+                        Log.Debug($"CLR was suspended for {microsSuspended} microseconds to collect a thread sample batch: threads={numThreads} frames={totalFrames} misses={numCacheMisses}");
+                    }
+                }
+                else
+                {
+                    throw new FormatException($"Unexpected operation code in a CPU sample batch: {operationCode}.");
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            if (logErrors)
+            {
+                Log.Error(e, "Unexpected error while parsing thread samples.");
+            }
+
+            return null;
+        }
+
+        return position == read ? samples : null;
     }
 
     private static string ReadString(byte[] buffer, ref int position)

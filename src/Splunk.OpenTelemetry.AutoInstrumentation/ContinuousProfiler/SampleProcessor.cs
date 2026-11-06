@@ -32,10 +32,12 @@ internal class SampleProcessor
     private readonly KeyValue _profilingDataTypeAllocation;
 #endif
     private readonly KeyValue _snapshotInstrumentationSource;
+    private readonly Func<uint>? _selectedSamplingPeriodResolver;
     private uint _selectedSamplingPeriod;
 
-    public SampleProcessor()
+    public SampleProcessor(Func<uint>? selectedSamplingPeriodResolver = null)
     {
+        _selectedSamplingPeriodResolver = selectedSamplingPeriodResolver;
         _format = GdiProfilingConventions.LogRecord.Attributes.Format("pprof-gzip-base64");
         _profilingDataTypeCpu = GdiProfilingConventions.LogRecord.Attributes.Type("cpu");
 #if NET
@@ -46,7 +48,7 @@ internal class SampleProcessor
 
     public uint SelectedSamplingPeriod
     {
-        get => Volatile.Read(ref _selectedSamplingPeriod);
+        get => _selectedSamplingPeriodResolver?.Invoke() ?? Volatile.Read(ref _selectedSamplingPeriod);
         set => Volatile.Write(ref _selectedSamplingPeriod, value);
     }
 
