@@ -88,8 +88,8 @@ public class OpAmpRemoteConfigurationListenerTests
     [Theory]
     [InlineData("callgraphs: {}", 40u, 0.01)]
     [InlineData("callgraphs:\n        sampling_interval: null\n        selection_probability: null", 40u, 0.01)]
-    [InlineData("callgraphs:\n        sampling_interval: 80\n        selection_probability: 0.75", 80u, 0.75)]
-    public void CallgraphsUseFileBasedYamlParserAndDefaults(string callgraphs, uint expectedInterval, double expectedProbability)
+    [InlineData("callgraphs:\n        sampling_interval: 80\n        selection_probability: 0.75", 40u, 0.75)]
+    public void CallgraphsUseFileBasedYamlParserAndKeepStartupSamplingInterval(string callgraphs, uint expectedInterval, double expectedProbability)
     {
         _ = Assembly.LoadFrom(Path.Combine(EnvironmentHelper.GetNukeBuildOutput(), "net", "OpenTelemetry.AutoInstrumentation.dll"));
         ProfilerRuntimeConfiguration.Initialize(new PluginSettings(new YamlRoot()));
@@ -106,6 +106,7 @@ public class OpAmpRemoteConfigurationListenerTests
 
         listener.HandleRemoteConfiguration([1], RemoteConfiguration.RemoteConfigContentType, Encoding.UTF8.GetBytes(yaml));
 
+        Assert.True(reports.Last().Status == RemoteConfigStatusCode.Applied, reports.Last().ErrorMessage);
         Assert.Equal(new[] { RemoteConfigStatusCode.Applying, RemoteConfigStatusCode.Applied }, reports.Select(report => report.Status));
         var state = ProfilerRuntimeConfiguration.Current;
         Assert.True(state.CpuProfilerEnabled);

@@ -102,7 +102,6 @@ distribution:
         cpu_profiler:
           sampling_interval: 10000
       callgraphs:
-        sampling_interval: 40
         selection_probability: 0.01
 ```
 
@@ -129,16 +128,20 @@ Supported at runtime:
   milliseconds. If omitted or zero, the default of `10000` ms is used.
 - `callgraphs`: enable Callgraph snapshot profiling. Omitting this section disables
   it, including when it was enabled at startup.
-- `callgraphs.sampling_interval`: change the snapshot sampling interval in
-  milliseconds. If omitted, null, or zero, the default of `40` ms is used.
 - `callgraphs.selection_probability`: change the probability of selecting new
   traces. If omitted or null, the default of `0.01` is used. Values are normalized
   using the same rules as file-based configuration: nonpositive or NaN values use
   the default, and values above `1.0` are capped at `1.0`.
 
+The Callgraph sampling interval retains its startup value, including when
+Callgraphs are initially disabled. Configure it before startup using
+`SPLUNK_SNAPSHOT_SAMPLING_INTERVAL` or file-based `callgraphs.sampling_interval`.
+The default is `40` ms. Remote `callgraphs.sampling_interval` values are ignored.
+
 When Callgraphs are enabled, the CPU sampling interval is adjusted to a multiple
-of the current snapshot sampling interval and is at least twice that interval.
-Each remote payload replaces the CPU and Callgraph configuration; omitted values
-use file-based defaults rather than values from the previous payload.
+of the startup snapshot sampling interval and is at least twice that interval.
+Each remote payload replaces CPU enablement, the CPU sampling interval, Callgraph
+enablement, and trace selection probability; omitted configurable values use
+file-based defaults rather than values from the previous payload.
 Memory profiling, exporter settings, and the high-resolution timer retain their
 startup configuration.

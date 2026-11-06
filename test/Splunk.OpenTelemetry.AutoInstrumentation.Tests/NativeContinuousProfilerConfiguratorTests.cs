@@ -16,6 +16,7 @@
 
 using System.Collections.Specialized;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
@@ -53,7 +54,7 @@ public class NativeContinuousProfilerConfiguratorTests
     }
 
     [Fact]
-    public void NativeConfiguration_UsesControlPlaneAndAppliesRemoteCallgraphsWhilePreservingMemorySettings()
+    public void NativeConfiguration_UsesControlPlaneAndPreservesStartupSnapshotIntervalAndMemorySettings()
     {
         var binding = new NativeContinuousProfilerConfigurator.RuntimeConfigurationBinding(typeof(NativeMethodsStub));
         var startupSettings = new PluginSettings(
@@ -71,11 +72,25 @@ public class NativeContinuousProfilerConfiguratorTests
                 }));
         NativeMethodsStub.Result = ApplyResult.Applied;
 
-        binding.Configure(startupSettings, CreateState(cpuProfilerEnabled: true, cpuProfilerCallStackInterval: 312, snapshotsEnabled: true, snapshotSamplingInterval: 104));
+        var configuration = new YamlRoot
+        {
+            Distribution = new Distribution
+            {
+                Splunk = new SplunkConfiguration
+                {
+                    Profiling = new ProfilerConfiguration
+                    {
+                        AlwaysOn = new AlwaysOn { CpuProfiler = new CpuProfiler { SamplingInterval = 312 } },
+                        Callgraphs = new CallGraphsConfiguration { SamplingInterval = 104 }
+                    }
+                }
+            }
+        };
+        binding.Configure(startupSettings, ProfilerRemoteConfigState.FromRemoteConfiguration(configuration, startupSettings));
 
         Assert.Equal(Authority.ControlPlane, NativeMethodsStub.LastAuthority);
         Assert.Equal(312u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
-        Assert.Equal(104u, NativeMethodsStub.LastConfiguration.SnapshotSamplingInterval);
+        Assert.Equal(78u, NativeMethodsStub.LastConfiguration.SnapshotSamplingInterval);
 #if NET
         Assert.Equal(123u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
 #else

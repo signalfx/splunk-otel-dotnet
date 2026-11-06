@@ -145,7 +145,7 @@ public class ContinuousProfilerTests : TestHelper
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void RemoteConfigurationEnablesUpdatesAndDisablesCallgraphs(bool isFileBased)
+    public void RemoteConfigurationEnablesUpdatesAndDisablesCallgraphsWithoutChangingSamplingInterval(bool isFileBased)
     {
         EnableBytecodeInstrumentation();
         if (isFileBased)
@@ -157,15 +157,17 @@ public class ContinuousProfilerTests : TestHelper
             SetEnvironmentVariable("SPLUNK_OPAMP_REMOTE_CONFIG", "true");
             SetEnvironmentVariable("SPLUNK_PROFILER_EXPORT_INTERVAL", "1000");
             SetEnvironmentVariable("OTEL_DOTNET_AUTO_OPAMP_ENABLED", "true");
+            SetEnvironmentVariable("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL", "80");
         }
 
         SetEnvironmentVariable("LONG_RUNNING", "true");
         using var logsCollector = new MockContinuousProfilerCollector(Output);
         SetExporter(logsCollector);
+        var snapshotSamplingInterval = isFileBased ? 40 : 80;
         var configurations = new[]
         {
             CreateRemoteCallgraphConfiguration(1, 40),
-            CreateRemoteCallgraphConfiguration(2, 80),
+            CreateRemoteCallgraphConfiguration(2, 300, selectionProbability: 0.75),
             CreateRemoteCallgraphConfiguration(3, null)
         };
         var applied = new bool[configurations.Length];
@@ -199,12 +201,12 @@ public class ContinuousProfilerTests : TestHelper
 
             if (stage < 2 && lastAppliedConfigHash.Equals(configurations[stage].ConfigHash))
             {
-                var interval = stage == 0 ? 40 : 80;
+                var probability = stage == 0 ? "1" : "0.75";
                 var intervalReported = isFileBased
-                    ? effectiveBody.Contains($"sampling_interval: {interval}\n")
-                    : effectiveBody.Split('\n').Contains($"SPLUNK_SNAPSHOT_SAMPLING_INTERVAL={interval}");
+                    ? effectiveBody.Contains($"sampling_interval: {snapshotSamplingInterval}\n") && effectiveBody.Contains($"selection_probability: {probability}\n")
+                    : effectiveBody.Split('\n').Contains($"SPLUNK_SNAPSHOT_SAMPLING_INTERVAL={snapshotSamplingInterval}") && effectiveBody.Split('\n').Contains($"SPLUNK_SNAPSHOT_SELECTION_PROBABILITY={probability}");
                 if (intervalReported && SpinWait.SpinUntil(
-                    () => GetCpuSamplingIntervals(logsCollector.GetAllLogs(), snapshots: true).Contains(interval),
+                    () => GetCpuSamplingIntervals(logsCollector.GetAllLogs(), snapshots: true).Contains(snapshotSamplingInterval),
                     TestTimeout.Expectation))
                 {
                     stage++;
@@ -231,21 +233,21 @@ public class ContinuousProfilerTests : TestHelper
                     if (isFileBased)
                     {
                         effective[0] |= body.Contains("sampling_interval: 40\n") && body.Contains("selection_probability: 1\n");
-                        effective[1] |= body.Contains("sampling_interval: 80\n") && body.Contains("selection_probability: 1\n");
+                        effective[1] |= body.Contains("sampling_interval: 40\n") && body.Contains("selection_probability: 0.75\n");
                         effective[2] |= effective[1] && !body.Contains("callgraphs:") && body.Contains("sampling_interval: 1000\n");
                     }
                     else
                     {
                         var properties = body.Split('\n');
-                        effective[0] |= properties.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=true") && properties.Contains("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=40") && properties.Contains("SPLUNK_SNAPSHOT_SELECTION_PROBABILITY=1");
-                        effective[1] |= properties.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=true") && properties.Contains("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=80") && properties.Contains("SPLUNK_SNAPSHOT_SELECTION_PROBABILITY=1");
+                        effective[0] |= properties.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=true") && properties.Contains("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=80") && properties.Contains("SPLUNK_SNAPSHOT_SELECTION_PROBABILITY=1") && properties.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=960");
+                        effective[1] |= properties.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=true") && properties.Contains("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=80") && properties.Contains("SPLUNK_SNAPSHOT_SELECTION_PROBABILITY=0.75") && properties.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=960");
                         effective[2] |= effective[1] && properties.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=false") && properties.Contains("SPLUNK_PROFILER_ENABLED=true");
                     }
                 }
 
                 return startupConfigurationReported && applied.All(value => value) && effective.All(value => value);
             },
-            "Remote Callgraph enablement, interval update and disablement are applied and reported");
+            "Remote Callgraph enablement, probability update and disablement preserve the startup sampling interval");
 
         using var process = StartTestApplication();
         Assert.NotNull(process);
@@ -268,9 +270,8 @@ public class ContinuousProfilerTests : TestHelper
         }
 
         var intervals = GetCpuSamplingIntervals(logsCollector.GetAllLogs(), snapshots: true).ToArray();
-        Assert.Contains(40, intervals);
-        Assert.Contains(80, intervals);
-        Assert.All(intervals, interval => Assert.Contains(interval, new long[] { 40, 80 }));
+        Assert.NotEmpty(intervals);
+        Assert.All(intervals, interval => Assert.Equal(snapshotSamplingInterval, interval));
     }
 
 #if NET
@@ -407,12 +408,12 @@ public class ContinuousProfilerTests : TestHelper
         }
     }
 
-    private static AgentRemoteConfig CreateRemoteCallgraphConfiguration(byte hash, uint? samplingInterval)
+    private static AgentRemoteConfig CreateRemoteCallgraphConfiguration(byte hash, uint? samplingInterval, double selectionProbability = 1.0)
     {
         var yaml = "distribution:\n  splunk:\n    profiling:\n      always_on:\n        cpu_profiler:\n          sampling_interval: 1000\n";
         if (samplingInterval.HasValue)
         {
-            yaml += $"      callgraphs:\n        sampling_interval: {samplingInterval}\n        selection_probability: 1.0\n";
+            yaml += FormattableString.Invariant($"      callgraphs:\n        sampling_interval: {samplingInterval}\n        selection_probability: {selectionProbability}\n");
         }
 
         return CreateRemoteConfiguration(hash, yaml);

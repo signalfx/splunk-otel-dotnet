@@ -419,7 +419,7 @@ public class Plugin :
             ? new NativeFormatParser(() => ProfilerRuntimeConfiguration.Current.SnapshotsEnabled)
             : new NativeFormatParser(Settings.SnapshotsEnabled);
         return new PprofInOtlpLogsExporter(
-            new SampleProcessor(() => ProfilerRuntimeConfiguration.Current.SnapshotsSamplingInterval),
+            new SampleProcessor { SelectedSamplingPeriod = PluginSettingsHelper.GetFinalSnapshotSamplingInterval(Settings.SnapshotsSamplingInterval) },
             new SampleExporter(new OtlpHttpLogSender(Settings.ProfilerLogsEndpoint)),
             parser);
     }

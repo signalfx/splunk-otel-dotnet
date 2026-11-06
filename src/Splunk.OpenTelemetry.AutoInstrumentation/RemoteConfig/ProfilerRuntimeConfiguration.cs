@@ -101,11 +101,10 @@ internal static class ProfilerRuntimeConfiguration
 
     internal static void Apply(YamlRoot? configuration, Action<PluginSettings, ProfilerRemoteConfigState> configureNative)
     {
-        var next = new ProfilerRemoteConfigState(new PluginSettings(configuration ?? new YamlRoot()));
-
         lock (Sync)
         {
             var startupSettings = GetStartupSettings();
+            var next = ProfilerRemoteConfigState.FromRemoteConfiguration(configuration, startupSettings);
             configureNative(startupSettings, next);
             _state = next;
         }
