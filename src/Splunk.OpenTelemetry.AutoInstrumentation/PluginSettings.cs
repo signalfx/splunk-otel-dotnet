@@ -100,8 +100,8 @@ internal class PluginSettings
             {
                 SnapshotsEnabled = true;
                 HighResolutionTimerEnabled = profilingConfig.Callgraphs.HighResolutionTimerEnabled;
-                SnapshotsSamplingInterval = PluginSettingsHelper.GetFinalSnapshotSamplingInterval(profilingConfig.Callgraphs.SamplingInterval ?? Constants.DefaultSnapshotSamplingIntervalMs);
-                var configuredSelectionRate = profilingConfig.Callgraphs.SelectionProbability ?? Constants.DefaultSnapshotSelectionRate;
+                SnapshotsSamplingInterval = PluginSettingsHelper.GetFinalSnapshotSamplingInterval(profilingConfig.Callgraphs.SamplingInterval);
+                var configuredSelectionRate = profilingConfig.Callgraphs.SelectionProbability;
                 SnapshotsSelectionRate = PluginSettingsHelper.GetFinalSnapshotSelectionProbability(configuredSelectionRate);
             }
 
