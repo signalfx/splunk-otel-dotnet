@@ -21,3 +21,8 @@ ActivitySource activitySource = new("TestApplication.ContinuousProfiler", "1.0.0
 
 using var activity = activitySource.StartActivity();
 ClassA.MethodA();
+
+while (Environment.GetEnvironmentVariable("LONG_RUNNING") == "true")
+{
+    ClassA.MethodA();
+}

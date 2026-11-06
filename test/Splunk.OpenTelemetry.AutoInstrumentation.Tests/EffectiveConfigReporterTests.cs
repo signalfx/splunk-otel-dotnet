@@ -25,6 +25,34 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 public class EffectiveConfigReporterTests
 {
     [Fact]
+    public void BuildCurrentPayload_UsesUpdatedProfilerRuntimeState()
+    {
+        var recorder = new EffectiveConfigRecorder(
+            new EffectiveConfigStaticSettings(
+                new PluginSettings(
+                    new NameValueConfigurationSource(
+                        new NameValueCollection
+                        {
+                            [ConfigurationKeys.Splunk.OpAmp.RemoteConfig] = "true",
+                            [ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = "1234"
+                        }))),
+            openTelemetrySdkDisabled: true);
+        var state = EffectiveProfilerState.None;
+        var reporter = EffectiveConfigReporter.CreateValidated(recorder, () => state);
+
+        state = new EffectiveProfilerState(EffectiveProfilerFeatures.Cpu, 4321, 0);
+
+        var body = Encoding.UTF8.GetString(reporter.BuildCurrentPayload().Content.ToArray());
+        Assert.Contains("SPLUNK_PROFILER_ENABLED=true", body, StringComparison.Ordinal);
+        Assert.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=4321", body, StringComparison.Ordinal);
+
+        state = EffectiveProfilerState.None;
+        body = Encoding.UTF8.GetString(reporter.BuildCurrentPayload().Content.ToArray());
+        Assert.Contains("SPLUNK_PROFILER_ENABLED=false", body, StringComparison.Ordinal);
+        Assert.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=1234", body, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void BuildCurrentPayload_CreatesEffectiveConfigFileFromCurrentRecorderState()
     {
         const string logsEndpoint = "http://logs-collector:4318/v1/logs";

@@ -21,4 +21,6 @@ internal class YamlRoot
     public Distribution? Distribution { get; set; }
 
     public InstrumentationDevelopment? InstrumentationDevelopment { get; set; }
+
+    public OpampDevelopment? OpampDevelopment { get; set; }
 }

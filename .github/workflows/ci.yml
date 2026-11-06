@@ -20,7 +20,7 @@ jobs:
             log-dir: "/c/ProgramData/OpenTelemetry .NET AutoInstrumentation/logs"
           - machine: ubuntu-22.04
             log-dir: "/var/log/opentelemetry/dotnet"
-          - machine: macos-14
+          - machine: macos-15
             log-dir: "/var/log/opentelemetry/dotnet"
     runs-on: ${{ matrix.machine }}
     steps:
@@ -28,7 +28,7 @@ jobs:
         with:
           fetch-depth: 0 # fetching all, needed to correctly calculate version
           persist-credentials: false
-      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           dotnet-version: | 
             8.0.427
@@ -156,7 +156,7 @@ jobs:
         with:
           fetch-depth: 0 # fetching all, needed to correctly calculate version
           persist-credentials: false
-      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           dotnet-version: | 
             8.0.427
@@ -175,14 +175,14 @@ jobs:
       matrix:
         include:
           - machine: ubuntu-22.04
-          - machine: macos-14
+          - machine: macos-15
     runs-on: ${{ matrix.machine }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # fetching all, needed to correctly calculate version
           persist-credentials: false
-      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           dotnet-version: | 
             8.0.427
@@ -226,7 +226,7 @@ jobs:
       - run: cp bin-ubuntu-22.04/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-glibc-x64.zip
       - run: cp bin-debian-arm64/splunk-*.zip ./splunk-opentelemetry-dotnet-linux-glibc-arm64.zip
       - run: cp bin-windows-2022/splunk-*.zip ./splunk-opentelemetry-dotnet-windows.zip
-      - run: cp bin-macos-14/splunk-*.zip ./splunk-opentelemetry-dotnet-macos.zip
+      - run: cp bin-macos-15/splunk-*.zip ./splunk-opentelemetry-dotnet-macos.zip
       - run: cp bin-windows-2022/InstallationScripts/splunk-otel-dotnet-install.sh ./splunk-otel-dotnet-install.sh
       - run: cp bin-windows-2022/InstallationScripts/Splunk.OTel.DotNet.psm1 ./Splunk.OTel.DotNet.psm1
       - run: cp bin-windows-2022/Matrix/splunk-otel-dotnet-metadata.yaml ./splunk-otel-dotnet-metadata.yaml

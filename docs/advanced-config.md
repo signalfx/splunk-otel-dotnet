@@ -7,7 +7,7 @@
 
 ## OpenTelemetry configuration
 
-See [Open Telemetry Auto Instrumentation documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/config.md)
+See [Open Telemetry Auto Instrumentation documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.0/docs/config.md)
 for configuration details.
 
 ## Splunk distribution configuration
@@ -24,7 +24,7 @@ documentation.
 
 When running your application, make sure to:
 
-1. Set the [resources](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/config.md#resources).
+1. Set the [resources](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.0/docs/config.md#resources).
 1. Set the environment variables from the table below.
 
 | Environment variable                 | .NET version        | Value                                                                                       |
@@ -44,17 +44,18 @@ When running your application, make sure to:
 | `OTEL_DOTNET_AUTO_HOME`              | All versions        | `$INSTALL_DIR`                                                                              |
 | `OTEL_DOTNET_AUTO_PLUGINS`           | All versions        | `Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation` |
 
-> Some settings can be omitted on .NET. For more information, see the [documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.18.0/docs/config.md#net-clr-profiler).
+> Some settings can be omitted on .NET. For more information, see the [documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.0/docs/config.md#net-clr-profiler).
 
 ### Splunk plugin settings
 
 Note: .NET Framework apps can read settings also from `Web.config` and `App.config`.
 
-| Environment variable                   | Default | Description                                |
-|----------------------------------------|---------|--------------------------------------------|
-| `SPLUNK_REALM`                         | `none`  | Specifies direct OTLP ingest realm. [1]    |
-| `SPLUNK_ACCESS_TOKEN`                  |         | Specifies direct OTLP ingest access token. |
-| `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED` | `true`  | Enables Splunk RUM integration.            |
+| Environment variable                   | Default | Description                                                                                               |
+|----------------------------------------|---------|-----------------------------------------------------------------------------------------------------------|
+| `SPLUNK_REALM`                         | `none`  | Specifies direct OTLP ingest realm. [1]                                                                   |
+| `SPLUNK_ACCESS_TOKEN`                  |         | Specifies direct OTLP ingest access token.                                                                |
+| `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED` | `true`  | Enables Splunk RUM integration.                                                                           |
+| `SPLUNK_OPAMP_REMOTE_CONFIG`           | `false` | Enables OpAMP remote configuration for CPU profiler enablement. Requires OpAMP. [2]                       |
 
 - [1]: By default, instrumentation libraries are configured to send to a local
   collector. If `SPLUNK_REALM` is set to
@@ -63,6 +64,9 @@ Note: .NET Framework apps can read settings also from `Web.config` and `App.conf
   based on the defined realm. If both `SPLUNK_REALM` and
   `OTEL_EXPORTER_*_ENDPOINT` are set then `OTEL_EXPORTER_*_ENDPOINT` takes
   precedence.
+- [2]: Enabling remote configuration initializes the continuous profiling
+  pipeline and can add overhead even while profiling is disabled. See
+  [OpAMP runtime behavior](opamp-config.md#runtime-behavior).
 
 ### Known differences to GDI Specification
 

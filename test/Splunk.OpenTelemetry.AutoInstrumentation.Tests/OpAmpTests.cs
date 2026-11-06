@@ -25,11 +25,127 @@ using OpenTelemetry.OpAmp.Client.Settings;
 using OpenTelemetry.Trace;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
 
 public class OpAmpTests
 {
+    [Fact]
+    public void ConfigureOptions_EnablesRemoteConfigurationRuntimeModeWhenCpuProfilerIsInitiallyDisabled()
+    {
+        var pluginSettings = new PluginSettings(new NameValueConfigurationSource(
+            new NameValueCollection
+            {
+                [ConfigurationKeys.Splunk.OpAmp.RemoteConfig] = "true"
+            }));
+        ProfilerRuntimeConfiguration.Initialize(pluginSettings);
+        var settings = new OpAmpClientSettings();
+        var opAmp = CreateOpAmp();
+
+        opAmp.ConfigureOptions(settings, pluginSettings);
+
+        Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
+        Assert.True(settings.RemoteConfiguration.AcceptsRemoteConfig);
+        Assert.True(settings.RemoteConfiguration.ReportsRemoteConfigStatus);
+        Assert.True(ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled);
+        Assert.False(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
+        Assert.Equal((uint)Constants.DefaultSamplingInterval, ProfilerRuntimeConfiguration.StartupCpuProfilerCallStackInterval);
+    }
+
+    [Fact]
+    public void ConfigureOptions_RemoteConfigurationIsDisabledByDefault()
+    {
+        var pluginSettings = new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        ProfilerRuntimeConfiguration.Initialize(pluginSettings);
+        var settings = new OpAmpClientSettings();
+
+        CreateOpAmp().ConfigureOptions(settings, pluginSettings);
+
+        Assert.True(settings.EffectiveConfigurationReporting.EnableReporting);
+        Assert.False(settings.RemoteConfiguration.AcceptsRemoteConfig);
+        Assert.False(settings.RemoteConfiguration.ReportsRemoteConfigStatus);
+        Assert.False(ProfilerRuntimeConfiguration.RuntimeConfigurationEnabled);
+    }
+
+    [Fact]
+    public void ConfigureClient_DoesNotSubscribeWhenRemoteConfigurationIsDisabled()
+    {
+        var opAmp = CreateConfiguredOpAmp();
+        var client = new TestOpAmpClient();
+
+        opAmp.ConfigureClient(client);
+
+        Assert.Equal(0, client.SubscriptionCount);
+        Assert.Null(opAmp.GetRemoteConfigStatus());
+    }
+
+    [Fact]
+    public void ConfigureClient_SubscribesBeforeStartupOnlyOnceAndIgnoresReplacementClients()
+    {
+        var opAmp = CreateRemoteConfiguredOpAmp();
+        var client = new TestOpAmpClient();
+        var replacement = new TestOpAmpClient();
+
+        opAmp.ConfigureClient(client);
+        opAmp.ConfigureClient(client);
+        opAmp.ConfigureClient(replacement);
+
+        Assert.Equal(1, client.SubscriptionCount);
+        Assert.NotNull(client.RemoteConfigurationListener);
+        Assert.Equal(0, replacement.SubscriptionCount);
+        Assert.Null(opAmp.GetRemoteConfigStatus());
+    }
+
+    [Fact]
+    public void RemoteConfigurationStatusGetterCompletesDuringNotificationsAndKeepsStableSnapshots()
+    {
+        var opAmp = CreateRemoteConfiguredOpAmp();
+        var reports = new List<RemoteConfigStatusReport>();
+        var client = new TestOpAmpClient(onRemoteNotify: () =>
+        {
+            var getter = Task.Run(opAmp.GetRemoteConfigStatus);
+            Assert.True(getter.Wait(TimeSpan.FromSeconds(5)), "The status getter was blocked by the notification caller.");
+            reports.Add(Assert.IsType<RemoteConfigStatusReport>(getter.GetAwaiter().GetResult()));
+        });
+        opAmp.ConfigureClient(client);
+        var configHash = new byte[] { 1, 2, 3 };
+
+        Assert.IsType<OpAmpRemoteConfigurationListener>(client.RemoteConfigurationListener)
+            .HandleRemoteConfiguration(configHash, contentType: null, body: null);
+
+        Assert.Collection(
+            reports,
+            report => Assert.Equal(RemoteConfigStatusCode.Applying, report.Status),
+            report => Assert.Equal(RemoteConfigStatusCode.Applied, report.Status));
+        Assert.Equal(new byte[] { 1, 2, 3 }, reports[0].LastRemoteConfigHash.ToArray());
+        Assert.Same(reports[1], opAmp.GetRemoteConfigStatus());
+        Assert.Equal(2, client.RemoteNotificationCount);
+    }
+
+    [Fact]
+    public void RemoteConfigurationCleanupUnsubscribesOnceAndPreventsLateBindingOrNotifications()
+    {
+        var opAmp = CreateRemoteConfiguredOpAmp();
+        var client = new TestOpAmpClient();
+        opAmp.ConfigureClient(client);
+        var listener = Assert.IsType<OpAmpRemoteConfigurationListener>(client.RemoteConfigurationListener);
+        listener.HandleRemoteConfiguration(new byte[] { 1 }, contentType: null, body: null);
+        var statusBeforeStop = opAmp.GetRemoteConfigStatus();
+
+        opAmp.StopClientReporting();
+        opAmp.StopClientReporting();
+        opAmp.ConfigureClient(client);
+        listener.HandleRemoteConfiguration(new byte[] { 2 }, contentType: null, body: null);
+
+        Assert.Equal(1, client.SubscriptionCount);
+        Assert.Equal(1, client.UnsubscriptionCount);
+        Assert.Equal(2, client.RemoteNotificationCount);
+        Assert.NotNull(statusBeforeStop);
+        Assert.Equal(RemoteConfigStatusCode.Applied, statusBeforeStop.Status);
+        Assert.Equal(new byte[] { 1 }, statusBeforeStop.LastRemoteConfigHash.ToArray());
+    }
+
     [Fact]
     public void SuccessfulPreflightEnablesEffectiveConfigReporting()
     {
@@ -149,16 +265,60 @@ public class OpAmpTests
         Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=none", GetPayload(opAmp));
     }
 
-    [Fact]
-    public void ChangesBeforeClientBindingAreAvailableWithoutAnInitialNotification()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ChangesBeforeStartupAreReportedByInitialNotification(bool bindBeforeChanges)
     {
         var opAmp = CreateConfiguredOpAmp();
+        var client = new TestOpAmpClient();
+        if (bindBeforeChanges)
+        {
+            opAmp.ConfigureClient(client);
+        }
+
         opAmp.MarkOpenTelemetryLoggerConfigured();
         opAmp.RecordLogExporterOptions(CreateLogOptions());
+        if (!bindBeforeChanges)
+        {
+            opAmp.ConfigureClient(client);
+        }
+
+        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://logs-collector:4318/v1/logs", GetPayload(opAmp));
+        Assert.Equal(0, client.NotificationCount);
+        string? notifiedPayload = null;
+        client.OnNotify = () => notifiedPayload = GetPayload(opAmp);
+
+        opAmp.StartClientReporting();
+
+        Assert.Equal(1, client.NotificationCount);
+        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://logs-collector:4318/v1/logs", notifiedPayload);
+    }
+
+    [Fact]
+    public void StartupNotifiesInitialConfigurationWithoutLoggerChangesOnlyOnce()
+    {
+        var opAmp = CreateConfiguredOpAmp();
         var client = new TestOpAmpClient();
         opAmp.ConfigureClient(client);
 
-        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://logs-collector:4318/v1/logs", GetPayload(opAmp));
+        opAmp.StartClientReporting();
+        opAmp.StartClientReporting();
+
+        Assert.Equal(1, client.NotificationCount);
+        Assert.Contains("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=none", GetPayload(opAmp));
+    }
+
+    [Fact]
+    public void StartupDoesNotNotifyWhenReportingIsUnavailable()
+    {
+        var opAmp = CreateOpAmp(opAmpEnabled: false);
+        opAmp.ConfigureEffectiveConfigReporting(new OpAmpClientSettings());
+        var client = new TestOpAmpClient();
+        opAmp.ConfigureClient(client);
+
+        opAmp.StartClientReporting();
+
         Assert.Equal(0, client.NotificationCount);
     }
 
@@ -168,14 +328,15 @@ public class OpAmpTests
         var opAmp = CreateConfiguredOpAmp();
         var client = new TestOpAmpClient();
         opAmp.ConfigureClient(client);
+        opAmp.StartClientReporting();
         opAmp.MarkOpenTelemetryLoggerConfigured();
-        Assert.Equal(0, client.NotificationCount);
-
-        opAmp.RecordLogExporterOptions(CreateLogOptions());
         Assert.Equal(1, client.NotificationCount);
 
         opAmp.RecordLogExporterOptions(CreateLogOptions());
-        Assert.Equal(1, client.NotificationCount);
+        Assert.Equal(2, client.NotificationCount);
+
+        opAmp.RecordLogExporterOptions(CreateLogOptions());
+        Assert.Equal(2, client.NotificationCount);
     }
 
     [Fact]
@@ -217,10 +378,11 @@ public class OpAmpTests
         var opAmp = CreateConfiguredOpAmp();
         var client = new TestOpAmpClient(() => throw new ObjectDisposedException("client"));
         opAmp.ConfigureClient(client);
+        opAmp.StartClientReporting();
         opAmp.MarkOpenTelemetryLoggerConfigured();
         opAmp.RecordLogExporterOptions(CreateLogOptions());
 
-        Assert.Equal(1, client.NotificationCount);
+        Assert.Equal(2, client.NotificationCount);
         Assert.Contains("http://logs-collector:4318/v1/logs", GetPayload(opAmp));
     }
 
@@ -231,12 +393,14 @@ public class OpAmpTests
         opAmp.MarkOpenTelemetryLoggerConfigured();
         Task<string>? getter = null;
         var completedDuringNotification = false;
-        var client = new TestOpAmpClient(() =>
+        var client = new TestOpAmpClient();
+        opAmp.ConfigureClient(client);
+        opAmp.StartClientReporting();
+        client.OnNotify = () =>
         {
             getter = Task.Run(() => GetPayload(opAmp));
             completedDuringNotification = getter.Wait(TimeSpan.FromSeconds(5));
-        });
-        opAmp.ConfigureClient(client);
+        };
 
         opAmp.RecordLogExporterOptions(CreateLogOptions());
         Assert.True(completedDuringNotification, "The getter was blocked by the notification caller.");
@@ -284,12 +448,14 @@ public class OpAmpTests
         var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var release = new ManualResetEventSlim();
         var releasedDuringNotification = false;
-        var client = new TestOpAmpClient(() =>
+        var client = new TestOpAmpClient();
+        opAmp.ConfigureClient(client);
+        opAmp.StartClientReporting();
+        client.OnNotify = () =>
         {
             entered.TrySetResult(true);
             releasedDuringNotification = release.Wait(TimeSpan.FromSeconds(5));
-        });
-        opAmp.ConfigureClient(client);
+        };
         var notification = Task.Run(() => opAmp.RecordLogExporterOptions(CreateLogOptions()));
         try
         {
@@ -304,7 +470,7 @@ public class OpAmpTests
         await CompletesAsync(notification);
         Assert.True(releasedDuringNotification);
         opAmp.RecordLogExporterOptions(CreateLogOptions("http://changed-after-stop:4318/v1/logs"));
-        Assert.Equal(1, client.NotificationCount);
+        Assert.Equal(2, client.NotificationCount);
     }
 
     [Fact]
@@ -313,16 +479,18 @@ public class OpAmpTests
         var opAmp = CreateConfiguredOpAmp();
         var client = new TestOpAmpClient();
         opAmp.ConfigureClient(client);
+        opAmp.StartClientReporting();
         opAmp.MarkOpenTelemetryLoggerConfigured();
         opAmp.RecordLogExporterOptions(CreateLogOptions());
-        Assert.Equal(1, client.NotificationCount);
+        Assert.Equal(2, client.NotificationCount);
 
         opAmp.StopClientReporting();
         opAmp.StopClientReporting();
         opAmp.ConfigureClient(client);
+        opAmp.StartClientReporting();
         opAmp.RecordLogExporterOptions(CreateLogOptions("http://changed-after-stop:4318/v1/logs"));
 
-        Assert.Equal(1, client.NotificationCount);
+        Assert.Equal(2, client.NotificationCount);
     }
 
     private static void AssertRecordingHookDoesNotCreateRecorder(Action<OpAmp> invokeRecordingHook)
@@ -345,6 +513,19 @@ public class OpAmpTests
     {
         var opAmp = CreateOpAmp(profilerStateResolver: profilerStateResolver);
         opAmp.ConfigureEffectiveConfigReporting(new OpAmpClientSettings());
+        return opAmp;
+    }
+
+    private static OpAmp CreateRemoteConfiguredOpAmp()
+    {
+        var pluginSettings = new PluginSettings(new NameValueConfigurationSource(
+            new NameValueCollection
+            {
+                [ConfigurationKeys.Splunk.OpAmp.RemoteConfig] = "true"
+            }));
+        ProfilerRuntimeConfiguration.Initialize(pluginSettings);
+        var opAmp = CreateOpAmp();
+        opAmp.ConfigureOptions(new OpAmpClientSettings(), pluginSettings);
         return opAmp;
     }
 
@@ -393,34 +574,52 @@ public class OpAmpTests
 
     private sealed class TestOpAmpClient : IOpAmpClient
     {
-        private readonly Action? _onNotify;
+        private readonly Action? _onRemoteNotify;
         private int _notificationCount;
+        private int _remoteNotificationCount;
 
-        public TestOpAmpClient(Action? onNotify = null)
+        public TestOpAmpClient(Action? onNotify = null, Action? onRemoteNotify = null)
         {
-            _onNotify = onNotify;
+            _onRemoteNotify = onRemoteNotify;
+            OnNotify = onNotify;
         }
 
         public int NotificationCount => Volatile.Read(ref _notificationCount);
 
+        public int RemoteNotificationCount => Volatile.Read(ref _remoteNotificationCount);
+
+        public int SubscriptionCount { get; private set; }
+
+        public int UnsubscriptionCount { get; private set; }
+
+        public OpAmpRemoteConfigurationListener? RemoteConfigurationListener { get; private set; }
+
+        public Action? OnNotify { get; set; }
+
         public void NotifyEffectiveConfigChanged()
         {
             Interlocked.Increment(ref _notificationCount);
-            _onNotify?.Invoke();
+            OnNotify?.Invoke();
         }
 
         public void NotifyRemoteConfigStatusChanged()
         {
+            Interlocked.Increment(ref _remoteNotificationCount);
+            _onRemoteNotify?.Invoke();
         }
 
         public void Subscribe<T>(IOpAmpListener<T> listener)
             where T : OpAmpMessage
         {
+            SubscriptionCount++;
+            RemoteConfigurationListener = Assert.IsType<OpAmpRemoteConfigurationListener>(listener);
         }
 
         public void Unsubscribe<T>(IOpAmpListener<T> listener)
             where T : OpAmpMessage
         {
+            UnsubscriptionCount++;
+            Assert.Same(RemoteConfigurationListener, listener);
         }
     }
 }
