@@ -30,6 +30,8 @@ public class OpAmpRemoteConfigurationListenerTests
     [Theory]
     [InlineData("distribution: [")]
     [InlineData("distribution:\n  splunk:\n    profiling:\n      always_on:\n        cpu_profiler:\n          sampling_interval: invalid\n")]
+    [InlineData("distribution:\n  splunk:\n    profiling:\n      always_on:\n        memory_profiler:\n          max_memory_samples: invalid\n")]
+    [InlineData("distribution:\n  splunk:\n    profiling:\n      always_on:\n        memory_profiler:\n          max_memory_samples: -1\n")]
     public void InvalidYamlIsNotRetriedAndNewConfigurationCanBeApplied(string invalidYaml)
     {
         var assemblyPath = Path.Combine(

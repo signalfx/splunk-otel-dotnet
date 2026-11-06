@@ -364,7 +364,7 @@ public class OpAmpTests
         var fail = false;
         var opAmp = CreateConfiguredOpAmp(() => fail ? throw new InvalidOperationException("Query failed.") : state);
         Assert.Contains("SPLUNK_PROFILER_ENABLED=false", GetPayload(opAmp));
-        state = new EffectiveProfilerState(EffectiveProfilerFeatures.Cpu, 2500, 0);
+        state = new EffectiveProfilerState(EffectiveProfilerFeatures.Cpu, 2500, 0, 0);
 
         Assert.Contains("SPLUNK_PROFILER_ENABLED=true", GetPayload(opAmp));
         Assert.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=2500", GetPayload(opAmp));

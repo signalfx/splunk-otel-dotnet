@@ -27,6 +27,7 @@ internal sealed class EffectiveConfigSnapshot
         bool memoryProfilerEnabled,
         bool snapshotProfilerEnabled,
         uint cpuProfilerCallStackInterval,
+        uint memoryProfilerMaxMemorySamplesPerMinute,
         uint snapshotSamplingInterval,
         double snapshotSelectionProbability)
     {
@@ -38,6 +39,7 @@ internal sealed class EffectiveConfigSnapshot
         MemoryProfilerEnabled = memoryProfilerEnabled;
         SnapshotProfilerEnabled = snapshotProfilerEnabled;
         CpuProfilerCallStackInterval = cpuProfilerCallStackInterval;
+        MemoryProfilerMaxMemorySamplesPerMinute = memoryProfilerMaxMemorySamplesPerMinute;
         SnapshotSamplingInterval = snapshotSamplingInterval;
         SnapshotSelectionProbability = snapshotSelectionProbability;
     }
@@ -60,6 +62,8 @@ internal sealed class EffectiveConfigSnapshot
 
     public uint CpuProfilerCallStackInterval { get; }
 
+    public uint MemoryProfilerMaxMemorySamplesPerMinute { get; }
+
     public uint SnapshotSamplingInterval { get; }
 
     public double SnapshotSelectionProbability { get; }
@@ -73,19 +77,21 @@ internal sealed class EffectiveConfigSnapshot
     {
         var cpuEnabled = (profilerState.Features & EffectiveProfilerFeatures.Cpu) != 0;
         var snapshotsEnabled = (profilerState.Features & EffectiveProfilerFeatures.Snapshot) != 0;
+#if NET
+        var memoryEnabled = (profilerState.Features & EffectiveProfilerFeatures.Memory) != 0;
+#else
+        const bool memoryEnabled = false;
+#endif
         return new EffectiveConfigSnapshot(
             fileBasedConfigFileName: staticSettings.FileBasedConfigFileName,
             traceEndpoints: traceEndpoints,
             metricEndpoints: metricEndpoints,
             logEndpoints: logEndpoints,
             cpuProfilerEnabled: cpuEnabled,
-#if NET
-            memoryProfilerEnabled: (profilerState.Features & EffectiveProfilerFeatures.Memory) != 0,
-#else
-            memoryProfilerEnabled: false,
-#endif
+            memoryProfilerEnabled: memoryEnabled,
             snapshotProfilerEnabled: snapshotsEnabled,
             cpuProfilerCallStackInterval: cpuEnabled ? profilerState.CpuSamplingInterval : staticSettings.CpuProfilerCallStackInterval,
+            memoryProfilerMaxMemorySamplesPerMinute: memoryEnabled ? profilerState.MaxMemorySamplesPerMinute : 0,
             snapshotSamplingInterval: snapshotsEnabled ? profilerState.SnapshotSamplingInterval : staticSettings.SnapshotSamplingInterval,
             snapshotSelectionProbability: staticSettings.SnapshotSelectionProbability);
     }

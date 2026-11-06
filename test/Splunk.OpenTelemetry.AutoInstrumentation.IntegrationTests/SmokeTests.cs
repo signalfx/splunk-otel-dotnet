@@ -273,6 +273,11 @@ public class SmokeTests : TestHelper, IDisposable
             ["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"] = "5000",
             ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.25",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
+#if NET
+            ["SPLUNK_PROFILER_MAX_MEMORY_SAMPLES"] = "200",
+#else
+            ["SPLUNK_PROFILER_MAX_MEMORY_SAMPLES"] = "0",
+#endif
             ["OTEL_CONFIG_FILE"] = "null"
         };
 
@@ -305,6 +310,7 @@ public class SmokeTests : TestHelper, IDisposable
             ["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"] = "40",
             ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.01",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
+            ["SPLUNK_PROFILER_MAX_MEMORY_SAMPLES"] = "0",
             ["OTEL_CONFIG_FILE"] = "null"
         };
 
@@ -378,6 +384,7 @@ public class SmokeTests : TestHelper, IDisposable
             ["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"] = "5000",
             ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.01",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
+            ["SPLUNK_PROFILER_MAX_MEMORY_SAMPLES"] = "0",
             ["OTEL_CONFIG_FILE"] = "null"
         };
 
@@ -455,6 +462,7 @@ public class SmokeTests : TestHelper, IDisposable
             ["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"] = "40",
             ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.01",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
+            ["SPLUNK_PROFILER_MAX_MEMORY_SAMPLES"] = "0",
             ["OTEL_CONFIG_FILE"] = "null"
         };
 
@@ -494,6 +502,7 @@ public class SmokeTests : TestHelper, IDisposable
             ["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"] = "40",
             ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.01",
             ["SPLUNK_PROFILER_CALL_STACK_INTERVAL"] = "10000",
+            ["SPLUNK_PROFILER_MAX_MEMORY_SAMPLES"] = "0",
             ["OTEL_CONFIG_FILE"] = "null"
         };
 

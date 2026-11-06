@@ -75,6 +75,24 @@ internal static class ProfilerRuntimeConfiguration
         }
     }
 
+#if NET
+    internal static uint StartupMemoryProfilerMaxMemorySamplesPerMinute
+    {
+        get
+        {
+            lock (Sync)
+            {
+                var startupSettings = GetStartupSettings();
+                var maxMemorySamples = PluginSettingsHelper.GetFinalMaxMemorySamples(startupSettings);
+                // A nonzero limit prepares allocation exports without enabling native collection.
+                return maxMemorySamples == 0 && startupSettings.OpAmpRemoteConfigEnabled
+                    ? Constants.DefaultMaxMemorySamples
+                    : maxMemorySamples;
+            }
+        }
+    }
+#endif
+
     public static void Initialize(PluginSettings settings)
     {
         settings = settings ?? throw new ArgumentNullException(nameof(settings));
@@ -84,7 +102,14 @@ internal static class ProfilerRuntimeConfiguration
             _startupSettings = settings;
             _state = new ProfilerRemoteConfigState(
                 settings.CpuProfilerEnabled,
-                PluginSettingsHelper.GetFinalContinuousSamplingInterval(settings));
+                PluginSettingsHelper.GetFinalContinuousSamplingInterval(settings),
+#if NET
+                settings.MemoryProfilerEnabled,
+                PluginSettingsHelper.GetFinalMaxMemorySamples(settings));
+#else
+                memoryProfilerEnabled: false,
+                memoryProfilerMaxMemorySamplesPerMinute: 0);
+#endif
         }
     }
 
@@ -107,7 +132,15 @@ internal static class ProfilerRuntimeConfiguration
                     startupSettings.SnapshotsEnabled,
                     startupSettings.SnapshotsSamplingInterval)
                 : 0u;
-            var next = new ProfilerRemoteConfigState(cpuProfiler != null, cpuSamplingInterval);
+#if NET
+            var memoryProfiler = profilingConfig?.AlwaysOn?.MemoryProfiler;
+            var maxMemorySamples = memoryProfiler != null
+                ? PluginSettingsHelper.GetFinalMaxMemorySamples(memoryProfiler.MaxMemorySamples)
+                : 0u;
+            var next = new ProfilerRemoteConfigState(cpuProfiler != null, cpuSamplingInterval, memoryProfiler != null, maxMemorySamples);
+#else
+            var next = new ProfilerRemoteConfigState(cpuProfiler != null, cpuSamplingInterval, memoryProfilerEnabled: false, memoryProfilerMaxMemorySamplesPerMinute: 0);
+#endif
             configureNative(startupSettings, next);
             _state = next;
         }
