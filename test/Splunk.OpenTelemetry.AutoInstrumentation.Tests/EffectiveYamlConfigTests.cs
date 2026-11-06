@@ -112,13 +112,13 @@ public class EffectiveYamlConfigTests
     }
 
     [Fact]
-    public void Create_UsesNullMemoryProfilerMarkerWhenEnabled()
+    public void Create_ReportsMemoryLimitWhenEnabled()
     {
         var config = EffectiveYamlConfig.Create(CreateSnapshot(memoryProfilerEnabled: true));
 
         var alwaysOn = Assert.IsType<EffectiveYamlConfig.EffectiveAlwaysOnProfilingWithMemoryConfig>(
             config.Distribution!.Splunk!.Profiling!.AlwaysOn);
-        Assert.Null(alwaysOn.MemoryProfiler);
+        Assert.Equal(123u, alwaysOn.MemoryProfiler.MaxMemorySamples);
     }
 
     [Fact]
@@ -169,6 +169,7 @@ public class EffectiveYamlConfigTests
             memoryProfilerEnabled: memoryProfilerEnabled,
             snapshotProfilerEnabled: snapshotProfilerEnabled,
             cpuProfilerCallStackInterval: 10000,
+            memoryProfilerMaxMemorySamplesPerMinute: 123,
             snapshotSamplingInterval: snapshotSamplingInterval,
             snapshotSelectionProbability: snapshotSelectionProbability);
     }

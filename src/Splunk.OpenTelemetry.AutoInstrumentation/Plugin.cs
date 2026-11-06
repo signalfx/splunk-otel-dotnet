@@ -246,8 +246,8 @@ public class Plugin :
         var threadSamplingEnabled = remoteConfigState.CpuProfilerEnabled;
         var threadSamplingInterval = ProfilerRuntimeConfiguration.StartupCpuProfilerCallStackInterval;
 #if NET
-        var allocationSamplingEnabled = Settings.MemoryProfilerEnabled;
-        var maxMemorySamplesPerMinute = PluginSettingsHelper.GetFinalMaxMemorySamples(Settings);
+        var allocationSamplingEnabled = remoteConfigState.MemoryProfilerEnabled && remoteConfigState.MemoryProfilerMaxMemorySamplesPerMinute != 0;
+        var maxMemorySamplesPerMinute = ProfilerRuntimeConfiguration.StartupMemoryProfilerMaxMemorySamplesPerMinute;
 #else
         // Allocation sampling is not supported on .NET Framework
         var allocationSamplingEnabled = false;
