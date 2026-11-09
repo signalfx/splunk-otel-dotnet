@@ -9,6 +9,8 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Added
 
+- Experimental support for OpAMP remote configuration for memory profiling.
+
 ### Changed
 
 ### Deprecated
@@ -30,8 +32,7 @@ This release includes all changes from following versiosn:
 
 ### Added
 
-- Experimental support for OpAMP remote configuration for CPU and memory profiling,
-  including the maximum number of memory samples per minute.
+- Experimental support for OpAMP remote configuration for CPU profiling.
 
 ### Changed
 
