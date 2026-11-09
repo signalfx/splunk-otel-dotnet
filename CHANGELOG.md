@@ -9,6 +9,8 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Added
 
+- Experimental support for OpAMP remote configuration for CallGraphs.
+
 ### Changed
 
 ### Deprecated
@@ -30,7 +32,7 @@ This release includes all changes from following versiosn:
 
 ### Added
 
-- Experimental support for OpAMP remote configuration for CPU profiling and callgraphs.
+- Experimental support for OpAMP remote configuration for CPU profiling.
 
 ### Changed
 
