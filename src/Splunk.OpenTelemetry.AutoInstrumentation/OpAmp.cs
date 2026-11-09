@@ -48,7 +48,7 @@ internal sealed class OpAmp
             () => new EffectiveConfigRecorder(staticSettings, OpenTelemetrySdkDisabledResolver.IsDisabled()),
             UpstreamOpAmpEnabledResolver.IsEnabled,
             UpstreamSdkSetupEnabledResolver.IsEnabled,
-            UpstreamProfilerStateResolver.Resolve)
+            ProfilerRuntimeConfiguration.GetEffectiveProfilerState)
     {
     }
 

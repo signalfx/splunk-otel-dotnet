@@ -18,11 +18,16 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal sealed class EffectiveProfilerState
 {
-    public EffectiveProfilerState(EffectiveProfilerFeatures features, uint cpuSamplingInterval, uint snapshotSamplingInterval)
+    public EffectiveProfilerState(
+        EffectiveProfilerFeatures features,
+        uint cpuSamplingInterval,
+        uint snapshotSamplingInterval,
+        double? snapshotSelectionProbability = null)
     {
         Features = features;
         CpuSamplingInterval = cpuSamplingInterval;
         SnapshotSamplingInterval = snapshotSamplingInterval;
+        SnapshotSelectionProbability = snapshotSelectionProbability;
     }
 
     public static EffectiveProfilerState None { get; } = new(EffectiveProfilerFeatures.None, 0, 0);
@@ -32,4 +37,6 @@ internal sealed class EffectiveProfilerState
     public uint CpuSamplingInterval { get; }
 
     public uint SnapshotSamplingInterval { get; }
+
+    public double? SnapshotSelectionProbability { get; }
 }

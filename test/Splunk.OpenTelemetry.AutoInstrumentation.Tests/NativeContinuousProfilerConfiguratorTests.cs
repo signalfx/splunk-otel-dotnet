@@ -16,6 +16,7 @@
 
 using System.Collections.Specialized;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
 using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests;
@@ -29,6 +30,12 @@ public class NativeContinuousProfilerConfiguratorTests
 
         /// <summary>The requested configuration was already active.</summary>
         NoChange,
+
+        /// <summary>A startup configuration is already committed.</summary>
+        IgnoredSeedAlreadyCommitted,
+
+        /// <summary>A remote configuration has precedence over startup settings.</summary>
+        IgnoredLowerAuthority,
 
         /// <summary>The runtime rejected the requested configuration.</summary>
         RejectedInvalidConfiguration,
@@ -47,7 +54,7 @@ public class NativeContinuousProfilerConfiguratorTests
     }
 
     [Fact]
-    public void NativeConfiguration_UsesControlPlaneAndPreservesStartupNonCpuSettings()
+    public void NativeConfiguration_UsesControlPlaneAndPreservesStartupSnapshotIntervalAndMemorySettings()
     {
         var binding = new NativeContinuousProfilerConfigurator.RuntimeConfigurationBinding(typeof(NativeMethodsStub));
         var startupSettings = new PluginSettings(
@@ -65,7 +72,21 @@ public class NativeContinuousProfilerConfiguratorTests
                 }));
         NativeMethodsStub.Result = ApplyResult.Applied;
 
-        binding.Configure(startupSettings, new ProfilerRemoteConfigState(cpuProfilerEnabled: true, cpuProfilerCallStackInterval: 312));
+        var configuration = new YamlRoot
+        {
+            Distribution = new Distribution
+            {
+                Splunk = new SplunkConfiguration
+                {
+                    Profiling = new ProfilerConfiguration
+                    {
+                        AlwaysOn = new AlwaysOn { CpuProfiler = new CpuProfiler { SamplingInterval = 312 } },
+                        Callgraphs = new CallGraphsConfiguration { SamplingInterval = 104 }
+                    }
+                }
+            }
+        };
+        binding.Configure(startupSettings, ProfilerRemoteConfigState.FromRemoteConfiguration(configuration, startupSettings));
 
         Assert.Equal(Authority.ControlPlane, NativeMethodsStub.LastAuthority);
         Assert.Equal(312u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
@@ -78,7 +99,7 @@ public class NativeContinuousProfilerConfiguratorTests
     }
 
     [Fact]
-    public void NativeConfiguration_DisablesOnlyRuntimeConfigurableCpuProfiler()
+    public void NativeConfiguration_DisablesCpuAndCallgraphsWhilePreservingMemorySettings()
     {
         var startupSettings = new PluginSettings(
             new NameValueConfigurationSource(
@@ -96,10 +117,10 @@ public class NativeContinuousProfilerConfiguratorTests
         var binding = new NativeContinuousProfilerConfigurator.RuntimeConfigurationBinding(typeof(NativeMethodsStub));
         NativeMethodsStub.Result = ApplyResult.Applied;
 
-        binding.Configure(startupSettings, new ProfilerRemoteConfigState(cpuProfilerEnabled: false, cpuProfilerCallStackInterval: 156));
+        binding.Configure(startupSettings, CreateState(cpuProfilerEnabled: false, cpuProfilerCallStackInterval: 156));
 
         Assert.Equal(0u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
-        Assert.Equal(78u, NativeMethodsStub.LastConfiguration.SnapshotSamplingInterval);
+        Assert.Equal(0u, NativeMethodsStub.LastConfiguration.SnapshotSamplingInterval);
 #if NET
         Assert.Equal(123u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
 #else
@@ -114,10 +135,27 @@ public class NativeContinuousProfilerConfiguratorTests
         var startupSettings = new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()));
         NativeMethodsStub.Result = ApplyResult.NoChange;
 
-        binding.Configure(startupSettings, new ProfilerRemoteConfigState(cpuProfilerEnabled: false, cpuProfilerCallStackInterval: 0));
+        binding.Configure(startupSettings, CreateState(cpuProfilerEnabled: false, cpuProfilerCallStackInterval: 0));
 
         Assert.Equal(0u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
         Assert.Equal(0u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
+    }
+
+    [Theory]
+    [InlineData(ApplyResult.Applied)]
+    [InlineData(ApplyResult.IgnoredSeedAlreadyCommitted)]
+    [InlineData(ApplyResult.IgnoredLowerAuthority)]
+    public void NativeConfiguration_SeedsStartupWithoutOverridingPreviouslyCommittedSettings(ApplyResult result)
+    {
+        var binding = new NativeContinuousProfilerConfigurator.RuntimeConfigurationBinding(typeof(NativeMethodsStub));
+        var startupSettings = new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        NativeMethodsStub.Result = result;
+
+        binding.Configure(startupSettings, CreateState(cpuProfilerEnabled: false, cpuProfilerCallStackInterval: 0), seed: true);
+
+        Assert.Equal(Authority.Seed, NativeMethodsStub.LastAuthority);
+        Assert.Equal(0u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
+        Assert.Equal(0u, NativeMethodsStub.LastConfiguration.SnapshotSamplingInterval);
     }
 
     [Theory]
@@ -131,9 +169,24 @@ public class NativeContinuousProfilerConfiguratorTests
         NativeMethodsStub.Result = result;
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
-            binding.Configure(startupSettings, new ProfilerRemoteConfigState(cpuProfilerEnabled: true, cpuProfilerCallStackInterval: 1234)));
+            binding.Configure(startupSettings, CreateState(cpuProfilerEnabled: true, cpuProfilerCallStackInterval: 1234)));
 
         Assert.Contains(result.ToString(), exception.Message, StringComparison.Ordinal);
+    }
+
+    private static ProfilerRemoteConfigState CreateState(
+        bool cpuProfilerEnabled,
+        uint cpuProfilerCallStackInterval,
+        bool snapshotsEnabled = false,
+        uint snapshotSamplingInterval = Constants.DefaultSnapshotSamplingIntervalMs)
+    {
+        return new ProfilerRemoteConfigState(new PluginSettings(new NameValueConfigurationSource(new NameValueCollection
+        {
+            [ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled] = cpuProfilerEnabled.ToString(),
+            [ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = cpuProfilerCallStackInterval.ToString(),
+            [ConfigurationKeys.Splunk.Snapshots.Enabled] = snapshotsEnabled.ToString(),
+            [ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs] = snapshotSamplingInterval.ToString()
+        })));
     }
 
     private readonly struct RuntimeConfiguration

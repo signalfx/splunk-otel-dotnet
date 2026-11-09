@@ -14,17 +14,60 @@
 // limitations under the License.
 // </copyright>
 
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 internal sealed class ProfilerRemoteConfigState
 {
-    public ProfilerRemoteConfigState(bool cpuProfilerEnabled, uint cpuProfilerCallStackInterval)
+    public ProfilerRemoteConfigState(PluginSettings settings)
+        : this(
+            settings.CpuProfilerEnabled,
+            settings.CpuProfilerCallStackInterval,
+            settings.SnapshotsEnabled,
+            settings.SnapshotsSamplingInterval,
+            settings.SnapshotsSelectionRate)
+    {
+    }
+
+    private ProfilerRemoteConfigState(
+        bool cpuProfilerEnabled,
+        long cpuProfilerCallStackInterval,
+        bool snapshotsEnabled,
+        uint snapshotsSamplingInterval,
+        double snapshotsSelectionRate)
     {
         CpuProfilerEnabled = cpuProfilerEnabled;
-        CpuProfilerCallStackInterval = cpuProfilerCallStackInterval;
+        SnapshotsEnabled = snapshotsEnabled;
+        SnapshotsSamplingInterval = PluginSettingsHelper.GetFinalSnapshotSamplingInterval(snapshotsSamplingInterval);
+        CpuProfilerCallStackInterval = PluginSettingsHelper.GetFinalContinuousSamplingInterval(
+            cpuProfilerCallStackInterval, snapshotsEnabled, SnapshotsSamplingInterval);
+        SnapshotsSelectionRate = PluginSettingsHelper.GetFinalSnapshotSelectionProbability(snapshotsSelectionRate);
+        SnapshotSelector = new TraceIdBasedSnapshotSelector(SnapshotsSelectionRate);
     }
 
     public bool CpuProfilerEnabled { get; }
 
     public uint CpuProfilerCallStackInterval { get; }
+
+    public bool SnapshotsEnabled { get; }
+
+    public uint SnapshotsSamplingInterval { get; }
+
+    public double SnapshotsSelectionRate { get; }
+
+    public ISnapshotSelector SnapshotSelector { get; }
+
+    public static ProfilerRemoteConfigState FromRemoteConfiguration(YamlRoot? configuration, PluginSettings startupSettings)
+    {
+        var profiling = configuration?.Distribution?.Splunk?.Profiling;
+        var cpuProfiler = profiling?.AlwaysOn?.CpuProfiler;
+        return new ProfilerRemoteConfigState(
+            cpuProfiler != null,
+            cpuProfiler?.SamplingInterval ?? Constants.DefaultSamplingInterval,
+            profiling?.Callgraphs != null,
+            startupSettings.SnapshotsSamplingInterval,
+            profiling?.Callgraphs?.SelectionProbability ?? Constants.DefaultSnapshotSelectionRate);
+    }
 }

@@ -85,7 +85,7 @@ internal class SampleProcessor
             return null;
         }
 
-        var selectedSampleProfile = BuildCpuProfile(selectedSamples, (long)SelectedSamplingPeriod!);
+        var selectedSampleProfile = BuildCpuProfile(selectedSamples, SelectedSamplingPeriod);
         var totalFrameCount = CountFrames(selectedSamples);
 
         var processSelectedSamples = BuildLogRecord(selectedSampleProfile, _profilingDataTypeCpu, totalFrameCount);
