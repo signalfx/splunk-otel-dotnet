@@ -18,6 +18,7 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration;
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 
@@ -421,29 +422,40 @@ public class ProfilerRuntimeRemoteConfigurationTests
         }
     }
 
-    [Fact]
-    public async Task ReadCurrent_WaitsForNativeConfigurationAndManagedPublication()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task GetEffectiveProfilerState_WaitsForNativeConfigurationAndManagedPublication(bool nativeSucceeds)
     {
         ProfilerRuntimeConfiguration.Initialize(CreateSettings());
         var configuration = CreateConfiguration(new ProfilerConfiguration
         {
-            AlwaysOn = new AlwaysOn { CpuProfiler = new CpuProfiler { SamplingInterval = 1234 } }
+            AlwaysOn = new AlwaysOn { CpuProfiler = new CpuProfiler { SamplingInterval = 1200 } },
+            Callgraphs = new CallGraphsConfiguration { SelectionProbability = 0.75 }
         });
         var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var readStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var release = new ManualResetEventSlim();
-        var nativeInterval = 0u;
-        var apply = Task.Run(() => ProfilerRuntimeConfiguration.Apply(configuration, (_, state) =>
+        var nativeState = EffectiveProfilerState.None;
+        var apply = Task.Run(() => ProfilerRuntimeConfiguration.Apply(configuration, (_, _) =>
         {
-            nativeInterval = state.CpuProfilerCallStackInterval;
+            if (nativeSucceeds)
+            {
+                nativeState = new EffectiveProfilerState(EffectiveProfilerFeatures.Cpu | EffectiveProfilerFeatures.Snapshot, 1200, 40);
+            }
+
             entered.TrySetResult(true);
             Assert.True(release.Wait(TimeSpan.FromSeconds(10)));
+            if (!nativeSucceeds)
+            {
+                throw new InvalidOperationException("ActivationFailed");
+            }
         }));
         var read = Task.Run(async () =>
         {
             await entered.Task;
             readStarted.TrySetResult(true);
-            return ProfilerRuntimeConfiguration.ReadCurrent(state => (nativeInterval, state.CpuProfilerCallStackInterval));
+            return ProfilerRuntimeConfiguration.GetEffectiveProfilerState(() => nativeState);
         });
 
         try
@@ -454,11 +466,24 @@ public class ProfilerRuntimeRemoteConfigurationTests
         finally
         {
             release.Set();
-            await CompletesAsync(apply);
+            if (nativeSucceeds)
+            {
+                await CompletesAsync(apply);
+            }
+            else
+            {
+                var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => apply);
+                Assert.Equal("ActivationFailed", exception.Message);
+            }
+
             await CompletesAsync(read);
         }
 
-        Assert.Equal((1234u, 1234u), await read);
+        var effectiveState = await read;
+        Assert.Equal(nativeState.Features, effectiveState.Features);
+        Assert.Equal(nativeState.CpuSamplingInterval, effectiveState.CpuSamplingInterval);
+        Assert.Equal(nativeState.SnapshotSamplingInterval, effectiveState.SnapshotSamplingInterval);
+        Assert.Equal(nativeSucceeds ? 0.75 : 0.01, effectiveState.SnapshotSelectionProbability);
     }
 
     [Theory]

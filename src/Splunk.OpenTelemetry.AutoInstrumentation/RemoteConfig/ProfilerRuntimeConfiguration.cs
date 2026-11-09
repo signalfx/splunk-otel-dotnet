@@ -15,6 +15,8 @@
 // </copyright>
 
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
+using Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
@@ -79,12 +81,23 @@ internal static class ProfilerRuntimeConfiguration
         Apply(configuration, NativeContinuousProfilerConfigurator.Configure);
     }
 
-    internal static T ReadCurrent<T>(Func<ProfilerRemoteConfigState, T> read)
+    public static EffectiveProfilerState GetEffectiveProfilerState()
+    {
+        return GetEffectiveProfilerState(UpstreamProfilerStateResolver.Resolve);
+    }
+
+    internal static EffectiveProfilerState GetEffectiveProfilerState(Func<EffectiveProfilerState> queryNativeState)
     {
         // Keep combined native and managed reads consistent with configuration transitions.
         lock (Sync)
         {
-            return read(GetState());
+            var runtimeState = GetState();
+            var nativeState = queryNativeState();
+            return new EffectiveProfilerState(
+                nativeState.Features,
+                nativeState.CpuSamplingInterval,
+                nativeState.SnapshotSamplingInterval,
+                runtimeState.SnapshotsSelectionRate);
         }
     }
 

@@ -15,7 +15,6 @@
 // </copyright>
 
 using System.Reflection;
-using Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig.Resolvers;
 
@@ -29,15 +28,7 @@ internal static class UpstreamProfilerStateResolver
 
     public static EffectiveProfilerState Resolve()
     {
-        return ProfilerRuntimeConfiguration.ReadCurrent(runtimeState =>
-        {
-            var state = ProfilerEnabled.Value ? Binding.Value.Query() : EffectiveProfilerState.None;
-            return new EffectiveProfilerState(
-                state.Features,
-                state.CpuSamplingInterval,
-                state.SnapshotSamplingInterval,
-                runtimeState.SnapshotsSelectionRate);
-        });
+        return ProfilerEnabled.Value ? Binding.Value.Query() : EffectiveProfilerState.None;
     }
 
     private static bool ResolveProfilerEnabled()
