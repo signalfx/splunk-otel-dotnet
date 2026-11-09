@@ -28,7 +28,7 @@ internal static class MetadataData
             dependencies:
             [
                 new("OpenTelemetry .NET", "https://github.com/open-telemetry/opentelemetry-dotnet", null, "1.20.1", "stable"),
-                new("OpenTelemetry .NET Automatic Instrumentation", "https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation", null, "1.19.0", "stable")
+                new("OpenTelemetry .NET Automatic Instrumentation", "https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation", null, "1.19.1", "stable")
             ],
             settings: SettingsData.GetSettings(),
             instrumentations: InstrumentationData.GetInstrumentations(),
