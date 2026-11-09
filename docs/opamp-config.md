@@ -129,7 +129,7 @@ Supported at runtime:
 - `callgraphs`: enable Callgraph snapshot profiling. Omitting this section disables
   it, including when it was enabled at startup.
 - `callgraphs.selection_probability`: change the probability of selecting new
-  traces. If omitted or null, the default of `0.01` is used. Values are normalized
+  traces. If omitted, the default of `0.01` is used. Values are normalized
   using the same rules as file-based configuration: zero, negative, or NaN values
   use the default, and values above `1.0` are capped at `1.0`.
 
