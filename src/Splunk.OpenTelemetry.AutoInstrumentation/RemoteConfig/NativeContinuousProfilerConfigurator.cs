@@ -64,8 +64,8 @@ internal static class NativeContinuousProfilerConfigurator
                 ? PluginSettingsHelper.GetFinalSnapshotSamplingInterval(startupSettings.SnapshotsSamplingInterval)
                 : 0u;
 #if NET
-            var maxMemorySamplesPerMinute = startupSettings.MemoryProfilerEnabled
-                ? PluginSettingsHelper.GetFinalMaxMemorySamples(startupSettings)
+            var maxMemorySamplesPerMinute = state.MemoryProfilerEnabled
+                ? state.MemoryProfilerMaxMemorySamplesPerMinute
                 : 0u;
 #else
             const uint maxMemorySamplesPerMinute = 0;

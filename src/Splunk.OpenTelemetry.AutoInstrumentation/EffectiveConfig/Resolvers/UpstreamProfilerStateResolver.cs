@@ -95,12 +95,15 @@ internal static class UpstreamProfilerStateResolver
             }
 
 #if NET
-            if ((uint)_allocationRate.GetValue(configuration)! != 0)
+            var maxMemorySamplesPerMinute = (uint)_allocationRate.GetValue(configuration)!;
+            if (maxMemorySamplesPerMinute != 0)
             {
                 features |= EffectiveProfilerFeatures.Memory;
             }
+#else
+            const uint maxMemorySamplesPerMinute = 0;
 #endif
-            return new EffectiveProfilerState(features, cpuInterval, snapshotInterval);
+            return new EffectiveProfilerState(features, cpuInterval, snapshotInterval, maxMemorySamplesPerMinute);
         }
 
         private FieldInfo GetConfigurationField(string name)

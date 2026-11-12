@@ -40,16 +40,24 @@ public class EffectiveConfigReporterTests
         var state = EffectiveProfilerState.None;
         var reporter = EffectiveConfigReporter.CreateValidated(recorder, () => state);
 
-        state = new EffectiveProfilerState(EffectiveProfilerFeatures.Cpu, 4321, 0);
+        state = new EffectiveProfilerState(EffectiveProfilerFeatures.Cpu | EffectiveProfilerFeatures.Memory, 4321, 0, 123);
 
         var body = Encoding.UTF8.GetString(reporter.BuildCurrentPayload().Content.ToArray());
         Assert.Contains("SPLUNK_PROFILER_ENABLED=true", body, StringComparison.Ordinal);
         Assert.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=4321", body, StringComparison.Ordinal);
+#if NET
+        Assert.Contains("SPLUNK_PROFILER_MEMORY_ENABLED=true", body, StringComparison.Ordinal);
+        Assert.Contains("SPLUNK_PROFILER_MAX_MEMORY_SAMPLES=123", body, StringComparison.Ordinal);
+#else
+        Assert.Contains("SPLUNK_PROFILER_MEMORY_ENABLED=false", body, StringComparison.Ordinal);
+        Assert.Contains("SPLUNK_PROFILER_MAX_MEMORY_SAMPLES=0", body, StringComparison.Ordinal);
+#endif
 
         state = EffectiveProfilerState.None;
         body = Encoding.UTF8.GetString(reporter.BuildCurrentPayload().Content.ToArray());
         Assert.Contains("SPLUNK_PROFILER_ENABLED=false", body, StringComparison.Ordinal);
         Assert.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=1234", body, StringComparison.Ordinal);
+        Assert.Contains("SPLUNK_PROFILER_MEMORY_ENABLED=false", body, StringComparison.Ordinal);
     }
 
     [Fact]

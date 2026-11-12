@@ -79,7 +79,7 @@ internal static class PluginSettingsHelper
 #if NET
     public static uint GetFinalMaxMemorySamples(long maxMemorySamplesPerMinute)
     {
-        if (maxMemorySamplesPerMinute < 0 || maxMemorySamplesPerMinute > 200)
+        if (maxMemorySamplesPerMinute <= 0 || maxMemorySamplesPerMinute > 200)
         {
             return Constants.DefaultMaxMemorySamples;
         }
