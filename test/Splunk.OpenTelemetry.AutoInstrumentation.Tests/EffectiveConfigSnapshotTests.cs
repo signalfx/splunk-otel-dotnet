@@ -26,32 +26,19 @@ public class EffectiveConfigSnapshotTests
     [Fact]
     public void Create_CopiesResolvedProfilerState()
     {
-        const EffectiveProfilerFeatures profilerFeatures = EffectiveProfilerFeatures.Cpu | EffectiveProfilerFeatures.Snapshot;
+        const EffectiveProfilerFeatures profilerFeatures = EffectiveProfilerFeatures.Cpu | EffectiveProfilerFeatures.Memory | EffectiveProfilerFeatures.Snapshot;
         var snapshot = EffectiveConfigSnapshot.Create(
             CreateStaticSettings(),
-            new EffectiveProfilerState(profilerFeatures, 2500, 100, 0),
+            new EffectiveProfilerState(profilerFeatures, 2500, 100, 123),
             [],
             [],
             []);
 
         Assert.True(snapshot.CpuProfilerEnabled);
-        Assert.False(snapshot.MemoryProfilerEnabled);
         Assert.True(snapshot.SnapshotProfilerEnabled);
         Assert.Equal(2500U, snapshot.CpuProfilerCallStackInterval);
         Assert.Equal(100U, snapshot.SnapshotSamplingInterval);
         Assert.Equal(0.25, snapshot.SnapshotSelectionProbability);
-    }
-
-    [Fact]
-    public void Create_UsesCommittedMemoryLimit()
-    {
-        var snapshot = EffectiveConfigSnapshot.Create(
-            CreateStaticSettings(),
-            new EffectiveProfilerState(EffectiveProfilerFeatures.Memory, 0, 0, 123),
-            [],
-            [],
-            []);
-
 #if NET
         Assert.True(snapshot.MemoryProfilerEnabled);
         Assert.Equal(123u, snapshot.MemoryProfilerMaxMemorySamplesPerMinute);

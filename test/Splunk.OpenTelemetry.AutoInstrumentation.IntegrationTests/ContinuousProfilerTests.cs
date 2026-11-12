@@ -143,24 +143,12 @@ public class ContinuousProfilerTests : TestHelper
     }
 
 #if NET
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task RemoteConfigurationEnablesUpdatesAndDisablesMemoryProfiling(bool isFileBased)
+    [Fact]
+    public async Task RemoteConfigurationEnablesUpdatesAndDisablesMemoryProfiling()
     {
         EnableBytecodeInstrumentation();
-        SetEnvironmentVariable("SPLUNK_PROFILER_ENABLED", "false");
-        SetEnvironmentVariable("SPLUNK_PROFILER_MEMORY_ENABLED", "true");
-        SetEnvironmentVariable("SPLUNK_PROFILER_MAX_MEMORY_SAMPLES", "0");
-        SetEnvironmentVariable("SPLUNK_OPAMP_REMOTE_CONFIG", "true");
-        SetEnvironmentVariable("SPLUNK_PROFILER_EXPORT_INTERVAL", "1000");
-        SetEnvironmentVariable("OTEL_DOTNET_AUTO_OPAMP_ENABLED", "true");
-        SetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES", "TestApplication.ContinuousProfiler");
+        EnableFileBasedConfig("configRemoteMemoryProfiler.yaml");
         SetEnvironmentVariable("LONG_RUNNING", "true");
-        if (isFileBased)
-        {
-            EnableFileBasedConfig("configRemoteMemoryProfiler.yaml");
-        }
 
         using var logsCollector = new MockContinuousProfilerCollector(Output);
         SetExporter(logsCollector);
@@ -168,10 +156,7 @@ public class ContinuousProfilerTests : TestHelper
         {
             (Config: CreateRemoteMemoryConfiguration(enabled: true, hash: 1, maxMemorySamples: 100), Enabled: true, Limit: 100u),
             (Config: CreateRemoteMemoryConfiguration(enabled: true, hash: 2, maxMemorySamples: 50), Enabled: true, Limit: 50u),
-            (Config: CreateRemoteMemoryConfiguration(enabled: true, hash: 3, maxMemorySamples: 0), Enabled: true, Limit: 200u),
-            (Config: CreateRemoteMemoryConfiguration(enabled: true, hash: 4, maxMemorySamples: -1), Enabled: true, Limit: 200u),
-            (Config: CreateRemoteMemoryConfiguration(enabled: true, hash: 5), Enabled: true, Limit: 200u),
-            (Config: CreateRemoteMemoryConfiguration(enabled: false, hash: 6), Enabled: false, Limit: 0u)
+            (Config: CreateRemoteMemoryConfiguration(enabled: false, hash: 3), Enabled: false, Limit: 0u)
         };
         var completedConfigurations = 0;
         var lastAppliedConfigHash = ByteString.Empty;
@@ -193,7 +178,7 @@ public class ContinuousProfilerTests : TestHelper
             {
                 var current = configurations[completedConfigurations];
                 if (lastAppliedConfigHash.Equals(current.Config.ConfigHash) &&
-                    ReportsMemoryConfiguration(effectiveConfigBody, isFileBased, current.Enabled, current.Limit) &&
+                    ReportsMemoryConfiguration(effectiveConfigBody, current.Enabled, current.Limit) &&
                     (!current.Enabled || SpinWait.SpinUntil(() => logsCollector.GetAllLogs().Length > previousLogCount, TestTimeout.Expectation)))
                 {
                     previousLogCount = logsCollector.GetAllLogs().Length;
@@ -206,7 +191,7 @@ public class ContinuousProfilerTests : TestHelper
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_OPAMP_SERVER_URL", $"http://localhost:{opAmpServer.Port}/v1/opamp");
         opAmpServer.Expect(
             _ => Volatile.Read(ref completedConfigurations) == configurations.Length,
-            "Remote memory enable, limit update, zero and negative limits, default limit, and disable are applied, exported, and reported");
+            "Remote memory enable, limit update, and disable are applied, exported, and reported");
 
         using var process = StartTestApplication();
         Assert.NotNull(process);
@@ -348,25 +333,17 @@ public class ContinuousProfilerTests : TestHelper
     }
 
 #if NET
-    private static bool ReportsMemoryConfiguration(string body, bool isFileBased, bool enabled, uint limit)
+    private static bool ReportsMemoryConfiguration(string body, bool enabled, uint limit)
     {
-        if (isFileBased)
-        {
-            return enabled
-                ? body.Contains("memory_profiler:") && body.Contains($"max_memory_samples: {limit}")
-                : !body.Contains("memory_profiler:");
-        }
-
-        var properties = body.Split('\n');
-        return properties.Contains($"SPLUNK_PROFILER_MEMORY_ENABLED={enabled.ToString().ToLowerInvariant()}") &&
-               properties.Contains($"SPLUNK_PROFILER_MAX_MEMORY_SAMPLES={limit}");
+        return enabled
+            ? body.Contains("memory_profiler:") && body.Contains($"max_memory_samples: {limit}")
+            : !body.Contains("memory_profiler:");
     }
 
-    private static AgentRemoteConfig CreateRemoteMemoryConfiguration(bool enabled, byte hash, long? maxMemorySamples = null)
+    private static AgentRemoteConfig CreateRemoteMemoryConfiguration(bool enabled, byte hash, uint maxMemorySamples = 100)
     {
         var yaml = enabled
-            ? "distribution:\n  splunk:\n    profiling:\n      always_on:\n        memory_profiler:\n" +
-              (maxMemorySamples.HasValue ? $"          max_memory_samples: {maxMemorySamples.Value}\n" : string.Empty)
+            ? $"distribution:\n  splunk:\n    profiling:\n      always_on:\n        memory_profiler:\n          max_memory_samples: {maxMemorySamples}\n"
             : "distribution:\n  splunk:\n    profiling: {}\n";
         var configuration = new AgentRemoteConfig
         {

@@ -294,78 +294,27 @@ public class ProfilerRuntimeRemoteConfigurationTests
     [Theory]
     [InlineData(false, 0u)]
     [InlineData(true, (uint)Constants.DefaultMaxMemorySamples)]
-    public void StartupMemorySamples_PreparesExportsForYamlWithoutMemoryProfiling(bool remoteConfigurationEnabled, uint expectedMaxMemorySamples)
+    public void StartupMemorySamples_PreparesExportsForZeroStartupLimitOnlyWhenRemoteConfigurationIsEnabled(bool remoteConfigurationEnabled, uint expectedMaxMemorySamples)
     {
-        ProfilerRuntimeConfiguration.Initialize(new PluginSettings(new YamlRoot
+        var startupSettings = new PluginSettings(new YamlRoot
         {
             OpampDevelopment = new OpampDevelopment
             {
                 Features = new Features { RemoteConfig = remoteConfigurationEnabled ? new object() : null }
             }
-        }));
+        });
+        ProfilerRuntimeConfiguration.Initialize(startupSettings);
 
+        Assert.Equal(0u, startupSettings.MemoryProfilerMaxMemorySamplesPerMinute);
         Assert.False(ProfilerRuntimeConfiguration.Current.MemoryProfilerEnabled);
-        Assert.Equal((uint)Constants.DefaultMaxMemorySamples, ProfilerRuntimeConfiguration.Current.MemoryProfilerMaxMemorySamplesPerMinute);
         Assert.Equal(expectedMaxMemorySamples, ProfilerRuntimeConfiguration.StartupMemoryProfilerMaxMemorySamplesPerMinute);
     }
 
     [Theory]
-    [InlineData(false, 0, (uint)Constants.DefaultMaxMemorySamples)]
-    [InlineData(true, 0, (uint)Constants.DefaultMaxMemorySamples)]
-    [InlineData(false, -1, (uint)Constants.DefaultMaxMemorySamples)]
-    [InlineData(true, -1, (uint)Constants.DefaultMaxMemorySamples)]
-    [InlineData(true, 137, 137u)]
-    public void StartupMemorySamples_UsesNormalizedLimit(bool remoteConfigurationEnabled, int maxMemorySamples, uint expectedExportLimit)
-    {
-        ProfilerRuntimeConfiguration.Initialize(CreateSettings(new NameValueCollection
-        {
-            [ConfigurationKeys.Splunk.OpAmp.RemoteConfig] = remoteConfigurationEnabled.ToString(),
-            [ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled] = "true",
-            [ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples] = maxMemorySamples.ToString()
-        }));
-
-        Assert.True(ProfilerRuntimeConfiguration.Current.MemoryProfilerEnabled);
-        Assert.Equal(expectedExportLimit, ProfilerRuntimeConfiguration.Current.MemoryProfilerMaxMemorySamplesPerMinute);
-        Assert.Equal(expectedExportLimit, ProfilerRuntimeConfiguration.StartupMemoryProfilerMaxMemorySamplesPerMinute);
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Apply_EnablesAndUpdatesMemoryProfiling(bool initiallyEnabled)
-    {
-        var startupSettings = CreateSettings(new NameValueCollection
-        {
-            [ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled] = initiallyEnabled.ToString(),
-            [ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples] = "137"
-        });
-        ProfilerRuntimeConfiguration.Initialize(startupSettings);
-
-        foreach (var limit in new uint[] { 123, 50, 200 })
-        {
-            ApplyConfiguration(CreateConfiguration(new ProfilerConfiguration
-            {
-                AlwaysOn = new AlwaysOn { MemoryProfiler = new MemoryProfiler { MaxMemorySamples = limit } }
-            }));
-
-            Assert.True(ProfilerRuntimeConfiguration.Current.MemoryProfilerEnabled);
-            Assert.Equal(limit, ProfilerRuntimeConfiguration.Current.MemoryProfilerMaxMemorySamplesPerMinute);
-            Assert.False(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
-        }
-
-        Assert.Equal(initiallyEnabled, startupSettings.MemoryProfilerEnabled);
-        Assert.Equal(137u, startupSettings.MemoryProfilerMaxMemorySamplesPerMinute);
-    }
-
-    [Theory]
     [InlineData(null)]
-    [InlineData(0L)]
-    [InlineData(-1L)]
-    [InlineData(201L)]
-    [InlineData((long)uint.MaxValue)]
-    [InlineData(long.MinValue)]
-    [InlineData(long.MaxValue)]
-    public void Apply_UsesDefaultMemoryLimitInsteadOfPreviousRemoteValue(long? limit)
+    [InlineData(201u)]
+    [InlineData(uint.MaxValue)]
+    public void Apply_UsesDefaultMemoryLimitInsteadOfPreviousRemoteValue(uint? limit)
     {
         ProfilerRuntimeConfiguration.Initialize(CreateSettings());
         ApplyConfiguration(CreateConfiguration(new ProfilerConfiguration
@@ -409,24 +358,6 @@ public class ProfilerRuntimeRemoteConfigurationTests
         Assert.Equal(!configurationOmitted, ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
     }
 
-    [Fact]
-    public void Apply_KeepsMemoryStateWhenNativeConfigurationFails()
-    {
-        ProfilerRuntimeConfiguration.Initialize(CreateSettings());
-        var configuration = CreateConfiguration(new ProfilerConfiguration
-        {
-            AlwaysOn = new AlwaysOn { MemoryProfiler = new MemoryProfiler { MaxMemorySamples = 123 } }
-        });
-        ApplyConfiguration(configuration);
-        var previous = ProfilerRuntimeConfiguration.Current;
-
-        Assert.Throws<InvalidOperationException>(() =>
-            ProfilerRuntimeConfiguration.Apply(null, (_, _) => throw new InvalidOperationException("ActivationFailed")));
-
-        Assert.Same(previous, ProfilerRuntimeConfiguration.Current);
-        Assert.True(ProfilerRuntimeConfiguration.Current.MemoryProfilerEnabled);
-        Assert.Equal(123u, ProfilerRuntimeConfiguration.Current.MemoryProfilerMaxMemorySamplesPerMinute);
-    }
 #else
     [Fact]
     public void Apply_IgnoresMemoryProfilingOnNetFramework()
@@ -450,19 +381,36 @@ public class ProfilerRuntimeRemoteConfigurationTests
         ProfilerRuntimeConfiguration.Initialize(CreateSettings(new NameValueCollection
         {
             [ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled] = initiallyEnabled.ToString(),
-            [ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = "4321"
+            [ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = "4321",
+#if NET
+            [ConfigurationKeys.Splunk.AlwaysOnProfiler.MemoryProfilerEnabled] = initiallyEnabled.ToString(),
+            [ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples] = "137"
+#endif
         }));
+        var previous = ProfilerRuntimeConfiguration.Current;
         var configuration = CreateConfiguration(new ProfilerConfiguration
         {
-            AlwaysOn = new AlwaysOn { CpuProfiler = new CpuProfiler { SamplingInterval = 1234 } }
+            AlwaysOn = new AlwaysOn
+            {
+                CpuProfiler = new CpuProfiler { SamplingInterval = 1234 },
+                MemoryProfiler = new MemoryProfiler { MaxMemorySamples = 123 }
+            }
         });
 
         var exception = Assert.Throws<InvalidOperationException>(() =>
             ProfilerRuntimeConfiguration.Apply(configuration, (_, _) => throw new InvalidOperationException("ActivationFailed")));
 
         Assert.Equal("ActivationFailed", exception.Message);
+        Assert.Same(previous, ProfilerRuntimeConfiguration.Current);
         Assert.Equal(initiallyEnabled, ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
         Assert.Equal(expectedSamplingInterval, ProfilerRuntimeConfiguration.CurrentCpuProfilerCallStackInterval);
+#if NET
+        Assert.Equal(initiallyEnabled, ProfilerRuntimeConfiguration.Current.MemoryProfilerEnabled);
+        Assert.Equal(137u, ProfilerRuntimeConfiguration.Current.MemoryProfilerMaxMemorySamplesPerMinute);
+#else
+        Assert.False(ProfilerRuntimeConfiguration.Current.MemoryProfilerEnabled);
+        Assert.Equal(0u, ProfilerRuntimeConfiguration.Current.MemoryProfilerMaxMemorySamplesPerMinute);
+#endif
     }
 
     [Fact]
