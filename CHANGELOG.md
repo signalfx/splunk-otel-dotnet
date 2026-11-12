@@ -31,6 +31,7 @@ This release includes all changes from following versiosn:
 ### Added
 
 - Experimental support for OpAMP remote configuration for CPU profiling.
+- Support for `arm64` in the Splunk OpenTelemetry Collector for Kubernetes.
 
 ### Changed
 
