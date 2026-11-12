@@ -8,7 +8,7 @@ Effective configuration reporting is enabled when OpAMP is enabled and the
 active configuration passes startup validation. Automatic SDK setup is required;
 `OTEL_SDK_DISABLED=true` remains supported as a valid no-op SDK configuration.
 
-See the [upstream OpAMP plugin documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.0/docs/plugins.md#opamp)
+See the [upstream OpAMP plugin documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.1/docs/plugins.md#opamp)
 for reporting behavior, plugin selection, and client lifecycle.
 Remote configuration is available through the opt-in Splunk feature described
 below.
@@ -18,8 +18,8 @@ below.
 Configure the OpAMP client through the OpenTelemetry .NET auto-instrumentation
 OpAMP options:
 
-- [Environment variables](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.0/docs/config.md#opamp-client)
-- [File-based configuration](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.0/docs/file-based-configuration.md#opamp)
+- [Environment variables](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.1/docs/config.md#opamp-client)
+- [File-based configuration](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.1/docs/file-based-configuration.md#opamp)
 
 ## Effective configuration contents
 
@@ -105,7 +105,7 @@ distribution:
 ### Runtime behavior
 
 Profiling remote configuration only works when the
-[.NET CLR Profiler](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.0/docs/config.md#net-clr-profiler)
+[.NET CLR Profiler](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.1/docs/config.md#net-clr-profiler)
 is enabled before the process starts. Without the .NET CLR Profiler, profiling
 does not run, and remote configuration cannot enable or configure the .NET CLR
 Profiler at runtime.
