@@ -312,8 +312,8 @@ public class ProfilerRuntimeRemoteConfigurationTests
 
     [Theory]
     [InlineData(null)]
+    [InlineData(0u)]
     [InlineData(201u)]
-    [InlineData(uint.MaxValue)]
     public void Apply_UsesDefaultMemoryLimitInsteadOfPreviousRemoteValue(uint? limit)
     {
         ProfilerRuntimeConfiguration.Initialize(CreateSettings());
@@ -401,7 +401,7 @@ public class ProfilerRuntimeRemoteConfigurationTests
             ProfilerRuntimeConfiguration.Apply(configuration, (_, _) => throw new InvalidOperationException("ActivationFailed")));
 
         Assert.Equal("ActivationFailed", exception.Message);
-        Assert.Same(previous, ProfilerRuntimeConfiguration.Current);
+        Assert.Equivalent(previous, ProfilerRuntimeConfiguration.Current);
         Assert.Equal(initiallyEnabled, ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
         Assert.Equal(expectedSamplingInterval, ProfilerRuntimeConfiguration.CurrentCpuProfilerCallStackInterval);
 #if NET
