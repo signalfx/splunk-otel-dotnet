@@ -134,7 +134,8 @@ Supported at runtime:
   Memory profiling is not supported on .NET Framework.
 - `always_on.memory_profiler.max_memory_samples`: change the maximum number of
   allocation samples collected per minute. Values from `1` to `200` are accepted.
-  If omitted, zero, negative, or above `200`, the default of `200` is used.
+  If omitted, zero, or above `200`, the default of `200` is used.
+  Negative YAML values are invalid and cause the configuration update to be rejected.
 
 Each payload replaces the runtime CPU and memory profiling settings. Omitting
 either profiler section disables that profiler. An empty `memory_profiler`
