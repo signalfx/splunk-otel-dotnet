@@ -83,11 +83,10 @@ internal static class ProfilerRuntimeConfiguration
             lock (Sync)
             {
                 var startupSettings = GetStartupSettings();
-                var maxMemorySamples = PluginSettingsHelper.GetFinalMaxMemorySamples(startupSettings);
                 // A nonzero limit prepares allocation exports without enabling native collection.
-                return maxMemorySamples == 0 && startupSettings.OpAmpRemoteConfigEnabled
-                    ? Constants.DefaultMaxMemorySamples
-                    : maxMemorySamples;
+                return startupSettings.MemoryProfilerEnabled || startupSettings.OpAmpRemoteConfigEnabled
+                    ? PluginSettingsHelper.GetFinalMaxMemorySamples(startupSettings)
+                    : startupSettings.MemoryProfilerMaxMemorySamplesPerMinute;
             }
         }
     }

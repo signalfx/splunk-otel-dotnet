@@ -133,8 +133,8 @@ Supported at runtime:
 - `always_on.memory_profiler`: enable or disable memory profiling on .NET.
   Memory profiling is not supported on .NET Framework.
 - `always_on.memory_profiler.max_memory_samples`: change the maximum number of
-  allocation samples collected per minute. Values from `0` to `200` are accepted.
-  above `200` uses the default of `200`.
+  allocation samples collected per minute. Values from `1` to `200` are accepted.
+  If omitted, zero, negative, or above `200`, the default of `200` is used.
 
 Each payload replaces the runtime CPU and memory profiling settings. Omitting
 either profiler section disables that profiler. An empty `memory_profiler`

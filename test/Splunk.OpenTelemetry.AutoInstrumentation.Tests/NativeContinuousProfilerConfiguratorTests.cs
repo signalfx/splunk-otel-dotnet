@@ -104,7 +104,7 @@ public class NativeContinuousProfilerConfiguratorTests
     }
 
     [Theory]
-    [InlineData(0u)]
+    [InlineData((uint)Constants.DefaultMaxMemorySamples)]
     [InlineData(123u)]
     public void NativeConfiguration_EnablesMemoryProfilingFromDisabledStartup(uint maxMemorySamples)
     {

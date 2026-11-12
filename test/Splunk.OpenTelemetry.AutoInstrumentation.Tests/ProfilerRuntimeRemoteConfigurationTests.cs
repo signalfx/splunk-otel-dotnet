@@ -305,15 +305,17 @@ public class ProfilerRuntimeRemoteConfigurationTests
         }));
 
         Assert.False(ProfilerRuntimeConfiguration.Current.MemoryProfilerEnabled);
-        Assert.Equal(0u, ProfilerRuntimeConfiguration.Current.MemoryProfilerMaxMemorySamplesPerMinute);
+        Assert.Equal((uint)Constants.DefaultMaxMemorySamples, ProfilerRuntimeConfiguration.Current.MemoryProfilerMaxMemorySamplesPerMinute);
         Assert.Equal(expectedMaxMemorySamples, ProfilerRuntimeConfiguration.StartupMemoryProfilerMaxMemorySamplesPerMinute);
     }
 
     [Theory]
-    [InlineData(false, 0u, 0u)]
-    [InlineData(true, 0u, (uint)Constants.DefaultMaxMemorySamples)]
-    [InlineData(true, 137u, 137u)]
-    public void StartupMemorySamples_PreparesExportsWithoutChangingSeed(bool remoteConfigurationEnabled, uint maxMemorySamples, uint expectedExportLimit)
+    [InlineData(false, 0, (uint)Constants.DefaultMaxMemorySamples)]
+    [InlineData(true, 0, (uint)Constants.DefaultMaxMemorySamples)]
+    [InlineData(false, -1, (uint)Constants.DefaultMaxMemorySamples)]
+    [InlineData(true, -1, (uint)Constants.DefaultMaxMemorySamples)]
+    [InlineData(true, 137, 137u)]
+    public void StartupMemorySamples_UsesNormalizedLimit(bool remoteConfigurationEnabled, int maxMemorySamples, uint expectedExportLimit)
     {
         ProfilerRuntimeConfiguration.Initialize(CreateSettings(new NameValueCollection
         {
@@ -323,7 +325,7 @@ public class ProfilerRuntimeRemoteConfigurationTests
         }));
 
         Assert.True(ProfilerRuntimeConfiguration.Current.MemoryProfilerEnabled);
-        Assert.Equal(maxMemorySamples, ProfilerRuntimeConfiguration.Current.MemoryProfilerMaxMemorySamplesPerMinute);
+        Assert.Equal(expectedExportLimit, ProfilerRuntimeConfiguration.Current.MemoryProfilerMaxMemorySamplesPerMinute);
         Assert.Equal(expectedExportLimit, ProfilerRuntimeConfiguration.StartupMemoryProfilerMaxMemorySamplesPerMinute);
     }
 
@@ -339,7 +341,7 @@ public class ProfilerRuntimeRemoteConfigurationTests
         });
         ProfilerRuntimeConfiguration.Initialize(startupSettings);
 
-        foreach (var limit in new uint[] { 123, 50, 0, 200 })
+        foreach (var limit in new uint[] { 123, 50, 200 })
         {
             ApplyConfiguration(CreateConfiguration(new ProfilerConfiguration
             {
@@ -357,9 +359,13 @@ public class ProfilerRuntimeRemoteConfigurationTests
 
     [Theory]
     [InlineData(null)]
-    [InlineData(201u)]
-    [InlineData(uint.MaxValue)]
-    public void Apply_UsesDefaultMemoryLimitInsteadOfPreviousRemoteValue(uint? limit)
+    [InlineData(0L)]
+    [InlineData(-1L)]
+    [InlineData(201L)]
+    [InlineData((long)uint.MaxValue)]
+    [InlineData(long.MinValue)]
+    [InlineData(long.MaxValue)]
+    public void Apply_UsesDefaultMemoryLimitInsteadOfPreviousRemoteValue(long? limit)
     {
         ProfilerRuntimeConfiguration.Initialize(CreateSettings());
         ApplyConfiguration(CreateConfiguration(new ProfilerConfiguration

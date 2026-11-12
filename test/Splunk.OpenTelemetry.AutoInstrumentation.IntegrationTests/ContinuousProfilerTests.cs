@@ -168,9 +168,10 @@ public class ContinuousProfilerTests : TestHelper
         {
             (Config: CreateRemoteMemoryConfiguration(enabled: true, hash: 1, maxMemorySamples: 100), Enabled: true, Limit: 100u),
             (Config: CreateRemoteMemoryConfiguration(enabled: true, hash: 2, maxMemorySamples: 50), Enabled: true, Limit: 50u),
-            (Config: CreateRemoteMemoryConfiguration(enabled: true, hash: 3, maxMemorySamples: 0), Enabled: false, Limit: 0u),
-            (Config: CreateRemoteMemoryConfiguration(enabled: true, hash: 4), Enabled: true, Limit: 200u),
-            (Config: CreateRemoteMemoryConfiguration(enabled: false, hash: 5), Enabled: false, Limit: 0u)
+            (Config: CreateRemoteMemoryConfiguration(enabled: true, hash: 3, maxMemorySamples: 0), Enabled: true, Limit: 200u),
+            (Config: CreateRemoteMemoryConfiguration(enabled: true, hash: 4, maxMemorySamples: -1), Enabled: true, Limit: 200u),
+            (Config: CreateRemoteMemoryConfiguration(enabled: true, hash: 5), Enabled: true, Limit: 200u),
+            (Config: CreateRemoteMemoryConfiguration(enabled: false, hash: 6), Enabled: false, Limit: 0u)
         };
         var completedConfigurations = 0;
         var lastAppliedConfigHash = ByteString.Empty;
@@ -205,14 +206,14 @@ public class ContinuousProfilerTests : TestHelper
         SetEnvironmentVariable("OTEL_DOTNET_AUTO_OPAMP_SERVER_URL", $"http://localhost:{opAmpServer.Port}/v1/opamp");
         opAmpServer.Expect(
             _ => Volatile.Read(ref completedConfigurations) == configurations.Length,
-            "Remote memory enable, limit update, zero limit, default limit, and disable are applied, exported, and reported");
+            "Remote memory enable, limit update, zero and negative limits, default limit, and disable are applied, exported, and reported");
 
         using var process = StartTestApplication();
         Assert.NotNull(process);
         using var helper = new ProcessHelper(process);
         try
         {
-            opAmpServer.AssertExpectations(TimeSpan.FromTicks(5 * TestTimeout.Expectation.Ticks));
+            opAmpServer.AssertExpectations(TimeSpan.FromTicks(configurations.Length * TestTimeout.Expectation.Ticks));
             Assert.False(process.HasExited, "The application exited before all remote memory transitions completed.");
         }
         finally
@@ -361,7 +362,7 @@ public class ContinuousProfilerTests : TestHelper
                properties.Contains($"SPLUNK_PROFILER_MAX_MEMORY_SAMPLES={limit}");
     }
 
-    private static AgentRemoteConfig CreateRemoteMemoryConfiguration(bool enabled, byte hash, uint? maxMemorySamples = null)
+    private static AgentRemoteConfig CreateRemoteMemoryConfiguration(bool enabled, byte hash, long? maxMemorySamples = null)
     {
         var yaml = enabled
             ? "distribution:\n  splunk:\n    profiling:\n      always_on:\n        memory_profiler:\n" +

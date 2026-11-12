@@ -104,7 +104,7 @@ distribution:
         memory_profiler:
           # Configure maximum memory samples collected per minute. 
           # Maximum value is 200.
-          # If omitted or null, 200 is used.
+          # If omitted, null, zero, negative, or above 200, 200 is used.
           max_memory_samples: 200
       # Configure Callgraph snapshot profiler
       callgraphs:
@@ -202,7 +202,7 @@ distribution:
         memory_profiler:
           # Configure maximum memory samples collected per minute. 
           # Maximum value is 200.
-          # If omitted or null, 200 is used.
+          # If omitted, null, zero, negative, or above 200, 200 is used.
           max_memory_samples: ${SPLUNK_PROFILER_MAX_MEMORY_SAMPLES}
       # Configure Callgraph snapshot profiler
       callgraphs:
