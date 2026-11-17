@@ -23,7 +23,7 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.19.1](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.19.1).
 
-This release includes all changes from following versiosn:
+This release includes all changes from following versions:
 
 - [OpenTelemetry .NET Auto Instrumentation v1.19.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.19.0),
 - [OpenTelemetry .NET Auto Instrumentation v1.18.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.10.0).
