@@ -343,19 +343,19 @@ public class Plugin :
     /// <summary>
     /// Called when the tracer provider has been initialized.
     /// </summary>
-    /// <param name="provider">Tracer provider.</param>
-    public void TracerProviderInitialized(TracerProvider provider)
+    /// <param name="tracerProvider">Tracer provider.</param>
+    public void TracerProviderInitialized(TracerProvider tracerProvider)
     {
-        _opAmp.RecordTraceProviderEndpoints(provider);
+        _opAmp.RecordTraceProviderEndpoints(tracerProvider);
     }
 
     /// <summary>
     /// Called when the meter provider has been initialized.
     /// </summary>
-    /// <param name="provider">Meter provider.</param>
-    public void MeterProviderInitialized(MeterProvider provider)
+    /// <param name="meterProvider">Meter provider.</param>
+    public void MeterProviderInitialized(MeterProvider meterProvider)
     {
-        _opAmp.RecordMetricProviderEndpoints(provider);
+        _opAmp.RecordMetricProviderEndpoints(meterProvider);
     }
 
     /// <summary>

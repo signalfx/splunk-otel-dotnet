@@ -78,9 +78,9 @@ internal class Logger : ILogger
         ErrorMethod?.Invoke(Log, [message, true]);
     }
 
-    public void Error(Exception ex, string message)
+    public void Error(Exception exception, string message)
     {
-        ErrorWithExceptionMethod?.Invoke(Log, [ex, message, true]);
+        ErrorWithExceptionMethod?.Invoke(Log, [exception, message, true]);
     }
 
     private static void CloseLogger(MethodInfo closeLoggerMethod)
