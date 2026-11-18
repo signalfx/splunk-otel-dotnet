@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
-          dotnet-version: 10.0.403
+          dotnet-version: 11.0.100
       - name: Test the PowerShell module instructions from README.md
         shell: powershell
         env:
@@ -69,7 +69,7 @@ jobs:
     steps:
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
-          dotnet-version: 10.0.403
+          dotnet-version: 11.0.100
       - run: brew install coreutils
         if: ${{ runner.os == 'macOS' }}
       - name: Create test directory
