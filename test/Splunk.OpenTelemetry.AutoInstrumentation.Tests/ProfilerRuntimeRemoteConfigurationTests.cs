@@ -347,10 +347,12 @@ public class ProfilerRuntimeRemoteConfigurationTests
             [ConfigurationKeys.Splunk.AlwaysOnProfiler.ProfilerMaxMemorySamples] = "137"
         }));
 
-        var configuration = configurationOmitted ? null : CreateConfiguration(new ProfilerConfiguration
-        {
-            AlwaysOn = new AlwaysOn { CpuProfiler = new CpuProfiler() }
-        });
+        var configuration = configurationOmitted
+            ? null
+            : CreateConfiguration(new ProfilerConfiguration
+            {
+                AlwaysOn = new AlwaysOn { CpuProfiler = new CpuProfiler() }
+            });
         ProfilerRuntimeConfiguration.Apply(configuration, (_, _) => { });
 
         Assert.False(ProfilerRuntimeConfiguration.Current.MemoryProfilerEnabled);
