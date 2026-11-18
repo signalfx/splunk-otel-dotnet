@@ -18,18 +18,21 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.EffectiveConfig;
 
 internal sealed class EffectiveProfilerState
 {
-    public EffectiveProfilerState(EffectiveProfilerFeatures features, uint cpuSamplingInterval, uint snapshotSamplingInterval)
+    public EffectiveProfilerState(EffectiveProfilerFeatures features, uint cpuSamplingInterval, uint snapshotSamplingInterval, uint maxMemorySamplesPerMinute)
     {
         Features = features;
         CpuSamplingInterval = cpuSamplingInterval;
         SnapshotSamplingInterval = snapshotSamplingInterval;
+        MaxMemorySamplesPerMinute = maxMemorySamplesPerMinute;
     }
 
-    public static EffectiveProfilerState None { get; } = new(EffectiveProfilerFeatures.None, 0, 0);
+    public static EffectiveProfilerState None { get; } = new(EffectiveProfilerFeatures.None, 0, 0, 0);
 
     public EffectiveProfilerFeatures Features { get; }
 
     public uint CpuSamplingInterval { get; }
 
     public uint SnapshotSamplingInterval { get; }
+
+    public uint MaxMemorySamplesPerMinute { get; }
 }
