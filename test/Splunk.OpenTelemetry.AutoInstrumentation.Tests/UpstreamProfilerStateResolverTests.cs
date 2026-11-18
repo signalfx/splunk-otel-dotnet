@@ -39,6 +39,11 @@ public class UpstreamProfilerStateResolverTests
         Assert.Equal(expected, state.Features);
         Assert.Equal(2000U, state.CpuSamplingInterval);
         Assert.Equal(40U, state.SnapshotSamplingInterval);
+#if NET
+        Assert.Equal(100u, state.MaxMemorySamplesPerMinute);
+#else
+        Assert.Equal(0u, state.MaxMemorySamplesPerMinute);
+#endif
     }
 
     [Fact]

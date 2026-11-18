@@ -34,6 +34,7 @@ The properties body contains the final values for:
 - `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`
 - `SPLUNK_PROFILER_ENABLED`
 - `SPLUNK_PROFILER_MEMORY_ENABLED`
+- `SPLUNK_PROFILER_MAX_MEMORY_SAMPLES`
 - `SPLUNK_SNAPSHOT_PROFILER_ENABLED`
 - `SPLUNK_SNAPSHOT_SAMPLING_INTERVAL`
 - `SPLUNK_SNAPSHOT_SELECTION_PROBABILITY`
@@ -45,6 +46,8 @@ reported as `false` because memory profiling is not supported on .NET Framework.
 Profiler enablement and active sampling intervals come from the upstream
 runtime sampler's committed configuration. Inactive features retain their
 configured interval defaults in the environment representation.
+The memory sample limit is reported as `0` while allocation sample collection
+is disabled.
 
 When instrumentation is configured with file-based configuration, the OpAMP
 effective configuration contains one file named after the configured YAML file
@@ -89,7 +92,8 @@ payload, then `Applied` after the payload is applied or `Failed` with an error
 message when the payload cannot be applied.
 
 After a remote configuration is applied, subsequent OpAMP effective
-configuration reports reflect the active CPU profiler runtime state.
+configuration reports reflect the active CPU and memory profiler runtime state,
+including the current maximum number of memory samples per minute.
 
 ### Remote configuration payload
 
@@ -100,6 +104,8 @@ distribution:
       always_on:
         cpu_profiler:
           sampling_interval: 10000
+        memory_profiler:
+          max_memory_samples: 200
 ```
 
 ### Runtime behavior
@@ -111,9 +117,10 @@ does not run, and remote configuration cannot enable or configure the .NET CLR
 Profiler at runtime.
 
 Enabling remote configuration initializes the continuous profiling pipeline at
-startup so that CPU profiling can be enabled later at runtime. This setup occurs
-even when CPU profiling is initially disabled.
-Native CPU sample collection remains disabled until CPU profiling is enabled,
+startup so that CPU and memory profiling can be enabled later at runtime. This
+setup occurs even when both profilers are initially disabled or the startup
+memory sample limit is zero.
+Native sample collection remains disabled until the corresponding profiler is enabled,
 but the initialized pipeline can still add CPU, memory, and thread overhead.
 Leave remote configuration disabled when runtime profiler activation is not
 required.
@@ -123,7 +130,18 @@ Supported at runtime:
 - `always_on.cpu_profiler`: enable or disable CPU profiling.
 - `always_on.cpu_profiler.sampling_interval`: change the CPU sampling interval in
   milliseconds. If omitted or zero, the default of `10000` ms is used.
+- `always_on.memory_profiler`: enable or disable memory profiling on .NET.
+  Memory profiling is not supported on .NET Framework.
+- `always_on.memory_profiler.max_memory_samples`: change the maximum number of
+  allocation samples collected per minute. Values from `1` to `200` are accepted.
+  If omitted, zero, or above `200`, the default of `200` is used.
+  Negative YAML values are invalid and cause the configuration update to be rejected.
+
+Each payload replaces the runtime CPU and memory profiling settings. Omitting
+either profiler section disables that profiler. An empty `memory_profiler`
+section enables memory profiling with the default limit, rather than preserving
+the previous remote or startup limit.
 
 When snapshots are enabled at startup, the CPU sampling interval is adjusted to
 a multiple of the snapshot sampling interval and is at least twice that interval.
-Snapshot and memory profiling settings retain their startup configuration.
+Snapshot and exporter settings retain their startup configuration.

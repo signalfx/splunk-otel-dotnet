@@ -54,8 +54,10 @@ public class EffectiveConfigPayloadBuilderTests
                 ["SPLUNK_PROFILER_ENABLED"] = "true",
 #if NET
                 ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "true",
+                ["SPLUNK_PROFILER_MAX_MEMORY_SAMPLES"] = "123",
 #else
                 ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
+                ["SPLUNK_PROFILER_MAX_MEMORY_SAMPLES"] = "0",
 #endif
                 ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "true",
                 ["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"] = "5000",
@@ -77,6 +79,7 @@ public class EffectiveConfigPayloadBuilderTests
             ["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"] = "none",
             ["SPLUNK_PROFILER_ENABLED"] = "false",
             ["SPLUNK_PROFILER_MEMORY_ENABLED"] = "false",
+            ["SPLUNK_PROFILER_MAX_MEMORY_SAMPLES"] = "0",
             ["SPLUNK_SNAPSHOT_PROFILER_ENABLED"] = "false",
             ["SPLUNK_SNAPSHOT_SAMPLING_INTERVAL"] = "40",
             ["SPLUNK_SNAPSHOT_SELECTION_PROBABILITY"] = "0.01",
@@ -200,6 +203,11 @@ public class EffectiveConfigPayloadBuilderTests
             memoryProfilerEnabled: memoryProfilerEnabled,
             snapshotProfilerEnabled: snapshotProfilerEnabled,
             cpuProfilerCallStackInterval: cpuProfilerCallStackInterval,
+#if NET
+            memoryProfilerMaxMemorySamplesPerMinute: memoryProfilerEnabled ? 123u : 0u,
+#else
+            memoryProfilerMaxMemorySamplesPerMinute: 0,
+#endif
             snapshotSamplingInterval: snapshotSamplingInterval,
             snapshotSelectionProbability: snapshotSelectionProbability);
     }
