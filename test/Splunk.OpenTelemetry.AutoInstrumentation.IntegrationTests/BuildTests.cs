@@ -40,7 +40,7 @@ public class BuildTests
     [Fact]
     public Task DistributionStructure()
     {
-        var distributionFolder = EnvironmentHelper.GetNukeBuildOutput();
+        var distributionFolder = EnvironmentHelper.GetFalloutBuildOutput();
         var files = Directory.GetFiles(distributionFolder, "*", SearchOption.AllDirectories);
 
         var relativesPaths = new List<string>(files.Length);

@@ -1,17 +1,17 @@
-using Nuke.Common;
-using Nuke.Common.IO;
-using Nuke.Common.ProjectModel;
-using Nuke.Common.Tooling;
-using Nuke.Common.Tools.DotNet;
+using Fallout.Common;
+using Fallout.Common.IO;
+using Fallout.Solutions;
+using Fallout.Common.Tooling;
+using Fallout.Common.Tools.DotNet;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Serilog;
-using static Nuke.Common.Tools.DotNet.DotNetTasks;
+using static Fallout.Common.Tools.DotNet.DotNetTasks;
 
-partial class Build : NukeBuild
+partial class Build : FalloutBuild
 {
-    private readonly static AbsolutePath TestNuGetPackageApps = NukeBuild.RootDirectory / "test" / "test-applications" / "nuget-package";
+    private readonly static AbsolutePath TestNuGetPackageApps = FalloutBuild.RootDirectory / "test" / "test-applications" / "nuget-package";
 
     [Solution("Splunk.OpenTelemetry.AutoInstrumentation.slnx")] readonly Solution Solution;
     public static int Main() => Execute<Build>(x => x.Workflow);

@@ -1,11 +1,11 @@
 using System.Runtime.InteropServices;
-using Nuke.Common;
-using Nuke.Common.IO;
-using Nuke.Common.Tools.DotNet;
+using Fallout.Common;
+using Fallout.Common.IO;
+using Fallout.Common.Tools.DotNet;
 
-using static Nuke.Common.Tools.DotNet.DotNetTasks;
+using static Fallout.Common.Tools.DotNet.DotNetTasks;
 
-partial class Build : NukeBuild
+partial class Build : FalloutBuild
 {
     readonly AbsolutePath NuGetPackageFolder = RootDirectory / "NuGetPackage";
 

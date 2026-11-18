@@ -54,7 +54,7 @@ public class EffectiveYamlSerializerTests
     {
         const string FrameworkDirectory = "net";
         var assemblyPath = Path.Combine(
-            EnvironmentHelper.GetNukeBuildOutput(),
+            EnvironmentHelper.GetFalloutBuildOutput(),
             FrameworkDirectory,
             "OpenTelemetry.AutoInstrumentation.dll");
         _ = Assembly.LoadFrom(assemblyPath);
