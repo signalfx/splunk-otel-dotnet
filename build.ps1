@@ -13,16 +13,22 @@ $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
 # CONFIGURATION
 ###########################################################################
 
-$BuildProjectFile = "$PSScriptRoot\build\_build.csproj"
-$TempDirectory = "$PSScriptRoot\\.fallout\temp"
+$TempDirectory = Join-Path $PSScriptRoot '.fallout/temp'
 
-$DotNetGlobalFile = "$PSScriptRoot\\global.json"
-$DotNetInstallFileDefault = "$PSScriptRoot\scripts\dotnet-install.ps1"
+$DotNetGlobalFile = Join-Path $PSScriptRoot 'global.json'
+$DotNetInstallFileDefault = Join-Path $PSScriptRoot 'scripts/dotnet-install.ps1'
 $DotNetInstallUrl = "https://dot.net/v1/dotnet-install.ps1"
 $DotNetChannel = "STS"
 
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = 1
 $env:DOTNET_NOLOGO = 1
+
+# Install by channel or version.
+# .NET 11+ packages are tar.gz. Windows tar refuses to extract when the
+# destination is reached through a symlink (Windows Runner's C:\Runner:
+# "too many symbolic link levels"). This switch makes the install script
+# download the zip and extract it with System.IO.Compression.
+$env:DOTNET_INSTALL_SKIP_TAR = "1"
 
 ###########################################################################
 # EXECUTION
@@ -33,38 +39,43 @@ function ExecSafe([scriptblock] $cmd) {
     if ($LASTEXITCODE) { exit $LASTEXITCODE }
 }
 
-# If dotnet CLI is installed globally and it matches requested version, use for execution
-if ($null -ne (Get-Command "dotnet" -ErrorAction SilentlyContinue) -and `
-     $(dotnet --version) -and $LASTEXITCODE -eq 0) {
-    $env:DOTNET_EXE = (Get-Command "dotnet").Path
-}
-else {
-    # Use local install script (preferred) or explicit override
-    $DotNetInstallFile = if (Test-Path env:DOTNET_INSTALL_FILE) { $env:DOTNET_INSTALL_FILE } else { $DotNetInstallFileDefault }
-    if (!(Test-Path $DotNetInstallFile)) {
-        throw "dotnet installer script not found: $DotNetInstallFile`nPlace a trusted copy at scripts/dotnet-install.ps1 (or set DOTNET_INSTALL_FILE).`nReference URL for obtaining the script: $DotNetInstallUrl"
+Push-Location -LiteralPath $PSScriptRoot
+try {
+    # If dotnet CLI is installed globally, use it; otherwise provision a local copy under .fallout/temp.
+    if ($null -ne (Get-Command "dotnet" -ErrorAction SilentlyContinue) -and `
+        $(dotnet --version) -and $LASTEXITCODE -eq 0) {
+        $env:DOTNET_EXE = (Get-Command "dotnet").Path
     }
-
-    # If global.json exists, load expected version
-    if (Test-Path $DotNetGlobalFile) {
-        $DotNetGlobal = $(Get-Content $DotNetGlobalFile | Out-String | ConvertFrom-Json)
-        if ($DotNetGlobal.PSObject.Properties["sdk"] -and $DotNetGlobal.sdk.PSObject.Properties["version"]) {
-            $DotNetVersion = $DotNetGlobal.sdk.version
+    else {
+        # Use the checked-in install script or an explicit override.
+        $DotNetInstallFile = if (Test-Path env:DOTNET_INSTALL_FILE) { $env:DOTNET_INSTALL_FILE } else { $DotNetInstallFileDefault }
+        if (!(Test-Path $DotNetInstallFile)) {
+            throw "dotnet installer script not found: $DotNetInstallFile`nPlace a trusted copy at scripts/dotnet-install.ps1 (or set DOTNET_INSTALL_FILE).`nReference URL for obtaining the script: $DotNetInstallUrl"
         }
+
+        if (Test-Path $DotNetGlobalFile) {
+            $DotNetGlobal = $(Get-Content $DotNetGlobalFile | Out-String | ConvertFrom-Json)
+            if ($DotNetGlobal.PSObject.Properties["sdk"] -and $DotNetGlobal.sdk.PSObject.Properties["version"]) {
+                $DotNetVersion = $DotNetGlobal.sdk.version
+            }
+        }
+
+        $DotNetDirectory = Join-Path $TempDirectory 'dotnet-win'
+        if (!(Test-Path variable:DotNetVersion)) {
+            ExecSafe { & powershell -NoProfile -ExecutionPolicy Bypass -File $DotNetInstallFile -InstallDir $DotNetDirectory -Channel $DotNetChannel -NoPath }
+        } else {
+            ExecSafe { & powershell -NoProfile -ExecutionPolicy Bypass -File $DotNetInstallFile -InstallDir $DotNetDirectory -Version $DotNetVersion -NoPath }
+        }
+        $env:DOTNET_EXE = Join-Path $DotNetDirectory 'dotnet.exe'
+        $env:DOTNET_ROOT = $DotNetDirectory
+        $env:PATH = "$DotNetDirectory;$env:PATH"
     }
 
-    # Install by channel or version
-    $DotNetDirectory = "$TempDirectory\dotnet-win"
-    if (!(Test-Path variable:DotNetVersion)) {
-        ExecSafe { & powershell $DotNetInstallFile -InstallDir $DotNetDirectory -Channel $DotNetChannel -NoPath }
-    } else {
-        ExecSafe { & powershell $DotNetInstallFile -InstallDir $DotNetDirectory -Version $DotNetVersion -NoPath }
-    }
-    $env:DOTNET_EXE = "$DotNetDirectory\dotnet.exe"
-    $env:PATH = "$DotNetDirectory;$env:PATH"
+    Write-Output "Microsoft (R) .NET SDK version $(& $env:DOTNET_EXE --version)"
+
+    ExecSafe { & $env:DOTNET_EXE tool restore }
+    ExecSafe { & $env:DOTNET_EXE fallout $BuildArguments }
 }
-
-Write-Output "Microsoft (R) .NET SDK version $(& $env:DOTNET_EXE --version)"
-
-ExecSafe { & $env:DOTNET_EXE build $BuildProjectFile /nodeReuse:false /p:UseSharedCompilation=false -nologo -clp:NoSummary --verbosity quiet }
-ExecSafe { & $env:DOTNET_EXE run --project $BuildProjectFile --no-build -- $BuildArguments }
+finally {
+    Pop-Location
+}
