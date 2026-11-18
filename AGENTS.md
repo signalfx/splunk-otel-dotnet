@@ -23,13 +23,13 @@ copies Splunk plugin binaries into it, then runs unit and integration tests.
 | `dotnet build src\Splunk.OpenTelemetry.AutoInstrumentation\Splunk.OpenTelemetry.AutoInstrumentation.csproj --framework net8.0` | Fast plugin build for local iteration |
 
 `net8.0` is a TFM used as a local iteration target;
-Use `./build.sh` on Linux for running Nuke targets.
+Use `./build.sh` on Linux for running Fallout targets.
 
 ## Testing
 
 - Integration tests use mock collectors and test applications under `test/test-applications/integrations/`.
 - Smoke tests expect `OpenTelemetryDistribution/` to contain freshly built plugin;
-run the Nuke workflow or the relevant build targets before relying on smoke results.
+run the Fallout workflow or the relevant build targets before relying on smoke results.
 
 ## Rules & Patterns
 
