@@ -65,6 +65,23 @@ internal static class ProfilerRuntimeConfiguration
         }
     }
 
+#if NET
+    internal static uint StartupMemoryProfilerMaxMemorySamplesPerMinute
+    {
+        get
+        {
+            lock (Sync)
+            {
+                var startupSettings = GetStartupSettings();
+                // A nonzero limit prepares allocation exports without enabling native collection.
+                return startupSettings.MemoryProfilerEnabled || startupSettings.OpAmpRemoteConfigEnabled
+                    ? PluginSettingsHelper.GetFinalMaxMemorySamples(startupSettings)
+                    : startupSettings.MemoryProfilerMaxMemorySamplesPerMinute;
+            }
+        }
+    }
+#endif
+
     public static void Initialize(PluginSettings settings)
     {
         settings = settings ?? throw new ArgumentNullException(nameof(settings));
@@ -97,6 +114,7 @@ internal static class ProfilerRuntimeConfiguration
                 nativeState.Features,
                 nativeState.CpuSamplingInterval,
                 nativeState.SnapshotSamplingInterval,
+                nativeState.MaxMemorySamplesPerMinute,
                 runtimeState.SnapshotsSelectionRate);
         }
     }

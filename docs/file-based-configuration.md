@@ -103,8 +103,8 @@ distribution:
         # Memory profiling is not supported on .NET Framework.
         memory_profiler:
           # Configure maximum memory samples collected per minute. 
-          # Maximum value is 500.
-          # If omitted or null, 200 is used.
+          # Maximum value is 200.
+          # If omitted, null, zero, or above 200, 200 is used.
           max_memory_samples: 200
       # Configure Callgraph snapshot profiler
       callgraphs:
@@ -201,9 +201,10 @@ distribution:
         # Memory profiling is not supported on .NET Framework.
         memory_profiler:
           # Configure maximum memory samples collected per minute. 
-          # Maximum value is 500.
-          # If omitted or null, 200 is used.
-          max_memory_samples: ${SPLUNK_PROFILER_MEMORY_MAX_SAMPLES}
+          # Maximum value is 200.
+          # If omitted, null, zero, or above 200, 200 is used.
+          # Negative values are invalid and cause the configuration to be rejected.
+          max_memory_samples: ${SPLUNK_PROFILER_MAX_MEMORY_SAMPLES}
       # Configure Callgraph snapshot profiler
       callgraphs:
         # Configure sampling interval.

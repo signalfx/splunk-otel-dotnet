@@ -54,7 +54,7 @@ public class NativeContinuousProfilerConfiguratorTests
     }
 
     [Fact]
-    public void NativeConfiguration_UsesControlPlaneAndPreservesStartupSnapshotIntervalAndMemorySettings()
+    public void NativeConfiguration_UsesControlPlaneAndAppliesRemoteSettingsWithStartupSnapshotInterval()
     {
         var binding = new NativeContinuousProfilerConfigurator.RuntimeConfigurationBinding(typeof(NativeMethodsStub));
         var startupSettings = new PluginSettings(
@@ -80,7 +80,11 @@ public class NativeContinuousProfilerConfiguratorTests
                 {
                     Profiling = new ProfilerConfiguration
                     {
-                        AlwaysOn = new AlwaysOn { CpuProfiler = new CpuProfiler { SamplingInterval = 312 } },
+                        AlwaysOn = new AlwaysOn
+                        {
+                            CpuProfiler = new CpuProfiler { SamplingInterval = 312 },
+                            MemoryProfiler = new MemoryProfiler { MaxMemorySamples = 137 }
+                        },
                         Callgraphs = new CallGraphsConfiguration { SamplingInterval = 104 }
                     }
                 }
@@ -92,14 +96,14 @@ public class NativeContinuousProfilerConfiguratorTests
         Assert.Equal(312u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
         Assert.Equal(78u, NativeMethodsStub.LastConfiguration.SnapshotSamplingInterval);
 #if NET
-        Assert.Equal(123u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
+        Assert.Equal(137u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
 #else
         Assert.Equal(0u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
 #endif
     }
 
     [Fact]
-    public void NativeConfiguration_DisablesCpuAndCallgraphsWhilePreservingMemorySettings()
+    public void NativeConfiguration_DisablesOmittedProfilers()
     {
         var startupSettings = new PluginSettings(
             new NameValueConfigurationSource(
@@ -117,12 +121,40 @@ public class NativeContinuousProfilerConfiguratorTests
         var binding = new NativeContinuousProfilerConfigurator.RuntimeConfigurationBinding(typeof(NativeMethodsStub));
         NativeMethodsStub.Result = ApplyResult.Applied;
 
-        binding.Configure(startupSettings, CreateState(cpuProfilerEnabled: false, cpuProfilerCallStackInterval: 156));
+        binding.Configure(startupSettings, ProfilerRemoteConfigState.FromRemoteConfiguration(null, startupSettings));
 
         Assert.Equal(0u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
         Assert.Equal(0u, NativeMethodsStub.LastConfiguration.SnapshotSamplingInterval);
+        Assert.Equal(0u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
+    }
+
+    [Theory]
+    [InlineData((uint)Constants.DefaultMaxMemorySamples)]
+    [InlineData(123u)]
+    public void NativeConfiguration_EnablesMemoryProfilingFromDisabledStartup(uint maxMemorySamples)
+    {
+        var startupSettings = new PluginSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        var binding = new NativeContinuousProfilerConfigurator.RuntimeConfigurationBinding(typeof(NativeMethodsStub));
+        NativeMethodsStub.Result = ApplyResult.Applied;
+
+        var configuration = new YamlRoot
+        {
+            Distribution = new Distribution
+            {
+                Splunk = new SplunkConfiguration
+                {
+                    Profiling = new ProfilerConfiguration
+                    {
+                        AlwaysOn = new AlwaysOn { MemoryProfiler = new MemoryProfiler { MaxMemorySamples = maxMemorySamples } }
+                    }
+                }
+            }
+        };
+        binding.Configure(startupSettings, ProfilerRemoteConfigState.FromRemoteConfiguration(configuration, startupSettings));
+
+        Assert.Equal(0u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
 #if NET
-        Assert.Equal(123u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
+        Assert.Equal(maxMemorySamples, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
 #else
         Assert.Equal(0u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
 #endif

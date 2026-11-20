@@ -37,7 +37,7 @@ public class OpAmpRemoteConfigurationListenerTests
     public void InvalidYamlIsNotRetriedAndNewConfigurationCanBeApplied(string invalidYaml)
     {
         var assemblyPath = Path.Combine(
-            EnvironmentHelper.GetNukeBuildOutput(),
+            EnvironmentHelper.GetFalloutBuildOutput(),
             "net",
             "OpenTelemetry.AutoInstrumentation.dll");
         _ = Assembly.LoadFrom(assemblyPath);
@@ -93,7 +93,7 @@ public class OpAmpRemoteConfigurationListenerTests
     [InlineData("callgraphs:\n        sampling_interval: 80\n        selection_probability: 0.75", 40u, 0.75)]
     public void CallgraphsUseFileBasedYamlParserAndKeepStartupSamplingInterval(string callgraphs, uint expectedInterval, double expectedProbability)
     {
-        _ = Assembly.LoadFrom(Path.Combine(EnvironmentHelper.GetNukeBuildOutput(), "net", "OpenTelemetry.AutoInstrumentation.dll"));
+        _ = Assembly.LoadFrom(Path.Combine(EnvironmentHelper.GetFalloutBuildOutput(), "net", "OpenTelemetry.AutoInstrumentation.dll"));
         ProfilerRuntimeConfiguration.Initialize(new PluginSettings(new YamlRoot()));
         var reports = new List<RemoteConfigStatusReport>();
         var listener = new OpAmpRemoteConfigurationListener(

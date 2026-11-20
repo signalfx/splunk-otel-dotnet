@@ -1,9 +1,9 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0.403-alpine3.24@sha256:5562fd626eec39f6f53218f9b7d7856ab7195d51d846568304fbe85071a3b6e6
+FROM mcr.microsoft.com/dotnet/sdk:11.0.100-alpine3.24@sha256:52556c0fb9d0f609ae9aeab9efeeba96f4acc2f7038f7696f2235ccbdbb8e290
 
 # renovate: datasource=repology depName=cmake
 ENV CMAKE_VERSION="4.2.3-r0"
-# renovate: datasource=repology depName=clang
-ENV CLANG_VERSION="22.1.3-r2"
+# renovate: datasource=repology depName=clang22
+ENV CLANG22_VERSION="22.1.3-r2"
 # renovate: datasource=repology depName=make
 ENV MAKE_VERSION="4.4.1-r4"
 # renovate: datasource=repology depName=bash
@@ -27,7 +27,7 @@ RUN apk update \
     && apk upgrade \
     && apk add --no-cache --update \
         cmake="${CMAKE_VERSION}" \
-        clang="${CLANG_VERSION}" \
+        clang22="${CLANG22_VERSION}" \
         make="${MAKE_VERSION}" \
         bash="${BASH_PACKAGE_VERSION}" \
         alpine-sdk="${ALPINE_SDK_VERSION}" \
@@ -42,17 +42,16 @@ RUN curl -sSfL "https://github.com/cli/cli/releases/download/v${GITHUB_CLI_VERSI
     && mv "/tmp/gh_${GITHUB_CLI_VERSION}_linux_${GITHUB_CLI_ARCH}/bin/gh" /usr/local/bin/gh \
     && rm -rf /tmp/gh.tar.gz "/tmp/gh_${GITHUB_CLI_VERSION}_linux_${GITHUB_CLI_ARCH}"
 
+# Make the unversioned Clang compiler binaries available to CMake.
+ENV PATH="/usr/lib/llvm22/bin:$PATH"
 ENV IsAlpine=true
 ENV PROTOBUF_PROTOC=/usr/bin/protoc
 ENV gRPC_PluginFullPath=/usr/bin/grpc_csharp_plugin
 
-# Install older sdks using the install script
-RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
-    && echo "SHA256: $(sha256sum dotnet-install.sh)" \
-    && echo "082f7685e156738a1b2e2ed8381a621870d4ce8e8c59278034556f05c186eb2e  dotnet-install.sh" | sha256sum -c \
-    && chmod +x ./dotnet-install.sh \
-    && ./dotnet-install.sh -v 9.0.320 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh -v 8.0.427 --install-dir /usr/share/dotnet --no-path \
+COPY ./scripts/dotnet-install.sh ./dotnet-install.sh
+
+RUN chmod +x ./dotnet-install.sh \
+    && ./dotnet-install.sh -v 10.0.404 --install-dir /usr/share/dotnet --no-path --skip-non-versioned-files \
     && rm dotnet-install.sh
 
 WORKDIR /project

@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
-          dotnet-version: 10.0.403
+          dotnet-version: 11.0.100
       - name: Test the PowerShell module instructions from README.md
         shell: powershell
         env:
@@ -23,8 +23,8 @@ jobs:
         run: |
           mkdir testapp
           cd testapp
-          dotnet new console
-          dotnet publish -f net10.0 -c Release
+          dotnet new console --framework net11.0
+          dotnet publish -f net11.0 -c Release
           $module_url = "https://github.com/$env:GITHUB_REPOSITORY_NAME/releases/download/$env:RELEASE_TAG_NAME/Splunk.OTel.DotNet.psm1"
           $dl_path = Join-Path $env:temp "Splunk.OTel.DotNet.psm1"
           $log_path = "C:\ProgramData\OpenTelemetry .NET AutoInstrumentation\logs\*"
@@ -40,12 +40,12 @@ jobs:
           Install-OpenTelemetryCore -ErrorAction Stop
           $install_dir = Get-OpenTelemetryInstallDirectory
           Register-OpenTelemetryForCurrentSession -OTelServiceName "MyServiceDisplayName"
-          ./bin/Release/net10.0/publish/testapp
+          ./bin/Release/net11.0/publish/testapp
           if (-not $?) { throw "dotnet help returned exit code: $LASTEXITCODE" }
           if (-not (Test-Path $log_path)) { throw "Log file does not exist. Instrumentation test failed." }
           Remove-Item $log_path
           Unregister-OpenTelemetryForCurrentSession
-          ./bin/Release/net10.0/publish/testapp
+          ./bin/Release/net11.0/publish/testapp
           if (-not $?) { throw "dotnet help returned exit code: $LASTEXITCODE" }
           if (Test-Path $log_path) { throw "Log file exists. Instrumentation unregister failed." }
           Uninstall-OpenTelemetryCore
@@ -69,7 +69,7 @@ jobs:
     steps:
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
-          dotnet-version: 10.0.403
+          dotnet-version: 11.0.100
       - run: brew install coreutils
         if: ${{ runner.os == 'macOS' }}
       - name: Create test directory
@@ -89,8 +89,8 @@ jobs:
         run: |
           mkdir testapp
           cd testapp
-          dotnet new console
-          dotnet publish -f net10.0 -c Release
+          dotnet new console --framework net11.0
+          dotnet publish -f net11.0 -c Release
           set -e
           curl -sSfL "https://github.com/${GITHUB_REPOSITORY_NAME}/releases/download/${RELEASE_TAG_NAME}/splunk-otel-dotnet-install.sh" -O
           gh release verify-asset "${RELEASE_TAG_NAME}" ./splunk-otel-dotnet-install.sh --repo "${GITHUB_REPOSITORY_NAME}"
@@ -102,7 +102,7 @@ jobs:
             test "$(ls -A "$HOME/.splunk-otel-dotnet")"
           curl -sSfL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/instrument.sh -O
           . ./instrument.sh
-          ./bin/Release/net10.0/publish/testapp
+          ./bin/Release/net11.0/publish/testapp
             test "$(ls -A '${{ matrix.log-dir }}' )"
 
   shell-scripts-container:
@@ -145,13 +145,13 @@ jobs:
             set -e
             mkdir testapp
             cd testapp
-            dotnet new console
-            dotnet publish /p:TreatWarningsAsErrors=false -f net10.0 -c Release
+            dotnet new console --framework net11.0
+            dotnet publish /p:TreatWarningsAsErrors=false -f net11.0 -c Release
             cp /tmp/splunk-otel-dotnet-install.sh ./splunk-otel-dotnet-install.sh
             sh ./splunk-otel-dotnet-install.sh
               test "$(ls -A "$HOME/.splunk-otel-dotnet")"
             curl -sSfL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/instrument.sh -O
             . ./instrument.sh
-            ./bin/Release/net10.0/publish/testapp
+            ./bin/Release/net11.0/publish/testapp
               test "$(ls -A /var/log/opentelemetry/dotnet )"
           '

@@ -8,7 +8,7 @@ Effective configuration reporting is enabled when OpAMP is enabled and the
 active configuration passes startup validation. Automatic SDK setup is required;
 `OTEL_SDK_DISABLED=true` remains supported as a valid no-op SDK configuration.
 
-See the [upstream OpAMP plugin documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.1/docs/plugins.md#opamp)
+See the [upstream OpAMP plugin documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.20.0/docs/plugins.md#opamp)
 for reporting behavior, plugin selection, and client lifecycle.
 Remote configuration is available through the opt-in Splunk feature described
 below.
@@ -18,8 +18,8 @@ below.
 Configure the OpAMP client through the OpenTelemetry .NET auto-instrumentation
 OpAMP options:
 
-- [Environment variables](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.1/docs/config.md#opamp-client)
-- [File-based configuration](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.1/docs/file-based-configuration.md#opamp)
+- [Environment variables](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.20.0/docs/config.md#opamp-client)
+- [File-based configuration](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.20.0/docs/file-based-configuration.md#opamp)
 
 ## Effective configuration contents
 
@@ -34,6 +34,7 @@ The properties body contains the final values for:
 - `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`
 - `SPLUNK_PROFILER_ENABLED`
 - `SPLUNK_PROFILER_MEMORY_ENABLED`
+- `SPLUNK_PROFILER_MAX_MEMORY_SAMPLES`
 - `SPLUNK_SNAPSHOT_PROFILER_ENABLED`
 - `SPLUNK_SNAPSHOT_SAMPLING_INTERVAL`
 - `SPLUNK_SNAPSHOT_SELECTION_PROBABILITY`
@@ -45,6 +46,8 @@ reported as `false` because memory profiling is not supported on .NET Framework.
 Profiler enablement and active sampling intervals come from the upstream
 runtime sampler's committed configuration. Inactive features retain their
 configured interval defaults in the environment representation.
+The memory sample limit is reported as `0` while allocation sample collection
+is disabled.
 
 When instrumentation is configured with file-based configuration, the OpAMP
 effective configuration contains one file named after the configured YAML file
@@ -89,8 +92,9 @@ payload, then `Applied` after the payload is applied or `Failed` with an error
 message when the payload cannot be applied.
 
 After a remote configuration is applied, subsequent OpAMP effective
-configuration reports reflect the active CPU and Callgraph profiler runtime state,
-including the current trace selection probability.
+configuration reports reflect the active CPU, memory, and Callgraph profiling
+settings, including the memory sample limit per minute and the trace selection
+probability.
 
 ### Remote configuration payload
 
@@ -101,6 +105,8 @@ distribution:
       always_on:
         cpu_profiler:
           sampling_interval: 10000
+        memory_profiler:
+          max_memory_samples: 200
       callgraphs:
         selection_probability: 0.01
 ```
@@ -108,13 +114,14 @@ distribution:
 ### Runtime behavior
 
 Profiling remote configuration only works when the
-[.NET CLR Profiler](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.1/docs/config.md#net-clr-profiler)
+[.NET CLR Profiler](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.20.0/docs/config.md#net-clr-profiler)
 is enabled before the process starts. Without the .NET CLR Profiler, profiling
 does not run, and remote configuration cannot enable or configure the .NET CLR
 Profiler at runtime.
 
 Enabling remote configuration initializes the continuous and Callgraph profiling
-pipelines at startup so that either profiler can be enabled later at runtime.
+pipelines at startup so that CPU profiling, memory profiling, and Callgraphs can
+be enabled at runtime.
 This setup occurs even when profiling is initially disabled. Sample collection
 follows the startup configuration until a remote configuration is accepted,
 but the initialized pipelines can still add CPU, memory, and thread overhead.
@@ -126,8 +133,13 @@ Supported at runtime:
 - `always_on.cpu_profiler`: enable or disable CPU profiling.
 - `always_on.cpu_profiler.sampling_interval`: change the CPU sampling interval in
   milliseconds. If omitted or zero, the default of `10000` ms is used.
-- `callgraphs`: enable Callgraph snapshot profiling. Omitting this section disables
-  it, including when it was enabled at startup.
+- `always_on.memory_profiler`: enable or disable memory profiling on .NET.
+  Memory profiling is not supported on .NET Framework.
+- `always_on.memory_profiler.max_memory_samples`: change the maximum number of
+  allocation samples collected per minute. Values from `1` to `200` are accepted.
+  If omitted, zero, or above `200`, the default of `200` is used.
+  Negative YAML values are invalid and cause the configuration update to be rejected.
+- `callgraphs`: enable Callgraph snapshot profiling.
 - `callgraphs.selection_probability`: change the probability of selecting new
   traces. If omitted, the default of `0.01` is used. Values are normalized
   using the same rules as file-based configuration: zero, negative, or NaN values
@@ -140,8 +152,8 @@ The default is `40` ms. Remote `callgraphs.sampling_interval` values are ignored
 
 When Callgraphs are enabled, the CPU sampling interval is adjusted to a multiple
 of the startup snapshot sampling interval and is at least twice that interval.
-Each remote payload replaces CPU enablement, the CPU sampling interval, Callgraph
-enablement, and trace selection probability; omitted configurable values use
-file-based defaults rather than values from the previous payload.
-Memory profiling, exporter settings, and the high-resolution timer retain their
-startup configuration.
+Each remote payload replaces CPU, memory, and Callgraph profiling settings. An
+omitted profiler section disables that profiler. If a profiler section is present
+and omits a configurable value, the file-based default applies.
+
+Configure the profiler exporter and high-resolution timer at startup.

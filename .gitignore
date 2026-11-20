@@ -453,9 +453,9 @@ $RECYCLE.BIN/
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# ignore nuke config
-.nuke/temp/*
-.nuke/build.schema.json
+# ignore fallout config
+.fallout/temp/*
+.fallout/build.schema.json
 
 NuGetPackage/
 OpenTelemetryDistribution/*

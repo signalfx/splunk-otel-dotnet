@@ -297,9 +297,11 @@ public class OtlpEndpointProviderGraphResolverTests
             .Build();
 
         Assert.Equal(
-            [EffectiveOtlpEndpoint.Grpc(
-                "http://collector:4317/opentelemetry.proto.collector.metrics.v1.MetricsService/Export",
-                EffectiveOtlpPipelineType.Periodic)],
+            [
+                EffectiveOtlpEndpoint.Grpc(
+                    "http://collector:4317/opentelemetry.proto.collector.metrics.v1.MetricsService/Export",
+                    EffectiveOtlpPipelineType.Periodic)
+            ],
             OtlpEndpointProviderGraphResolver.ResolveMetricEndpoints(provider));
     }
 

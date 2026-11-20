@@ -27,7 +27,14 @@ internal sealed class ProfilerRemoteConfigState
             settings.CpuProfilerCallStackInterval,
             settings.SnapshotsEnabled,
             settings.SnapshotsSamplingInterval,
-            settings.SnapshotsSelectionRate)
+            settings.SnapshotsSelectionRate,
+#if NET
+            settings.MemoryProfilerEnabled,
+            PluginSettingsHelper.GetFinalMaxMemorySamples(settings))
+#else
+            memoryProfilerEnabled: false,
+            memoryProfilerMaxMemorySamplesPerMinute: 0)
+#endif
     {
     }
 
@@ -36,7 +43,9 @@ internal sealed class ProfilerRemoteConfigState
         long cpuProfilerCallStackInterval,
         bool snapshotsEnabled,
         uint snapshotsSamplingInterval,
-        double snapshotsSelectionRate)
+        double snapshotsSelectionRate,
+        bool memoryProfilerEnabled,
+        uint memoryProfilerMaxMemorySamplesPerMinute)
     {
         CpuProfilerEnabled = cpuProfilerEnabled;
         SnapshotsEnabled = snapshotsEnabled;
@@ -45,11 +54,17 @@ internal sealed class ProfilerRemoteConfigState
             cpuProfilerCallStackInterval, snapshotsEnabled, SnapshotsSamplingInterval);
         SnapshotsSelectionRate = PluginSettingsHelper.GetFinalSnapshotSelectionProbability(snapshotsSelectionRate);
         SnapshotSelector = new TraceIdBasedSnapshotSelector(SnapshotsSelectionRate);
+        MemoryProfilerEnabled = memoryProfilerEnabled;
+        MemoryProfilerMaxMemorySamplesPerMinute = memoryProfilerMaxMemorySamplesPerMinute;
     }
 
     public bool CpuProfilerEnabled { get; }
 
     public uint CpuProfilerCallStackInterval { get; }
+
+    public bool MemoryProfilerEnabled { get; }
+
+    public uint MemoryProfilerMaxMemorySamplesPerMinute { get; }
 
     public bool SnapshotsEnabled { get; }
 
@@ -63,11 +78,22 @@ internal sealed class ProfilerRemoteConfigState
     {
         var profiling = configuration?.Distribution?.Splunk?.Profiling;
         var cpuProfiler = profiling?.AlwaysOn?.CpuProfiler;
+        var callgraphs = profiling?.Callgraphs;
+#if NET
+        var memoryProfiler = profiling?.AlwaysOn?.MemoryProfiler;
+#endif
         return new ProfilerRemoteConfigState(
             cpuProfiler != null,
             cpuProfiler?.SamplingInterval ?? Constants.DefaultSamplingInterval,
-            profiling?.Callgraphs != null,
+            callgraphs != null,
             startupSettings.SnapshotsSamplingInterval,
-            profiling?.Callgraphs?.SelectionProbability ?? Constants.DefaultSnapshotSelectionRate);
+            callgraphs?.SelectionProbability ?? Constants.DefaultSnapshotSelectionRate,
+#if NET
+            memoryProfiler != null,
+            memoryProfiler != null ? PluginSettingsHelper.GetFinalMaxMemorySamples(memoryProfiler.MaxMemorySamples) : 0);
+#else
+            memoryProfilerEnabled: false,
+            memoryProfilerMaxMemorySamplesPerMinute: 0);
+#endif
     }
 }

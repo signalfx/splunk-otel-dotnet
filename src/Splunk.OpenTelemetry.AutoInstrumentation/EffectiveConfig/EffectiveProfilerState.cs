@@ -22,15 +22,17 @@ internal sealed class EffectiveProfilerState
         EffectiveProfilerFeatures features,
         uint cpuSamplingInterval,
         uint snapshotSamplingInterval,
+        uint maxMemorySamplesPerMinute = 0,
         double? snapshotSelectionProbability = null)
     {
         Features = features;
         CpuSamplingInterval = cpuSamplingInterval;
         SnapshotSamplingInterval = snapshotSamplingInterval;
+        MaxMemorySamplesPerMinute = maxMemorySamplesPerMinute;
         SnapshotSelectionProbability = snapshotSelectionProbability;
     }
 
-    public static EffectiveProfilerState None { get; } = new(EffectiveProfilerFeatures.None, 0, 0);
+    public static EffectiveProfilerState None { get; } = new(EffectiveProfilerFeatures.None, 0, 0, 0);
 
     public EffectiveProfilerFeatures Features { get; }
 
@@ -38,5 +40,6 @@ internal sealed class EffectiveProfilerState
 
     public uint SnapshotSamplingInterval { get; }
 
+    public uint MaxMemorySamplesPerMinute { get; }
     public double? SnapshotSelectionProbability { get; }
 }
