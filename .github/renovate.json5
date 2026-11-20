@@ -22,7 +22,7 @@
       matchStrings: [
         "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s*\\n\\s*ENV\\s+.*?_VERSION=\"(?<currentValue>[^\"]+)\"",
       ],
-      packageNameTemplate: "alpine_3_23/{{{depName}}}",
+      packageNameTemplate: "alpine_3_24/{{{depName}}}",
       versioningTemplate: "apk",
     },
   ],
