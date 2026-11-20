@@ -5,22 +5,9 @@ All notable changes to this component are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.17.0...HEAD)
-
-This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.20.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.20.0).
-
-> [!WARNING]
-> This release of the Splunk Distribution of OpenTelemetry .NET drops support
-> for .NET 8 and .NET 9. Both reached end of support on November 10, 2026.
-> Customers who want to continue instrumenting .NET 8 or .NET 9 services must use
-> Splunk Distribution of OpenTelemetry .NET version 1.17.0 or less.
+## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.18.0...HEAD)
 
 ### Added
-
-- Experimental support for OpAMP remote configuration for memory profiling.
-- `linux/arm64` support in the .NET auto-instrumentation image for the OpenTelemetry Operator.
-- Experimental support for OpAMP remote configuration for Callgraphs, including
-  enabling or disabling Callgraphs and updating the trace selection probability.
 
 ### Changed
 
@@ -31,6 +18,26 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.20.0
 ### Fixed
 
 ### Security
+
+## [1.17.0](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.17.0)
+
+This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.20.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.20.0).
+
+> [!WARNING]
+> This release of the Splunk Distribution of OpenTelemetry .NET drops support
+> for .NET 8 and .NET 9. Both reached end of support on November 10, 2026.
+> Customers who want to continue instrumenting .NET 8 or .NET 9 services must use
+> Splunk Distribution of OpenTelemetry .NET version 1.17.0 or less.
+> Best effort support for Splunk Distribution of OpenTelemetry .NET is provided
+> up to May 10, 2027 for the last versions of .NET 8 (version 8.0.34)
+> or .NET 9 (version 9.0.23) only.
+
+### Added
+
+- Experimental support for OpAMP remote configuration for memory profiling.
+- `linux/arm64` support in the .NET auto-instrumentation image for the OpenTelemetry Operator.
+- Experimental support for OpAMP remote configuration for Callgraphs, including
+  enabling or disabling Callgraphs and updating the trace selection probability.
 
 ## [1.17.0](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.17.0)
 
