@@ -18,6 +18,7 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.20.0
 ### Added
 
 - Experimental support for OpAMP remote configuration for memory profiling.
+- `linux/arm64` support in the .NET auto-instrumentation image for the OpenTelemetry Operator.
 - Experimental support for OpAMP remote configuration for Callgraphs, including
   enabling or disabling Callgraphs and updating the trace selection probability.
 
