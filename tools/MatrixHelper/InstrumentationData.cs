@@ -170,8 +170,10 @@ internal static class InstrumentationData
                     new MetricData("process.memory.usage", upDownCounter, "The amount of physical memory allocated for this process.", conditionallyBundled),
                     new("process.memory.virtual", upDownCounter, "The amount of committed virtual memory for this process.", conditionallyBundled),
                     new MetricData("process.cpu.time", counter, "Total CPU seconds broken down by different states, such as user and system.", conditionallyBundled),
-                    new("process.cpu.count", upDownCounter, "Total CPU seconds broken down by different states, such as user and system.", conditionallyBundled),
-                    new("process.threads", upDownCounter, "Process threads count.", conditionallyBundled))
+                    new("process.thread.count", upDownCounter, "Number of threads in the process.", conditionallyBundled),
+                    new("process.uptime", gauge, "Time in seconds since the process started.", conditionallyBundled),
+                    new("process.windows.handle.count", upDownCounter, "Number of handles held by the process on Windows.", conditionallyBundled),
+                    new("process.unix.file_descriptor.count", upDownCounter, "Number of file descriptors in use by the process on Linux.", conditionallyBundled))
             ]),
             new("ILOGGER", new InstrumentedComponent("Microsoft.Extensions.Logging", "8.0.0 and higher"), "Not supported on .NET Framework", "beta", "community", new LogLists()),
             new(["LOG4NET"], [new InstrumentedComponent("log4net", "2.0.13 to 4.0.0")], null, "beta", "community", [], [new LogLists()], [new Setting("OTEL_DOTNET_AUTO_LOGS_ENABLE_LOG4NET_BRIDGE", "Enables `log4net` bridge. When `log4net` logs bridge is enabled, and `log4net` is configured with at least 1 appender, application logs are exported in OTLP format in addition to being written into their currently configured destination.", "false", "boolean", SettingsData.InstrumentationCategory)]),
