@@ -30,7 +30,7 @@ internal sealed class ProfilerRemoteConfigState
             settings.SnapshotsSelectionRate,
 #if NET
             settings.MemoryProfilerEnabled,
-            PluginSettingsHelper.GetFinalMaxMemorySamples(settings))
+            settings.MemoryProfilerMaxMemorySamplesPerMinute)
 #else
             memoryProfilerEnabled: false,
             memoryProfilerMaxMemorySamplesPerMinute: 0)
@@ -40,7 +40,7 @@ internal sealed class ProfilerRemoteConfigState
 
     private ProfilerRemoteConfigState(
         bool cpuProfilerEnabled,
-        long cpuProfilerCallStackInterval,
+        uint cpuProfilerCallStackInterval,
         bool snapshotsEnabled,
         uint snapshotsSamplingInterval,
         double snapshotsSelectionRate,
@@ -50,9 +50,8 @@ internal sealed class ProfilerRemoteConfigState
         CpuProfilerEnabled = cpuProfilerEnabled;
         SnapshotsEnabled = snapshotsEnabled;
         SnapshotsSamplingInterval = PluginSettingsHelper.GetFinalSnapshotSamplingInterval(snapshotsSamplingInterval);
-        CpuProfilerCallStackInterval = PluginSettingsHelper.GetFinalContinuousSamplingInterval(
-            cpuProfilerCallStackInterval, snapshotsEnabled, SnapshotsSamplingInterval);
-        SnapshotsSelectionRate = PluginSettingsHelper.GetFinalSnapshotSelectionProbability(snapshotsSelectionRate);
+        CpuProfilerCallStackInterval = cpuProfilerCallStackInterval;
+        SnapshotsSelectionRate = snapshotsSelectionRate;
         SnapshotSelector = new TraceIdBasedSnapshotSelector(SnapshotsSelectionRate);
         MemoryProfilerEnabled = memoryProfilerEnabled;
         MemoryProfilerMaxMemorySamplesPerMinute = memoryProfilerMaxMemorySamplesPerMinute;
@@ -77,6 +76,12 @@ internal sealed class ProfilerRemoteConfigState
     public static ProfilerRemoteConfigState FromRemoteConfiguration(YamlRoot? configuration, PluginSettings startupSettings)
     {
         var profiling = configuration?.Distribution?.Splunk?.Profiling;
+        var snapshotsSamplingInterval = startupSettings.SnapshotsSamplingInterval;
+        if (ProfilerRemoteConfigValidator.GetValidationError(profiling, snapshotsSamplingInterval) is { } error)
+        {
+            throw new ValidationException(error);
+        }
+
         var cpuProfiler = profiling?.AlwaysOn?.CpuProfiler;
         var callgraphs = profiling?.Callgraphs;
 #if NET
@@ -86,14 +91,16 @@ internal sealed class ProfilerRemoteConfigState
             cpuProfiler != null,
             cpuProfiler?.SamplingInterval ?? Constants.DefaultSamplingInterval,
             callgraphs != null,
-            startupSettings.SnapshotsSamplingInterval,
+            snapshotsSamplingInterval,
             callgraphs?.SelectionProbability ?? Constants.DefaultSnapshotSelectionRate,
 #if NET
             memoryProfiler != null,
-            memoryProfiler != null ? PluginSettingsHelper.GetFinalMaxMemorySamples(memoryProfiler.MaxMemorySamples) : 0);
+            memoryProfiler?.MaxMemorySamples ?? 0);
 #else
             memoryProfilerEnabled: false,
             memoryProfilerMaxMemorySamplesPerMinute: 0);
 #endif
     }
+
+    internal sealed class ValidationException(string message) : FormatException(message);
 }
