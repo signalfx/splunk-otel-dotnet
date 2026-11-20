@@ -18,6 +18,7 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.20.0
 ### Added
 
 - Experimental support for OpAMP remote configuration for memory profiling.
+- `linux/arm64` support in the .NET auto-instrumentation image for the OpenTelemetry Operator.
 
 ### Changed
 
@@ -41,7 +42,6 @@ This release includes all changes from following versions:
 ### Added
 
 - Experimental support for OpAMP remote configuration for CPU profiling.
-- Support for `arm64` in the Splunk OpenTelemetry Collector for Kubernetes.
 
 ### Changed
 
