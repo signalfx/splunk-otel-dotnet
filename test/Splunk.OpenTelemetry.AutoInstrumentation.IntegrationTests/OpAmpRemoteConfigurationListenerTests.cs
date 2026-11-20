@@ -27,26 +27,45 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests;
 
 public class OpAmpRemoteConfigurationListenerTests
 {
+    private const string CpuProfilerYaml = "distribution:\n  splunk:\n    profiling:\n      always_on:\n        cpu_profiler:\n";
+    private const string ValidCpuYaml = CpuProfilerYaml + "          sampling_interval: 1234\n";
+    private const string MemoryProfilerYaml = ValidCpuYaml + "        memory_profiler:\n";
+    private const string CallgraphsYaml = CpuProfilerYaml + "          sampling_interval: 1200\n      callgraphs:\n";
+
     [Theory]
     [InlineData("distribution: [")]
-    [InlineData("distribution:\n  splunk:\n    profiling:\n      always_on:\n        cpu_profiler:\n          sampling_interval: invalid\n")]
-    [InlineData("distribution:\n  splunk:\n    profiling:\n      callgraphs:\n        sampling_interval: invalid\n")]
-    [InlineData("distribution:\n  splunk:\n    profiling:\n      callgraphs:\n        selection_probability: invalid\n")]
-    [InlineData("distribution:\n  splunk:\n    profiling:\n      callgraphs:\n        sampling_interval: null\n")]
-    [InlineData("distribution:\n  splunk:\n    profiling:\n      callgraphs:\n        selection_probability: null\n")]
-    public void InvalidYamlIsNotRetriedAndNewConfigurationCanBeApplied(string invalidYaml)
+    [InlineData(CpuProfilerYaml + "          sampling_interval: invalid\n")]
+    [InlineData(CpuProfilerYaml + "          sampling_interval: -1\n")]
+    [InlineData(CpuProfilerYaml + "          sampling_interval: 0\n")]
+    [InlineData(CpuProfilerYaml + "          sampling_interval: 4294967296\n")]
+    [InlineData(CpuProfilerYaml + "          sampling_interval: 1000\n      callgraphs:\n        sampling_interval: 40\n        selection_probability: 0.75\n")]
+    [InlineData(CpuProfilerYaml + "          sampling_interval: 80\n      callgraphs: {}\n")]
+    [InlineData(MemoryProfilerYaml + "          max_memory_samples: -1\n")]
+    [InlineData(MemoryProfilerYaml + "          max_memory_samples: 0\n")]
+    [InlineData(MemoryProfilerYaml + "          max_memory_samples: 201\n")]
+    [InlineData(CallgraphsYaml + "        sampling_interval: invalid\n")]
+    [InlineData(CallgraphsYaml + "        sampling_interval: null\n")]
+    [InlineData(CallgraphsYaml + "        selection_probability: invalid\n")]
+    [InlineData(CallgraphsYaml + "        selection_probability: null\n")]
+    [InlineData(CallgraphsYaml + "        selection_probability: -0.1\n")]
+    [InlineData(CallgraphsYaml + "        selection_probability: 0\n")]
+    [InlineData(CallgraphsYaml + "        selection_probability: 1.1\n")]
+    [InlineData(CallgraphsYaml + "        selection_probability: NaN\n")]
+    [InlineData(CallgraphsYaml + "        selection_probability: Infinity\n")]
+    public void InvalidPayloadLeavesPreviousConfigurationActiveAndIsNotRetried(string invalidYaml)
     {
         var assemblyPath = Path.Combine(
             EnvironmentHelper.GetFalloutBuildOutput(),
             "net",
             "OpenTelemetry.AutoInstrumentation.dll");
         _ = Assembly.LoadFrom(assemblyPath);
+        ProfilerRuntimeConfiguration.Initialize(new PluginSettings(new YamlRoot()) { SnapshotsSamplingInterval = 80 });
 
         var configHash = new byte[] { 1, 2, 3 };
         var reports = new List<RemoteConfigStatusReport>();
         var parseAttempts = 0;
         var appliedCount = 0;
-        YamlRoot? appliedConfiguration = null;
+        var nativeApplyCount = 0;
         var timestamp = 0L;
         var listener = new OpAmpRemoteConfigurationListener(
             () => appliedCount++,
@@ -55,7 +74,7 @@ public class OpAmpRemoteConfigurationListenerTests
                 reports.Add(report);
                 return Task.CompletedTask;
             },
-            configuration => appliedConfiguration = configuration,
+            configuration => ProfilerRuntimeConfiguration.Apply(configuration, (_, _) => nativeApplyCount++),
             () => timestamp,
             yaml =>
             {
@@ -63,38 +82,50 @@ public class OpAmpRemoteConfigurationListenerTests
                 return RemoteConfiguration.ParseYaml(yaml);
             });
 
+        const string InitialYaml = CpuProfilerYaml + "          sampling_interval: 2000\n";
+        listener.HandleRemoteConfiguration([1], RemoteConfiguration.RemoteConfigContentType, Encoding.UTF8.GetBytes(InitialYaml));
+        Assert.Equal(RemoteConfigStatusCode.Applied, reports.Last().Status);
+        var previous = ProfilerRuntimeConfiguration.Current;
+
         foreach (var nextTimestamp in new[] { 0L, 30 * Stopwatch.Frequency, 60 * Stopwatch.Frequency, 3600 * Stopwatch.Frequency })
         {
             timestamp = nextTimestamp;
             listener.HandleRemoteConfiguration(configHash.ToArray(), RemoteConfiguration.RemoteConfigContentType, Encoding.UTF8.GetBytes(invalidYaml));
         }
 
-        Assert.Equal(1, parseAttempts);
-        Assert.Equal(0, appliedCount);
-        Assert.Null(appliedConfiguration);
-        Assert.Equal(new[] { RemoteConfigStatusCode.Applying, RemoteConfigStatusCode.Failed }, reports.Select(report => report.Status));
-        Assert.All(reports, report => Assert.Equal(configHash, report.LastRemoteConfigHash.ToArray()));
-        Assert.False(string.IsNullOrEmpty(reports[1].ErrorMessage));
-
-        var nextConfigHash = new byte[] { 4, 5, 6 };
-        const string ValidYaml = "distribution:\n  splunk:\n    profiling:\n      always_on:\n        cpu_profiler:\n          sampling_interval: 1234\n";
-        listener.HandleRemoteConfiguration(nextConfigHash, RemoteConfiguration.RemoteConfigContentType, Encoding.UTF8.GetBytes(ValidYaml));
-
         Assert.Equal(2, parseAttempts);
         Assert.Equal(1, appliedCount);
-        Assert.Equal(1234u, appliedConfiguration?.Distribution?.Splunk?.Profiling?.AlwaysOn?.CpuProfiler?.SamplingInterval);
-        Assert.Equal(new[] { RemoteConfigStatusCode.Applying, RemoteConfigStatusCode.Applied }, reports.Skip(2).Select(report => report.Status));
-        Assert.All(reports.Skip(2), report => Assert.Equal(nextConfigHash, report.LastRemoteConfigHash.ToArray()));
+        Assert.Equal(1, nativeApplyCount);
+        Assert.Same(previous, ProfilerRuntimeConfiguration.Current);
+        Assert.Equal(new[] { RemoteConfigStatusCode.Applying, RemoteConfigStatusCode.Failed }, reports.Skip(2).Select(report => report.Status));
+        Assert.All(reports.Skip(2), report => Assert.Equal(configHash, report.LastRemoteConfigHash.ToArray()));
+        Assert.False(string.IsNullOrEmpty(reports.Last().ErrorMessage));
+
+        var nextConfigHash = new byte[] { 4, 5, 6 };
+        listener.HandleRemoteConfiguration(nextConfigHash, RemoteConfiguration.RemoteConfigContentType, Encoding.UTF8.GetBytes(ValidCpuYaml));
+
+        Assert.Equal(3, parseAttempts);
+        Assert.Equal(2, appliedCount);
+        Assert.Equal(2, nativeApplyCount);
+        Assert.Equal(1234u, ProfilerRuntimeConfiguration.CurrentCpuProfilerCallStackInterval);
+        Assert.Equal(new[] { RemoteConfigStatusCode.Applying, RemoteConfigStatusCode.Applied }, reports.Skip(4).Select(report => report.Status));
+        Assert.All(reports.Skip(4), report => Assert.Equal(nextConfigHash, report.LastRemoteConfigHash.ToArray()));
     }
 
     [Theory]
-    [InlineData("callgraphs:", 40u, 0.01)]
-    [InlineData("callgraphs: {}", 40u, 0.01)]
-    [InlineData("callgraphs:\n        sampling_interval: 80\n        selection_probability: 0.75", 40u, 0.75)]
-    public void CallgraphsUseFileBasedYamlParserAndKeepStartupSamplingInterval(string callgraphs, uint expectedInterval, double expectedProbability)
+    [InlineData("callgraphs:", 40u, 0.01, 10000u)]
+    [InlineData("callgraphs: {}", 300u, 0.01, 9900u)]
+    [InlineData("callgraphs:\n        sampling_interval: 80\n        selection_probability: 0.75", 40u, 0.75, 10000u)]
+    [InlineData("callgraphs:\n        sampling_interval: 0\n        selection_probability: 0.75", 40u, 0.75, 10000u)]
+    [InlineData("callgraphs:\n        sampling_interval: 4294967295\n        selection_probability: 1", 40u, 1.0, 10000u)]
+    public void CallgraphsUseFileBasedYamlParserAndKeepStartupSamplingInterval(
+        string callgraphs,
+        uint startupInterval,
+        double expectedProbability,
+        uint expectedCpuInterval)
     {
         _ = Assembly.LoadFrom(Path.Combine(EnvironmentHelper.GetFalloutBuildOutput(), "net", "OpenTelemetry.AutoInstrumentation.dll"));
-        ProfilerRuntimeConfiguration.Initialize(new PluginSettings(new YamlRoot()));
+        ProfilerRuntimeConfiguration.Initialize(new PluginSettings(new YamlRoot()) { SnapshotsSamplingInterval = startupInterval });
         var reports = new List<RemoteConfigStatusReport>();
         var listener = new OpAmpRemoteConfigurationListener(
             () => { },
@@ -104,7 +135,7 @@ public class OpAmpRemoteConfigurationListenerTests
                 return Task.CompletedTask;
             },
             configuration => ProfilerRuntimeConfiguration.Apply(configuration, (_, _) => { }));
-        var yaml = "distribution:\n  splunk:\n    profiling:\n      always_on:\n        cpu_profiler:\n          sampling_interval: 10000\n      " + callgraphs + "\n";
+        var yaml = CpuProfilerYaml + "      " + callgraphs + "\n";
 
         listener.HandleRemoteConfiguration([1], RemoteConfiguration.RemoteConfigContentType, Encoding.UTF8.GetBytes(yaml));
 
@@ -112,9 +143,9 @@ public class OpAmpRemoteConfigurationListenerTests
         Assert.Equal(new[] { RemoteConfigStatusCode.Applying, RemoteConfigStatusCode.Applied }, reports.Select(report => report.Status));
         var state = ProfilerRuntimeConfiguration.Current;
         Assert.True(state.CpuProfilerEnabled);
-        Assert.Equal(10000u, state.CpuProfilerCallStackInterval);
+        Assert.Equal(expectedCpuInterval, state.CpuProfilerCallStackInterval);
         Assert.True(state.SnapshotsEnabled);
-        Assert.Equal(expectedInterval, state.SnapshotsSamplingInterval);
+        Assert.Equal(startupInterval, state.SnapshotsSamplingInterval);
         Assert.Equal(expectedProbability, state.SnapshotsSelectionRate);
     }
 }

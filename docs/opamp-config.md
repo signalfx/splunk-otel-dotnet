@@ -89,7 +89,9 @@ content type `application/yaml`.
 The distribution reports remote configuration status for each new
 `AgentRemoteConfig.config_hash`. It sends `Applying` before processing the
 payload, then `Applied` after the payload is applied or `Failed` with an error
-message when the payload cannot be applied.
+message when the payload cannot be applied. If any profiling setting is invalid,
+the distribution rejects the entire payload and keeps the previously active
+configuration.
 
 After a remote configuration is applied, subsequent OpAMP effective
 configuration reports reflect the active CPU, memory, and Callgraph profiling
@@ -132,26 +134,31 @@ Supported at runtime:
 
 - `always_on.cpu_profiler`: enable or disable CPU profiling.
 - `always_on.cpu_profiler.sampling_interval`: change the CPU sampling interval in
-  milliseconds. If omitted or zero, the default of `10000` ms is used.
+  milliseconds. Specify an integer from `1` to `4294967295`. If omitted, the
+  default is `10000` ms.
 - `always_on.memory_profiler`: enable or disable memory profiling on .NET.
   Memory profiling is not supported on .NET Framework.
 - `always_on.memory_profiler.max_memory_samples`: change the maximum number of
-  allocation samples collected per minute. Values from `1` to `200` are accepted.
-  If omitted, zero, or above `200`, the default of `200` is used.
-  Negative YAML values are invalid and cause the configuration update to be rejected.
+  allocation samples collected per minute. Specify an integer from `1` to `200`.
+  If omitted, the default of `200` is used.
 - `callgraphs`: enable Callgraph snapshot profiling.
 - `callgraphs.selection_probability`: change the probability of selecting new
-  traces. If omitted, the default of `0.01` is used. Values are normalized
-  using the same rules as file-based configuration: zero, negative, or NaN values
-  use the default, and values above `1.0` are capped at `1.0`.
+  traces. Specify a number greater than `0` and less than or equal to `1`.
+  If omitted, the default of `0.01` is used.
 
 The Callgraph sampling interval retains its startup value, including when
 Callgraphs are initially disabled. Configure it before startup using
 `SPLUNK_SNAPSHOT_SAMPLING_INTERVAL` or file-based `callgraphs.sampling_interval`.
-The default is `40` ms. Remote `callgraphs.sampling_interval` values are ignored.
+The default is `40` ms. The agent uses the startup interval for every remote
+configuration update.
 
-When Callgraphs are enabled, the CPU sampling interval is adjusted to a multiple
-of the startup snapshot sampling interval and is at least twice that interval.
+When a remote payload enables both CPU profiling and Callgraphs, an explicitly
+specified CPU sampling interval must be a multiple of the startup Callgraph
+sampling interval and at least twice as long. For a requested CPU interval
+`cpu` and startup Callgraph interval `snapshot`, the aligned interval is
+`snapshot * max(2, floor(cpu / snapshot))`. If the payload omits the CPU interval,
+the agent aligns the default using the same formula.
+
 Each remote payload replaces CPU, memory, and Callgraph profiling settings. An
 omitted profiler section disables that profiler. If a profiler section is present
 and omits a configurable value, the file-based default applies.

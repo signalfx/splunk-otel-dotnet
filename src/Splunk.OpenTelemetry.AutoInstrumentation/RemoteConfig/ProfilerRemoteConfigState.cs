@@ -77,6 +77,12 @@ internal sealed class ProfilerRemoteConfigState
     public static ProfilerRemoteConfigState FromRemoteConfiguration(YamlRoot? configuration, PluginSettings startupSettings)
     {
         var profiling = configuration?.Distribution?.Splunk?.Profiling;
+        var snapshotsSamplingInterval = startupSettings.SnapshotsSamplingInterval;
+        if (ProfilerRemoteConfigValidator.GetValidationError(profiling, snapshotsSamplingInterval) is { } error)
+        {
+            throw new ValidationException(error);
+        }
+
         var cpuProfiler = profiling?.AlwaysOn?.CpuProfiler;
         var callgraphs = profiling?.Callgraphs;
 #if NET
@@ -86,7 +92,7 @@ internal sealed class ProfilerRemoteConfigState
             cpuProfiler != null,
             cpuProfiler?.SamplingInterval ?? Constants.DefaultSamplingInterval,
             callgraphs != null,
-            startupSettings.SnapshotsSamplingInterval,
+            snapshotsSamplingInterval,
             callgraphs?.SelectionProbability ?? Constants.DefaultSnapshotSelectionRate,
 #if NET
             memoryProfiler != null,
@@ -96,4 +102,6 @@ internal sealed class ProfilerRemoteConfigState
             memoryProfilerMaxMemorySamplesPerMinute: 0);
 #endif
     }
+
+    internal sealed class ValidationException(string message) : FormatException(message);
 }

@@ -162,6 +162,12 @@ internal sealed class OpAmpRemoteConfigurationListener : IOpAmpListener<RemoteCo
             _onApplied();
             ReportStatus(configHash, RemoteConfigStatusCode.Applied);
         }
+        catch (ProfilerRemoteConfigState.ValidationException ex)
+        {
+            _configurationValidated = false;
+            Log.Error($"Invalid OpAMP remote configuration. {ex.Message}");
+            ReportStatus(configHash, RemoteConfigStatusCode.Failed, ex.Message);
+        }
         catch (Exception ex)
         {
             Log.Error(ex, "Failed to apply OpAMP remote configuration.");
