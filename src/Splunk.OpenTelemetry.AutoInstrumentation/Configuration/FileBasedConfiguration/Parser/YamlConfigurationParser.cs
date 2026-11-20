@@ -30,7 +30,17 @@ internal static class YamlConfigurationParser
 
     internal static YamlRoot? ParseContent(string yaml)
     {
-        return ParseYaml("ParseYamlContent", yaml);
+        try
+        {
+            return ParseYaml("ParseYamlContent", yaml);
+        }
+        catch (Exception ex) when (
+            ex.GetType().GetMethod("ToMessage", Type.EmptyTypes) is { } toMessage &&
+            toMessage.DeclaringType?.FullName == "Vendors.YamlDotNet.Core.YamlException")
+        {
+            // ToMessage includes the input position without including inner exception details.
+            throw new FormatException((string)toMessage.Invoke(ex, null)!, ex);
+        }
     }
 
     private static YamlRoot? ParseYaml(string methodName, string argument)

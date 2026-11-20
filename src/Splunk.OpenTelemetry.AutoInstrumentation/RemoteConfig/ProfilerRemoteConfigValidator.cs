@@ -44,10 +44,12 @@ internal static class ProfilerRemoteConfigValidator
             }
         }
 
+#if NET
         if (alwaysOn?.MemoryProfiler is { MaxMemorySamples: 0 or > Constants.DefaultMaxMemorySamples })
         {
             return $"always_on.memory_profiler.max_memory_samples must be between 1 and {Constants.DefaultMaxMemorySamples}.";
         }
+#endif
 
         if (profiling?.Callgraphs is { SelectionProbability: not (> 0 and <= Constants.MaxSnapshotSelectionRate) })
         {

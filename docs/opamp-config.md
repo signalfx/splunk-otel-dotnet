@@ -89,8 +89,9 @@ content type `application/yaml`.
 The distribution reports remote configuration status for each new
 `AgentRemoteConfig.config_hash`. It sends `Applying` before processing the
 payload, then `Applied` after the payload is applied or `Failed` with an error
-message when the payload cannot be applied. If any profiling setting is invalid,
-the distribution rejects the entire payload and keeps the previously active
+message when the payload cannot be applied. YAML parsing errors include a line
+and column when available. If YAML parsing or validation fails, the
+distribution rejects the entire payload and keeps the previously active
 configuration.
 
 After a remote configuration is applied, subsequent OpAMP effective
@@ -137,10 +138,10 @@ Supported at runtime:
   milliseconds. Specify an integer from `1` to `4294967295`. If omitted, the
   default is `10000` ms.
 - `always_on.memory_profiler`: enable or disable memory profiling on .NET.
-  Memory profiling is not supported on .NET Framework.
+  .NET Framework ignores this section after YAML parsing.
 - `always_on.memory_profiler.max_memory_samples`: change the maximum number of
-  allocation samples collected per minute. Specify an integer from `1` to `200`.
-  If omitted, the default of `200` is used.
+  allocation samples collected per minute. On .NET, specify an integer from `1`
+  to `200`. If omitted, the default of `200` is used.
 - `callgraphs`: enable Callgraph snapshot profiling.
 - `callgraphs.selection_probability`: change the probability of selecting new
   traces. Specify a number greater than `0` and less than or equal to `1`.

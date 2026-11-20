@@ -347,15 +347,24 @@ public class ProfilerRuntimeRemoteConfigurationTests
     }
 
 #else
-    [Fact]
-    public void Apply_IgnoresMemoryProfilingOnNetFramework()
+    [Theory]
+    [InlineData(0u)]
+    [InlineData(100u)]
+    [InlineData(201u)]
+    public void Apply_IgnoresMemoryProfilingOnNetFramework(uint maxMemorySamples)
     {
         ProfilerRuntimeConfiguration.Initialize(CreateSettings());
         ApplyConfiguration(CreateConfiguration(new ProfilerConfiguration
         {
-            AlwaysOn = new AlwaysOn { MemoryProfiler = new MemoryProfiler { MaxMemorySamples = 123 } }
+            AlwaysOn = new AlwaysOn
+            {
+                CpuProfiler = new CpuProfiler { SamplingInterval = 1200 },
+                MemoryProfiler = new MemoryProfiler { MaxMemorySamples = maxMemorySamples }
+            }
         }));
 
+        Assert.True(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
+        Assert.Equal(1200u, ProfilerRuntimeConfiguration.CurrentCpuProfilerCallStackInterval);
         Assert.False(ProfilerRuntimeConfiguration.Current.MemoryProfilerEnabled);
         Assert.Equal(0u, ProfilerRuntimeConfiguration.Current.MemoryProfilerMaxMemorySamplesPerMinute);
     }
@@ -405,8 +414,10 @@ public class ProfilerRuntimeRemoteConfigurationTests
     [InlineData(0u, 100u, 0.75, "always_on.cpu_profiler.sampling_interval")]
     [InlineData(1234u, 100u, 0.75, "The aligned interval for 1234 ms is 1200 ms.")]
     [InlineData(40u, 100u, 0.75, "The aligned interval for 40 ms is 80 ms.")]
+#if NET
     [InlineData(1200u, 0u, 0.75, "always_on.memory_profiler.max_memory_samples")]
     [InlineData(1200u, 201u, 0.75, "always_on.memory_profiler.max_memory_samples")]
+#endif
     [InlineData(1200u, 100u, 0.0, "callgraphs.selection_probability")]
     [InlineData(1200u, 100u, double.NaN, "callgraphs.selection_probability")]
     public void Apply_RejectsInvalidRemoteSettingsBeforeNativeConfiguration(

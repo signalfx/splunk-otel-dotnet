@@ -34,14 +34,14 @@ public class OpAmpRemoteConfigurationListenerTests
 
     [Theory]
     [InlineData("distribution: [")]
-    [InlineData(CpuProfilerYaml + "          sampling_interval: invalid\n")]
-    [InlineData(CpuProfilerYaml + "          sampling_interval: -1\n")]
+    [InlineData(CpuProfilerYaml + "          sampling_interval: invalid\n", "Line: 6, Col: 30")]
+    [InlineData(CpuProfilerYaml + "          sampling_interval: -1\n", "Line: 6, Col: 30")]
     [InlineData(CpuProfilerYaml + "          sampling_interval: 0\n")]
-    [InlineData(CpuProfilerYaml + "          sampling_interval: 4294967296\n")]
+    [InlineData(CpuProfilerYaml + "          sampling_interval: 4294967296\n", "Line: 6, Col: 30")]
     [InlineData(CpuProfilerYaml + "          sampling_interval: 1000\n      callgraphs:\n        sampling_interval: 40\n        selection_probability: 0.75\n")]
     [InlineData(CpuProfilerYaml + "          sampling_interval: 120\n      callgraphs: {}\n")]
     [InlineData(CpuProfilerYaml + "      callgraphs: {}\n")]
-    [InlineData(MemoryProfilerYaml + "          max_memory_samples: -1\n")]
+    [InlineData(MemoryProfilerYaml + "          max_memory_samples: -1\n", "Line: 8, Col: 31")]
     [InlineData(MemoryProfilerYaml + "          max_memory_samples: 0\n")]
     [InlineData(MemoryProfilerYaml + "          max_memory_samples: 201\n")]
     [InlineData(CallgraphsYaml + "        sampling_interval: invalid\n")]
@@ -53,7 +53,7 @@ public class OpAmpRemoteConfigurationListenerTests
     [InlineData(CallgraphsYaml + "        selection_probability: 1.1\n")]
     [InlineData(CallgraphsYaml + "        selection_probability: NaN\n")]
     [InlineData(CallgraphsYaml + "        selection_probability: Infinity\n")]
-    public void InvalidPayloadLeavesPreviousConfigurationActiveAndIsNotRetried(string invalidYaml)
+    public void InvalidPayloadLeavesPreviousConfigurationActiveAndIsNotRetried(string invalidYaml, string? expectedError = null)
     {
         var assemblyPath = Path.Combine(
             EnvironmentHelper.GetFalloutBuildOutput(),
@@ -101,6 +101,10 @@ public class OpAmpRemoteConfigurationListenerTests
         Assert.Equal(new[] { RemoteConfigStatusCode.Applying, RemoteConfigStatusCode.Failed }, reports.Skip(2).Select(report => report.Status));
         Assert.All(reports.Skip(2), report => Assert.Equal(configHash, report.LastRemoteConfigHash.ToArray()));
         Assert.False(string.IsNullOrEmpty(reports.Last().ErrorMessage));
+        if (expectedError != null)
+        {
+            Assert.Contains(expectedError, reports.Last().ErrorMessage, StringComparison.Ordinal);
+        }
 
         var nextConfigHash = new byte[] { 4, 5, 6 };
         listener.HandleRemoteConfiguration(nextConfigHash, RemoteConfiguration.RemoteConfigContentType, Encoding.UTF8.GetBytes(ValidCpuYaml));
