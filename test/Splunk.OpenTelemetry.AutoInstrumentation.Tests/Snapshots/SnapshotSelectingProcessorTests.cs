@@ -67,10 +67,9 @@ public class SnapshotSelectingProcessorTests
                 activities.Count(
                     activity => activity.GetTagItem(SnapshotConstants.SplunkSnapshotProfilingAttributeName) is true));
 
-            foreach (var activity in activities)
-            {
-                processor.OnEnd(activity);
-            }
+            Parallel.Invoke(
+                () => Parallel.ForEach(activities, processor.OnEnd),
+                () => processor.Clean(DateTimeOffset.MaxValue));
 
             Assert.Equal(expectedLimit, stops);
 
@@ -110,6 +109,72 @@ public class SnapshotSelectingProcessorTests
         processor.OnEnd(activity);
 
         Assert.Equal(1, stops);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task EmptySelection_OnEndAndCleanupDoNotWaitForNativeTransition(bool endingLastSelection)
+    {
+        var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var release = new ManualResetEventSlim();
+        var filter = new SnapshotFilter(
+            _ =>
+            {
+                if (!endingLastSelection)
+                {
+                    entered.TrySetResult(true);
+                    Assert.True(release.Wait(TimeSpan.FromSeconds(10)));
+                }
+            },
+            _ =>
+            {
+                if (endingLastSelection)
+                {
+                    entered.TrySetResult(true);
+                    Assert.True(release.Wait(TimeSpan.FromSeconds(10)));
+                }
+            });
+        using var processor = new SnapshotSelectingProcessor(filter, new FixedSnapshotSelector(true));
+        using var selected = CreateEntryActivity();
+        using var unselected = CreateEntryActivity();
+        if (endingLastSelection)
+        {
+            processor.OnStart(selected);
+        }
+
+        var transition = Task.Run(() =>
+        {
+            if (endingLastSelection)
+            {
+                processor.OnEnd(selected);
+            }
+            else
+            {
+                processor.OnStart(selected);
+            }
+        });
+
+        try
+        {
+            await CompletesAsync(entered.Task);
+            await CompletesAsync(Task.WhenAll(
+                Task.Run(() => processor.OnEnd(unselected)),
+                Task.Run(() => processor.Clean(DateTimeOffset.MaxValue))));
+        }
+        finally
+        {
+            release.Set();
+            await CompletesAsync(transition);
+        }
+
+        processor.OnEnd(selected);
+    }
+
+    private static async Task CompletesAsync(Task task)
+    {
+        Assert.Same(task, await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(5))));
+        await task;
     }
 
     private static Activity CreateEntryActivity()

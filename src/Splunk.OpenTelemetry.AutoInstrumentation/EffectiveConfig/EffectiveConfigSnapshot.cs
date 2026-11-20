@@ -93,7 +93,7 @@ internal sealed class EffectiveConfigSnapshot
             cpuProfilerCallStackInterval: cpuEnabled ? profilerState.CpuSamplingInterval : staticSettings.CpuProfilerCallStackInterval,
             memoryProfilerMaxMemorySamplesPerMinute: memoryEnabled ? profilerState.MaxMemorySamplesPerMinute : 0,
             snapshotSamplingInterval: snapshotsEnabled ? profilerState.SnapshotSamplingInterval : staticSettings.SnapshotSamplingInterval,
-            snapshotSelectionProbability: staticSettings.SnapshotSelectionProbability);
+            snapshotSelectionProbability: profilerState.SnapshotSelectionProbability ?? staticSettings.SnapshotSelectionProbability);
     }
 
     private static IReadOnlyList<EffectiveOtlpEndpoint> CopyEndpoints(IReadOnlyList<EffectiveOtlpEndpoint> endpoints)
