@@ -204,7 +204,7 @@ internal sealed class EffectiveYamlConfig
             if (snapshot.CpuProfilerEnabled || snapshot.MemoryProfilerEnabled)
             {
                 alwaysOn = snapshot.MemoryProfilerEnabled
-                    ? new EffectiveAlwaysOnProfilingWithMemoryConfig()
+                    ? new EffectiveAlwaysOnProfilingWithMemoryConfig(snapshot.MemoryProfilerMaxMemorySamplesPerMinute)
                     : new EffectiveAlwaysOnProfilingConfig();
                 alwaysOn.CpuProfiler = snapshot.CpuProfilerEnabled
                     ? new EffectiveSamplingIntervalConfig { SamplingInterval = snapshot.CpuProfilerCallStackInterval }
@@ -233,8 +233,13 @@ internal sealed class EffectiveYamlConfig
 
     internal sealed class EffectiveAlwaysOnProfilingWithMemoryConfig : EffectiveAlwaysOnProfilingConfig
     {
-        [EffectiveYamlProperty("memory_profiler", 1, preserveNull: true)]
-        public EffectiveMemoryProfilerConfig? MemoryProfiler => null;
+        public EffectiveAlwaysOnProfilingWithMemoryConfig(uint maxMemorySamples)
+        {
+            MemoryProfiler = new EffectiveMemoryProfilerConfig { MaxMemorySamples = maxMemorySamples };
+        }
+
+        [EffectiveYamlProperty("memory_profiler", 1)]
+        public EffectiveMemoryProfilerConfig MemoryProfiler { get; }
     }
 
     internal sealed class EffectiveSamplingIntervalConfig
@@ -254,5 +259,7 @@ internal sealed class EffectiveYamlConfig
 
     internal sealed class EffectiveMemoryProfilerConfig
     {
+        [EffectiveYamlProperty("max_memory_samples", 0)]
+        public uint MaxMemorySamples { get; set; }
     }
 }

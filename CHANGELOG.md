@@ -7,7 +7,17 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ## [Unreleased](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.17.0...HEAD)
 
+This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.20.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.20.0).
+
+> [!WARNING]
+> This release of the Splunk Distribution of OpenTelemetry .NET drops support
+> for .NET 8 and .NET 9. Both reached end of support on November 10, 2026.
+> Customers who want to continue instrumenting .NET 8 or .NET 9 services must use
+> Splunk Distribution of OpenTelemetry .NET version 1.17.0 or less.
+
 ### Added
+
+- Experimental support for OpAMP remote configuration for memory profiling.
 
 ### Changed
 
@@ -23,7 +33,7 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.19.1](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.19.1).
 
-This release includes all changes from following versiosn:
+This release includes all changes from following versions:
 
 - [OpenTelemetry .NET Auto Instrumentation v1.19.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.19.0),
 - [OpenTelemetry .NET Auto Instrumentation v1.18.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.10.0).

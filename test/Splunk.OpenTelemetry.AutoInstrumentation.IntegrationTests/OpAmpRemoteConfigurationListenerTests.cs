@@ -33,7 +33,7 @@ public class OpAmpRemoteConfigurationListenerTests
     public void InvalidYamlIsNotRetriedAndNewConfigurationCanBeApplied(string invalidYaml)
     {
         var assemblyPath = Path.Combine(
-            EnvironmentHelper.GetNukeBuildOutput(),
+            EnvironmentHelper.GetFalloutBuildOutput(),
             "net",
             "OpenTelemetry.AutoInstrumentation.dll");
         _ = Assembly.LoadFrom(assemblyPath);

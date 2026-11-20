@@ -15,21 +15,21 @@ copies Splunk plugin binaries into it, then runs unit and integration tests.
 | --- | --- |
 | `.\build.cmd Workflow` | Full CI-like build: clean, restore, unpack upstream distribution, compile, test, and package |
 | `.\build.cmd NuGetWorkflow` | Build and test the NuGet package workflow |
-| `dotnet test <project> --framework net8.0 --filter "FullyQualifiedName~MyTestName"` | Use to target single test |
-| `dotnet test test\Splunk.OpenTelemetry.AutoInstrumentation.Tests\Splunk.OpenTelemetry.AutoInstrumentation.Tests.csproj --framework net8.0 --no-restore -v minimal` | Focused unit test pass on `net8.0` |
-| `dotnet test test\Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests\Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.csproj --framework net8.0 --filter "Category!=NuGetPackage" --no-restore -v minimal` | Focused integration test pass after distribution is prepared |
+| `dotnet test <project> --framework net10.0 --filter "FullyQualifiedName~MyTestName"` | Use to target single test |
+| `dotnet test test\Splunk.OpenTelemetry.AutoInstrumentation.Tests\Splunk.OpenTelemetry.AutoInstrumentation.Tests.csproj --framework net10.0 --no-restore -v minimal` | Focused unit test pass on `net10.0` |
+| `dotnet test test\Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests\Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests.csproj --framework net10.0 --filter "Category!=NuGetPackage" --no-restore -v minimal` | Focused integration test pass after distribution is prepared |
 | `dotnet format .\Splunk.OpenTelemetry.AutoInstrumentation.slnx --no-restore --verify-no-changes` | Formatting check used by CI |
 | `dotnet format .\Splunk.OpenTelemetry.AutoInstrumentation.slnx --no-restore` | Apply formatting fixes |
-| `dotnet build src\Splunk.OpenTelemetry.AutoInstrumentation\Splunk.OpenTelemetry.AutoInstrumentation.csproj --framework net8.0` | Fast plugin build for local iteration |
+| `dotnet build src\Splunk.OpenTelemetry.AutoInstrumentation\Splunk.OpenTelemetry.AutoInstrumentation.csproj --framework net10.0` | Fast plugin build for local iteration |
 
-`net8.0` is a TFM used as a local iteration target;
-Use `./build.sh` on Linux for running Nuke targets.
+`net10.0` is a TFM used as a local iteration target;
+Use `./build.sh` on Linux for running Fallout targets.
 
 ## Testing
 
 - Integration tests use mock collectors and test applications under `test/test-applications/integrations/`.
 - Smoke tests expect `OpenTelemetryDistribution/` to contain freshly built plugin;
-run the Nuke workflow or the relevant build targets before relying on smoke results.
+run the Fallout workflow or the relevant build targets before relying on smoke results.
 
 ## Rules & Patterns
 

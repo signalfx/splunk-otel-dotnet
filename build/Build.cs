@@ -1,17 +1,17 @@
-using Nuke.Common;
-using Nuke.Common.IO;
-using Nuke.Common.ProjectModel;
-using Nuke.Common.Tooling;
-using Nuke.Common.Tools.DotNet;
+using Fallout.Common;
+using Fallout.Common.IO;
+using Fallout.Solutions;
+using Fallout.Common.Tooling;
+using Fallout.Common.Tools.DotNet;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Serilog;
-using static Nuke.Common.Tools.DotNet.DotNetTasks;
+using static Fallout.Common.Tools.DotNet.DotNetTasks;
 
-partial class Build : NukeBuild
+partial class Build : FalloutBuild
 {
-    private readonly static AbsolutePath TestNuGetPackageApps = NukeBuild.RootDirectory / "test" / "test-applications" / "nuget-package";
+    private readonly static AbsolutePath TestNuGetPackageApps = FalloutBuild.RootDirectory / "test" / "test-applications" / "nuget-package";
 
     [Solution("Splunk.OpenTelemetry.AutoInstrumentation.slnx")] readonly Solution Solution;
     public static int Main() => Execute<Build>(x => x.Workflow);
@@ -19,7 +19,7 @@ partial class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Release'")]
     readonly Configuration Configuration = Configuration.Release;
 
-    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.19.1";
+    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.20.0";
 
     [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
     readonly string OpenTelemetryAutoInstrumentationVersion = OpenTelemetryAutoInstrumentationDefaultVersion;
@@ -195,7 +195,7 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             (RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
-             "net8.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll").CopyToDirectory(OpenTelemetryDistributionFolder / "net");
+             "net10.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll").CopyToDirectory(OpenTelemetryDistributionFolder / "net");
 
             if (EnvironmentInfo.IsWin)
             {
