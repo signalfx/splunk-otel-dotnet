@@ -47,7 +47,7 @@ public class ProfilerRuntimeRemoteConfigurationTests
         Assert.False(ProfilerRuntimeConfiguration.Current.CpuProfilerEnabled);
         Assert.Equal(expectedSamplingInterval, ProfilerRuntimeConfiguration.StartupCpuProfilerCallStackInterval);
         Assert.Equal((uint)Constants.DefaultSnapshotSamplingIntervalMs, ProfilerRuntimeConfiguration.Current.SnapshotsSamplingInterval);
-        Assert.Equal(Constants.DefaultSnapshotSelectionRate, ProfilerRuntimeConfiguration.Current.SnapshotsSelectionRate);
+        Assert.Equal(0.0, ProfilerRuntimeConfiguration.Current.SnapshotsSelectionRate);
     }
 
     [Theory]
