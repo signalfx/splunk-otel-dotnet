@@ -7,7 +7,7 @@
 
 ## OpenTelemetry configuration
 
-See [Open Telemetry Auto Instrumentation documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.1/docs/config.md)
+See [OpenTelemetry .NET Auto Instrumentation documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.20.0/docs/config.md)
 for configuration details.
 
 ## Splunk distribution configuration
@@ -24,27 +24,29 @@ documentation.
 
 When running your application, make sure to:
 
-1. Set the [resources](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.1/docs/config.md#resources).
+1. Set the [resources](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.20.0/docs/config.md#resources).
 1. Set the environment variables from the table below.
 
-| Environment variable                 | .NET version        | Value                                                                                       |
-|--------------------------------------|---------------------|---------------------------------------------------------------------------------------------|
-| `COR_ENABLE_PROFILING`               | .NET Framework      | `1`                                                                                         |
-| `COR_PROFILER`                       | .NET Framework      | `{918728DD-259F-4A6A-AC2B-B85E1B658318}`                                                    |
-| `COR_PROFILER_PATH_32`               | .NET Framework      | `$INSTALL_DIR/win-x86/OpenTelemetry.AutoInstrumentation.Native.dll`                         |
-| `COR_PROFILER_PATH_64`               | .NET Framework      | `$INSTALL_DIR/win-x64/OpenTelemetry.AutoInstrumentation.Native.dll`                         |
-| `CORECLR_ENABLE_PROFILING`           | .NET                | `1`                                                                                         |
-| `CORECLR_PROFILER`                   | .NET                | `{918728DD-259F-4A6A-AC2B-B85E1B658318}`                                                    |
-| `CORECLR_PROFILER_PATH`              | .NET on Linux glibc | `$INSTALL_DIR//linux-x64/OpenTelemetry.AutoInstrumentation.Native.so`                       |
-| `CORECLR_PROFILER_PATH`              | .NET on Linux musl  | `$INSTALL_DIR//linux-musl-x64/OpenTelemetry.AutoInstrumentation.Native.so`                  |
-| `CORECLR_PROFILER_PATH`              | .NET on macOS       | `$INSTALL_DIR/osx-x64/OpenTelemetry.AutoInstrumentation.Native.dylib`                       |
-| `CORECLR_PROFILER_PATH_32`           | .NET on Windows     | `$INSTALL_DIR/win-x86/OpenTelemetry.AutoInstrumentation.Native.dll`                         |
-| `CORECLR_PROFILER_PATH_64`           | .NET on Windows     | `$INSTALL_DIR/win-x64/OpenTelemetry.AutoInstrumentation.Native.dll`                         |
-| `DOTNET_STARTUP_HOOKS`               | .NET                | `$INSTALL_DIR/netcoreapp3.1/OpenTelemetry.AutoInstrumentation.StartupHook.dll`              |
-| `OTEL_DOTNET_AUTO_HOME`              | All versions        | `$INSTALL_DIR`                                                                              |
-| `OTEL_DOTNET_AUTO_PLUGINS`           | All versions        | `Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation` |
+| Environment variable       | .NET version and platform | Value                                                                                       |
+|----------------------------|---------------------------|---------------------------------------------------------------------------------------------|
+| `COR_ENABLE_PROFILING`     | .NET Framework            | `1`                                                                                         |
+| `COR_PROFILER`             | .NET Framework            | `{918728DD-259F-4A6A-AC2B-B85E1B658318}`                                                    |
+| `COR_PROFILER_PATH_32`     | .NET Framework            | `$INSTALL_DIR/win-x86/OpenTelemetry.AutoInstrumentation.Native.dll`                         |
+| `COR_PROFILER_PATH_64`     | .NET Framework            | `$INSTALL_DIR/win-x64/OpenTelemetry.AutoInstrumentation.Native.dll`                         |
+| `CORECLR_ENABLE_PROFILING` | .NET                      | `1`                                                                                         |
+| `CORECLR_PROFILER`         | .NET                      | `{918728DD-259F-4A6A-AC2B-B85E1B658318}`                                                    |
+| `CORECLR_PROFILER_PATH`    | .NET on Linux glibc x64   | `$INSTALL_DIR/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so`                        |
+| `CORECLR_PROFILER_PATH`    | .NET on Linux glibc ARM64 | `$INSTALL_DIR/linux-arm64/OpenTelemetry.AutoInstrumentation.Native.so`                      |
+| `CORECLR_PROFILER_PATH`    | .NET on Linux musl x64    | `$INSTALL_DIR/linux-musl-x64/OpenTelemetry.AutoInstrumentation.Native.so`                   |
+| `CORECLR_PROFILER_PATH`    | .NET on Linux musl ARM64  | `$INSTALL_DIR/linux-musl-arm64/OpenTelemetry.AutoInstrumentation.Native.so`                 |
+| `CORECLR_PROFILER_PATH`    | .NET on macOS ARM64       | `$INSTALL_DIR/osx-arm64/OpenTelemetry.AutoInstrumentation.Native.dylib`                     |
+| `CORECLR_PROFILER_PATH_32` | .NET on Windows           | `$INSTALL_DIR/win-x86/OpenTelemetry.AutoInstrumentation.Native.dll`                         |
+| `CORECLR_PROFILER_PATH_64` | .NET on Windows           | `$INSTALL_DIR/win-x64/OpenTelemetry.AutoInstrumentation.Native.dll`                         |
+| `DOTNET_STARTUP_HOOKS`     | .NET                      | `$INSTALL_DIR/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll`                        |
+| `OTEL_DOTNET_AUTO_HOME`    | All versions              | `$INSTALL_DIR`                                                                              |
+| `OTEL_DOTNET_AUTO_PLUGINS` | All versions              | `Splunk.OpenTelemetry.AutoInstrumentation.Plugin, Splunk.OpenTelemetry.AutoInstrumentation` |
 
-> Some settings can be omitted on .NET. For more information, see the [documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.19.1/docs/config.md#net-clr-profiler).
+> Some settings can be omitted on .NET. For more information, see the [documentation](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/v1.20.0/docs/config.md#net-clr-profiler).
 
 ### Splunk plugin settings
 

@@ -19,7 +19,7 @@ partial class Build : FalloutBuild
     [Parameter("Configuration to build - Default is 'Release'")]
     readonly Configuration Configuration = Configuration.Release;
 
-    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.19.1";
+    const string OpenTelemetryAutoInstrumentationDefaultVersion = "v1.20.0";
 
     [Parameter($"OpenTelemetry AutoInstrumentation dependency version - Default is '{OpenTelemetryAutoInstrumentationDefaultVersion}'")]
     readonly string OpenTelemetryAutoInstrumentationVersion = OpenTelemetryAutoInstrumentationDefaultVersion;
@@ -195,7 +195,7 @@ partial class Build : FalloutBuild
         .Executes(() =>
         {
             (RootDirectory / "src" / "Splunk.OpenTelemetry.AutoInstrumentation" / "bin" / Configuration /
-             "net8.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll").CopyToDirectory(OpenTelemetryDistributionFolder / "net");
+             "net10.0" / "Splunk.OpenTelemetry.AutoInstrumentation.dll").CopyToDirectory(OpenTelemetryDistributionFolder / "net");
 
             if (EnvironmentInfo.IsWin)
             {
