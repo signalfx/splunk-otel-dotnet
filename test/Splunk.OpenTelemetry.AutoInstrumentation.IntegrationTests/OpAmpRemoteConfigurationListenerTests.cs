@@ -39,7 +39,8 @@ public class OpAmpRemoteConfigurationListenerTests
     [InlineData(CpuProfilerYaml + "          sampling_interval: 0\n")]
     [InlineData(CpuProfilerYaml + "          sampling_interval: 4294967296\n")]
     [InlineData(CpuProfilerYaml + "          sampling_interval: 1000\n      callgraphs:\n        sampling_interval: 40\n        selection_probability: 0.75\n")]
-    [InlineData(CpuProfilerYaml + "          sampling_interval: 80\n      callgraphs: {}\n")]
+    [InlineData(CpuProfilerYaml + "          sampling_interval: 120\n      callgraphs: {}\n")]
+    [InlineData(CpuProfilerYaml + "      callgraphs: {}\n")]
     [InlineData(MemoryProfilerYaml + "          max_memory_samples: -1\n")]
     [InlineData(MemoryProfilerYaml + "          max_memory_samples: 0\n")]
     [InlineData(MemoryProfilerYaml + "          max_memory_samples: 201\n")]
@@ -59,7 +60,7 @@ public class OpAmpRemoteConfigurationListenerTests
             "net",
             "OpenTelemetry.AutoInstrumentation.dll");
         _ = Assembly.LoadFrom(assemblyPath);
-        ProfilerRuntimeConfiguration.Initialize(new PluginSettings(new YamlRoot()) { SnapshotsSamplingInterval = 80 });
+        ProfilerRuntimeConfiguration.Initialize(new PluginSettings(new YamlRoot()) { SnapshotsSamplingInterval = 120 });
 
         var configHash = new byte[] { 1, 2, 3 };
         var reports = new List<RemoteConfigStatusReport>();
@@ -113,16 +114,15 @@ public class OpAmpRemoteConfigurationListenerTests
     }
 
     [Theory]
-    [InlineData("callgraphs:", 40u, 0.01, 10000u)]
-    [InlineData("callgraphs: {}", 300u, 0.01, 9900u)]
-    [InlineData("callgraphs:\n        sampling_interval: 80\n        selection_probability: 0.75", 40u, 0.75, 10000u)]
-    [InlineData("callgraphs:\n        sampling_interval: 0\n        selection_probability: 0.75", 40u, 0.75, 10000u)]
-    [InlineData("callgraphs:\n        sampling_interval: 4294967295\n        selection_probability: 1", 40u, 1.0, 10000u)]
+    [InlineData("callgraphs:", 40u, 0.01)]
+    [InlineData("callgraphs: {}", 80u, 0.01)]
+    [InlineData("callgraphs:\n        sampling_interval: 80\n        selection_probability: 0.75", 40u, 0.75)]
+    [InlineData("callgraphs:\n        sampling_interval: 0\n        selection_probability: 0.75", 40u, 0.75)]
+    [InlineData("callgraphs:\n        sampling_interval: 4294967295\n        selection_probability: 1", 40u, 1.0)]
     public void CallgraphsUseFileBasedYamlParserAndKeepStartupSamplingInterval(
         string callgraphs,
         uint startupInterval,
-        double expectedProbability,
-        uint expectedCpuInterval)
+        double expectedProbability)
     {
         _ = Assembly.LoadFrom(Path.Combine(EnvironmentHelper.GetFalloutBuildOutput(), "net", "OpenTelemetry.AutoInstrumentation.dll"));
         ProfilerRuntimeConfiguration.Initialize(new PluginSettings(new YamlRoot()) { SnapshotsSamplingInterval = startupInterval });
@@ -143,7 +143,7 @@ public class OpAmpRemoteConfigurationListenerTests
         Assert.Equal(new[] { RemoteConfigStatusCode.Applying, RemoteConfigStatusCode.Applied }, reports.Select(report => report.Status));
         var state = ProfilerRuntimeConfiguration.Current;
         Assert.True(state.CpuProfilerEnabled);
-        Assert.Equal(expectedCpuInterval, state.CpuProfilerCallStackInterval);
+        Assert.Equal(10000u, state.CpuProfilerCallStackInterval);
         Assert.True(state.SnapshotsEnabled);
         Assert.Equal(startupInterval, state.SnapshotsSamplingInterval);
         Assert.Equal(expectedProbability, state.SnapshotsSelectionRate);

@@ -23,8 +23,9 @@ internal static class ProfilerRemoteConfigValidator
     public static string? GetValidationError(ProfilerConfiguration? profiling, uint startupSnapshotsSamplingInterval)
     {
         var alwaysOn = profiling?.AlwaysOn;
-        if (alwaysOn?.CpuProfiler?.ConfiguredSamplingInterval is { } cpuInterval)
+        if (alwaysOn?.CpuProfiler is { } cpuProfiler)
         {
+            var cpuInterval = cpuProfiler.SamplingInterval;
             if (!PluginSettingsHelper.IsValidContinuousSamplingInterval(cpuInterval))
             {
                 return $"always_on.cpu_profiler.sampling_interval must be between 1 and {uint.MaxValue}.";

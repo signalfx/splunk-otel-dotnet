@@ -152,12 +152,11 @@ Callgraphs are initially disabled. Configure it before startup using
 The default is `40` ms. The agent uses the startup interval for every remote
 configuration update.
 
-When a remote payload enables both CPU profiling and Callgraphs, an explicitly
-specified CPU sampling interval must be a multiple of the startup Callgraph
-sampling interval and at least twice as long. For a requested CPU interval
-`cpu` and startup Callgraph interval `snapshot`, the aligned interval is
-`snapshot * max(2, floor(cpu / snapshot))`. If the payload omits the CPU interval,
-the agent aligns the default using the same formula.
+When a remote payload enables both CPU profiling and Callgraphs, the CPU
+sampling interval must be a multiple of the startup Callgraph sampling interval
+and at least twice as long. An incompatible interval causes the entire payload
+to be rejected. The error includes the aligned interval computed as
+`snapshot * max(2, floor(cpu / snapshot))`.
 
 Each remote payload replaces CPU, memory, and Callgraph profiling settings. An
 omitted profiler section disables that profiler. If a profiler section is present
