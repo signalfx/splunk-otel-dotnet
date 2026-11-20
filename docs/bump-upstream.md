@@ -14,6 +14,10 @@
    - [`docs/advanced-config.md`](./advanced-config.md)
    - [`src/Splunk.OpenTelemetry.AutoInstrumentation/Splunk.OpenTelemetry.AutoInstrumentation.csproj`](../src/Splunk.OpenTelemetry.AutoInstrumentation/Splunk.OpenTelemetry.AutoInstrumentation.csproj)
 
+1. Manually align the plugin and integration test NuGet dependencies listed in
+   the upstream bump rule with the target upstream release. The package list is
+   in the [Renovate configuration](../.github/renovate.json5).
+
 1. Update the `test/Splunk.OpenTelemetry.AutoInstrumentation.IntegrationTests/BuildTests.DistributionStructure_*.verified.txt`
    files.
 
