@@ -14,18 +14,46 @@
 // limitations under the License.
 // </copyright>
 
+using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
+using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
+
 namespace Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
 internal sealed class ProfilerRemoteConfigState
 {
-    public ProfilerRemoteConfigState(
+    public ProfilerRemoteConfigState(PluginSettings settings)
+        : this(
+            settings.CpuProfilerEnabled,
+            settings.CpuProfilerCallStackInterval,
+            settings.SnapshotsEnabled,
+            settings.SnapshotsSamplingInterval,
+            settings.SnapshotsSelectionRate,
+#if NET
+            settings.MemoryProfilerEnabled,
+            PluginSettingsHelper.GetFinalMaxMemorySamples(settings))
+#else
+            memoryProfilerEnabled: false,
+            memoryProfilerMaxMemorySamplesPerMinute: 0)
+#endif
+    {
+    }
+
+    private ProfilerRemoteConfigState(
         bool cpuProfilerEnabled,
-        uint cpuProfilerCallStackInterval,
+        long cpuProfilerCallStackInterval,
+        bool snapshotsEnabled,
+        uint snapshotsSamplingInterval,
+        double snapshotsSelectionRate,
         bool memoryProfilerEnabled,
         uint memoryProfilerMaxMemorySamplesPerMinute)
     {
         CpuProfilerEnabled = cpuProfilerEnabled;
-        CpuProfilerCallStackInterval = cpuProfilerCallStackInterval;
+        SnapshotsEnabled = snapshotsEnabled;
+        SnapshotsSamplingInterval = PluginSettingsHelper.GetFinalSnapshotSamplingInterval(snapshotsSamplingInterval);
+        CpuProfilerCallStackInterval = PluginSettingsHelper.GetFinalContinuousSamplingInterval(
+            cpuProfilerCallStackInterval, snapshotsEnabled, SnapshotsSamplingInterval);
+        SnapshotsSelectionRate = PluginSettingsHelper.GetFinalSnapshotSelectionProbability(snapshotsSelectionRate);
+        SnapshotSelector = new TraceIdBasedSnapshotSelector(SnapshotsSelectionRate);
         MemoryProfilerEnabled = memoryProfilerEnabled;
         MemoryProfilerMaxMemorySamplesPerMinute = memoryProfilerMaxMemorySamplesPerMinute;
     }
@@ -37,4 +65,35 @@ internal sealed class ProfilerRemoteConfigState
     public bool MemoryProfilerEnabled { get; }
 
     public uint MemoryProfilerMaxMemorySamplesPerMinute { get; }
+
+    public bool SnapshotsEnabled { get; }
+
+    public uint SnapshotsSamplingInterval { get; }
+
+    public double SnapshotsSelectionRate { get; }
+
+    public ISnapshotSelector SnapshotSelector { get; }
+
+    public static ProfilerRemoteConfigState FromRemoteConfiguration(YamlRoot? configuration, PluginSettings startupSettings)
+    {
+        var profiling = configuration?.Distribution?.Splunk?.Profiling;
+        var cpuProfiler = profiling?.AlwaysOn?.CpuProfiler;
+        var callgraphs = profiling?.Callgraphs;
+#if NET
+        var memoryProfiler = profiling?.AlwaysOn?.MemoryProfiler;
+#endif
+        return new ProfilerRemoteConfigState(
+            cpuProfiler != null,
+            cpuProfiler?.SamplingInterval ?? Constants.DefaultSamplingInterval,
+            callgraphs != null,
+            startupSettings.SnapshotsSamplingInterval,
+            callgraphs?.SelectionProbability ?? Constants.DefaultSnapshotSelectionRate,
+#if NET
+            memoryProfiler != null,
+            memoryProfiler != null ? PluginSettingsHelper.GetFinalMaxMemorySamples(memoryProfiler.MaxMemorySamples) : 0);
+#else
+            memoryProfilerEnabled: false,
+            memoryProfilerMaxMemorySamplesPerMinute: 0);
+#endif
+    }
 }

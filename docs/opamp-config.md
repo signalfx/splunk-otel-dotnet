@@ -92,8 +92,9 @@ payload, then `Applied` after the payload is applied or `Failed` with an error
 message when the payload cannot be applied.
 
 After a remote configuration is applied, subsequent OpAMP effective
-configuration reports reflect the active CPU and memory profiler runtime state,
-including the current maximum number of memory samples per minute.
+configuration reports reflect the active CPU, memory, and Callgraph profiling
+settings, including the memory sample limit per minute and the trace selection
+probability.
 
 ### Remote configuration payload
 
@@ -106,6 +107,8 @@ distribution:
           sampling_interval: 10000
         memory_profiler:
           max_memory_samples: 200
+      callgraphs:
+        selection_probability: 0.01
 ```
 
 ### Runtime behavior
@@ -116,12 +119,12 @@ is enabled before the process starts. Without the .NET CLR Profiler, profiling
 does not run, and remote configuration cannot enable or configure the .NET CLR
 Profiler at runtime.
 
-Enabling remote configuration initializes the continuous profiling pipeline at
-startup so that CPU and memory profiling can be enabled later at runtime. This
-setup occurs even when both profilers are initially disabled or the startup
-memory sample limit is zero.
-Native sample collection remains disabled until the corresponding profiler is enabled,
-but the initialized pipeline can still add CPU, memory, and thread overhead.
+Enabling remote configuration initializes the continuous and Callgraph profiling
+pipelines at startup so that CPU profiling, memory profiling, and Callgraphs can
+be enabled at runtime.
+This setup occurs even when profiling is initially disabled. Sample collection
+follows the startup configuration until a remote configuration is accepted,
+but the initialized pipelines can still add CPU, memory, and thread overhead.
 Leave remote configuration disabled when runtime profiler activation is not
 required.
 
@@ -136,12 +139,21 @@ Supported at runtime:
   allocation samples collected per minute. Values from `1` to `200` are accepted.
   If omitted, zero, or above `200`, the default of `200` is used.
   Negative YAML values are invalid and cause the configuration update to be rejected.
+- `callgraphs`: enable Callgraph snapshot profiling.
+- `callgraphs.selection_probability`: change the probability of selecting new
+  traces. If omitted, the default of `0.01` is used. Values are normalized
+  using the same rules as file-based configuration: zero, negative, or NaN values
+  use the default, and values above `1.0` are capped at `1.0`.
 
-Each payload replaces the runtime CPU and memory profiling settings. Omitting
-either profiler section disables that profiler. An empty `memory_profiler`
-section enables memory profiling with the default limit, rather than preserving
-the previous remote or startup limit.
+The Callgraph sampling interval retains its startup value, including when
+Callgraphs are initially disabled. Configure it before startup using
+`SPLUNK_SNAPSHOT_SAMPLING_INTERVAL` or file-based `callgraphs.sampling_interval`.
+The default is `40` ms. Remote `callgraphs.sampling_interval` values are ignored.
 
-When snapshots are enabled at startup, the CPU sampling interval is adjusted to
-a multiple of the snapshot sampling interval and is at least twice that interval.
-Snapshot and exporter settings retain their startup configuration.
+When Callgraphs are enabled, the CPU sampling interval is adjusted to a multiple
+of the startup snapshot sampling interval and is at least twice that interval.
+Each remote payload replaces CPU, memory, and Callgraph profiling settings. An
+omitted profiler section disables that profiler. If a profiler section is present
+and omits a configurable value, the file-based default applies.
+
+Configure the profiler exporter and high-resolution timer at startup.

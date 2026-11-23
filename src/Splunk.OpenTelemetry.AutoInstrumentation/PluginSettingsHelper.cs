@@ -125,12 +125,19 @@ internal static class PluginSettingsHelper
 
     public static double GetFinalSnapshotSelectionProbability(double configuredSelectionRate)
     {
-        return configuredSelectionRate switch
+        if (configuredSelectionRate <= 0 || double.IsNaN(configuredSelectionRate))
         {
-            <= 0 or double.NaN => Constants.DefaultSnapshotSelectionRate,
-            > Constants.MaxSnapshotSelectionRate => Constants.MaxSnapshotSelectionRate,
-            _ => configuredSelectionRate
-        };
+            Log.Warning($"Invalid snapshot selection probability {configuredSelectionRate}. Using the default value of {Constants.DefaultSnapshotSelectionRate}.");
+            return Constants.DefaultSnapshotSelectionRate;
+        }
+
+        if (configuredSelectionRate > Constants.MaxSnapshotSelectionRate)
+        {
+            Log.Warning($"Snapshot selection probability {configuredSelectionRate} exceeds the maximum value of {Constants.MaxSnapshotSelectionRate}. Capping it at {Constants.MaxSnapshotSelectionRate}.");
+            return Constants.MaxSnapshotSelectionRate;
+        }
+
+        return configuredSelectionRate;
     }
 
     public static Uri GetProfilerLogsEndpoint(IConfigurationSource source, Uri? otlpFallback)
