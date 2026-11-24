@@ -36,15 +36,16 @@ internal static class PluginSettingsHelper
 
     public static uint GetFinalContinuousSamplingInterval(long callStackInterval)
     {
-        return callStackInterval <= 0 || callStackInterval > uint.MaxValue
-            ? Constants.DefaultSamplingInterval
-            : (uint)callStackInterval;
+        return IsValidContinuousSamplingInterval(callStackInterval)
+            ? (uint)callStackInterval
+            : Constants.DefaultSamplingInterval;
     }
 
     public static uint GetFinalContinuousSamplingInterval(
         long callStackInterval,
         bool snapshotsEnabled,
-        uint snapshotsSamplingInterval)
+        uint snapshotsSamplingInterval,
+        bool logAdjustment = true)
     {
         var interval = GetFinalContinuousSamplingInterval(callStackInterval);
         if (!snapshotsEnabled)
@@ -53,13 +54,9 @@ internal static class PluginSettingsHelper
         }
 
         var snapshotInterval = GetFinalSnapshotSamplingInterval(snapshotsSamplingInterval);
-        var finalContinuousSamplingInterval = (interval / snapshotInterval) * snapshotInterval;
-        if (finalContinuousSamplingInterval <= snapshotInterval)
-        {
-            finalContinuousSamplingInterval = snapshotInterval * 2;
-        }
+        var finalContinuousSamplingInterval = snapshotInterval * Math.Max(2u, interval / snapshotInterval);
 
-        if (finalContinuousSamplingInterval != interval)
+        if (logAdjustment && finalContinuousSamplingInterval != interval)
         {
             Log.Warning($"Adjusting continuous profiler call stack interval from {interval}ms to {finalContinuousSamplingInterval}ms to be aligned with snapshot sampling interval of {snapshotInterval}ms.");
         }
@@ -76,10 +73,15 @@ internal static class PluginSettingsHelper
             snapshotsSamplingInterval);
     }
 
+    public static bool IsValidContinuousSamplingInterval(long callStackInterval)
+    {
+        return callStackInterval is > 0 and <= uint.MaxValue;
+    }
+
 #if NET
     public static uint GetFinalMaxMemorySamples(long maxMemorySamplesPerMinute)
     {
-        if (maxMemorySamplesPerMinute <= 0 || maxMemorySamplesPerMinute > 200)
+        if (maxMemorySamplesPerMinute <= 0 || maxMemorySamplesPerMinute > Constants.DefaultMaxMemorySamples)
         {
             return Constants.DefaultMaxMemorySamples;
         }

@@ -164,11 +164,12 @@ public class ContinuousProfilerTests : TestHelper
         using var logsCollector = new MockContinuousProfilerCollector(Output);
         SetExporter(logsCollector);
         var snapshotSamplingInterval = isFileBased ? 40 : 80;
+        var alignedCpuSamplingInterval = isFileBased ? 1000u : 960u;
         var configurations = new[]
         {
-            CreateRemoteCallgraphConfiguration(1, 40),
-            CreateRemoteCallgraphConfiguration(2, 300, selectionProbability: 0.75),
-            CreateRemoteCallgraphConfiguration(3, null)
+            CreateRemoteCallgraphConfiguration(1, 40, alignedCpuSamplingInterval),
+            CreateRemoteCallgraphConfiguration(2, 300, alignedCpuSamplingInterval, selectionProbability: 0.75),
+            CreateRemoteCallgraphConfiguration(3, null, 1000)
         };
         var applied = new bool[configurations.Length];
         var effective = new bool[configurations.Length];
@@ -512,9 +513,9 @@ public class ContinuousProfilerTests : TestHelper
         }
     }
 
-    private static AgentRemoteConfig CreateRemoteCallgraphConfiguration(byte hash, uint? samplingInterval, double selectionProbability = 1.0)
+    private static AgentRemoteConfig CreateRemoteCallgraphConfiguration(byte hash, uint? samplingInterval, uint cpuSamplingInterval, double selectionProbability = 1.0)
     {
-        var yaml = "distribution:\n  splunk:\n    profiling:\n      always_on:\n        cpu_profiler:\n          sampling_interval: 1000\n";
+        var yaml = FormattableString.Invariant($"distribution:\n  splunk:\n    profiling:\n      always_on:\n        cpu_profiler:\n          sampling_interval: {cpuSamplingInterval}\n");
         if (samplingInterval.HasValue)
         {
             yaml += FormattableString.Invariant($"      callgraphs:\n        sampling_interval: {samplingInterval}\n        selection_probability: {selectionProbability}\n");
