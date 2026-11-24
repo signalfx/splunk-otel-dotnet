@@ -19,7 +19,7 @@ This component adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ### Security
 
-## [1.17.0](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.17.0)
+## [1.18.0](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.18.0)
 
 This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.20.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.20.0).
 
@@ -35,7 +35,8 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.20.0
 ### Added
 
 - Experimental support for OpAMP remote configuration for memory profiling.
-- `linux/arm64` support in the .NET auto-instrumentation image for the OpenTelemetry Operator.
+- `linux/arm64` support in the .NET auto-instrumentation image for the
+  OpenTelemetry Operator.
 - Experimental support for OpAMP remote configuration for Callgraphs, including
   enabling or disabling Callgraphs and updating the trace selection probability.
 
