@@ -19,29 +19,23 @@ using System.Globalization;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 
-internal class TraceIdBasedSnapshotSelector : ISnapshotSelector
+internal static class TraceIdBasedSnapshotSelector
 {
     private const int RandomnessHexLength = 7;
     private const uint MaxRandomnessValue = 0x0FFFFFFF;
 
-    private readonly uint _threshold;
-
-    public TraceIdBasedSnapshotSelector(double selectionProbability)
+    public static bool Select(ActivityTraceId traceId, double selectionProbability)
     {
-        _threshold = (uint)(selectionProbability * MaxRandomnessValue);
-    }
-
-    public bool Select(ActivityContext context)
-    {
-        if (_threshold == 0 || context.TraceId == default)
+        var threshold = (uint)(selectionProbability * MaxRandomnessValue);
+        if (threshold == 0 || traceId == default)
         {
             return false;
         }
 
-        var traceId = context.TraceId.ToHexString();
-        var randomnessHex = traceId.Substring(traceId.Length - RandomnessHexLength, RandomnessHexLength);
+        var traceIdHex = traceId.ToHexString();
+        var randomnessHex = traceIdHex.Substring(traceIdHex.Length - RandomnessHexLength, RandomnessHexLength);
         var randomness = uint.Parse(randomnessHex, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
 
-        return randomness <= _threshold;
+        return randomness <= threshold;
     }
 }
