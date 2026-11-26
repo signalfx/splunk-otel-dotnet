@@ -73,7 +73,9 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
 
         [Theory]
         [InlineData("40", "1000", 1000u)]
-        [InlineData("30", "1000", 990u)]
+        [InlineData("30", "1000", 1020u)]
+        [InlineData("30", "1234", 1230u)]
+        [InlineData("30", "999", 9990u)]
         public void SamplingIntervals_HaveToBeAligned(string snapshotSamplingInterval, string configuredContinuousProfilingSamplingInterval, uint finalSamplingInterval)
         {
             var settings = new PluginSettings(new NameValueConfigurationSource(
@@ -88,6 +90,39 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests
             Assert.Equal(finalSamplingInterval, settings.CpuProfilerCallStackInterval);
         }
 #endif
+
+        [Theory]
+        [InlineData(999u, 10000u)]
+        [InlineData(1000u, 1000u)]
+        public void CpuSamplingInterval_RespectsMinimumForStartupConfiguration(uint interval, uint expectedInterval)
+        {
+            var environmentSettings = new PluginSettings(new NameValueConfigurationSource(
+                new NameValueCollection
+                {
+                    [ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled] = "true",
+                    [ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = interval.ToString()
+                }));
+
+            var yamlSettings = new PluginSettings(new YamlRoot
+            {
+                Distribution = new Distribution
+                {
+                    Splunk = new SplunkConfiguration
+                    {
+                        Profiling = new ProfilerConfiguration
+                        {
+                            AlwaysOn = new AlwaysOn
+                            {
+                                CpuProfiler = new CpuProfiler { SamplingInterval = interval }
+                            }
+                        }
+                    }
+                }
+            });
+
+            Assert.Equal(expectedInterval, environmentSettings.CpuProfilerCallStackInterval);
+            Assert.Equal(expectedInterval, yamlSettings.CpuProfilerCallStackInterval);
+        }
 
         [Fact]
         internal void PluginSettings_DefaultValues()

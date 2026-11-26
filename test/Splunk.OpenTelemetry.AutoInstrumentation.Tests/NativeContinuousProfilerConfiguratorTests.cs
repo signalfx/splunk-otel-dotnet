@@ -62,7 +62,7 @@ public class NativeContinuousProfilerConfiguratorTests
                 new NameValueCollection
                 {
                     [ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled] = "true",
-                    [ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = "156",
+                    [ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = "1560",
                     [ConfigurationKeys.Splunk.Snapshots.Enabled] = "true",
                     [ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs] = "78",
 #if NET
@@ -82,7 +82,7 @@ public class NativeContinuousProfilerConfiguratorTests
                     {
                         AlwaysOn = new AlwaysOn
                         {
-                            CpuProfiler = new CpuProfiler { SamplingInterval = 312 },
+                            CpuProfiler = new CpuProfiler { SamplingInterval = 1000 },
                             MemoryProfiler = new MemoryProfiler { MaxMemorySamples = 137 }
                         },
                         Callgraphs = new CallGraphsConfiguration { SamplingInterval = 104 }
@@ -93,7 +93,7 @@ public class NativeContinuousProfilerConfiguratorTests
         binding.Configure(startupSettings, ProfilerRemoteConfigState.FromRemoteConfiguration(configuration, startupSettings));
 
         Assert.Equal(Authority.ControlPlane, NativeMethodsStub.LastAuthority);
-        Assert.Equal(312u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
+        Assert.Equal(1014u, NativeMethodsStub.LastConfiguration.CpuSamplingInterval);
         Assert.Equal(78u, NativeMethodsStub.LastConfiguration.SnapshotSamplingInterval);
 #if NET
         Assert.Equal(137u, NativeMethodsStub.LastConfiguration.MaxMemorySamplesPerMinute);
@@ -110,7 +110,7 @@ public class NativeContinuousProfilerConfiguratorTests
                 new NameValueCollection
                 {
                     [ConfigurationKeys.Splunk.AlwaysOnProfiler.CpuProfilerEnabled] = "true",
-                    [ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = "156",
+                    [ConfigurationKeys.Splunk.AlwaysOnProfiler.CallStackInterval] = "1560",
                     [ConfigurationKeys.Splunk.Snapshots.Enabled] = "true",
                     [ConfigurationKeys.Splunk.Snapshots.SamplingIntervalMs] = "78",
 #if NET

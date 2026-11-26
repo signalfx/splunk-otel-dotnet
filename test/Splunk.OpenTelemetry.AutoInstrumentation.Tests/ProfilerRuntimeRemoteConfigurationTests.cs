@@ -189,9 +189,10 @@ public class ProfilerRuntimeRemoteConfigurationTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Apply_UsesDefaultSamplingIntervalWhenRemoteIntervalIsOmittedOrZero(bool zeroInterval)
+    [InlineData(null)]
+    [InlineData(0u)]
+    [InlineData(999u)]
+    public void Apply_UsesDefaultSamplingIntervalWhenRemoteIntervalIsOmittedOrBelowMinimum(uint? samplingInterval)
     {
         ProfilerRuntimeConfiguration.Initialize(CreateSettings(new NameValueCollection
         {
@@ -200,9 +201,9 @@ public class ProfilerRuntimeRemoteConfigurationTests
         }));
 
         var cpuProfiler = new CpuProfiler();
-        if (zeroInterval)
+        if (samplingInterval.HasValue)
         {
-            cpuProfiler.SamplingInterval = 0;
+            cpuProfiler.SamplingInterval = samplingInterval.Value;
         }
 
         ApplyConfiguration(CreateConfiguration(new ProfilerConfiguration

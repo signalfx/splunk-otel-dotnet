@@ -57,6 +57,7 @@ Note: .NET Framework apps can read settings also from `Web.config` and `App.conf
 | `SPLUNK_REALM`                         | `none`  | Specifies direct OTLP ingest realm. [1]                                                                           |
 | `SPLUNK_ACCESS_TOKEN`                  |         | Specifies direct OTLP ingest access token.                                                                        |
 | `SPLUNK_TRACE_RESPONSE_HEADER_ENABLED` | `true`  | Enables Splunk RUM integration.                                                                                   |
+| `SPLUNK_PROFILER_CALL_STACK_INTERVAL`  | `10000` | CPU profiling sampling interval in milliseconds. Values below `1000` ms use the default.                          |
 | `SPLUNK_OPAMP_REMOTE_CONFIG`           | `false` | Enables OpAMP remote configuration for CPU profiling, memory profiling, and Callgraphs. [2]                       |
 
 - [1]: By default, instrumentation libraries are configured to send to a local

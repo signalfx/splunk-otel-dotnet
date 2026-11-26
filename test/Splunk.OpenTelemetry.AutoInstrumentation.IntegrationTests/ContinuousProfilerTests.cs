@@ -239,8 +239,8 @@ public class ContinuousProfilerTests : TestHelper
                     else
                     {
                         var properties = body.Split('\n');
-                        effective[0] |= properties.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=true") && properties.Contains("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=80") && properties.Contains("SPLUNK_SNAPSHOT_SELECTION_PROBABILITY=1") && properties.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=960");
-                        effective[1] |= properties.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=true") && properties.Contains("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=80") && properties.Contains("SPLUNK_SNAPSHOT_SELECTION_PROBABILITY=0.75") && properties.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=960");
+                        effective[0] |= properties.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=true") && properties.Contains("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=80") && properties.Contains("SPLUNK_SNAPSHOT_SELECTION_PROBABILITY=1") && properties.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=1040");
+                        effective[1] |= properties.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=true") && properties.Contains("SPLUNK_SNAPSHOT_SAMPLING_INTERVAL=80") && properties.Contains("SPLUNK_SNAPSHOT_SELECTION_PROBABILITY=0.75") && properties.Contains("SPLUNK_PROFILER_CALL_STACK_INTERVAL=1040");
                         effective[2] |= effective[1] && properties.Contains("SPLUNK_SNAPSHOT_PROFILER_ENABLED=false") && properties.Contains("SPLUNK_PROFILER_ENABLED=true");
                     }
                 }
