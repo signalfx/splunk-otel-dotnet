@@ -15,7 +15,6 @@
 // </copyright>
 
 using Splunk.OpenTelemetry.AutoInstrumentation.Configuration.FileBasedConfiguration;
-using Splunk.OpenTelemetry.AutoInstrumentation.Snapshots;
 
 namespace Splunk.OpenTelemetry.AutoInstrumentation.RemoteConfig;
 
@@ -53,7 +52,6 @@ internal sealed class ProfilerRemoteConfigState
         CpuProfilerCallStackInterval = PluginSettingsHelper.GetFinalContinuousSamplingInterval(
             cpuProfilerCallStackInterval, snapshotsEnabled, SnapshotsSamplingInterval);
         SnapshotsSelectionRate = PluginSettingsHelper.GetFinalSnapshotSelectionProbability(snapshotsSelectionRate);
-        SnapshotSelector = new TraceIdBasedSnapshotSelector(SnapshotsSelectionRate);
         MemoryProfilerEnabled = memoryProfilerEnabled;
         MemoryProfilerMaxMemorySamplesPerMinute = memoryProfilerMaxMemorySamplesPerMinute;
     }
@@ -71,8 +69,6 @@ internal sealed class ProfilerRemoteConfigState
     public uint SnapshotsSamplingInterval { get; }
 
     public double SnapshotsSelectionRate { get; }
-
-    public ISnapshotSelector SnapshotSelector { get; }
 
     public static ProfilerRemoteConfigState FromRemoteConfiguration(YamlRoot? configuration, PluginSettings startupSettings)
     {

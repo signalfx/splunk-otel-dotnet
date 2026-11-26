@@ -4,6 +4,29 @@
   labels: ["dependencies"],
   commitMessageAction: "Bump",
   extends: ["config:best-practices"],
+  packageRules: [
+    {
+      description: "Update these NuGet packages manually with the upstream distribution (see docs/bump-upstream.md)",
+      matchManagers: ["nuget"],
+      matchPackageNames: [
+        "Google.Protobuf",
+        "Microsoft.Extensions.Configuration.EnvironmentVariables",
+        "Microsoft.Extensions.Logging",
+        "Microsoft.Extensions.Logging.Abstractions",
+        "Microsoft.Extensions.Logging.Console",
+        "OpenTelemetry.Api",
+        "OpenTelemetry.AutoInstrumentation",
+        "OpenTelemetry.AutoInstrumentation.PluginApi",
+        "OpenTelemetry.Exporter.OpenTelemetryProtocol",
+        "OpenTelemetry.Instrumentation.AspNet",
+        "OpenTelemetry.Instrumentation.AspNetCore",
+        "OpenTelemetry.OpAmp.Client",
+        "System.Collections.Immutable",
+        "System.Diagnostics.DiagnosticSource",
+      ],
+      enabled: false,
+    },
+  ],
   customManagers: [
     {
       customType: "regex",
