@@ -24,6 +24,7 @@ internal sealed class RuntimeSnapshotSelector : ISnapshotSelector
     public bool Select(ActivityContext context)
     {
         var state = ProfilerRuntimeConfiguration.Current;
-        return state.SnapshotsEnabled && state.SnapshotSelector.Select(context);
+        return state.SnapshotsEnabled &&
+               TraceIdBasedSnapshotSelector.Select(context.TraceId, state.SnapshotsSelectionRate);
     }
 }

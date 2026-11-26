@@ -22,12 +22,9 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests.Snapshots
     public class TraceIdBasedSnapshotSelectorTests
     {
         [Fact]
-        public void Select_ShouldReturnFalse_ForDefaultContext()
+        public void Select_ShouldReturnFalse_ForDefaultTraceId()
         {
-            var selector = new TraceIdBasedSnapshotSelector(1.0);
-            var context = default(ActivityContext);
-
-            var result = selector.Select(context);
+            var result = TraceIdBasedSnapshotSelector.Select(default, selectionProbability: 1.0);
 
             Assert.False(result);
         }
@@ -35,10 +32,9 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests.Snapshots
         [Fact]
         public void Select_ShouldReturnTrue_WhenTraceIdRandomnessMatchesThreshold()
         {
-            var selector = new TraceIdBasedSnapshotSelector(0.5);
-            var context = CreateContextFromRandomness("7ffffff");
+            var traceId = CreateTraceIdFromRandomness("7ffffff");
 
-            var result = selector.Select(context);
+            var result = TraceIdBasedSnapshotSelector.Select(traceId, selectionProbability: 0.5);
 
             Assert.True(result);
         }
@@ -46,18 +42,28 @@ namespace Splunk.OpenTelemetry.AutoInstrumentation.Tests.Snapshots
         [Fact]
         public void Select_ShouldReturnFalse_WhenTraceIdRandomnessExceedsThreshold()
         {
-            var selector = new TraceIdBasedSnapshotSelector(0.5);
-            var context = CreateContextFromRandomness("8000000");
+            var traceId = CreateTraceIdFromRandomness("8000000");
 
-            var result = selector.Select(context);
+            var result = TraceIdBasedSnapshotSelector.Select(traceId, selectionProbability: 0.5);
 
             Assert.False(result);
         }
 
-        private static ActivityContext CreateContextFromRandomness(string randomnessHex)
+        [Fact]
+        public void Select_ShouldReturnFalse_WhenProbabilityYieldsZeroThreshold()
         {
-            var traceId = randomnessHex.PadLeft(32, '0');
-            return new ActivityContext(ActivityTraceId.CreateFromString(traceId.AsSpan()), ActivitySpanId.CreateRandom(), ActivityTraceFlags.Recorded);
+            var traceId = CreateTraceIdFromRandomness("0000000");
+
+            var result = TraceIdBasedSnapshotSelector.Select(traceId, selectionProbability: 1e-10);
+
+            Assert.False(result);
+        }
+
+        private static ActivityTraceId CreateTraceIdFromRandomness(string randomnessHex)
+        {
+            // The leading "1" keeps the trace ID valid when the suffix is all zeros.
+            var traceIdHex = "1" + randomnessHex.PadLeft(31, '0');
+            return ActivityTraceId.CreateFromString(traceIdHex.AsSpan());
         }
     }
 }
