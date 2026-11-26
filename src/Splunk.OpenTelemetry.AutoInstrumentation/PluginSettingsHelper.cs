@@ -34,30 +34,28 @@ internal static class PluginSettingsHelper
         return string.IsNullOrEmpty(fileName) ? Constants.DefaultFileBasedConfigFileName : fileName!;
     }
 
-    public static uint GetFinalContinuousSamplingInterval(long callStackInterval)
-    {
-        return callStackInterval <= 0 || callStackInterval > uint.MaxValue
-            ? Constants.DefaultSamplingInterval
-            : (uint)callStackInterval;
-    }
-
     public static uint GetFinalContinuousSamplingInterval(
         long callStackInterval,
         bool snapshotsEnabled,
         uint snapshotsSamplingInterval)
     {
-        var interval = GetFinalContinuousSamplingInterval(callStackInterval);
+        if (callStackInterval < Constants.MinCpuSamplingIntervalMs || callStackInterval > uint.MaxValue)
+        {
+            Log.Warning($"Invalid CPU profiler sampling interval of {callStackInterval}ms. The supported range is {Constants.MinCpuSamplingIntervalMs}ms to {uint.MaxValue}ms. Using the default of {Constants.DefaultSamplingInterval}ms.");
+            callStackInterval = Constants.DefaultSamplingInterval;
+        }
+
+        var interval = (uint)callStackInterval;
         if (!snapshotsEnabled)
         {
             return interval;
         }
 
         var snapshotInterval = GetFinalSnapshotSamplingInterval(snapshotsSamplingInterval);
-        var finalContinuousSamplingInterval = (interval / snapshotInterval) * snapshotInterval;
-        if (finalContinuousSamplingInterval <= snapshotInterval)
-        {
-            finalContinuousSamplingInterval = snapshotInterval * 2;
-        }
+        // Round the minimum up to a whole number of snapshot intervals.
+        var minSnapshotIntervals = (Constants.MinCpuSamplingIntervalMs + snapshotInterval - 1) / snapshotInterval;
+        var snapshotIntervals = Math.Max(interval / snapshotInterval, Math.Max(2u, minSnapshotIntervals));
+        var finalContinuousSamplingInterval = snapshotIntervals * snapshotInterval;
 
         if (finalContinuousSamplingInterval != interval)
         {

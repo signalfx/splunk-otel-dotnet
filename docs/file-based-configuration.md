@@ -96,8 +96,8 @@ distribution:
       always_on:
         # Configure CPU call stack profiler
         cpu_profiler:
-          # Configure frequency with which call stacks are sampled.
-          # If omitted or null, 10000 is used.
+          # Configure the CPU sampling interval in milliseconds. The minimum is 1000.
+          # If omitted, null, or set to a value from 0 to 999, 10000 is used.
           sampling_interval: 10000
         # Configure memory allocation profiler
         # Memory profiling is not supported on .NET Framework.
@@ -194,8 +194,8 @@ distribution:
       always_on:
         # Configure CPU call stack profiler
         cpu_profiler:
-          # Configure frequency with which call stacks are sampled.
-          # If omitted or null, 10000 is used.
+          # Configure the CPU sampling interval in milliseconds. The minimum is 1000.
+          # If omitted, null, or set to a value from 0 to 999, 10000 is used.
           sampling_interval: ${SPLUNK_PROFILER_CALL_STACK_INTERVAL}
         # Configure memory allocation profiler
         # Memory profiling is not supported on .NET Framework.

@@ -32,6 +32,10 @@ This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.20.0
 
 ### Security
 
+- **Breaking change:** AlwaysOn CPU profiling requires a sampling interval of at
+  least `1000` ms at startup and through OpAMP. Values below the minimum use the
+  default interval of `10000` ms before Callgraph alignment.
+
 ## [1.17.0](https://github.com/signalfx/splunk-otel-dotnet/compare/v1.17.0)
 
 This release is built on top of [OpenTelemetry .NET Auto Instrumentation v1.19.1](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.19.1).

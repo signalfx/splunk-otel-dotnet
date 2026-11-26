@@ -132,7 +132,8 @@ Supported at runtime:
 
 - `always_on.cpu_profiler`: enable or disable CPU profiling.
 - `always_on.cpu_profiler.sampling_interval`: change the CPU sampling interval in
-  milliseconds. If omitted or zero, the default of `10000` ms is used.
+  milliseconds. The minimum is `1000` ms. If omitted or set to a value from
+  `0` to `999`, the default of `10000` ms is used before Callgraph alignment.
 - `always_on.memory_profiler`: enable or disable memory profiling on .NET.
   Memory profiling is not supported on .NET Framework.
 - `always_on.memory_profiler.max_memory_samples`: change the maximum number of
@@ -151,7 +152,8 @@ Callgraphs are initially disabled. Configure it before startup using
 The default is `40` ms. Remote `callgraphs.sampling_interval` values are ignored.
 
 When Callgraphs are enabled, the CPU sampling interval is adjusted to a multiple
-of the startup snapshot sampling interval and is at least twice that interval.
+of the startup snapshot sampling interval. The result is at least `1000` ms and
+at least twice the snapshot interval.
 Each remote payload replaces CPU, memory, and Callgraph profiling settings. An
 omitted profiler section disables that profiler. If a profiler section is present
 and omits a configurable value, the file-based default applies.

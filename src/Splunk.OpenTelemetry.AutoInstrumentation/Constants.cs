@@ -27,6 +27,7 @@ internal static class Constants
     public const bool DefaultHighResolutionTimer = false;
 
     // Cpu Profiler
+    public const uint MinCpuSamplingIntervalMs = 1000;
     public const int DefaultSamplingInterval = 10000;
 
     // Memory Profiler
